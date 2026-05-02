@@ -44,34 +44,40 @@ body = {
 
 ### Step 2: Compute content_hash
 
-Apply JCS to the body, SHA-256 the canonical form, hex-encode lowercase.
+Canonicalize the body using JCS (RFC 8785), compute SHA-256, and prepend the `sha256:` algorithm prefix.
 
 ```python
 import hashlib, jcs
 
+# Body must NOT yet contain content_hash, signature, or any registry-assigned fields.
 canonical = jcs.canonicalize(body)
-content_hash = hashlib.sha256(canonical).hexdigest()
+hash_hex = hashlib.sha256(canonical).hexdigest()
+content_hash = f"sha256:{hash_hex}"
 body["content_hash"] = content_hash
 ```
 
-The exclusion set (RFC-ACDP-0001 §5.7) — `signature`, `ctx_id`, `lineage_id`, `origin_registry`, `created_at` — is implicit at this stage because the body does not yet contain those fields.
+The exclusion set (RFC-ACDP-0001 §5.7) is `content_hash`, `signature`, `ctx_id`, `lineage_id`, `origin_registry`, `created_at`. At this stage, the body contains none of these (you haven't set `content_hash` or `signature` yet, and the registry-assigned fields don't exist on the producer side), so the exclusion is implicit.
+
+> **Python implementer note.** `json.dumps(obj, sort_keys=True, separators=(',', ':'), ensure_ascii=False)` is JCS-conformant for most input shapes but fails on negative zero (preserves `-0.0` instead of emitting `0`). Use the `jcs` package on PyPI to be safe. See RFC-ACDP-0001 §5.2.
 
 ### Step 3: Sign
 
-Sign the **bytes of the lowercase hex content_hash string** (not the raw hash bytes).
+Sign the bytes of the **full `content_hash` string** — that is, the ASCII bytes of `sha256:` followed by the 64 hex chars. Producers MUST NOT sign the raw 32-byte digest, and MUST NOT sign the hex-only substring without the `sha256:` prefix.
 
 ```python
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 import base64
 
-sig_value = private_key.sign(content_hash.encode("ascii"))
+# private_key is an ed25519 private key (cryptography.hazmat.primitives.asymmetric.ed25519.Ed25519PrivateKey)
+sig_bytes = private_key.sign(content_hash.encode("ascii"))
 
 body["signature"] = {
     "algorithm": "ed25519",
-    "key_id": "did:web:agent.example#key-1",
-    "value": base64.b64encode(sig_value).decode("ascii"),
+    "key_id": "did:web:agents.example.com:my-agent#key-1",
+    "value": base64.b64encode(sig_bytes).decode("ascii")
 }
 ```
+
+The `key_id` MUST be a DID URL whose DID portion equals `body.agent_id` — the registry will verify this binding (RFC-ACDP-0003 §2.1 step 6) and reject mismatches with `key_not_authorized`.
 
 ### Step 4: Publish
 
@@ -109,29 +115,31 @@ state = context["registry_state"]
 ```python
 import hashlib, jcs
 
-# Strip registry-assigned and signature fields per RFC-ACDP-0001 §5.7
-EXCLUDE = {"signature", "ctx_id", "lineage_id", "origin_registry", "created_at"}
-hashable = {k: v for k, v in body.items() if k not in EXCLUDE}
+# Strip the full exclusion set per RFC-ACDP-0001 §5.7 — including content_hash itself.
+EXCLUDE = {"content_hash", "signature", "ctx_id", "lineage_id", "origin_registry", "created_at"}
+producer_content = {k: v for k, v in body.items() if k not in EXCLUDE}
 
-canonical = jcs.canonicalize(hashable)
-recomputed = hashlib.sha256(canonical).hexdigest()
+canonical = jcs.canonicalize(producer_content)
+recomputed_hex = hashlib.sha256(canonical).hexdigest()
+recomputed = f"sha256:{recomputed_hex}"
+
 assert recomputed == body["content_hash"], "content_hash mismatch — body has been tampered"
 ```
 
 ### Step 3: Verify signature
 
 ```python
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 import base64
 
-# Resolve producer's DID document. did:web is HTTPS-based.
-# (The DID library or your own resolver returns the public key for body.signature.key_id.)
-producer_pubkey = resolve_did_key(body["signature"]["key_id"])  # Ed25519PublicKey
+# resolve_did_key returns the producer's Ed25519 public key for the DID URL in signature.key_id.
+producer_pubkey = resolve_did_key(body["signature"]["key_id"])
 
+# The signature was made over the bytes of the full content_hash string.
 sig_bytes = base64.b64decode(body["signature"]["value"])
 producer_pubkey.verify(sig_bytes, body["content_hash"].encode("ascii"))
-# raises on failure
 ```
+
+If `verify` raises, the body is not authentically from `agent_id`.
 
 ### Step 4: Use the context
 
@@ -201,8 +209,8 @@ If the registry returns 501 Not Implemented, fall back to keyword search.
 
 | Error code | Cause | Fix |
 |---|---|---|
-| `invalid_signature` | Signature didn't verify | Check key_id, signing input (the hex string, not raw bytes), algorithm. |
-| `hash_mismatch` | content_hash ≠ recomputed | JCS implementation differs. Run the canonicalization test vector (`schemas/conformance/can-001-jcs-vector.json`). |
+| `invalid_signature` | Signature didn't verify | Confirm you signed the bytes of the full `sha256:<hex>` string (not raw digest, not hex without prefix). Check `key_id` resolution and algorithm. |
+| `hash_mismatch` | content_hash ≠ recomputed | JCS implementation differs. Run `schemas/conformance/can-001-jcs-vector.json`. Common cause: stdlib `json.dumps` not normalizing `-0.0`; use the `jcs` PyPI package. |
 | `superseded_target` | Supersession constraints failed | Check `details.reason` — common values: `not_found`, `lineage_mismatch`, `version_mismatch`, `already_superseded`. |
 | `unsupported_algorithm` | You used a non-ed25519 algorithm | Either use ed25519 or check the registry's `supported_signature_algorithms`. |
 | `embedded_too_large` | Embedded data > 64 KB | Switch to `location` form. |
