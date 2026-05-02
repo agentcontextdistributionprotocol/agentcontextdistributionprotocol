@@ -121,7 +121,13 @@ Results MAY include or exclude contexts published mid-iteration; cross-page cons
 
 ## 3. Semantic Similarity
 
-Semantic similarity is OPTIONAL. A registry that does not index embeddings MUST advertise an empty `supported_embedding_models` array in capabilities (RFC-ACDP-0007) and MUST return HTTP 501 Not Implemented for similarity endpoints.
+Semantic similarity is OPTIONAL. A registry that does not index embeddings MUST advertise an empty `supported_embedding_models` array in capabilities (RFC-ACDP-0007). For requests to similarity endpoints, such a registry MUST return HTTP 501 Not Implemented with the standard error envelope:
+
+```json
+{ "error": { "code": "not_implemented", "message": "Similarity search is not implemented." } }
+```
+
+Implementations MUST NOT return a 501 response with an empty body for ACDP endpoints; the standard error envelope is required so consumers can react programmatically.
 
 ### 3.1 Similarity by reference
 
@@ -182,6 +188,21 @@ The response conforms to [`schemas/json/acdp-similarity-response.schema.json`](.
 
 `similarity` values are in `[-1, 1]` for cosine similarity but are typically `[0, 1]` for normalized embeddings. Similarity values are **not comparable across embedding models**. Implementations MUST NOT mix results from different embedding models in a single response.
 
+### 3.5 Vector input constraints
+
+The `embedding` field of similarity requests:
+
+- MUST contain only finite IEEE 754 double-precision values. NaN, +Infinity, and -Infinity are invalid.
+- MUST have length matching the dimension of the requested `embedding_model`.
+- MUST NOT exceed the registry's `limits.max_embedding_dimensions` (RFC-ACDP-0007 §3.2).
+
+The `top_k` parameter:
+
+- MUST be an integer ≥ 1.
+- MUST NOT exceed the registry's `limits.max_top_k` (RFC-ACDP-0007 §3.2).
+
+Registries MUST reject violations with `schema_violation` (HTTP 400). Producers SHOULD canonicalize and normalize their embedding vectors before submission; registries MAY reject vectors with norms outside an implementation-defined range as `schema_violation`.
+
 ---
 
 ## 4. Visibility Scoping
@@ -202,7 +223,7 @@ A registry MUST scope keyword and similarity results identically. A registry MUS
 |---|---|---|
 | Filter value malformed | `schema_violation` | 400 |
 | Unsupported embedding model | `unsupported_embedding_model` | 400 |
-| Similarity not implemented | (no body) | 501 |
+| Similarity not implemented | `not_implemented` | 501 |
 | Per-agent rate limit hit | `rate_limited` | 429 |
 
 ---
