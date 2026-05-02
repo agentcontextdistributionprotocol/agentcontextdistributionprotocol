@@ -1,31 +1,32 @@
 {
   "id": "pub-006",
-  "description": "Producer submits a publish request where signature.key_id's DID portion does not equal body.agent_id. Registry MUST reject with key_not_authorized (HTTP 403) per RFC-ACDP-0003 §2.1 step 6. This catches the case where one agent attempts to publish content claiming a different agent's identity, but signs with their own key.",
-  "tags": ["failure", "security", "publish", "identity-binding"],
-  "input": {
-    "endpoint": "POST /contexts",
+  "description": "Publish with signature.key_id whose DID portion does not match agent_id MUST be rejected with key_not_authorized (HTTP 403). Tests RFC-ACDP-0003 §2.1 step 6: the registry verifies the DID portion of key_id (everything before '#') equals agent_id, and rejects before signature verification.",
+  "tags": ["publish", "negative", "auth"],
+  "request": {
+    "method": "POST",
+    "path": "/contexts",
+    "content_type": "application/acdp+json",
     "body": {
       "version": 1,
       "supersedes": null,
-      "agent_id": "did:web:agents.example.com:alice",
+      "agent_id": "did:agent:alice",
       "contributors": [],
       "content_hash": "sha256:5f8d88d6758cfd43be875d49edc9eaa494de8ec645bf7de6c592b15bbb1e2e3c",
       "signature": {
         "algorithm": "ed25519",
-        "key_id": "did:web:agents.example.com:bob#key-1",
-        "value": "Ym9iX3NpZ25pbmdfYXNfYWxpY2VfdGVzdF9zaWc="
+        "key_id": "did:agent:bob#key-1",
+        "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
       },
-      "title": "Minimal",
+      "title": "Test",
       "type": "data_snapshot",
       "data_refs": [],
       "derived_from": [],
       "visibility": "public"
-    },
-    "notes": "body.agent_id = did:web:agents.example.com:alice; signature.key_id = did:web:agents.example.com:bob#key-1. The DID portion of key_id (did:web:agents.example.com:bob) does not equal agent_id (did:web:agents.example.com:alice). Registry MUST reject before even attempting signature verification."
+    }
   },
   "expected": {
-    "outcome": "failure",
-    "http_status": 403,
+    "status": 403,
     "error_code": "key_not_authorized"
-  }
+  },
+  "notes": "agent_id is alice but signature.key_id is under bob's DID. Registries MUST reject before attempting signature verification."
 }
