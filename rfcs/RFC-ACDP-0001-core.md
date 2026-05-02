@@ -42,12 +42,15 @@ The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **
 |---|---|
 | **Agent** | A software entity that produces or consumes contexts. Agents have stable identifiers (DIDs, per [DID-CORE]). |
 | **Context** | A unit of agent-produced content described by an ACDP body and tracked by an ACDP registry. |
-| **Body** | The immutable, signed portion of a context. |
-| **Registry State** | The portion of a context maintained by a registry, returned alongside the body on retrieval. In v0.0.1 this contains only the derived `status` field. |
+| **Body** | The immutable stored object representing a context. Contains producer-controlled fields plus the registry-assigned identity fields (`ctx_id`, `lineage_id`, `origin_registry`, `created_at`) and the integrity fields (`content_hash`, `signature`). All body fields are set at publish time and immutable thereafter. |
+| **ProducerContent** | The signature/hash preimage. The Body with `content_hash`, `signature`, and the four registry-assigned identity fields removed (the §5.7 exclusion set). The producer signs ProducerContent; the Body wraps ProducerContent plus the registry-assigned identifiers and the signature. |
+| **RegistryState** | The mutable, registry-derived state returned alongside the Body on retrieval. In v0.0.1 contains only the derived `status` field. Future ACDP versions add lifecycle events, relationships, and attestations to RegistryState without changing the Body. |
 | **Registry** | A service that accepts, stores, and serves contexts according to this specification. |
 | **Lineage** | A chain of contexts representing successive versions of the same logical work, identified by a stable `lineage_id`. |
 | **Producer** | An agent that publishes contexts. |
 | **Consumer** | An agent that retrieves and uses contexts. |
+
+The Body contains both producer-controlled and registry-assigned fields; only ProducerContent is covered by the producer signature. See §5.7 for the exact exclusion set and §5.9 for what the producer signature does and does not bind.
 
 ---
 
@@ -175,7 +178,7 @@ For first versions, the registry computes `lineage_id` from the `ctx_id` it just
 
 ### 5.7 Content Hash
 
-The `content_hash` field of a body is the SHA-256 [FIPS 180-4] digest of the JCS-canonicalized **producer content**, encoded as the literal string `sha256:` followed by 64 lowercase hexadecimal characters. Producer content is the publish request body with the following fields removed:
+The `content_hash` field of a body is the SHA-256 [FIPS 180-4] digest of the JCS-canonicalized **ProducerContent** (§2), encoded as the literal string `sha256:` followed by 64 lowercase hexadecimal characters. ProducerContent is the publish request body with the following fields removed:
 
 - `content_hash` itself (a field cannot contain its own hash);
 - `signature` (the signature is over the hash, so cannot be in the hashed input);
@@ -207,7 +210,7 @@ ACDP's protections decompose by what the producer signature does and does not bi
 
 **What the producer signature binds (cryptographic protection):**
 
-- **Body tampering** is detected by recomputing `content_hash` over the canonicalized body. Any change in any non-excluded field changes the hash; the signature will not verify.
+- **Body tampering** is detected by recomputing `content_hash` over the canonicalized ProducerContent (§2). Any change in any non-excluded field changes the hash; the signature will not verify.
 - **Producer impersonation** of content is prevented: a third party cannot forge a signature without the producer's private key.
 - **Lineage integrity**: each ancestor in `derived_from` is independently signed by its own producer.
 

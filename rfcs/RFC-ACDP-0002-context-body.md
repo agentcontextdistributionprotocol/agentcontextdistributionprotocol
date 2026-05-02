@@ -17,14 +17,14 @@ Draft. Backward-incompatible changes remain possible until Final.
 
 ## 2. The Two-Part Structure
 
-A context consists of two parts:
+A context consists of two parts (terminology defined in RFC-ACDP-0001 §2):
 
-- The **body**: an immutable, signed JSON object containing the content of the context. Defined in this document.
-- The **registry state**: a JSON object maintained by a registry containing fields derived after publication. Defined in RFC-ACDP-0004 §3.
+- The **Body**: an immutable JSON object containing the content of the context. The Body wraps ProducerContent (the producer-signed portion) plus the registry-assigned identity fields and the signature. Defined in this document.
+- The **RegistryState**: a JSON object maintained by a registry containing fields derived after publication. Defined in RFC-ACDP-0004 §3.
 
 When a context is retrieved (RFC-ACDP-0004 §2), both parts are returned together as a JSON object with two top-level keys: `body` and `registry_state`.
 
-This structural separation is preserved in v0.0.1 to enable forward compatibility: future versions will add lifecycle events, relationships, and attestations to registry state without changing the body's structure or signing semantics.
+This structural separation is preserved in v0.0.1 to enable forward compatibility: future versions will add lifecycle events, relationships, and attestations to RegistryState without changing the Body's structure or signing semantics.
 
 ---
 
