@@ -38,8 +38,8 @@ The full normative threat model is [RFC-ACDP-0008 Security](../rfcs/RFC-ACDP-000
 ### 2. DNS spoof against a producer DID
 **Result.** TLS validation at the producer's HTTPS endpoint catches the spoof unless the attacker also has a valid TLS cert. Even with a forged DID document, the attacker still needs the real private key to sign anything.
 
-### 3. Producer rotates keys; old context still valid
-**Result.** Verifier consults the producer's DID document, finds the historical key validity window, and verifies the old signature against the old key.
+### 3. Producer rotates keys; old context
+**Result.** The signing key has been removed from the producer's current DID document. The signature won't verify against the producer's *current* keys, and most DID methods don't expose a historical key validity window. v0.0.1 consumers SHOULD verify against the current DID document and either reject the old context (strict) or accept the residual risk (pragmatic). External transparency logs or the registry-receipts mechanism reserved in [RFC-ACDP-0009 §2.7](../rfcs/RFC-ACDP-0009-extensions.md#27-registry-receipts-likely-v01) will close this gap in a future version. See [RFC-ACDP-0008 §10.3](../rfcs/RFC-ACDP-0008-security.md#103-historical-key-validity).
 
 ### 4. Replay of a captured publish request
 **Result.** Idempotent at the content level — the registry assigns a new `ctx_id` but the body is identical. Producers wishing to suppress duplicates deduplicate locally on `content_hash`.

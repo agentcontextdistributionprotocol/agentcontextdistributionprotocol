@@ -165,11 +165,18 @@ Registries MAY allow anonymous reads of `visibility: public` contexts. Anonymous
 
 **Result.** TLS certificate validation at the producer's HTTPS endpoint catches the spoof unless the attacker has also obtained a valid TLS cert for the hostname. With DNSSEC + cert pinning, both are required to forge a context. Even with a forged DID document, the attacker must also produce a signature under the **real** producer's private key for any context the consumer is asking to verify — the existing signed contexts are tamper-evident.
 
-### 7.3 Producer rotates keys; old context still valid
+### 7.3 Producer rotates keys; old context
 
-**Setup.** Producer P signed `ctx://reg/abc` with key K1 at `created_at=t1`. P later rotates to K2; K1 is removed from P's DID document at `t2`.
+**Setup.** Producer P signed `acdp://reg.example/<uuid>` with key K1 at `created_at=t1`. P later rotates to K2; K1 is removed from P's DID document at `t2`. A consumer at `t3 > t2` retrieves the context and tries to verify it.
 
-**Result.** A consumer at `t3 > t2` verifying the context resolves P's DID document, finds the historical key validity window for K1 (`[t0, t2]`), confirms `created_at=t1` falls within it, and verifies the signature with K1. The context remains valid.
+**Result (v0.0.1, with the documented limitation in §10.3).** The consumer resolves P's *current* DID document and finds only K2. The K1 signature on the old context does not verify against K2. Without an external mechanism (DID-document snapshotting, transparency log, or registry receipt — none of which v0.0.1 specifies), the consumer **cannot** assert that K1 was authorized at `t1`.
+
+Two acceptable v0.0.1 responses for the consumer:
+
+- **Strict.** Reject the context. Old contexts whose signing keys have been rotated out are no longer locally verifiable.
+- **Pragmatic.** Trust the producer's current DID document's claim about key rotation timeline (if any), or defer to an out-of-band attestation. The consumer accepts the residual risk that K1 was rotated *because* it was compromised, in which case signatures from K1 should not have been honored after `t2`.
+
+A future ACDP version (RFC-ACDP-0009 §2.7 reserves registry receipts) will let the registry attest to *which producer key was current at the time of acceptance*, removing the historical-key dependency entirely. Until then, deployments where this matters SHOULD use external transparency logs as documented in §10.2.
 
 ### 7.4 Replay of a captured publish
 
