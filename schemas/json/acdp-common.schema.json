@@ -6,8 +6,17 @@
 
   "$defs": {
     "did": {
-      "title": "Decentralized Identifier",
-      "description": "A DID per W3C DID Core specification. ACDP does not constrain the DID method.",
+      "title": "Decentralized Identifier (plain DID)",
+      "description": "A plain DID per W3C DID Core specification, without fragment, query, or path. Used for principal identifiers (agent_id, contributors[], audience[], registry_did). ACDP does not constrain the DID method.",
+      "type": "string",
+      "pattern": "^did:[a-z0-9]+:[A-Za-z0-9._:%-]+$",
+      "minLength": 7,
+      "maxLength": 2048
+    },
+
+    "did_url": {
+      "title": "Decentralized Identifier URL",
+      "description": "A DID URL per W3C DID Core, optionally including path, query, and/or fragment. Used for signature.key_id (typically with a #key-N fragment).",
       "type": "string",
       "pattern": "^did:[a-z0-9]+:[A-Za-z0-9._:#/?=&%-]+$",
       "minLength": 7,
@@ -64,9 +73,8 @@
           "enum": ["ed25519", "ecdsa-p256"]
         },
         "key_id": {
-          "type": "string",
-          "description": "DID URL identifying the signing key (e.g., did:web:agent.example#key-1).",
-          "minLength": 1
+          "$ref": "#/$defs/did_url",
+          "description": "DID URL identifying the signing key (e.g., did:web:agent.example#key-1)."
         },
         "value": {
           "type": "string",
