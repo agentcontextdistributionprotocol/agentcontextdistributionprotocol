@@ -19,6 +19,9 @@ ACDP error codes returned in error envelopes (`error.code`). The envelope shape 
 | `payload_too_large` | Stable | 413 | Request body exceeds `limits.max_payload_bytes`. | [RFC-ACDP-0007 §3.1](../rfcs/RFC-ACDP-0007-capabilities.md#31-required-fields) |
 | `embedded_too_large` | Stable | 413 | An embedded data reference exceeds 64 KB. | [RFC-ACDP-0002 §6.3](../rfcs/RFC-ACDP-0002-context-body.md#63-embedded-form) |
 | `immutable_field` | Stable | 400 | Attempted mutation of an immutable field. | [RFC-ACDP-0002 §3](../rfcs/RFC-ACDP-0002-context-body.md#3-body-fields) |
+| `key_resolution_failed` | Stable | 400 | The signing key referenced by `signature.key_id` could not be resolved (DID-document fetch failed, key not present in document, etc.). | [RFC-ACDP-0003 §2.1 step 6](../rfcs/RFC-ACDP-0003-publish.md#21-registry-processing) |
+| `key_not_authorized` | Stable | 403 | The DID portion of `signature.key_id` (everything before `#`) does not equal `body.agent_id`. | [RFC-ACDP-0003 §2.1 step 6](../rfcs/RFC-ACDP-0003-publish.md#21-registry-processing) |
+| `not_implemented` | Stable | 501 | The requested endpoint or capability is not implemented by this registry. Returned with the standard error envelope (RFC-ACDP-0007 §4); see RFC-ACDP-0005 §3 for similarity-search not-implemented. | [RFC-ACDP-0005 §3](../rfcs/RFC-ACDP-0005-discovery.md#3-semantic-similarity) |
 
 ## `superseded_target` reason codes
 

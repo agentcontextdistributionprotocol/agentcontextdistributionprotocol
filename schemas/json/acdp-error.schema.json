@@ -26,7 +26,10 @@
             "rate_limited",
             "payload_too_large",
             "embedded_too_large",
-            "immutable_field"
+            "immutable_field",
+            "key_resolution_failed",
+            "key_not_authorized",
+            "not_implemented"
           ],
           "description": "A machine-readable error code from the ACDP standard error vocabulary."
         },
