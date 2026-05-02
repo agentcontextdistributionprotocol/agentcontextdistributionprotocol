@@ -1,0 +1,48 @@
+name: RFC Proposal
+description: Propose a new ACDP RFC or a substantive change to an existing one.
+title: "[RFC] "
+labels: ["rfc"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One-paragraph description of the proposed change.
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: What problem does this solve? Why is it needed now?
+    validations:
+      required: true
+
+  - type: textarea
+    id: design
+    attributes:
+      label: Design
+      description: Proposal in detail. Include schema/proto changes, error-code additions, and security implications.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What else was considered and why was it rejected?
+
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Backward compatibility
+      description: How does this affect existing producers, consumers, and registries?
+    validations:
+      required: true
+
+  - type: textarea
+    id: open
+    attributes:
+      label: Open questions
+      description: Unresolved issues that need discussion before acceptance.

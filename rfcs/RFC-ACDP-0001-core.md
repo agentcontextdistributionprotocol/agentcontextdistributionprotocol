@@ -1,0 +1,335 @@
+# RFC-ACDP-0001
+# Agent Context Description Protocol (ACDP) — Core
+
+**Document:** RFC-ACDP-0001
+**Version:** 0.0.1-draft
+**Status:** Community Standards Track (Draft)
+**Canonical wire format:** JSON over HTTP (with Protocol Buffers mirror)
+**Required JSON canonicalization:** [RFC 8785 — JSON Canonicalization Scheme (JCS)](https://datatracker.ietf.org/doc/html/rfc8785)
+**Intended status:** Stable Core
+
+> This is an RFC-style open standard. It is not an IETF RFC.
+
+---
+
+## Abstract
+
+The Agent Context Description Protocol (ACDP) lets autonomous AI agents **publish, discover, and verify** units of contextual information ("contexts") across distributed systems and organizational boundaries.
+
+ACDP introduces one strict invariant:
+
+> **Once a context body is published, it MUST NOT change. Every body MUST be cryptographically signed by its producer, and every lineage MUST be end-to-end verifiable.**
+
+ACDP Core does not define discovery semantics, registry policy, retraction rules, attestation schemas, or domain logic. ACDP Core defines structure: the **identifier formats** (`acdp://`, `lin:`), the **canonicalization algorithm** (JCS), the **content-hash and signature semantics**, the **time format**, and the **registry hooks** the rest of the spec depends on.
+
+---
+
+## 1. Status of This Memo
+
+This document is Draft Standards Track. Implementations MAY adopt it experimentally. Backward-incompatible changes remain possible until Final status.
+
+This is the **first published version** of ACDP. The numbering scheme treats `acdp/0.0.1` as the inaugural release.
+
+---
+
+## 2. Conventions and Terminology
+
+The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **SHOULD**, **SHOULD NOT**, **RECOMMENDED**, **MAY**, and **OPTIONAL** in this document are to be interpreted as described in BCP 14 ([RFC 2119](https://datatracker.ietf.org/doc/html/rfc2119), [RFC 8174](https://datatracker.ietf.org/doc/html/rfc8174)) when, and only when, they appear in all capitals.
+
+| Term | Definition |
+|---|---|
+| **Agent** | A software entity that produces or consumes contexts. Agents have stable identifiers (DIDs, per [DID-CORE]). |
+| **Context** | A unit of agent-produced content described by an ACDP body and tracked by an ACDP registry. |
+| **Body** | The immutable, signed portion of a context. |
+| **Registry State** | The portion of a context maintained by a registry, returned alongside the body on retrieval. In v0.0.1 this contains only the derived `status` field. |
+| **Registry** | A service that accepts, stores, and serves contexts according to this specification. |
+| **Lineage** | A chain of contexts representing successive versions of the same logical work, identified by a stable `lineage_id`. |
+| **Producer** | An agent that publishes contexts. |
+| **Consumer** | An agent that retrieves and uses contexts. |
+
+---
+
+## 3. Scope and Design Goals
+
+ACDP exists to make agent-produced knowledge **discoverable, verifiable, and reusable** across organizational boundaries. It provides:
+
+1. content-addressed, cryptographically-signed bodies;
+2. a deterministic lineage model for versioning;
+3. a small set of HTTP-based publish/retrieve operations (RFC-ACDP-0003, RFC-ACDP-0004);
+4. keyword and semantic discovery (RFC-ACDP-0005);
+5. cross-registry references via the `acdp://` URI scheme (RFC-ACDP-0006);
+6. registry capability declaration (RFC-ACDP-0007);
+7. a defined error surface (RFC-ACDP-0007);
+8. a threat model (RFC-ACDP-0008).
+
+ACDP does **not** define:
+
+- coordination, voting, consensus, or convergent decision-making;
+- demand-pull, requests, or fulfillment mechanics;
+- payment, settlement, or marketplaces;
+- workflow or pipeline declarations;
+- reputation algorithms;
+- quality scoring by registries;
+- audit-grade time anchoring;
+- encrypted bodies (use `data_refs` splitting and external ACLs);
+- schema hosting (ACDP only references schemas);
+- hard deletion of any kind;
+- multi-party or threshold signatures (use `contributors`).
+
+See [docs/non-goals.md](../docs/non-goals.md) for the full non-goals list and rationale.
+
+---
+
+## 4. Architecture
+
+```
+┌────────────────────────────┐                ┌────────────────────────────┐
+│  Producer Agent            │                │  Consumer Agent            │
+│  (DID, signing key)        │                │  (DID, key resolver)       │
+└──────────────┬─────────────┘                └──────────────┬─────────────┘
+               │ POST /contexts (signed body)                │
+               ▼                                             │
+       ┌──────────────────────┐                              │
+       │  ACDP Registry       │                              │
+       │  did:web:reg.example │  ◀──── GET /contexts/{ctx_id}┘
+       │  /.well-known/acdp   │  (body + registry_state)
+       └──────────────────────┘
+                 │
+                 │ verify producer signature locally,
+                 │ walk derived_from → cross-registry resolves
+                 ▼
+       Other ACDP registries
+```
+
+Each role's responsibilities:
+
+- **Producer.** Builds a body, computes `content_hash` over the JCS-canonicalized body (excluding registry-assigned fields), signs the hash with its DID-bound key, and submits a publish request.
+- **Registry.** Verifies the signature, recomputes `content_hash`, assigns `ctx_id` / `lineage_id` / `origin_registry` / `created_at`, validates supersession constraints, persists the body, derives `status`.
+- **Consumer.** Fetches a context, verifies the producer's signature against the producer's DID document, walks `derived_from` references via cross-registry resolution.
+
+Verification is **stateless and local** for the consumer: to check a context, a consumer needs only the producer's public key (resolved from the producer's DID document), the canonicalization algorithm (JCS), and the spec-defined exclusion set for `content_hash`.
+
+---
+
+## 5. Wire Format
+
+### 5.1 JSON encoding
+
+All ACDP messages on the wire are JSON ([RFC 8259]) objects encoded as UTF-8 ([RFC 3629]). Implementations MUST emit valid UTF-8 and MUST accept any valid UTF-8.
+
+The HTTP `Content-Type` for ACDP bodies is `application/acdp+json`. Implementations MAY also accept `application/json` for compatibility but SHOULD emit `application/acdp+json`. See [`registries/media-types.md`](../registries/media-types.md).
+
+### 5.2 Canonicalization
+
+Cryptographic hashes over ACDP data structures use JSON Canonicalization Scheme (JCS) [RFC 8785]. Implementations MUST canonicalize using JCS before hashing for any normative cryptographic operation.
+
+Cross-language interoperability of canonicalization is the most common source of ACDP implementation bugs. The conformance fixture `can-001-jcs-vector.json` defines the authoritative test vectors; implementations failing those vectors MUST NOT claim conformance.
+
+### 5.3 Time Format
+
+All timestamps in ACDP are RFC 3339 [RFC 3339] date-time strings in UTC, with explicit `Z` suffix and millisecond precision:
+
+```
+2026-04-16T10:30:15.123Z
+```
+
+Implementations MUST emit timestamps in this exact form. Implementations MUST accept any valid RFC 3339 date-time on input but SHOULD normalize to the canonical form on storage.
+
+### 5.4 Identifier Formats
+
+| Identifier | Form | Spec |
+|---|---|---|
+| **`ctx_id`** (context identifier) | `acdp://<authority>/<uuid>` where `<authority>` is a DNS hostname identifying the origin registry and `<uuid>` is a UUID v4 [RFC 4122]. | §5.5 |
+| **`lineage_id`** | `lin:<hex>` where `<hex>` is a 64-character lowercase hexadecimal SHA-256 digest. | §5.6 |
+| **`agent_id`** | A Decentralized Identifier [DID-CORE]. | RFC-ACDP-0002 |
+
+The `ctx_id` is assigned by the registry at publish time; producers MUST NOT supply a `ctx_id` in publish requests. The corresponding URI scheme `acdp` is registered in §11.
+
+### 5.5 Context-ID assignment
+
+A registry assigns `ctx_id` at publish time as `acdp://<own_authority>/<freshly_generated_uuidv4>`. The authority component MUST equal the DNS hostname declared in the registry's capabilities document (RFC-ACDP-0007). Two registries MUST NOT share an authority.
+
+### 5.6 Lineage Identifier Derivation
+
+A context's `lineage_id` MUST be derived deterministically from the `ctx_id` of the lineage's first version (the version with `supersedes: null`):
+
+```
+lineage_id = "lin:" + lowercase_hex(SHA-256(first_version_ctx_id))
+```
+
+The hash input is the UTF-8 encoding of the `ctx_id` string.
+
+For first versions, the registry computes `lineage_id` from the `ctx_id` it just assigned. For subsequent versions, the registry MUST walk back through `supersedes` references to find the version 1 context and apply the same formula. If a producer supplied a `lineage_id` in the publish request, the registry MUST verify it matches this computed value, and MUST reject the publication on mismatch with `superseded_target` (see RFC-ACDP-0007 error registry).
+
+### 5.7 Content Hash
+
+The `content_hash` field of a body is the lowercase hexadecimal SHA-256 [FIPS 180-4] digest of the JCS-canonicalized body, with the following fields **excluded**:
+
+- `signature` (the signature is over the hash, so cannot be in the hashed input);
+- `ctx_id`, `lineage_id`, `origin_registry`, `created_at` (assigned by the registry at publish time, not known to the producer).
+
+All other body fields are included in the hash input.
+
+The exclusion list permits the producer to compute `content_hash` and sign before the registry assigns identifiers. The producer commits to the content; the registry separately binds the identifiers.
+
+Implementations MUST produce identical `content_hash` values for the same body content across all conforming implementations. Test vectors are provided in the conformance fixtures.
+
+### 5.8 Signature
+
+The `signature` field of a body is a JSON object:
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `algorithm` | string | Yes | Signature algorithm identifier. See §5.10. |
+| `key_id` | string | Yes | DID URL identifying the signing key. |
+| `value` | string | Yes | Base64-encoded signature bytes. |
+
+The signature value is computed over the bytes of the **lowercase hexadecimal `content_hash` string** (over the ASCII representation of the hex digest, not the raw hash bytes).
+
+Registries MUST verify the signature at publish time. A context whose signature does not verify MUST be rejected with the `invalid_signature` error code (RFC-ACDP-0007).
+
+### 5.9 Replay and Tamper Protection
+
+Because every ACDP body is content-addressed and signed:
+
+- **Tampering** is detected by recomputing `content_hash` over the canonicalized body. Any change in any non-excluded field changes the hash.
+- **Replay** at the wire level is mitigated by HTTPS transport security. ACDP itself does not specify per-request nonces — the body's content hash makes "the same body twice" idempotent.
+- **Cross-registry impersonation** is prevented by the `origin_registry` field being part of the registry-assigned set: a forwarded body cannot claim a different origin.
+
+### 5.10 Signature Algorithms
+
+Implementations MUST support `ed25519` [RFC 8032]. Implementations MAY support additional algorithms (e.g. `ecdsa-p256`). A registry's supported algorithms MUST be declared in its capabilities document (RFC-ACDP-0007). Registries MUST reject `unsupported_algorithm` for any algorithm not in their declared list.
+
+---
+
+## 6. Compatibility Model
+
+ACDP uses a layered compatibility model:
+
+- **Protocol version** is advertised in the registry capabilities document as `acdp_version` (e.g. `0.0.1`).
+- **Schema namespace** governs canonical Protobuf compatibility (e.g. `acdp.v1`).
+- **Body extensibility** is forward-compatible only via additive fields. Breaking body changes require a new schema namespace.
+- **Registry-state extensibility** is open: future versions add fields (lifecycle events, relationships, attestations); consumers MUST tolerate unknown fields in registry state.
+
+Major protocol version mismatches are not compatible. Minor versions are expected to be backward compatible. Consumers receiving an unknown `acdp_version` SHOULD treat it as a higher version and degrade gracefully, using only operations defined in the version they understand.
+
+---
+
+## 7. Transport
+
+ACDP operations are HTTP-based with JSON request and response bodies, content type `application/acdp+json`. Operations are defined in:
+
+- RFC-ACDP-0003 — `POST /contexts`, supersession.
+- RFC-ACDP-0004 — `GET /contexts/{ctx_id}`, `GET /contexts/{ctx_id}/body`, `GET /lineages/{lineage_id}`, `GET /lineages/{lineage_id}/current`.
+- RFC-ACDP-0005 — `GET /contexts/search`, `GET/POST /contexts/similar`.
+- RFC-ACDP-0007 — `GET /.well-known/acdp.json`.
+
+A canonical Protobuf mirror is published under `schemas/proto/acdp/v1/`. Binary-transport bindings (e.g. gRPC) MAY use the Protobuf mirror; the JSON mapping is the source of truth.
+
+All ACDP traffic MUST run over TLS in production deployments.
+
+---
+
+## 8. Registry Hooks
+
+ACDP maintains four registries under [`registries/`](../registries/):
+
+- **context-types** — registered values for `Body.type`.
+- **error-codes** — protocol-level error codes returned in error envelopes.
+- **media-types** — content types used in transport bindings.
+- **locator-schemes** — well-known dotted-namespace schemes for structured `data_refs.location`.
+
+New entries are added via the [RFC process](../governance/RFC-PROCESS.md). Experimental identifiers SHOULD use reverse-domain notation.
+
+---
+
+## 9. Conformance
+
+A conformant ACDP registry MUST:
+
+1. Parse and validate publish requests against `acdp-publish-request.schema.json`.
+2. Recompute `content_hash` per §5.7 and reject on mismatch.
+3. Verify the producer's signature per §5.8 and reject on failure.
+4. Assign `ctx_id`, `origin_registry`, `created_at` per §5.5.
+5. Compute `lineage_id` per §5.6.
+6. Validate supersession constraints per RFC-ACDP-0003.
+7. Serve `GET /.well-known/acdp.json` per RFC-ACDP-0007.
+8. Pass the conformance fixtures in [`schemas/conformance/`](../schemas/conformance/).
+9. Reproduce the JCS test vectors exactly (`can-001-jcs-vector.json`).
+
+A conformant ACDP consumer MUST:
+
+1. Verify signatures end-to-end for every context it relies on.
+2. Treat unknown fields in body and registry state as opaque.
+3. Treat `status: superseded` and `status: expired` as signals that a context's conclusions may not be current.
+4. Resolve cross-registry `acdp://` references per RFC-ACDP-0006 if it follows them.
+
+---
+
+## 10. Security Considerations
+
+See [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md) for the full threat model. Implementations MUST use a cryptographically secure RNG for UUIDs, store private keys in secure storage, and validate all inputs against the JSON Schemas before processing.
+
+---
+
+## 11. IANA Considerations
+
+### 11.1 URI Scheme Registration
+
+This document requests provisional registration of the `acdp` URI scheme:
+
+- **Scheme name:** `acdp`
+- **Status:** Provisional
+- **Applications/protocols that use this scheme:** Agent Context Description Protocol (ACDP)
+- **Contact:** Zer07 Labs `<specifications@zer07labs.com>`
+- **Change controller:** Zer07 Labs
+- **References:** This document
+- **Syntax:** `acdp://<authority>/<uuid>`, where `<authority>` is a DNS hostname per [RFC 1035] and `<uuid>` is a UUID per [RFC 4122]
+- **Security considerations:** See RFC-ACDP-0008
+- **Encoding considerations:** See §5
+
+### 11.2 Media Type Registration
+
+- **Type:** `application`
+- **Subtype:** `acdp+json`
+- **Required parameters:** None
+- **Optional parameters:** `version` (ACDP specification version)
+- **Encoding considerations:** UTF-8 per [RFC 8259]
+- **Security considerations:** See RFC-ACDP-0008
+- **Published specification:** This document
+- **Applications that use this media type:** ACDP registries and clients
+
+### 11.3 Well-Known URI Registration
+
+- **URI suffix:** `acdp.json`
+- **Change controller:** Zer07 Labs
+- **Specification document(s):** This document; RFC-ACDP-0007 §3
+- **Related information:** None
+
+---
+
+## 12. References
+
+### 12.1 Normative References
+
+- [DID-CORE] World Wide Web Consortium, "Decentralized Identifiers (DIDs) v1.0", W3C Recommendation, July 2022.
+- [FIPS 180-4] National Institute of Standards and Technology, "Secure Hash Standard (SHS)", FIPS PUB 180-4, August 2015.
+- [RFC 1035] Mockapetris, P., "Domain names — implementation and specification", STD 13, RFC 1035, November 1987.
+- [RFC 2119] Bradner, S., "Key words for use in RFCs to Indicate Requirement Levels", BCP 14, RFC 2119, March 1997.
+- [RFC 3339] Klyne, G. and C. Newman, "Date and Time on the Internet: Timestamps", RFC 3339, July 2002.
+- [RFC 3629] Yergeau, F., "UTF-8, a transformation format of ISO 10646", STD 63, RFC 3629, November 2003.
+- [RFC 4122] Leach, P., Mealling, M., and R. Salz, "A Universally Unique IDentifier (UUID) URN Namespace", RFC 4122, July 2005.
+- [RFC 8032] Josefsson, S. and I. Liusvaara, "Edwards-Curve Digital Signature Algorithm (EdDSA)", RFC 8032, January 2017.
+- [RFC 8174] Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words", BCP 14, RFC 8174, May 2017.
+- [RFC 8259] Bray, T., "The JavaScript Object Notation (JSON) Data Interchange Format", STD 90, RFC 8259, December 2017.
+- [RFC 8785] Rundgren, A., Jordan, B., and S. Erdtman, "JSON Canonicalization Scheme (JCS)", RFC 8785, June 2020.
+
+### 12.2 Cross-references
+
+- [RFC-ACDP-0002 Context Body](RFC-ACDP-0002-context-body.md)
+- [RFC-ACDP-0003 Publish](RFC-ACDP-0003-publish.md)
+- [RFC-ACDP-0004 Retrieval](RFC-ACDP-0004-retrieval.md)
+- [RFC-ACDP-0005 Discovery](RFC-ACDP-0005-discovery.md)
+- [RFC-ACDP-0006 Cross-Registry References](RFC-ACDP-0006-cross-registry.md)
+- [RFC-ACDP-0007 Capabilities & Errors](RFC-ACDP-0007-capabilities.md)
+- [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md)

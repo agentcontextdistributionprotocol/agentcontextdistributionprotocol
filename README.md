@@ -1,0 +1,252 @@
+# Agent Context Description Protocol (ACDP)
+
+**Version:** 0.0.1-draft
+**Status:** Community Standards Track (Draft)
+**Wire format:** JSON over HTTP (canonical) with Protocol Buffers mirror
+**Required JSON canonicalization:** [JCS — RFC 8785](https://datatracker.ietf.org/doc/html/rfc8785)
+
+ACDP is a protocol for autonomous AI agents to **publish, discover, and verify** units of contextual information ("contexts") across distributed systems and organizational boundaries. ACDP defines a wire format, a data model, and a small set of HTTP-based operations that let heterogeneous agents find and build upon each other's work without a coordination protocol or shared trust authority.
+
+ACDP introduces one strict invariant:
+
+> **Once a context body is published, it MUST NOT change. Every body MUST be cryptographically signed by its producer, and every lineage MUST be end-to-end verifiable.**
+
+There is no central authority. Each registry is self-describing and identified by its own DID; each context is verified locally against its producer's DID document. ACDP is **coordination-agnostic** — it does not specify session, voting, consensus, marketplace, or reputation semantics.
+
+This is the **first published version** of ACDP. v0.0.1 defines the minimal substrate; lifecycle events, post-publication relationships, attestations, push subscriptions, and server-side traversal are deferred to future versions.
+
+---
+
+## What ACDP looks like
+
+```
+Producer Agent                                Consumer Agent
+   │                                                │
+   │  POST /contexts                                │
+   │  (signed body)                                 │
+   ├───────────────▶ Registry                       │
+   │  ◀── ctx_id, lineage_id, status ───            │
+   │                                                │
+   │                          GET /contexts/{ctx_id}│
+   │                          ◀────────────────────┤
+   │                          (body + registry_state)│
+   │                                                │
+   │      verify producer signature locally,        │
+   │      walk derived_from chain to other          │
+   │      registries (cross-registry references)    │
+```
+
+---
+
+## What this repository contains
+
+This repository is structured like a publishable protocol standard. The normative core is small and stable; implementers get enough architectural and operational guidance to build real registries and clients.
+
+```text
+agentcontextdescriptionprotocol/
+  manifesto/
+    manifesto.md
+
+  rfcs/
+    RFC-ACDP-0001-core.md            # Data model, JCS, hashing, signatures
+    RFC-ACDP-0002-context-body.md    # The body schema, types, data refs
+    RFC-ACDP-0003-publish.md         # Publication and supersession
+    RFC-ACDP-0004-retrieval.md       # Retrieval and lineage queries
+    RFC-ACDP-0005-discovery.md       # Keyword search and similarity
+    RFC-ACDP-0006-cross-registry.md  # ctx:// resolution across registries
+    RFC-ACDP-0007-capabilities.md    # /.well-known/acdp.json + errors
+    RFC-ACDP-0008-security.md        # Threat model and required defenses
+    RFC-ACDP-0009-extensions.md      # Reserved — retraction, attestations…
+
+  docs/
+    overview.md
+    architecture.md
+    discovery.md
+    integration-guide.md
+    threat-model.md
+    why-acdp.md
+    non-goals.md
+
+  registries/
+    README.md
+    context-types.md
+    error-codes.md
+    media-types.md
+    locator-schemes.md
+
+  schemas/
+    json/                            # Canonical JSON Schemas
+      acdp-common.schema.json
+      acdp-context-body.schema.json
+      acdp-context.schema.json
+      acdp-data-ref.schema.json
+      acdp-registry-state.schema.json
+      acdp-publish-request.schema.json
+      acdp-publish-response.schema.json
+      acdp-search-response.schema.json
+      acdp-similarity-response.schema.json
+      acdp-capabilities.schema.json
+      acdp-error.schema.json
+      acdp-index.schema.json
+    proto/                           # Canonical Protobuf mirror
+      acdp/v1/
+        common.proto
+        context.proto
+        publish.proto
+        discovery.proto
+        capabilities.proto
+        error.proto
+    conformance/
+      README.md
+      pub-001-invalid-signature.json
+      pub-002-hash-mismatch.json
+      pub-003-superseded-target-mismatch.json
+      ret-001-not-found.json
+      can-001-jcs-vector.json
+
+  examples/
+    README.md
+    publish/
+      data-snapshot-publish-request.json
+    retrieval/
+      data-snapshot-context.json
+      coauthored-analysis-context.json
+    supersession/
+      v2-supersedes-v1.json
+    search/
+      keyword-search-response.json
+      similarity-response.json
+    capabilities/
+      acdp-capabilities.json
+    error/
+      invalid-signature.json
+    mixed-data-refs/
+      alert-mixed-data-refs.json
+
+  governance/
+    GOVERNANCE.md
+    RFC-PROCESS.md
+
+  scripts/        # Validation scripts
+  packages/       # Per-language proto outputs (after make proto-gen-all)
+  .github/        # CI, issue templates, PR template
+
+  buf.yaml        # Protobuf module config
+  Makefile
+  CHANGELOG.md  CONTRIBUTING.md  CODE_OF_CONDUCT.md
+  LICENSE       VERSIONING.md     README.md
+```
+
+---
+
+## Reading order
+
+If you are new to ACDP, read in this order:
+
+1. **[manifesto/manifesto.md](manifesto/manifesto.md)** — why a context substrate is needed.
+2. **[docs/overview.md](docs/overview.md)** — one-page architecture overview.
+3. **[RFC-ACDP-0001 Core](rfcs/RFC-ACDP-0001-core.md)** — identifiers, JCS, hashing, signatures.
+4. **[RFC-ACDP-0002 Context Body](rfcs/RFC-ACDP-0002-context-body.md)** — the immutable body schema.
+5. **[RFC-ACDP-0003 Publish](rfcs/RFC-ACDP-0003-publish.md)** — POST `/contexts` and supersession.
+6. **[RFC-ACDP-0004 Retrieval](rfcs/RFC-ACDP-0004-retrieval.md)** — GET `/contexts/{ctx_id}` and lineage queries.
+7. **[RFC-ACDP-0005 Discovery](rfcs/RFC-ACDP-0005-discovery.md)** — keyword and similarity search.
+8. **[RFC-ACDP-0006 Cross-Registry](rfcs/RFC-ACDP-0006-cross-registry.md)** — `acdp://` resolution.
+9. **[RFC-ACDP-0007 Capabilities](rfcs/RFC-ACDP-0007-capabilities.md)** — `/.well-known/acdp.json` and error envelopes.
+10. **[RFC-ACDP-0008 Security](rfcs/RFC-ACDP-0008-security.md)** — threat model.
+11. **[docs/architecture.md](docs/architecture.md)** and **[docs/integration-guide.md](docs/integration-guide.md)** — operational guidance.
+
+---
+
+## Conformance profiles
+
+| Profile | Required RFCs | Description |
+|---|---|---|
+| `acdp-registry-core` *(default)* | 0001–0004, 0007, 0008 | Every conformant registry. Implements canonicalization, body schema, publish, retrieval, capabilities, error envelope. |
+| `acdp-registry-discovery` | + 0005 | Adds keyword search; similarity is OPTIONAL. |
+| `acdp-registry-federated` | + 0006 | Resolves cross-registry `acdp://` references end-to-end. |
+| `acdp-consumer` | 0001, 0004 (read), 0006 | A consumer that retrieves and verifies contexts. |
+
+There is no producer-only profile: producers MUST be able to verify any context they publish, and that requires the same cryptographic core as a registry.
+
+---
+
+## Standards posture
+
+- **RFC-ACDP-0001 Core** — identifiers (`acdp://`, `lin:`), JCS canonicalization, hashing, signatures, time format.
+- **RFC-ACDP-0002 Context Body** — immutable signed body, context types, data references, visibility.
+- **RFC-ACDP-0003 Publish** — `POST /contexts`, supersession constraints, registry-assigned fields.
+- **RFC-ACDP-0004 Retrieval** — `GET /contexts/{ctx_id}`, body-only retrieval, lineage queries.
+- **RFC-ACDP-0005 Discovery** — keyword and similarity search semantics, cursor pagination.
+- **RFC-ACDP-0006 Cross-Registry** — `acdp://` URI scheme, resolution flow, federation non-goals.
+- **RFC-ACDP-0007 Capabilities** — `/.well-known/acdp.json`, error envelope, error code registry.
+- **RFC-ACDP-0008 Security** — threat model and required defenses for v0.0.1.
+- **RFC-ACDP-0009 Extensions** *(reserved)* — retraction/lifecycle events, attestations, push subscriptions, walks.
+
+---
+
+## Compatibility model
+
+- **Protocol version** governs the wire envelope (`acdp_version: 0.0.1`).
+- **Schema namespace** governs canonical Protobuf compatibility (`acdp.v1`).
+- **Registry capabilities** advertise per-registry options (algorithms, embedding models, limits).
+
+Major mismatches are not compatible. Minor versions are expected to be backward compatible. Unknown fields MUST be ignored on body and registry-state. See [VERSIONING.md](VERSIONING.md).
+
+---
+
+## Using ACDP proto packages
+
+Generated outputs live under `packages/` after `make proto-gen-all`:
+
+```bash
+# TypeScript / Node.js
+npm install @acdp/proto
+
+# Python
+pip install acdp-proto
+
+# Go
+go get github.com/agentcontextdescriptionprotocol/acdp-proto-go@proto-v0.0.1
+
+# Java   (build.gradle.kts)
+# implementation("io.acdp:acdp-proto:0.0.1")
+
+# C#   (.csproj)
+# <PackageReference Include="Acdp.Proto" Version="0.0.1" />
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the release workflow.
+
+---
+
+## Repository highlights
+
+- **Canonical JSON Schemas** under `schemas/json/` — the source of truth for the wire format.
+- **Canonical Protobuf schemas** under `schemas/proto/acdp/v1/` — the binary mirror.
+- **Conformance fixtures** under `schemas/conformance/`, validated in CI.
+- **Registries** under `registries/` evolve without destabilizing the core.
+- **Examples** under `examples/` are validated against the canonical schemas.
+- **GitHub Actions CI** validates JSON Schemas, examples, fixtures, and Protobuf compilation on every PR.
+
+---
+
+## Development
+
+```bash
+make install-tools    # buf, protoc, ajv-cli (one-time)
+make validate         # JSON Schemas + examples + protobuf compile + buf lint
+make proto-gen-all    # Generate Go/Python/Java/C#/JS into packages/
+make help             # Show all targets
+```
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) and the [RFC process](governance/RFC-PROCESS.md).
+
+---
+
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE).

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.0.1/acdp-context.schema.json",
+  "title": "ACDP Context",
+  "description": "The full retrieval shape of an ACDP context: an immutable signed body plus the registry's mutable state. Returned by GET /contexts/{ctx_id}.",
+
+  "type": "object",
+  "required": ["body", "registry_state"],
+  "properties": {
+    "body": {
+      "$ref": "https://schemas.acdp.io/v0.0.1/acdp-context-body.schema.json",
+      "description": "The immutable signed body. End-to-end verifiable via the producer's signature."
+    },
+    "registry_state": {
+      "$ref": "https://schemas.acdp.io/v0.0.1/acdp-registry-state.schema.json",
+      "description": "The registry-maintained state. In v0.0.1 contains only the derived 'status' field."
+    }
+  },
+  "additionalProperties": false
+}

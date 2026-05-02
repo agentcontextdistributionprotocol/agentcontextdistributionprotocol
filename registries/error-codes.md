@@ -1,0 +1,44 @@
+# Error Code Registry
+
+ACDP error codes returned in error envelopes (`error.code`). The envelope shape and HTTP status mapping are defined in [RFC-ACDP-0007 §4–5](../rfcs/RFC-ACDP-0007-capabilities.md).
+
+## v0.0.1 codes
+
+| Code | Status | HTTP | Meaning | Source |
+|---|---|---|---|---|
+| `invalid_signature` | Stable | 400 | Signature verification failed. | [RFC-ACDP-0001 §5.8](../rfcs/RFC-ACDP-0001-core.md#58-signature), [RFC-ACDP-0003 §2.1](../rfcs/RFC-ACDP-0003-publish.md#21-registry-processing) |
+| `hash_mismatch` | Stable | 400 | `content_hash` does not match the canonicalized body. | [RFC-ACDP-0001 §5.7](../rfcs/RFC-ACDP-0001-core.md#57-content-hash) |
+| `schema_violation` | Stable | 400 | Request body or query failed structural validation. | [RFC-ACDP-0003 §2.1](../rfcs/RFC-ACDP-0003-publish.md#21-registry-processing) |
+| `not_authorized` | Stable | 403 | Agent lacks permission for the operation. | [RFC-ACDP-0003 §3.1](../rfcs/RFC-ACDP-0003-publish.md#31-supersession-constraints) |
+| `not_found` | Stable | 404 | Resource not found. | [RFC-ACDP-0004 §7](../rfcs/RFC-ACDP-0004-retrieval.md#7-errors) |
+| `visibility_denied` | Stable | 404 | Resource exists but is not visible to the requester (returned as 404 to avoid leaking existence). | [RFC-ACDP-0002 §7](../rfcs/RFC-ACDP-0002-context-body.md#7-visibility), [RFC-ACDP-0004 §2.3](../rfcs/RFC-ACDP-0004-retrieval.md#23-visibility-aware-response) |
+| `superseded_target` | Stable | 400 | The `supersedes` target is invalid (any reason — `details.reason` provides specifics). | [RFC-ACDP-0003 §3.1](../rfcs/RFC-ACDP-0003-publish.md#31-supersession-constraints) |
+| `unsupported_algorithm` | Stable | 400 | Signature algorithm not in the registry's `supported_signature_algorithms`. | [RFC-ACDP-0007 §3](../rfcs/RFC-ACDP-0007-capabilities.md#3-capabilities-document) |
+| `unsupported_embedding_model` | Stable | 400 | Embedding model not in the registry's `supported_embedding_models`. | [RFC-ACDP-0005 §3.1](../rfcs/RFC-ACDP-0005-discovery.md#31-similarity-by-reference) |
+| `rate_limited` | Stable | 429 | Per-agent rate limit exceeded. | [RFC-ACDP-0008 §4.3](../rfcs/RFC-ACDP-0008-security.md#43-rate-limiting) |
+| `payload_too_large` | Stable | 413 | Request body exceeds `limits.max_payload_bytes`. | [RFC-ACDP-0007 §3.1](../rfcs/RFC-ACDP-0007-capabilities.md#31-required-fields) |
+| `embedded_too_large` | Stable | 413 | An embedded data reference exceeds 64 KB. | [RFC-ACDP-0002 §6.3](../rfcs/RFC-ACDP-0002-context-body.md#63-embedded-form) |
+| `immutable_field` | Stable | 400 | Attempted mutation of an immutable field. | [RFC-ACDP-0002 §3](../rfcs/RFC-ACDP-0002-context-body.md#3-body-fields) |
+
+## `superseded_target` reason codes
+
+When returning `superseded_target`, registries SHOULD include `details.reason` to disambiguate. Defined values:
+
+| `details.reason` | Meaning |
+|---|---|
+| `not_found` | The `supersedes` target does not exist. |
+| `lineage_mismatch` | The new context's computed `lineage_id` ≠ the superseded context's `lineage_id`. |
+| `version_mismatch` | The new context's `version` ≠ `previous.version + 1`. |
+| `already_superseded` | Another context already supersedes the target. |
+| `cross_registry_supersession_unsupported` | Registry does not support cross-registry supersession. |
+
+## Adding a code
+
+Open a PR adding a row to the table above. Codes MUST:
+
+- Be lowercase snake_case.
+- Not collide with existing entries.
+- Be implementable by both registries and consumers (registries emit; consumers handle).
+- Carry a single semantic — no overloading. If an existing code already covers the case, reuse it with `details`.
+
+Information leakage rule: `error.message` is informational only and MUST NOT be used in automated decisions. Registries MUST NOT distinguish "not found" from "not authorized" externally for visibility-restricted contexts.

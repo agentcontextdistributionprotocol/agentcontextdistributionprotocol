@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.0.1/acdp-search-response.schema.json",
+  "title": "ACDP Search Response",
+  "description": "Response shape for GET /contexts/search and the keyword form of search.",
+
+  "type": "object",
+  "required": ["matches"],
+  "properties": {
+    "matches": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/match_summary" }
+    },
+    "next_cursor": {
+      "type": "string",
+      "description": "Opaque cursor for retrieving the next page. Absent if there are no more results."
+    },
+    "total_estimate": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Estimated total matches. May be approximate; not guaranteed to be exact."
+    }
+  },
+  "additionalProperties": false
+}

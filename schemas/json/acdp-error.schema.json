@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.0.1/acdp-error.schema.json",
+  "title": "ACDP Error Response",
+  "description": "Standard error response returned by ACDP endpoints on failure.",
+
+  "type": "object",
+  "required": ["error"],
+  "properties": {
+    "error": {
+      "type": "object",
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "invalid_signature",
+            "hash_mismatch",
+            "schema_violation",
+            "not_authorized",
+            "not_found",
+            "visibility_denied",
+            "superseded_target",
+            "unsupported_algorithm",
+            "unsupported_embedding_model",
+            "rate_limited",
+            "payload_too_large",
+            "embedded_too_large",
+            "immutable_field"
+          ],
+          "description": "A machine-readable error code from the ACDP standard error vocabulary."
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable error description."
+        },
+        "details": {
+          "type": "object",
+          "description": "Optional structured details about the error. Shape is error-code-specific.",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

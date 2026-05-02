@@ -1,0 +1,6 @@
+version: v2
+plugins:
+  - remote: buf.build/protocolbuffers/js
+    out: packages/proto-npm/generated
+    opt:
+      - import_style=commonjs

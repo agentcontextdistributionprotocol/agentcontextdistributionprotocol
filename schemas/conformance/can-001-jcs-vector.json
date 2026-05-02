@@ -1,0 +1,86 @@
+{
+  "id": "can-001",
+  "description": "Canonicalization and hashing test vectors. Implementations MUST reproduce these outputs exactly. Failure to reproduce is non-conformance with RFC-ACDP-0001.",
+  "tags": ["happy-path", "canonicalization", "hashing"],
+  "vectors": [
+    {
+      "name": "Body canonicalization and SHA-256",
+      "description": "Producer-supplied body fields with the RFC-ACDP-0001 §5.7 exclusion set already removed. Apply JCS, then SHA-256, hex-encode lowercase.",
+      "input": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:agent:test",
+        "contributors": [],
+        "title": "Minimal",
+        "type": "data_snapshot",
+        "data_refs": []
+      },
+      "expected": {
+        "canonical_form": "{\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_refs\":[],\"supersedes\":null,\"title\":\"Minimal\",\"type\":\"data_snapshot\",\"version\":1}",
+        "sha256_hex": "5f8d88d6758cfd43be875d49edc9eaa494de8ec645bf7de6c592b15bbb1e2e3c"
+      }
+    },
+    {
+      "name": "Lineage identifier derivation — vector 1",
+      "description": "lineage_id = 'lin:' + lowercase_hex(SHA-256(utf8(ctx_id))).",
+      "input": {
+        "ctx_id": "acdp://reg.example/00000000-0000-0000-0000-000000000001"
+      },
+      "expected": {
+        "lineage_id": "lin:293b7d29e98ffdca084eb07f944a695b912a1acf95bb2b39311d12281b453823"
+      },
+      "notes": "Hash input is the UTF-8 bytes of the ctx_id string, including the 'acdp://' prefix."
+    },
+    {
+      "name": "Lineage identifier derivation — vector 2",
+      "input": {
+        "ctx_id": "acdp://registry.example.com/550e8400-e29b-41d4-a716-446655440000"
+      },
+      "expected": {
+        "lineage_id": "lin:ca770dc5d7c41109753bd3d045c2b7bd4cf687ab9cd2552ff17a37bcecbd0810"
+      }
+    },
+    {
+      "name": "Lineage identifier derivation — vector 3",
+      "input": {
+        "ctx_id": "acdp://other.registry.io/abc-123-def"
+      },
+      "expected": {
+        "lineage_id": "lin:5abfff70a6f8370053a9441477bf5e0b827dec22d5b77a4795e9319458e19df9"
+      },
+      "notes": "Although this ctx_id does not match the strict UUID v4 syntax, the lineage derivation operates on the literal UTF-8 bytes — implementations MUST hash the exact input string."
+    },
+    {
+      "name": "JCS — number formatting",
+      "description": "Trailing zeros after the decimal are dropped; integers carry no decimal point; negative zero canonicalizes to positive zero.",
+      "input": {
+        "values": [42, -7, 0, 1.10, 1.5, -0.0]
+      },
+      "expected": {
+        "canonical_form": "{\"values\":[42,-7,0,1.1,1.5,0]}"
+      }
+    },
+    {
+      "name": "JCS — array order preservation",
+      "description": "JCS sorts object keys but preserves array element order.",
+      "input": {
+        "tags": ["zebra", "apple", "mango"]
+      },
+      "expected": {
+        "canonical_form": "{\"tags\":[\"zebra\",\"apple\",\"mango\"]}"
+      }
+    },
+    {
+      "name": "JCS — empty / null distinction",
+      "description": "Presence of \"field\": null produces a different hash than the absence of the field. Empty arrays and empty objects are preserved.",
+      "input": {
+        "a": null,
+        "b": [],
+        "c": {}
+      },
+      "expected": {
+        "canonical_form": "{\"a\":null,\"b\":[],\"c\":{}}"
+      }
+    }
+  ]
+}

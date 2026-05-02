@@ -1,0 +1,12 @@
+{
+  "acdp_version": "0.0.1",
+  "registry_did": "did:web:registry.example.com",
+  "supported_signature_algorithms": ["ed25519"],
+  "supported_embedding_models": [
+    "text-embedding-3-large@2026-02"
+  ],
+  "limits": {
+    "max_payload_bytes": 1048576,
+    "max_embedded_bytes": 65536
+  }
+}

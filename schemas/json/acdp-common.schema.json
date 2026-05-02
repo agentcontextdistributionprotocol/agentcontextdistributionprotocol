@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json",
+  "title": "ACDP Common Types",
+  "description": "Shared type definitions referenced by other ACDP schemas. Defined as of ACDP v0.0.1.",
+
+  "$defs": {
+    "did": {
+      "title": "Decentralized Identifier",
+      "description": "A DID per W3C DID Core specification. ACDP does not constrain the DID method.",
+      "type": "string",
+      "pattern": "^did:[a-z0-9]+:[A-Za-z0-9._:#/?=&%-]+$",
+      "minLength": 7,
+      "maxLength": 2048
+    },
+
+    "ctx_id": {
+      "title": "Context Identifier",
+      "description": "A globally unique URI of the form acdp://<authority>/<uuid>. The authority is a DNS hostname; the UUID is RFC 4122.",
+      "type": "string",
+      "pattern": "^acdp://[a-zA-Z0-9.-]+/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+      "examples": [
+        "acdp://registry.example.com/550e8400-e29b-41d4-a716-446655440000"
+      ]
+    },
+
+    "lineage_id": {
+      "title": "Lineage Identifier",
+      "description": "Deterministically derived from the first version's ctx_id. Form: lin:<64 lowercase hex chars>.",
+      "type": "string",
+      "pattern": "^lin:[0-9a-f]{64}$",
+      "examples": [
+        "lin:b14ccd2a8b34530309255db68c151a10689b6a82feb30aff9222d54fdd871720"
+      ]
+    },
+
+    "content_hash": {
+      "title": "Content Hash",
+      "description": "Lowercase hexadecimal SHA-256 digest, optionally prefixed with sha256:.",
+      "type": "string",
+      "pattern": "^(sha256:)?[0-9a-f]{64}$"
+    },
+
+    "rfc3339_timestamp": {
+      "title": "RFC 3339 Timestamp",
+      "description": "An RFC 3339 date-time in UTC with millisecond precision and Z suffix. Implementations MAY accept other valid RFC 3339 forms but SHOULD normalize to this canonical form.",
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$",
+      "examples": [
+        "2026-04-16T10:30:15.123Z"
+      ]
+    },
+
+    "signature": {
+      "title": "Detached Signature",
+      "description": "A cryptographic signature over a content_hash. Signs the lowercase hex string of the digest, not raw hash bytes.",
+      "type": "object",
+      "required": ["algorithm", "key_id", "value"],
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "description": "Signature algorithm. ed25519 is mandatory to support; other algorithms MAY be declared by registries.",
+          "enum": ["ed25519", "ecdsa-p256"]
+        },
+        "key_id": {
+          "type": "string",
+          "description": "DID URL identifying the signing key (e.g., did:web:agent.example#key-1).",
+          "minLength": 1
+        },
+        "value": {
+          "type": "string",
+          "description": "Base64-encoded signature bytes.",
+          "pattern": "^[A-Za-z0-9+/]+=*$",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "tag": {
+      "title": "Tag",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+
+    "embedding": {
+      "title": "Semantic Embedding Vector",
+      "description": "A vector representation of the context's content for similarity discovery.",
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 1,
+      "maxItems": 16384
+    },
+
+    "embedding_model": {
+      "title": "Embedding Model Identifier",
+      "description": "Form: <model_name>@<version>. Cross-model similarity is undefined.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+@[A-Za-z0-9_.-]+$",
+      "examples": [
+        "text-embedding-3-large@2026-02"
+      ]
+    },
+
+    "data_period": {
+      "title": "Data Period",
+      "description": "The time window the underlying data covers. Distinct from publication time and expiration time.",
+      "type": "object",
+      "required": ["start", "end"],
+      "properties": {
+        "start": { "$ref": "#/$defs/rfc3339_timestamp" },
+        "end": { "$ref": "#/$defs/rfc3339_timestamp" }
+      },
+      "additionalProperties": false
+    },
+
+    "visibility": {
+      "title": "Visibility",
+      "type": "string",
+      "enum": ["public", "restricted", "private"]
+    },
+
+    "context_type": {
+      "title": "Context Type",
+      "description": "Standard ACDP context types. Custom types use namespaced format like 'science:experiment-replication'.",
+      "type": "string",
+      "anyOf": [
+        { "enum": ["data_snapshot", "analysis", "prediction", "alert"] },
+        { "pattern": "^[a-z][a-z0-9_]*:[a-z][a-z0-9_-]*$" }
+      ]
+    },
+
+    "status": {
+      "title": "Context Status",
+      "description": "Derived from supersession queries and clock. v0.0.1 has no retraction; future versions will add a 'retracted' value.",
+      "type": "string",
+      "enum": ["active", "superseded", "expired"]
+    },
+
+    "match_summary": {
+      "title": "Context Summary in Search Response",
+      "description": "A lightweight projection of a context, used in search and similarity responses.",
+      "type": "object",
+      "required": ["ctx_id", "type", "agent_id", "title", "created_at", "status"],
+      "properties": {
+        "ctx_id": { "$ref": "#/$defs/ctx_id" },
+        "lineage_id": { "$ref": "#/$defs/lineage_id" },
+        "agent_id": { "$ref": "#/$defs/did" },
+        "title": { "type": "string" },
+        "summary": { "type": "string" },
+        "type": { "$ref": "#/$defs/context_type" },
+        "domain": { "type": "string" },
+        "created_at": { "$ref": "#/$defs/rfc3339_timestamp" },
+        "status": { "$ref": "#/$defs/status" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

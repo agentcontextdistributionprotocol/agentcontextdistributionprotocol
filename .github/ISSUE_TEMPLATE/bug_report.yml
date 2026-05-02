@@ -1,0 +1,52 @@
+name: Spec / Implementation Bug
+description: Report an ambiguity, contradiction, or error in the ACDP spec, schemas, or proto.
+title: "[bug] "
+labels: ["spec-bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One-paragraph description of the bug.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of ACDP is affected?
+      options:
+        - RFC (normative spec text)
+        - JSON Schema
+        - Proto schema
+        - Conformance fixture
+        - Documentation
+        - Build / CI
+    validations:
+      required: true
+
+  - type: textarea
+    id: location
+    attributes:
+      label: Location
+      description: File path and (if relevant) section number, e.g. `rfcs/RFC-ACDP-0001-core.md §5.7`.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes / proposed fix

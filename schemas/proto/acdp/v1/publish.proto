@@ -1,0 +1,60 @@
+// Copyright Zer07 Labs.
+// Licensed under the Apache License, Version 2.0.
+//
+// Publish request and response. See rfcs/RFC-ACDP-0003-publish.md.
+
+syntax = "proto3";
+
+package acdp.v1;
+
+import "acdp/v1/common.proto";
+import "acdp/v1/context.proto";
+
+// The producer-supplied portion of a context body for POST /contexts.
+// Excludes registry-assigned fields (ctx_id, origin_registry, created_at).
+// Includes content_hash and signature.
+// See RFC-ACDP-0003 §2.
+message PublishRequest {
+  uint32 version = 1;
+  string supersedes = 2;          // empty for first version
+  string agent_id = 3;
+  repeated string contributors = 4;
+
+  string content_hash = 5;
+  Signature signature = 6;
+
+  string title = 7;
+  string description = 8;
+  string type = 9;
+  string domain = 10;
+  string schema_uri = 11;
+  string summary = 12;
+
+  repeated DataRef data_refs = 13;
+  repeated string derived_from = 14;
+
+  repeated string tags = 15;
+  repeated double embedding = 16;
+  string embedding_model = 17;
+  DataPeriod data_period = 18;
+  string expires_at = 19;
+
+  Visibility visibility = 20;
+  repeated string audience = 21;
+
+  string metadata_json = 22;
+
+  // Optional: producer-supplied lineage_id for self-verification.
+  // Registry verifies it matches the deterministically-derived value.
+  string lineage_id = 23;
+}
+
+// Response returned by the registry on successful publication.
+// See RFC-ACDP-0003 §4.
+message PublishResponse {
+  string ctx_id = 1;
+  string lineage_id = 2;
+  uint32 version = 3;
+  string created_at = 4;
+  Status status = 5;
+}

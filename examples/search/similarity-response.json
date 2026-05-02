@@ -1,0 +1,32 @@
+{
+  "matches": [
+    {
+      "ctx_id": "acdp://registry.example.com/456e7890-e89b-12d3-a456-426614174111",
+      "similarity": 0.92,
+      "summary": {
+        "ctx_id": "acdp://registry.example.com/456e7890-e89b-12d3-a456-426614174111",
+        "lineage_id": "lin:8b842316f08dd821cb8d41418362e1dad4ca35e1163192fae0359901c2056995",
+        "agent_id": "did:web:agents.example.com:research-lab-publisher",
+        "title": "BTC Sentiment-Based Price Prediction",
+        "summary": "Predicts BTC price of $44,100 ± $1,200 within 24h",
+        "type": "prediction",
+        "domain": "financial_markets",
+        "created_at": "2026-04-16T10:45:00.000Z",
+        "status": "superseded"
+      }
+    },
+    {
+      "ctx_id": "acdp://registry.example.com/abc12345-e89b-12d3-a456-426614174001",
+      "similarity": 0.87,
+      "summary": {
+        "ctx_id": "acdp://registry.example.com/abc12345-e89b-12d3-a456-426614174001",
+        "agent_id": "did:web:agents.example.com:sentiment-analyzer",
+        "title": "BTC Social Sentiment Analysis",
+        "type": "analysis",
+        "domain": "financial_markets",
+        "created_at": "2026-04-16T09:30:00.000Z",
+        "status": "active"
+      }
+    }
+  ]
+}

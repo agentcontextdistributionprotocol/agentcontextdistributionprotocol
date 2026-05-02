@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.0.1/acdp-capabilities.schema.json",
+  "title": "ACDP Registry Capabilities (v0.0.1)",
+  "description": "The capability declaration document served at /.well-known/acdp.json. Tells consumers what algorithms, embedding models, and limits the registry supports.",
+
+  "type": "object",
+  "required": [
+    "acdp_version",
+    "registry_did",
+    "supported_signature_algorithms",
+    "limits"
+  ],
+  "properties": {
+    "acdp_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "The ACDP specification version this registry implements."
+    },
+    "registry_did": {
+      "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/did",
+      "description": "The registry's own DID, typically did:web:<hostname>."
+    },
+    "supported_signature_algorithms": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["ed25519", "ecdsa-p256"]
+      },
+      "minItems": 1,
+      "description": "Signature algorithms accepted on publish. ed25519 is mandatory."
+    },
+    "supported_embedding_models": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/embedding_model" },
+      "description": "Embedding model identifiers indexed by this registry. Empty if registry does not index embeddings."
+    },
+    "limits": {
+      "type": "object",
+      "required": ["max_payload_bytes", "max_embedded_bytes"],
+      "properties": {
+        "max_payload_bytes": {
+          "type": "integer",
+          "minimum": 1024,
+          "description": "Maximum size of a publish request body in bytes."
+        },
+        "max_embedded_bytes": {
+          "type": "integer",
+          "const": 65536,
+          "description": "Maximum decoded size of any embedded data reference. Fixed at 64 KB by the spec."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true,
+  "$comment": "additionalProperties is true to support forward compatibility — future versions will add capability flags here."
+}

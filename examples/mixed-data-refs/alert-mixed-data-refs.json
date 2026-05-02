@@ -1,0 +1,65 @@
+{
+  "body": {
+    "ctx_id": "acdp://registry.example.com/aaaabbbb-cccc-dddd-eeee-ffff00001111",
+    "lineage_id": "lin:4f4217a4c160b3b4ccbd5d3c90cb3aebda6e56e5de2b6b5d04d99d518264453f",
+    "version": 1,
+    "supersedes": null,
+    "agent_id": "did:web:agents.example.com:anomaly-detector",
+    "contributors": [],
+    "origin_registry": "registry.example.com",
+    "created_at": "2026-04-16T10:30:15.000Z",
+    "content_hash": "sha256:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    "signature": {
+      "algorithm": "ed25519",
+      "key_id": "did:web:agents.example.com:anomaly-detector#key-1",
+      "value": "YW5vbWFseV9hbGVydF9zaWduYXR1cmVfcGxhY2Vob2xkZXI="
+    },
+    "title": "Anomaly detected in production stream",
+    "type": "alert",
+    "domain": "service_health",
+    "data_refs": [
+      {
+        "type": "primary_result",
+        "embedded": {
+          "encoding": "json",
+          "content": {
+            "anomaly_score": 0.94,
+            "detected_at": "2026-04-16T10:30:15.000Z",
+            "feature_drift": ["latency_p99", "error_rate"]
+          }
+        },
+        "size_bytes": 142,
+        "format": "json",
+        "content_hash": "sha256:c0a1d2e3b4a5d6c7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1"
+      },
+      {
+        "type": "raw_data",
+        "location": {
+          "scheme": "kafka.offset",
+          "broker": "kafka.prod.example.com:9092",
+          "topic": "service-metrics",
+          "partition": 7,
+          "offset_start": 8421005,
+          "offset_end": 8421847
+        },
+        "description": "842 metric events spanning the anomaly window",
+        "format": "json"
+      },
+      {
+        "type": "supporting_info",
+        "location": "s3://baseline-models/anomaly-detector-v3.pkl",
+        "description": "Model used to detect the anomaly",
+        "size_bytes": 4194304,
+        "format": "binary",
+        "content_hash": "sha256:fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+      }
+    ],
+    "derived_from": [],
+    "tags": ["anomaly", "production", "high-severity"],
+    "visibility": "public",
+    "summary": "Anomaly score 0.94 detected on service-metrics partition 7."
+  },
+  "registry_state": {
+    "status": "active"
+  }
+}

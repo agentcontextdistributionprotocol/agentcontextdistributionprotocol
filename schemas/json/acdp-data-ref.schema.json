@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.0.1/acdp-data-ref.schema.json",
+  "title": "ACDP Data Reference",
+  "description": "A reference to a piece of data the context describes. Each data reference contains exactly one of 'location' (URI string or structured locator) or 'embedded' (inline content).",
+
+  "type": "object",
+  "required": ["type"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": ["primary_result", "raw_data", "supporting_info", "derived_data"],
+      "description": "The role of this data within the context."
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Human-readable description of the referenced data."
+    },
+    "size_bytes": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Size of the referenced or embedded data in bytes."
+    },
+    "format": {
+      "type": "string",
+      "examples": ["json", "csv", "parquet", "binary", "yaml", "xml"],
+      "description": "Producer-defined format identifier."
+    },
+    "schema_version": {
+      "type": "string",
+      "description": "Producer-specific schema version for this data."
+    },
+    "content_hash": {
+      "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/content_hash",
+      "description": "Optional SHA-256 hash for verifying data integrity at fetch time. For embedded data, computed over decoded bytes."
+    },
+    "location": {
+      "description": "URI string or structured locator object identifying where the data resides.",
+      "oneOf": [
+        {
+          "title": "URI String Form",
+          "type": "string",
+          "minLength": 1,
+          "examples": [
+            "postgres://analytics_db/sentiment_analysis?id=12345",
+            "s3://bucket/path/to/object",
+            "https://example.com/data.json"
+          ]
+        },
+        {
+          "title": "Structured Locator Form",
+          "type": "object",
+          "required": ["scheme"],
+          "properties": {
+            "scheme": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$",
+              "description": "Dotted-namespace identifier for the locator type. Examples: kafka.offset, ipfs.cid, db.row, vendor.handle."
+            }
+          },
+          "additionalProperties": true
+        }
+      ]
+    },
+    "embedded": {
+      "title": "Embedded Content",
+      "description": "Inline content for small data. Decoded size MUST NOT exceed 64 KB.",
+      "type": "object",
+      "required": ["encoding", "content"],
+      "properties": {
+        "encoding": {
+          "type": "string",
+          "enum": ["json", "utf8", "base64"],
+          "description": "Encoding of the content. Determines how the content_hash is computed."
+        },
+        "content": {
+          "description": "The embedded data. Type depends on encoding: any JSON value for 'json'; string for 'utf8' and 'base64'."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    {
+      "title": "Has location",
+      "required": ["location"],
+      "not": { "required": ["embedded"] }
+    },
+    {
+      "title": "Has embedded",
+      "required": ["embedded"],
+      "not": { "required": ["location"] }
+    }
+  ]
+}

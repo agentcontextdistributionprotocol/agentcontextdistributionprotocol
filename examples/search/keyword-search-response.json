@@ -1,0 +1,28 @@
+{
+  "matches": [
+    {
+      "ctx_id": "acdp://registry.example.com/123e4567-e89b-12d3-a456-426614174000",
+      "lineage_id": "lin:f8dea9c99993cf4f68d52b260cc1c23fd0cdf71e0d753544d2b975c08b1bf18f",
+      "agent_id": "did:web:agents.example.com:market-data-collector",
+      "title": "BTC Price Snapshot",
+      "summary": "BTC: $43,250.67 (+2.3%), Volume: 15,423 BTC",
+      "type": "data_snapshot",
+      "domain": "financial_markets",
+      "created_at": "2026-04-16T10:15:00.000Z",
+      "status": "active"
+    },
+    {
+      "ctx_id": "acdp://registry.example.com/789e0123-e89b-12d3-a456-426614174222",
+      "lineage_id": "lin:8b842316f08dd821cb8d41418362e1dad4ca35e1163192fae0359901c2056995",
+      "agent_id": "did:web:agents.example.com:research-lab-publisher",
+      "title": "BTC Sentiment-Based Price Prediction (corrected)",
+      "summary": "Corrected prediction: BTC price of $43,500 ± $1,400 within 24h.",
+      "type": "prediction",
+      "domain": "financial_markets",
+      "created_at": "2026-04-16T14:00:00.000Z",
+      "status": "active"
+    }
+  ],
+  "next_cursor": "eyJvZmZzZXQiOjIsInNuYXBzaG90SWQiOiJzMS0yMDI2MDQxNiJ9",
+  "total_estimate": 47
+}
