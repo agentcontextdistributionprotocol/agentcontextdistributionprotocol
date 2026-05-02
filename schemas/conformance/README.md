@@ -67,5 +67,9 @@ The runner interface is implementation-defined.
 | ID | Description | Outcome |
 |---|---|---|
 | `can-001` | Body canonicalization → SHA-256 → lineage derivation test vectors | success: byte-exact reproduction |
+| `can-002` | Unicode (NFC) handling — title with é (U+00E9 precomposed) and em dash (U+2014) | success: byte-exact reproduction |
+| `can-003` | Body with `metadata` object — verifies nested-key sorting | success: byte-exact reproduction |
+| `can-004` | Body with embedded JSON data ref — verifies key sorting inside `data_refs[].embedded` | success: byte-exact reproduction |
+| `can-005` | Empty-vs-absent field distinction (`tags: []` vs no `tags` key) | success: distinct hashes; absent-tags vector hash matches `can-001` vector 1 |
 
-All v0.0.1 fixtures listed above are authored. Additional fixtures (visibility-restricted retrieval, embedded-too-large, payload-too-large, race on supersession, etc.) are welcome via PR.
+All v0.0.1 fixtures listed above are authored. The `can-005` fixture's "absent tags" vector cross-checks with `can-001` vector 1 — they have bit-identical input and MUST produce the same hash. Additional fixtures (embedded-too-large, payload-too-large, race on supersession, etc.) are welcome via PR.

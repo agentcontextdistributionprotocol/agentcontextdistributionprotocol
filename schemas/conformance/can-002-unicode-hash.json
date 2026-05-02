@@ -1,0 +1,29 @@
+{
+  "id": "can-002",
+  "description": "Unicode handling vector. The title contains a precomposed character (U+00E9, é) and an em dash (U+2014). JCS requires Unicode NFC; implementations that decompose (NFD) before serializing will produce different bytes and a different hash. Implementations MUST reproduce the canonical form and SHA-256 byte-exactly.",
+  "tags": ["happy-path", "canonicalization", "hashing", "unicode"],
+  "vectors": [
+    {
+      "name": "Unicode (precomposed) body canonicalization and SHA-256",
+      "description": "Producer-supplied body fields with title 'café — test'. The é is U+00E9 (precomposed); the em dash is U+2014. Apply JCS, then SHA-256, hex-encode lowercase.",
+      "input": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:agent:test",
+        "contributors": [],
+        "title": "café — test",
+        "type": "data_snapshot",
+        "data_refs": []
+      },
+      "expected": {
+        "canonical_form": "{\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_refs\":[],\"supersedes\":null,\"title\":\"café — test\",\"type\":\"data_snapshot\",\"version\":1}",
+        "sha256_hex": "1f92c3fbb396e08e6697ec0de74c6f9951b51e5ba2cae510cd30cac9932ce8f8",
+        "content_hash_field_value": "sha256:1f92c3fbb396e08e6697ec0de74c6f9951b51e5ba2cae510cd30cac9932ce8f8"
+      },
+      "implementer_notes": [
+        "If your implementation decomposes the title to NFD before serialization, the bytes for é become U+0065 U+0301 (two code points) and you'll get a different hash. JCS requires NFC.",
+        "If your serializer escapes non-ASCII characters as \\uXXXX (e.g. Python's `json.dumps(..., ensure_ascii=True)`), you'll also get a different hash. Use ensure_ascii=False (Python) or the equivalent in your language."
+      ]
+    }
+  ]
+}
