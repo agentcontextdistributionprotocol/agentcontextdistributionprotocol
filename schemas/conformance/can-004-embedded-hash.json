@@ -1,38 +1,39 @@
 {
   "id": "can-004",
-  "description": "Embedded data reference canonicalization. The body contains a single data_refs entry with embedded JSON content. JCS sorts keys inside the data ref ('embedded' < 'type'), inside the embedded object ('content' < 'encoding'), and inside the embedded content ('score' alone).",
+  "description": "Embedded data reference canonicalization. The body contains a single data_refs entry with embedded JSON content and a format hint. JCS sorts keys inside the data ref ('embedded' < 'format' < 'type'), inside the embedded object ('content' < 'encoding'), and inside the embedded content ('score' alone).",
   "tags": ["happy-path", "canonicalization", "hashing", "embedded"],
   "vectors": [
     {
-      "name": "Body with embedded JSON data ref",
-      "description": "Producer-supplied body containing one embedded data ref. Demonstrates that embedded.content (which is itself JSON for encoding=json) is canonicalized as part of the parent body.",
+      "name": "Body with embedded JSON data ref and format hint",
+      "description": "Producer-supplied body containing one embedded data ref. Demonstrates that embedded.content (which is itself JSON for encoding=json) is canonicalized as part of the parent body, and that ordinary fields like 'format' on the data ref are sorted with the rest.",
       "input": {
         "version": 1,
         "supersedes": null,
         "agent_id": "did:agent:test",
         "contributors": [],
-        "title": "Minimal",
-        "type": "data_snapshot",
+        "title": "Alert with embedded data",
+        "type": "alert",
         "data_refs": [
           {
             "type": "primary_result",
             "embedded": {
               "encoding": "json",
               "content": {"score": 0.94}
-            }
+            },
+            "format": "json"
           }
         ]
       },
       "expected": {
-        "canonical_form": "{\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_refs\":[{\"embedded\":{\"content\":{\"score\":0.94},\"encoding\":\"json\"},\"type\":\"primary_result\"}],\"supersedes\":null,\"title\":\"Minimal\",\"type\":\"data_snapshot\",\"version\":1}",
-        "sha256_hex": "588926a504bb56ef397b2a029b2659611398cf5bfcbfa4e4275d5981313af7ea",
-        "content_hash_field_value": "sha256:588926a504bb56ef397b2a029b2659611398cf5bfcbfa4e4275d5981313af7ea"
+        "canonical_form": "{\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_refs\":[{\"embedded\":{\"content\":{\"score\":0.94},\"encoding\":\"json\"},\"format\":\"json\",\"type\":\"primary_result\"}],\"supersedes\":null,\"title\":\"Alert with embedded data\",\"type\":\"alert\",\"version\":1}",
+        "sha256_hex": "f93c029c508fae457b46d88482ad5e13311fe485f7baf50ded527fad9901c4fd",
+        "content_hash_field_value": "sha256:f93c029c508fae457b46d88482ad5e13311fe485f7baf50ded527fad9901c4fd"
       },
       "implementer_notes": [
-        "Inside data_refs[0]: the original input order is type, embedded; canonical order is embedded, type (alphabetical).",
-        "Inside data_refs[0].embedded: original order is encoding, content; canonical order is content, encoding.",
+        "Inside data_refs[0]: input order is type, embedded, format; canonical order is embedded, format, type (alphabetical).",
+        "Inside data_refs[0].embedded: input order is encoding, content; canonical order is content, encoding.",
         "data_refs is an array; array order is preserved. Producers MUST establish a stable array order before signing.",
-        "Note: when encoding=json, the embedded content is canonicalized as part of the parent body. When encoding=base64 or utf8, the content is a string and is not re-canonicalized; the data_ref's own content_hash (if present) is computed over the decoded bytes per RFC-ACDP-0002 §6.3."
+        "When encoding=json, the embedded content is canonicalized as part of the parent body. When encoding=base64 or utf8, the content is a string and is not re-canonicalized; the data_ref's own content_hash (if present) is computed over the decoded bytes per RFC-ACDP-0002 §6.3."
       ]
     }
   ]

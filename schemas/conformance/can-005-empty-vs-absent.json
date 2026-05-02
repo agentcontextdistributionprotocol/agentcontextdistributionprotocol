@@ -4,42 +4,42 @@
   "tags": ["happy-path", "canonicalization", "hashing", "field-presence"],
   "vectors": [
     {
-      "name": "Body with empty tags array",
-      "description": "Body containing tags: [] (empty array, but field present). This is normatively distinct from the absent-tags vector below.",
+      "name": "Body with explicitly empty tags",
+      "description": "Body containing tags: [] (empty array, but field present). Normatively distinct from the absent-tags vector below.",
       "input": {
         "version": 1,
         "supersedes": null,
         "agent_id": "did:agent:test",
         "contributors": [],
-        "title": "Minimal",
+        "title": "Test",
         "type": "data_snapshot",
         "data_refs": [],
         "tags": []
       },
       "expected": {
-        "canonical_form": "{\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_refs\":[],\"supersedes\":null,\"tags\":[],\"title\":\"Minimal\",\"type\":\"data_snapshot\",\"version\":1}",
-        "sha256_hex": "91675c5a7e313156b35b7d1bdf845818634abf2d02ef8a0217992047b150250c",
-        "content_hash_field_value": "sha256:91675c5a7e313156b35b7d1bdf845818634abf2d02ef8a0217992047b150250c"
+        "canonical_form": "{\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_refs\":[],\"supersedes\":null,\"tags\":[],\"title\":\"Test\",\"type\":\"data_snapshot\",\"version\":1}",
+        "sha256_hex": "c470ca23279dbf48e060e3a1ca808e73b8e2a07717e329ddd41ac3564ecfd6fb",
+        "content_hash_field_value": "sha256:c470ca23279dbf48e060e3a1ca808e73b8e2a07717e329ddd41ac3564ecfd6fb"
       }
     },
     {
-      "name": "Body without tags field",
-      "description": "Same body but with tags omitted entirely. The canonical form is shorter; the SHA-256 differs from the empty-tags case. Note: this vector's hash is identical to can-001 vector 1's hash (5f8d88d6...) because the underlying inputs are equivalent.",
+      "name": "Same body without tags field",
+      "description": "Same body but with tags omitted entirely. The canonical form is shorter; the SHA-256 differs from the empty-tags case.",
       "input": {
         "version": 1,
         "supersedes": null,
         "agent_id": "did:agent:test",
         "contributors": [],
-        "title": "Minimal",
+        "title": "Test",
         "type": "data_snapshot",
         "data_refs": []
       },
       "expected": {
-        "canonical_form": "{\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_refs\":[],\"supersedes\":null,\"title\":\"Minimal\",\"type\":\"data_snapshot\",\"version\":1}",
-        "sha256_hex": "5f8d88d6758cfd43be875d49edc9eaa494de8ec645bf7de6c592b15bbb1e2e3c",
-        "content_hash_field_value": "sha256:5f8d88d6758cfd43be875d49edc9eaa494de8ec645bf7de6c592b15bbb1e2e3c"
+        "canonical_form": "{\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_refs\":[],\"supersedes\":null,\"title\":\"Test\",\"type\":\"data_snapshot\",\"version\":1}",
+        "sha256_hex": "5cd6531f0a08ce264f139e0074c8a4da5f98ada61b3e3b7fd37f3a3e81851c5f",
+        "content_hash_field_value": "sha256:5cd6531f0a08ce264f139e0074c8a4da5f98ada61b3e3b7fd37f3a3e81851c5f"
       },
-      "notes": "Cross-checks with can-001 vector 1 — the input is bit-identical, so the hash MUST match. Implementations that fail this consistency check have a determinism bug somewhere in their canonicalization or hashing pipeline."
+      "notes": "Hashes MUST differ from the previous vector. Implementations that treat absent and empty-array as equivalent will fail this vector."
     }
   ],
   "implementer_notes": [

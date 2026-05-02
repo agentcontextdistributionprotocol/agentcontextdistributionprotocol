@@ -1,6 +1,6 @@
 {
   "id": "can-002",
-  "description": "Unicode handling vector. The title contains a precomposed character (U+00E9, é) and an em dash (U+2014). JCS requires Unicode NFC; implementations that decompose (NFD) before serializing will produce different bytes and a different hash. Implementations MUST reproduce the canonical form and SHA-256 byte-exactly.",
+  "description": "Unicode (NFC) handling. The title contains a precomposed character (U+00E9, é) and an em dash (U+2014). JCS requires NFC; implementations decomposing to NFD before serializing will produce different bytes and a different hash. Implementations MUST reproduce the canonical form and SHA-256 byte-exactly.",
   "tags": ["happy-path", "canonicalization", "hashing", "unicode"],
   "vectors": [
     {
