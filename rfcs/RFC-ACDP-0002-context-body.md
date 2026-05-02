@@ -215,6 +215,10 @@ Retrieval by a requester who is not in the effective audience for a `restricted`
 
 ACDP does not enforce access control on data referenced by `data_refs`. The visibility field affects metadata discoverability through the registry; the underlying data store enforces its own access control.
 
+### 7.1 Visibility is permanent for a given body
+
+Bodies are immutable, and `audience` is a producer-signed field of the body. The audience encoded in a body is therefore frozen forever. To revoke a DID's access to a context, the producer MUST publish a successor (via supersession) with a smaller audience; the predecessor remains accessible to its original audience until expiration or future retraction (RFC-ACDP-0009 §2.1). Retrieval-time `Cache-Control: private, no-store` (RFC-ACDP-0004 §6.2) is conservative against potential future visibility-model changes; it does not change the per-body audience semantics.
+
 ---
 
 ## 8. Embedded vs Referenced Data

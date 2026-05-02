@@ -146,6 +146,8 @@ Implementations:
 
 **Producer note.** Because timestamps are part of the JCS-canonicalized body, two contexts with timestamps differing only in fractional precision will produce different `content_hash` values. Producers MUST use canonical millisecond form for timestamps in publish requests.
 
+**Clock and skew.** Registries SHOULD use NTP-synchronized UTC clocks. The registry's clock is authoritative for `created_at` (registry-assigned) and for the `status: expired` derivation (RFC-ACDP-0004 §4). Consumers computing `expired` locally MAY apply a skew tolerance of up to ±60 seconds against `expires_at`; consumers comparing a registry's `created_at` against their own local clock SHOULD allow the same tolerance. Producers MUST set `expires_at` and `data_period.{start,end}` based on their own UTC clock; small skew between producer and registry is expected and harmless because these fields are signed (not derived).
+
 ### 5.4 Identifier Formats
 
 | Identifier | Form | Spec |
