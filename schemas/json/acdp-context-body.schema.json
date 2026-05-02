@@ -159,7 +159,12 @@
     },
     {
       "if": { "properties": { "visibility": { "const": "restricted" } } },
-      "then": { "required": ["audience"] }
+      "then": {
+        "required": ["audience"],
+        "properties": {
+          "audience": { "minItems": 1 }
+        }
+      }
     },
     {
       "if": { "properties": { "version": { "const": 1 } } },
