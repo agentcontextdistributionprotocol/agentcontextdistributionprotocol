@@ -30,7 +30,9 @@
         "enum": ["ed25519", "ecdsa-p256"]
       },
       "minItems": 1,
-      "description": "Signature algorithms accepted on publish. ed25519 is mandatory."
+      "uniqueItems": true,
+      "contains": { "const": "ed25519" },
+      "description": "Signature algorithms accepted on publish. MUST contain 'ed25519' (RFC-ACDP-0001 §5.10)."
     },
     "supported_embedding_models": {
       "type": "array",
@@ -53,7 +55,8 @@
       "items": { "type": "string" },
       "minItems": 1,
       "uniqueItems": true,
-      "description": "DID methods this registry can resolve (for producer DID-document and key lookups). MUST include 'did:web' (RFC-ACDP-0008 §4.7). Examples: 'did:web', 'did:key'."
+      "contains": { "const": "did:web" },
+      "description": "DID methods this registry can resolve. MUST contain 'did:web' (RFC-ACDP-0008 §4.7). Examples: 'did:web', 'did:key'."
     },
     "supports_idempotency_key": {
       "type": "boolean",
@@ -73,7 +76,8 @@
       },
       "uniqueItems": true,
       "minItems": 1,
-      "description": "Profile(s) this implementation claims conformance to. See RFC-ACDP-0001 §9. Any registry MUST declare 'acdp-registry-core'."
+      "contains": { "const": "acdp-registry-core" },
+      "description": "Profile(s) this implementation claims conformance to. MUST contain 'acdp-registry-core' for any registry. See RFC-ACDP-0001 §9."
     },
     "limits": {
       "type": "object",
