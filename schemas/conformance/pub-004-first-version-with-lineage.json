@@ -1,32 +1,33 @@
 {
   "id": "pub-004",
-  "description": "Producer submits a first-version publish request (version=1, supersedes=null) but illegally includes a lineage_id field. Registry MUST reject with schema_violation (HTTP 400) per RFC-ACDP-0003 §2.2. Producers cannot supply a correct lineage_id for first versions because the formula is SHA-256(ctx_id) and ctx_id is registry-assigned. The acdp-publish-request.schema.json enforces this via an allOf clause.",
-  "tags": ["failure", "schema", "publish", "first-version"],
-  "input": {
-    "endpoint": "POST /contexts",
+  "description": "First-version publish requests MUST NOT include lineage_id. Producers cannot supply a correct value (the formula is SHA-256(ctx_id) and ctx_id is registry-assigned), so any value is necessarily wrong. The acdp-publish-request.schema.json's allOf clause enforces this; the registry rejects at step 1 (schema validation).",
+  "tags": ["publish", "negative", "first-version"],
+  "request": {
+    "method": "POST",
+    "path": "/contexts",
+    "content_type": "application/acdp+json",
     "body": {
       "version": 1,
       "supersedes": null,
-      "agent_id": "did:web:agents.example.com:test-producer",
+      "lineage_id": "lin:0000000000000000000000000000000000000000000000000000000000000000",
+      "agent_id": "did:agent:test",
       "contributors": [],
       "content_hash": "sha256:5f8d88d6758cfd43be875d49edc9eaa494de8ec645bf7de6c592b15bbb1e2e3c",
       "signature": {
         "algorithm": "ed25519",
-        "key_id": "did:web:agents.example.com:test-producer#key-1",
-        "value": "Zmlyc3RfdmVyc2lvbl93aXRoX2xpbmVhZ2VfdGVzdF9zaWc="
+        "key_id": "did:agent:test#key-1",
+        "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
       },
-      "title": "Minimal",
+      "title": "Test",
       "type": "data_snapshot",
       "data_refs": [],
       "derived_from": [],
-      "visibility": "public",
-      "lineage_id": "lin:0000000000000000000000000000000000000000000000000000000000000000"
-    },
-    "notes": "The body is otherwise well-formed. Only the presence of lineage_id alongside version=1 is the violation."
+      "visibility": "public"
+    }
   },
   "expected": {
-    "outcome": "failure",
-    "http_status": 400,
+    "status": 400,
     "error_code": "schema_violation"
-  }
+  },
+  "notes": "The body is otherwise well-formed. Only the presence of lineage_id alongside version=1 is the violation."
 }
