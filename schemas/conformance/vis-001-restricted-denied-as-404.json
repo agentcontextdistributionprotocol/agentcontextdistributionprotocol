@@ -1,0 +1,87 @@
+{
+  "id": "vis-001",
+  "description": "Visibility-restricted retrieval MUST NOT distinguish 'not found' from 'not authorized' externally. An unauthorized requester for a restricted context MUST receive the same response as a requester asking for a non-existent ctx_id: HTTP 404 with error code 'not_found'. Returning 'visibility_denied' externally would leak the existence of the context to unauthorized parties. Per RFC-ACDP-0002 §7, RFC-ACDP-0004 §2.3, and RFC-ACDP-0008 §4.5.",
+  "tags": ["failure", "security", "visibility", "retrieval"],
+  "preconditions": {
+    "existing_context": {
+      "ctx_id": "acdp://registry.example.com/22222222-2222-2222-2222-222222222222",
+      "body_subset": {
+        "agent_id": "did:web:agents.example.com:alice",
+        "visibility": "restricted",
+        "audience": ["did:web:agents.example.com:authorized-consumer"]
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "name": "Producer (agent_id) requests own restricted context",
+      "input": {
+        "endpoint": "GET /contexts/{ctx_id}",
+        "ctx_id": "acdp://registry.example.com/22222222-2222-2222-2222-222222222222",
+        "effective_requester_did": "did:web:agents.example.com:alice"
+      },
+      "expected": {
+        "outcome": "success",
+        "http_status": 200,
+        "notes": "Producer is always in the effective audience for their own contexts."
+      }
+    },
+    {
+      "name": "Authorized requester (in audience) requests restricted context",
+      "input": {
+        "endpoint": "GET /contexts/{ctx_id}",
+        "ctx_id": "acdp://registry.example.com/22222222-2222-2222-2222-222222222222",
+        "effective_requester_did": "did:web:agents.example.com:authorized-consumer"
+      },
+      "expected": {
+        "outcome": "success",
+        "http_status": 200
+      }
+    },
+    {
+      "name": "Unauthorized requester (NOT in audience) requests restricted context",
+      "input": {
+        "endpoint": "GET /contexts/{ctx_id}",
+        "ctx_id": "acdp://registry.example.com/22222222-2222-2222-2222-222222222222",
+        "effective_requester_did": "did:web:agents.example.com:eve"
+      },
+      "expected": {
+        "outcome": "failure",
+        "http_status": 404,
+        "error_code": "not_found",
+        "notes": "MUST return identical response shape to a genuine not-found case. Registries MUST NOT use error_code 'visibility_denied' externally; that semantic is for internal logging only (RFC-ACDP-0008 §4.5)."
+      }
+    },
+    {
+      "name": "Unauthorized requester requests genuinely non-existent ctx_id",
+      "input": {
+        "endpoint": "GET /contexts/{ctx_id}",
+        "ctx_id": "acdp://registry.example.com/00000000-0000-0000-0000-000000000000",
+        "effective_requester_did": "did:web:agents.example.com:eve"
+      },
+      "expected": {
+        "outcome": "failure",
+        "http_status": 404,
+        "error_code": "not_found",
+        "notes": "This response MUST be byte-indistinguishable from the previous scenario. Anything else (timing differences, response-size differences, error-code differences) leaks existence."
+      }
+    },
+    {
+      "name": "Contributor (NOT in audience) requests restricted context",
+      "input": {
+        "endpoint": "GET /contexts/{ctx_id}",
+        "ctx_id": "acdp://registry.example.com/22222222-2222-2222-2222-222222222222",
+        "effective_requester_did": "did:web:agents.example.com:listed-contributor",
+        "context_subset_for_test": {
+          "contributors": ["did:web:agents.example.com:listed-contributor"]
+        }
+      },
+      "expected": {
+        "outcome": "failure",
+        "http_status": 404,
+        "error_code": "not_found",
+        "notes": "Contributors are NOT auto-authorized (T1.7). To grant a contributor read access, the producer MUST list the DID in audience explicitly. Listing a contributor in contributors alone does NOT grant read access."
+      }
+    }
+  ]
+}
