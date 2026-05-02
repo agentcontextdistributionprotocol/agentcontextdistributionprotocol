@@ -9,7 +9,7 @@
       "supersedes": null,
       "agent_id": "did:web:agents.example.com:test-producer",
       "contributors": [],
-      "content_hash": "sha256:5f8d88d6758cfd43be875d49edc9eaa494de8ec645bf7de6c592b15bbb1e2e3c",
+      "content_hash": "sha256:793df0a80cb9f8a053d338fa615c24944b6015430d764b7c2584c0185f9bbf42",
       "signature": {
         "algorithm": "ed25519",
         "key_id": "did:web:agents.example.com:test-producer#key-1",

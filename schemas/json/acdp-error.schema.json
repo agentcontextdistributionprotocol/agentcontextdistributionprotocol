@@ -44,7 +44,7 @@
         },
         "details": {
           "type": "object",
-          "description": "Optional structured details about the error. Shape is error-code-specific.",
+          "description": "Optional structured details about the error. Shape is error-code-specific. Recognized keys per code: superseded_target → 'reason' (one of 'not_found', 'lineage_mismatch', 'version_mismatch', 'already_superseded', 'cross_registry_supersession_unsupported'); invalid_signature → 'key_id', 'algorithm'; key_resolution_failed / key_resolution_unreachable → 'key_id', 'underlying' (transport-layer message); duplicate_publish → 'idempotency_key', 'original_ctx_id'. Registries MAY include additional keys; consumers MUST tolerate unknown keys.",
           "additionalProperties": true
         }
       },

@@ -1,0 +1,21 @@
+{
+  "id": "err-001",
+  "description": "On unexpected internal failure, the registry MUST return the standard error envelope (RFC-ACDP-0007 §4) with HTTP 500 and code 'internal_error'. The response Content-Type MUST be application/acdp+json. error.message MUST NOT leak stack traces or sensitive context.",
+  "tags": ["failure", "error-envelope", "5xx"],
+  "input": {
+    "endpoint": "any",
+    "scenario": "Registry triggers an unhandled exception path (e.g., persistence layer throws). Implementation-defined trigger — fixtures cannot reproduce; this is a structural test for the response shape."
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 500,
+    "error_code": "internal_error",
+    "content_type": "application/acdp+json",
+    "envelope": {
+      "error": {
+        "code": "internal_error",
+        "message": "An unexpected error occurred."
+      }
+    }
+  }
+}

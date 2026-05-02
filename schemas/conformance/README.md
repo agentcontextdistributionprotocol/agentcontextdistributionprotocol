@@ -12,7 +12,9 @@ conformance/
 ├── pub-*.json    Publish-flow scenarios (RFC-ACDP-0003)
 ├── ret-*.json    Retrieval scenarios (RFC-ACDP-0004)
 ├── vis-*.json    Visibility-leak prevention scenarios (RFC-ACDP-0002, RFC-ACDP-0008)
-└── can-*.json    Canonicalization / cryptographic test vectors (RFC-ACDP-0001)
+├── can-*.json    Canonicalization / hashing test vectors (RFC-ACDP-0001)
+├── sig-*.json    Cryptographic golden vectors (signing & verification, RFC-ACDP-0001)
+└── err-*.json    Error envelope and HTTP status fixtures (RFC-ACDP-0007)
 ```
 
 ---
@@ -84,3 +86,17 @@ The runner interface is implementation-defined.
 | `can-005` | Empty-vs-absent field distinction (`tags: []` vs no `tags` key) | success: distinct hashes; absent-tags vector hash matches `can-001` vector 1 |
 
 All v0.0.1 fixtures listed above are authored. The `can-005` fixture's "absent tags" vector cross-checks with `can-001` vector 1 — they have bit-identical input and MUST produce the same hash. Additional fixtures (embedded-too-large, payload-too-large, race on supersession, etc.) are welcome via PR.
+
+### Cryptographic golden vectors (RFC-ACDP-0001)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `sig-001` | Real Ed25519 keypair (test seed of 32 zero bytes); produce content_hash, sign, verify, derive lineage. | success: byte-exact reproduction of canonical form, content_hash, signature, lineage_id |
+
+The `sig-*` fixtures are checked by `scripts/conformance-runner.py` (CI). A failing `sig-001` indicates an end-to-end pipeline defect: JCS, SHA-256, signing-input framing (full `sha256:` prefix), Ed25519, base64, or lineage derivation.
+
+### Error envelope (RFC-ACDP-0007)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `err-001` | 500 Internal Error returns the standard envelope with `internal_error` code | failure: HTTP 500, envelope-conformant |

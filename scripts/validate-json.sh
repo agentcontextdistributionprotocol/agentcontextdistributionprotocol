@@ -100,8 +100,33 @@ validate_dir_against "${EXAMPLES_DIR}/publish"          "${PUBLISH_REQUEST_SCHEM
 validate_dir_against "${EXAMPLES_DIR}/retrieval"        "${CONTEXT_SCHEMA}"              "context"
 validate_dir_against "${EXAMPLES_DIR}/supersession"     "${CONTEXT_SCHEMA}"              "context (supersession)"
 validate_dir_against "${EXAMPLES_DIR}/mixed-data-refs"  "${CONTEXT_SCHEMA}"              "context (mixed data refs)"
+validate_dir_against "${EXAMPLES_DIR}/visibility"       "${CONTEXT_SCHEMA}"              "context (visibility)"
 validate_dir_against "${EXAMPLES_DIR}/capabilities"     "${CAPABILITIES_SCHEMA}"         "capabilities"
 validate_dir_against "${EXAMPLES_DIR}/error"            "${ERROR_SCHEMA}"                "error"
+
+# Meta-shape illustrative examples — JSON syntax check only (not single payloads)
+syntax_check_dir() {
+    local dir="$1"
+    local label="$2"
+    [ -d "$dir" ] || return 0
+    echo "── ${label} examples (${dir}) — syntax check only ──"
+    for f in "${dir}"/*.json; do
+        [ -f "$f" ] || continue
+        TOTAL=$((TOTAL + 1))
+        echo "  $(basename "$f")"
+        if syntax_check "$f"; then
+            VALIDATED=$((VALIDATED + 1))
+            echo "    ✓ Valid JSON"
+        else
+            echo "    ✗ Invalid JSON"
+            exit 1
+        fi
+    done
+    echo
+}
+
+syntax_check_dir "${EXAMPLES_DIR}/lineage"     "lineage"
+syntax_check_dir "${EXAMPLES_DIR}/idempotency" "idempotency"
 
 # search/ contains two distinct shapes — validate per-file
 SEARCH_DIR="${EXAMPLES_DIR}/search"

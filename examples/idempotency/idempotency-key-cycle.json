@@ -1,0 +1,99 @@
+{
+  "description": "Illustrates the Idempotency-Key flow defined in RFC-ACDP-0003 §6. Producer retries a publish after a network error using the same Idempotency-Key. The registry returns the original response with HTTP 200 (instead of the original 201).",
+  "scenario": [
+    {
+      "step": 1,
+      "label": "Initial publish",
+      "request": {
+        "method": "POST",
+        "path": "/contexts",
+        "headers": {
+          "Content-Type": "application/acdp+json",
+          "Idempotency-Key": "01HFRX7KCN5G5BYZ3D9V8Q1T2W"
+        },
+        "body": {
+          "version": 1,
+          "supersedes": null,
+          "agent_id": "did:web:agents.example.com:retry-aware-publisher",
+          "contributors": [],
+          "content_hash": "sha256:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:web:agents.example.com:retry-aware-publisher#key-1",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+          },
+          "title": "Snapshot retried after network error",
+          "type": "data_snapshot",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "Location": "/contexts/acdp%3A%2F%2Fregistry.example.com%2Faaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
+        },
+        "body": {
+          "ctx_id": "acdp://registry.example.com/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "lineage_id": "lin:sha256:d534b03c95757c75c512aff8c3e4616040ee97293fbb066fd511e04ba0443f58",
+          "version": 1,
+          "created_at": "2026-04-16T10:00:00.000Z",
+          "status": "active"
+        }
+      },
+      "notes": "Producer's HTTP client times out before reading the 201 response (registry has already persisted)."
+    },
+    {
+      "step": 2,
+      "label": "Producer retry with same Idempotency-Key and same content_hash",
+      "request": {
+        "method": "POST",
+        "path": "/contexts",
+        "headers": {
+          "Content-Type": "application/acdp+json",
+          "Idempotency-Key": "01HFRX7KCN5G5BYZ3D9V8Q1T2W"
+        },
+        "body": "(same body bytes as step 1)"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "ctx_id": "acdp://registry.example.com/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "lineage_id": "lin:sha256:d534b03c95757c75c512aff8c3e4616040ee97293fbb066fd511e04ba0443f58",
+          "version": 1,
+          "created_at": "2026-04-16T10:00:00.000Z",
+          "status": "active"
+        }
+      },
+      "notes": "Status is 200 (not 201) so producers can distinguish 'newly created' from 'already created via my prior attempt'."
+    },
+    {
+      "step": 3,
+      "label": "Programming-error retry with same Idempotency-Key but different content",
+      "request": {
+        "method": "POST",
+        "path": "/contexts",
+        "headers": {
+          "Content-Type": "application/acdp+json",
+          "Idempotency-Key": "01HFRX7KCN5G5BYZ3D9V8Q1T2W"
+        },
+        "body": {
+          "version": 1,
+          "title": "DIFFERENT body — bug in producer code",
+          "...": "different content_hash"
+        }
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "error": {
+            "code": "duplicate_publish",
+            "message": "Idempotency-Key already used for content with a different content_hash."
+          }
+        }
+      },
+      "notes": "Registry rejects rather than silently choosing one body. Producers MUST scope Idempotency-Keys to a single content_hash and MUST generate fresh keys for distinct publications."
+    }
+  ]
+}
