@@ -198,13 +198,25 @@ The signature value is computed over the bytes of the full `content_hash` string
 
 Registries MUST verify the signature at publish time. A context whose signature does not verify MUST be rejected with the `invalid_signature` error code (RFC-ACDP-0007).
 
-### 5.9 Replay and Tamper Protection
+### 5.9 Replay, Tamper, and Impersonation Protection
 
-Because every ACDP body is content-addressed and signed:
+ACDP's protections decompose by what the producer signature does and does not bind:
 
-- **Tampering** is detected by recomputing `content_hash` over the canonicalized body. Any change in any non-excluded field changes the hash.
-- **Replay** at the wire level is mitigated by HTTPS transport security. ACDP itself does not specify per-request nonces — the body's content hash makes "the same body twice" idempotent.
-- **Cross-registry impersonation** is prevented by the `origin_registry` field being part of the registry-assigned set: a forwarded body cannot claim a different origin.
+**What the producer signature binds (cryptographic protection):**
+
+- **Body tampering** is detected by recomputing `content_hash` over the canonicalized body. Any change in any non-excluded field changes the hash; the signature will not verify.
+- **Producer impersonation** of content is prevented: a third party cannot forge a signature without the producer's private key.
+- **Lineage integrity**: each ancestor in `derived_from` is independently signed by its own producer.
+
+**What the producer signature does NOT bind (registry-honesty protection):**
+
+- `ctx_id`, `lineage_id`, `origin_registry`, and `created_at` are registry-assigned. The producer signature does not cover them. A consumer cannot cryptographically verify which registry first accepted the content, what `ctx_id` it was assigned, what lineage it belongs to, or when publication occurred. These facts rely on **registry honesty** in v0.0.1.
+
+A malicious or compromised registry could republish a producer's signed content under a different `ctx_id` or `origin_registry` (the signature would still verify), or backdate `created_at`. See RFC-ACDP-0008 §9.1 for the full discussion and §9.2 for mitigations.
+
+A future ACDP version will introduce **registry receipts** (RFC-ACDP-0009 §2.7) that bind registry-assigned identifiers to the registry's DID, closing this gap cryptographically.
+
+**Replay** at the wire level is mitigated by HTTPS transport security. ACDP itself does not specify per-request nonces — the body's content hash makes "the same body twice" content-level idempotent. Registries SHOULD implement `Idempotency-Key` (RFC-ACDP-0003 §6) for true publication-level idempotency.
 
 ### 5.10 Signature Algorithms
 
