@@ -144,9 +144,12 @@
 
     "status": {
       "title": "Context Status",
-      "description": "Derived from supersession queries and clock. v0.0.1 has no retraction; future versions will add a 'retracted' value.",
+      "description": "Derived by the registry from supersession queries and the clock. v0.0.1 emits one of 'active', 'superseded', 'expired'; future versions will add 'retracted' (RFC-ACDP-0009 §2.1) and possibly others. The pattern is open so that future status values do not break existing v0.0.1 consumers; v0.0.1 consumers MUST tolerate unknown status values and SHOULD treat them as 'active' (with logging) until they upgrade. See RFC-ACDP-0004 §4.",
       "type": "string",
-      "enum": ["active", "superseded", "expired"]
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "minLength": 1,
+      "maxLength": 64,
+      "examples": ["active", "superseded", "expired"]
     },
 
     "match_summary": {

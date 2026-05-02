@@ -85,9 +85,13 @@ The `status` field is **derived** by the registry from supersession queries and 
 
 When both `superseded` and `expired` could apply, `status` is `superseded` (supersession dominates expiration).
 
-The registry computes `status` from supersession queries against its own data and from the current clock. Consumers can verify `status` independently by issuing the same queries and observing the same clock.
+The registry computes `status` from supersession queries against its own data and from the current clock. `status` is **registry-attested**: a consumer cannot independently verify `status` without trusting the registry's supersession index. Consumers wanting independent confirmation MAY query the registry for any context with `supersedes` equal to this context's `ctx_id`; absence (returned over the wire) still relies on registry honesty. See RFC-ACDP-0008 §9.1.
 
 Because `status` is derived, it MUST NOT be persisted into the body. The body's `content_hash` is computed without `status`.
+
+### 4.1 Forward compatibility
+
+Future ACDP versions will add new `status` values (e.g. `retracted` per RFC-ACDP-0009 §2.1). v0.0.1 consumers receiving an unknown `status` value MUST NOT reject the response — they SHOULD treat the value as `active` for decision-making and log it for operator review. v0.0.1 schemas use an open string pattern for `status` to support this forward-compatibility (RFC-ACDP-0001 §6).
 
 ---
 
