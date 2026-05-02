@@ -38,6 +38,21 @@ The first published version of ACDP. **Coordination-agnostic substrate from the 
 - **TD4:** Split DID schema. `did` is plain (no fragment / query / path); `did_url` is the permissive form. `signature.key_id` now `$ref`s `did_url`.
 - **TD5:** Made implementation profiles normative in `RFC-ACDP-0001 §9.1` — `acdp-registry-core`, `acdp-registry-discovery`, `acdp-registry-federated`, `acdp-consumer` each with their MUST list.
 
+### Iteration 3 changes (release-readiness)
+
+- **Tship-A1:** Rewrote RFC-0001 §5.9. Cross-registry impersonation is now correctly framed as registry-honesty protection, not cryptographic protection. Producer signatures bind producer-controlled content; registry-assigned fields rely on registry honesty in v0.0.1.
+- **Tship-A2:** Cache headers are now visibility-aware. Public bodies use `Cache-Control: public, max-age=…, immutable`; restricted/private bodies MUST use `Cache-Control: private, no-store`. Closes a privacy leak via shared HTTP caches.
+- **Tship-A3:** Aligned RFC-0007 §5 error code registry with the schema (added 7 missing codes; removed `visibility_denied` as a wire code). Wire enum and registry doc now agree exactly.
+- **Tship-A4:** Rewrote integration-guide hash and signature flow. Producers now compute `sha256:<hex>` (not bare hex), sign the full prefixed string, and the consumer EXCLUDE set includes `content_hash`.
+- **Tship-B1:** Tightened `ctx_id` schema to lowercase authority + RFC 4122 v4 UUID. Updated all fixtures to v4-conforming UUIDs and recomputed lineage_id values.
+- **Tship-B2:** Added `contains` constraints to capabilities schema for `supported_signature_algorithms`, `supported_did_methods`, `profiles` (mandatory `ed25519`, `did:web`, `acdp-registry-core`).
+- **Tship-B3:** Enforced non-empty `audience` for `visibility: restricted` in publish-request and context-body schemas.
+- **Tship-B4:** Clarified the "signed body" invariant. The producer signature covers the producer-controlled portion of the body, not the registry-assigned fields. Light-touch wording change in RFC-0001, README, and overview.
+- **Tship-B5:** Added `acdp-similarity-request.schema.json` for POST `/contexts/similar` request bodies; referenced from RFC-0005 §3.2.
+- **Tship-C1:** Added `sig-001-ed25519-golden.json` — real Ed25519 keypair, real canonical bytes, real content_hash, real signature, full producer + verifier round-trip.
+- **Tship-C2:** Added `scripts/conformance-runner.py` and wired into CI. Conformance vectors are now executed, not just structurally validated.
+- **Tship-D1:** This entry.
+
 ### Included
 
 - **Core** — identifiers, JCS canonicalization, content hashing, signatures, time format (RFC-ACDP-0001).
