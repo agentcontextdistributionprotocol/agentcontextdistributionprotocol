@@ -1,7 +1,7 @@
 {
   "body": {
-    "ctx_id": "acdp://registry.example.com/456e7890-e89b-12d3-a456-426614174111",
-    "lineage_id": "lin:8b842316f08dd821cb8d41418362e1dad4ca35e1163192fae0359901c2056995",
+    "ctx_id": "acdp://registry.example.com/456e7890-e89b-42d3-a456-426614174111",
+    "lineage_id": "lin:dfecdf34c4dca2484fb17be1e8c73f8bcd192e5a0781bd8f0af4ce012bbc8217",
     "version": 1,
     "supersedes": null,
     "agent_id": "did:web:agents.example.com:research-lab-publisher",
@@ -29,8 +29,8 @@
       }
     ],
     "derived_from": [
-      "acdp://registry.example.com/abc12345-e89b-12d3-a456-426614174001",
-      "acdp://registry.example.com/123e4567-e89b-12d3-a456-426614174000"
+      "acdp://registry.example.com/abc12345-e89b-42d3-a456-426614174001",
+      "acdp://registry.example.com/123e4567-e89b-42d3-a456-426614174000"
     ],
     "tags": ["bitcoin", "prediction", "sentiment"],
     "embedding": [0.012, -0.045, 0.078, 0.131, -0.022, 0.019],

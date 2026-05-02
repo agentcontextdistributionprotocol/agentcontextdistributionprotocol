@@ -4,7 +4,7 @@
   "tags": ["retrieval", "visibility", "leak-prevention"],
   "setup": {
     "context_published": {
-      "ctx_id": "acdp://registry.example.com/00000000-0000-0000-0000-000000000001",
+      "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-000000000001",
       "agent_id": "did:agent:owner",
       "visibility": "restricted",
       "audience": ["did:agent:authorized_consumer"]
@@ -15,7 +15,7 @@
       "name": "Producer (agent_id) requests own restricted context",
       "request": {
         "method": "GET",
-        "path": "/contexts/acdp%3A%2F%2Fregistry.example.com%2F00000000-0000-0000-0000-000000000001",
+        "path": "/contexts/acdp%3A%2F%2Fregistry.example.com%2F00000000-0000-4000-8000-000000000001",
         "effective_requester_did": "did:agent:owner"
       },
       "expected": {
@@ -27,7 +27,7 @@
       "name": "Authorized consumer (in audience) sees the context",
       "request": {
         "method": "GET",
-        "path": "/contexts/acdp%3A%2F%2Fregistry.example.com%2F00000000-0000-0000-0000-000000000001",
+        "path": "/contexts/acdp%3A%2F%2Fregistry.example.com%2F00000000-0000-4000-8000-000000000001",
         "effective_requester_did": "did:agent:authorized_consumer"
       },
       "expected": {
@@ -38,7 +38,7 @@
       "name": "Unauthorized consumer sees not_found (existence-leak prevention)",
       "request": {
         "method": "GET",
-        "path": "/contexts/acdp%3A%2F%2Fregistry.example.com%2F00000000-0000-0000-0000-000000000001",
+        "path": "/contexts/acdp%3A%2F%2Fregistry.example.com%2F00000000-0000-4000-8000-000000000001",
         "effective_requester_did": "did:agent:other_consumer"
       },
       "expected": {
@@ -51,7 +51,7 @@
       "name": "Unauthorized consumer requests genuinely non-existent ctx_id",
       "request": {
         "method": "GET",
-        "path": "/contexts/acdp%3A%2F%2Fregistry.example.com%2F00000000-0000-0000-0000-000000000000",
+        "path": "/contexts/acdp%3A%2F%2Fregistry.example.com%2F00000000-0000-4000-8000-000000000000",
         "effective_requester_did": "did:agent:other_consumer"
       },
       "expected": {
@@ -64,7 +64,7 @@
       "name": "Contributor (NOT in audience) requests restricted context",
       "request": {
         "method": "GET",
-        "path": "/contexts/acdp%3A%2F%2Fregistry.example.com%2F00000000-0000-0000-0000-000000000001",
+        "path": "/contexts/acdp%3A%2F%2Fregistry.example.com%2F00000000-0000-4000-8000-000000000001",
         "effective_requester_did": "did:agent:listed_contributor",
         "context_subset_for_test": {
           "contributors": ["did:agent:listed_contributor"]

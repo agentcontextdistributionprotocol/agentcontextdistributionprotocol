@@ -1,7 +1,7 @@
 {
   "body": {
-    "ctx_id": "acdp://registry.example.com/aaaabbbb-cccc-dddd-eeee-ffff00001111",
-    "lineage_id": "lin:4f4217a4c160b3b4ccbd5d3c90cb3aebda6e56e5de2b6b5d04d99d518264453f",
+    "ctx_id": "acdp://registry.example.com/aaaabbbb-cccc-4ddd-8eee-ffff00001111",
+    "lineage_id": "lin:56ce2aa40d7b42e90ab9aaf859b7d1439323141ef952cc2ad47fdb6ccfcbb780",
     "version": 1,
     "supersedes": null,
     "agent_id": "did:web:agents.example.com:anomaly-detector",

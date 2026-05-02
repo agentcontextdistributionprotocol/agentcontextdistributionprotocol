@@ -25,31 +25,30 @@
       "name": "Lineage identifier derivation — vector 1",
       "description": "lineage_id = 'lin:' + lowercase_hex(SHA-256(utf8(ctx_id))).",
       "input": {
-        "ctx_id": "acdp://reg.example/00000000-0000-0000-0000-000000000001"
+        "ctx_id": "acdp://reg.example/00000000-0000-4000-8000-000000000001"
       },
       "expected": {
-        "lineage_id": "lin:293b7d29e98ffdca084eb07f944a695b912a1acf95bb2b39311d12281b453823"
+        "lineage_id": "lin:766b44a63adb664a46a205e19e9f9c19e0ba60512f402b0d97f5211cc7e3e878"
       },
       "notes": "Hash input is the UTF-8 bytes of the ctx_id string, including the 'acdp://' prefix."
     },
     {
       "name": "Lineage identifier derivation — vector 2",
       "input": {
-        "ctx_id": "acdp://registry.example.com/550e8400-e29b-41d4-a716-446655440000"
+        "ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234"
       },
       "expected": {
-        "lineage_id": "lin:ca770dc5d7c41109753bd3d045c2b7bd4cf687ab9cd2552ff17a37bcecbd0810"
+        "lineage_id": "lin:c7fef01c000f8edaa9cb46122ceb5d7bca38328f002fb0f40e362e3b289bbb2a"
       }
     },
     {
       "name": "Lineage identifier derivation — vector 3",
       "input": {
-        "ctx_id": "acdp://other.registry.io/abc-123-def"
+        "ctx_id": "acdp://other.registry.io/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
       },
       "expected": {
-        "lineage_id": "lin:5abfff70a6f8370053a9441477bf5e0b827dec22d5b77a4795e9319458e19df9"
-      },
-      "notes": "Although this ctx_id does not match the strict UUID v4 syntax, the lineage derivation operates on the literal UTF-8 bytes — implementations MUST hash the exact input string."
+        "lineage_id": "lin:d534b03c95757c75c512aff8c3e4616040ee97293fbb066fd511e04ba0443f58"
+      }
     },
     {
       "name": "JCS — number formatting",

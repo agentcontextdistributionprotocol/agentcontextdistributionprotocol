@@ -5,12 +5,12 @@
   "setup": {
     "contexts_published": [
       {
-        "ctx_id": "acdp://registry.example.com/00000000-0000-0000-0000-000000000001",
+        "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-000000000001",
         "title": "Public alpha",
         "visibility": "public"
       },
       {
-        "ctx_id": "acdp://registry.example.com/00000000-0000-0000-0000-000000000002",
+        "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-000000000002",
         "title": "Restricted alpha",
         "visibility": "restricted",
         "audience": ["did:agent:authorized"]
@@ -30,8 +30,8 @@
         "matches_count": 2,
         "total_estimate": 2,
         "matches_ctx_ids": [
-          "acdp://registry.example.com/00000000-0000-0000-0000-000000000001",
-          "acdp://registry.example.com/00000000-0000-0000-0000-000000000002"
+          "acdp://registry.example.com/00000000-0000-4000-8000-000000000001",
+          "acdp://registry.example.com/00000000-0000-4000-8000-000000000002"
         ]
       }
     },
@@ -47,7 +47,7 @@
         "matches_count": 1,
         "total_estimate": 1,
         "matches_ctx_ids": [
-          "acdp://registry.example.com/00000000-0000-0000-0000-000000000001"
+          "acdp://registry.example.com/00000000-0000-4000-8000-000000000001"
         ]
       },
       "notes": "MUST be matches_count=1 AND total_estimate=1. Including the restricted context in total_estimate (even without listing it in matches) leaks its existence to the unauthorized requester. Registry MUST scope BOTH the matches array AND the total_estimate count."
@@ -67,7 +67,7 @@
         "matches_count": 1,
         "total_estimate": 1,
         "matches_ctx_ids": [
-          "acdp://registry.example.com/00000000-0000-0000-0000-000000000001"
+          "acdp://registry.example.com/00000000-0000-4000-8000-000000000001"
         ]
       },
       "notes": "Anonymous requesters see only public contexts. Same scoping rule as authenticated unauthorized requesters."
