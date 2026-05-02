@@ -1,7 +1,7 @@
 {
   "body": {
     "ctx_id": "acdp://registry.example.com/789e0123-e89b-42d3-a456-426614174222",
-    "lineage_id": "lin:dfecdf34c4dca2484fb17be1e8c73f8bcd192e5a0781bd8f0af4ce012bbc8217",
+    "lineage_id": "lin:sha256:dfecdf34c4dca2484fb17be1e8c73f8bcd192e5a0781bd8f0af4ce012bbc8217",
     "version": 2,
     "supersedes": "acdp://registry.example.com/456e7890-e89b-42d3-a456-426614174111",
     "agent_id": "did:web:agents.example.com:research-lab-publisher",

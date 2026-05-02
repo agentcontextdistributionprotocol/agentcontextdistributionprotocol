@@ -48,7 +48,7 @@
       },
       "registry_assigned": {
         "ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234",
-        "lineage_id": "lin:c7fef01c000f8edaa9cb46122ceb5d7bca38328f002fb0f40e362e3b289bbb2a",
+        "lineage_id": "lin:sha256:c7fef01c000f8edaa9cb46122ceb5d7bca38328f002fb0f40e362e3b289bbb2a",
         "origin_registry": "registry.example.com",
         "created_at": "2026-04-16T10:30:15.123Z"
       },

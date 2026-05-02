@@ -9,7 +9,7 @@
     "body": {
       "version": 1,
       "supersedes": null,
-      "lineage_id": "lin:0000000000000000000000000000000000000000000000000000000000000000",
+      "lineage_id": "lin:sha256:0000000000000000000000000000000000000000000000000000000000000000",
       "agent_id": "did:agent:test",
       "contributors": [],
       "content_hash": "sha256:5f8d88d6758cfd43be875d49edc9eaa494de8ec645bf7de6c592b15bbb1e2e3c",

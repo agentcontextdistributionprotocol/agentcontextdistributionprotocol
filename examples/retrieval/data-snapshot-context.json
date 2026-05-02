@@ -1,7 +1,7 @@
 {
   "body": {
     "ctx_id": "acdp://registry.example.com/123e4567-e89b-42d3-a456-426614174000",
-    "lineage_id": "lin:9d5694da9b985ae44832c256d5fd1333654ecf10a59682c83c67b3d22e2023a4",
+    "lineage_id": "lin:sha256:9d5694da9b985ae44832c256d5fd1333654ecf10a59682c83c67b3d22e2023a4",
     "version": 1,
     "supersedes": null,
     "agent_id": "did:web:agents.example.com:market-data-collector",

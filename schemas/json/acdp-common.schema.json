@@ -35,11 +35,11 @@
 
     "lineage_id": {
       "title": "Lineage Identifier",
-      "description": "Deterministically derived from the first version's ctx_id. Form: lin:<64 lowercase hex chars>.",
+      "description": "Deterministically derived from the first version's ctx_id. Form: lin:<algorithm>:<digest>. v0.0.1 emits 'lin:sha256:<64-lowercase-hex>'. The algorithm is namespaced so future ACDP versions can adopt different hashes (e.g. SHA-3, post-quantum) without colliding with v0.0.1 lineage_ids. Consumers MUST treat lin: values with unknown algorithms as opaque and MUST NOT compare across algorithms.",
       "type": "string",
-      "pattern": "^lin:[0-9a-f]{64}$",
+      "pattern": "^lin:sha256:[0-9a-f]{64}$",
       "examples": [
-        "lin:b14ccd2a8b34530309255db68c151a10689b6a82feb30aff9222d54fdd871720"
+        "lin:sha256:b14ccd2a8b34530309255db68c151a10689b6a82feb30aff9222d54fdd871720"
       ]
     },
 

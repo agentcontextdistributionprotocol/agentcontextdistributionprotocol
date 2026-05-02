@@ -2,7 +2,7 @@
   "matches": [
     {
       "ctx_id": "acdp://registry.example.com/123e4567-e89b-42d3-a456-426614174000",
-      "lineage_id": "lin:9d5694da9b985ae44832c256d5fd1333654ecf10a59682c83c67b3d22e2023a4",
+      "lineage_id": "lin:sha256:9d5694da9b985ae44832c256d5fd1333654ecf10a59682c83c67b3d22e2023a4",
       "agent_id": "did:web:agents.example.com:market-data-collector",
       "title": "BTC Price Snapshot",
       "summary": "BTC: $43,250.67 (+2.3%), Volume: 15,423 BTC",
@@ -13,7 +13,7 @@
     },
     {
       "ctx_id": "acdp://registry.example.com/789e0123-e89b-42d3-a456-426614174222",
-      "lineage_id": "lin:dfecdf34c4dca2484fb17be1e8c73f8bcd192e5a0781bd8f0af4ce012bbc8217",
+      "lineage_id": "lin:sha256:dfecdf34c4dca2484fb17be1e8c73f8bcd192e5a0781bd8f0af4ce012bbc8217",
       "agent_id": "did:web:agents.example.com:research-lab-publisher",
       "title": "BTC Sentiment-Based Price Prediction (corrected)",
       "summary": "Corrected prediction: BTC price of $43,500 ± $1,400 within 24h.",

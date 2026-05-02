@@ -7,7 +7,7 @@
     "preconditions": {
       "existing_context": {
         "ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111",
-        "lineage_id": "lin:1111111111111111111111111111111111111111111111111111111111111111",
+        "lineage_id": "lin:sha256:1111111111111111111111111111111111111111111111111111111111111111",
         "version": 1
       }
     },
@@ -27,7 +27,7 @@
       "data_refs": [],
       "derived_from": [],
       "visibility": "public",
-      "lineage_id": "lin:9999999999999999999999999999999999999999999999999999999999999999"
+      "lineage_id": "lin:sha256:9999999999999999999999999999999999999999999999999999999999999999"
     },
     "notes": "The supplied lineage_id (9999...) does not match the computed lineage_id (1111...) of the supersession target."
   },

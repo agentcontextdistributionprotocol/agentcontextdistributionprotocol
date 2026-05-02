@@ -23,12 +23,12 @@
     },
     {
       "name": "Lineage identifier derivation — vector 1",
-      "description": "lineage_id = 'lin:' + lowercase_hex(SHA-256(utf8(ctx_id))).",
+      "description": "lineage_id = 'lin:sha256:' + lowercase_hex(SHA-256(utf8(ctx_id))).",
       "input": {
         "ctx_id": "acdp://reg.example/00000000-0000-4000-8000-000000000001"
       },
       "expected": {
-        "lineage_id": "lin:766b44a63adb664a46a205e19e9f9c19e0ba60512f402b0d97f5211cc7e3e878"
+        "lineage_id": "lin:sha256:766b44a63adb664a46a205e19e9f9c19e0ba60512f402b0d97f5211cc7e3e878"
       },
       "notes": "Hash input is the UTF-8 bytes of the ctx_id string, including the 'acdp://' prefix."
     },
@@ -38,7 +38,7 @@
         "ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234"
       },
       "expected": {
-        "lineage_id": "lin:c7fef01c000f8edaa9cb46122ceb5d7bca38328f002fb0f40e362e3b289bbb2a"
+        "lineage_id": "lin:sha256:c7fef01c000f8edaa9cb46122ceb5d7bca38328f002fb0f40e362e3b289bbb2a"
       }
     },
     {
@@ -47,7 +47,7 @@
         "ctx_id": "acdp://other.registry.io/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
       },
       "expected": {
-        "lineage_id": "lin:d534b03c95757c75c512aff8c3e4616040ee97293fbb066fd511e04ba0443f58"
+        "lineage_id": "lin:sha256:d534b03c95757c75c512aff8c3e4616040ee97293fbb066fd511e04ba0443f58"
       }
     },
     {

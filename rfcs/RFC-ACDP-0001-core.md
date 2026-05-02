@@ -151,7 +151,7 @@ Implementations:
 | Identifier | Form | Spec |
 |---|---|---|
 | **`ctx_id`** (context identifier) | `acdp://<authority>/<uuid>` where `<authority>` is a DNS hostname identifying the origin registry and `<uuid>` is a UUID v4 [RFC 4122]. | §5.5 |
-| **`lineage_id`** | `lin:<hex>` where `<hex>` is a 64-character lowercase hexadecimal SHA-256 digest. | §5.6 |
+| **`lineage_id`** | `lin:<algorithm>:<digest>`. v0.0.1 form: `lin:sha256:<64-lowercase-hex>`. | §5.6 |
 | **`agent_id`** | A Decentralized Identifier [DID-CORE]. | RFC-ACDP-0002 |
 
 The `ctx_id` is assigned by the registry at publish time; producers MUST NOT supply a `ctx_id` in publish requests. The corresponding URI scheme `acdp` is registered in §11.
@@ -165,10 +165,10 @@ A registry assigns `ctx_id` at publish time as `acdp://<own_authority>/<freshly_
 A context's `lineage_id` MUST be derived deterministically from the `ctx_id` of the lineage's first version (the version with `supersedes: null`):
 
 ```
-lineage_id = "lin:" + lowercase_hex(SHA-256(first_version_ctx_id))
+lineage_id = "lin:sha256:" + lowercase_hex(SHA-256(first_version_ctx_id))
 ```
 
-The hash input is the UTF-8 encoding of the `ctx_id` string.
+The hash input is the UTF-8 encoding of the `ctx_id` string. The `sha256` algorithm prefix is fixed in v0.0.1; future ACDP versions MAY introduce additional algorithms (`lin:sha3-256:...`, `lin:blake3:...`) for new lineages without invalidating existing v0.0.1 `lin:sha256:` identifiers. Consumers MUST NOT compare lineage_ids across different algorithm prefixes.
 
 For first versions, the registry computes `lineage_id` from the `ctx_id` it just assigned. For subsequent versions, the registry MUST walk back through `supersedes` references to find the version 1 context and apply the same formula. If a producer supplied a `lineage_id` in the publish request, the registry MUST verify it matches this computed value, and MUST reject the publication on mismatch with `superseded_target` (see RFC-ACDP-0007 error registry).
 

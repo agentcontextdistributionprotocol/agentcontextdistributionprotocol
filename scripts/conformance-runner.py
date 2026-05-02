@@ -72,7 +72,7 @@ def check_canonicalization_and_hash(fixture, vector):
 
     if "lineage_id" in exp:
         ctx_id = inp.get("ctx_id", "")
-        actual = "lin:" + hashlib.sha256(ctx_id.encode("utf-8")).hexdigest()
+        actual = "lin:sha256:" + hashlib.sha256(ctx_id.encode("utf-8")).hexdigest()
         if actual != exp["lineage_id"]:
             fail(fixture, name, f"lineage_id mismatch. expected={exp['lineage_id']} actual={actual}")
             return False
@@ -138,7 +138,7 @@ def check_signature_vector(fixture, fixture_data, vector):
 
     reg = vector.get("registry_assigned", {})
     if "ctx_id" in reg and "lineage_id" in reg:
-        derived = "lin:" + hashlib.sha256(reg["ctx_id"].encode("utf-8")).hexdigest()
+        derived = "lin:sha256:" + hashlib.sha256(reg["ctx_id"].encode("utf-8")).hexdigest()
         if derived != reg["lineage_id"]:
             fail(fixture, name, f"lineage_id mismatch. expected={reg['lineage_id']} actual={derived}")
             return False

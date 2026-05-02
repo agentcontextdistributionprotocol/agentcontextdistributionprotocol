@@ -109,7 +109,7 @@ Location: /contexts/acdp%3A%2F%2Fregistry.example.com%2F550e8400-e29b-41d4-a716-
 ```json
 {
   "ctx_id": "acdp://registry.example.com/550e8400-e29b-41d4-a716-446655440000",
-  "lineage_id": "lin:b14ccd2a8b34530309255db68c151a10689b6a82feb30aff9222d54fdd871720",
+  "lineage_id": "lin:sha256:b14ccd2a8b34530309255db68c151a10689b6a82feb30aff9222d54fdd871720",
   "version": 1,
   "created_at": "2026-04-16T10:30:15.123Z",
   "status": "active"
