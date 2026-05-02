@@ -43,7 +43,7 @@
 
     "rfc3339_timestamp": {
       "title": "RFC 3339 Timestamp",
-      "description": "An RFC 3339 date-time in UTC with millisecond precision and Z suffix. Implementations MAY accept other valid RFC 3339 forms but SHOULD normalize to this canonical form.",
+      "description": "An RFC 3339 date-time in UTC with the Z suffix. Canonical emission form uses millisecond precision (e.g. '2026-04-16T10:30:15.123Z'). Implementations MUST emit canonical form when generating new timestamps and MUST accept any valid RFC 3339 form (including no/microsecond/nanosecond precision) on input. The schema regex below permits any precision, supporting both emit and accept profiles. Producers note: timestamps are part of the signed body; producers MUST use canonical millisecond form in publish requests to ensure interoperable content_hash values.",
       "type": "string",
       "format": "date-time",
       "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$",

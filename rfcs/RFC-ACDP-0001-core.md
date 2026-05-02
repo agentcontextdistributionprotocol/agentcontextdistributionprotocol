@@ -127,13 +127,20 @@ Cross-language interoperability of canonicalization is the most common source of
 
 ### 5.3 Time Format
 
-All timestamps in ACDP are RFC 3339 [RFC 3339] date-time strings in UTC, with explicit `Z` suffix and millisecond precision:
+All timestamps in ACDP are RFC 3339 [RFC 3339] date-time strings in UTC with the explicit `Z` suffix.
+
+The **canonical emission form** uses millisecond precision:
 
 ```
 2026-04-16T10:30:15.123Z
 ```
 
-Implementations MUST emit timestamps in this exact form. Implementations MUST accept any valid RFC 3339 date-time on input but SHOULD normalize to the canonical form on storage.
+Implementations:
+- MUST emit timestamps in canonical form when generating new timestamps.
+- MUST accept any valid RFC 3339 date-time on input. This includes timestamps with no fractional seconds, microsecond, or nanosecond precision.
+- SHOULD normalize accepted timestamps to canonical form on storage.
+
+**Producer note.** Because timestamps are part of the JCS-canonicalized body, two contexts with timestamps differing only in fractional precision will produce different `content_hash` values. Producers MUST use canonical millisecond form for timestamps in publish requests.
 
 ### 5.4 Identifier Formats
 
