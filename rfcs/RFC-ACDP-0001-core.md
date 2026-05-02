@@ -222,7 +222,39 @@ A future ACDP version will introduce **registry receipts** (RFC-ACDP-0009 §2.7)
 
 ### 5.10 Signature Algorithms
 
-Implementations MUST support `ed25519` [RFC 8032]. Implementations MAY support additional algorithms (e.g. `ecdsa-p256`). A registry's supported algorithms MUST be declared in its capabilities document (RFC-ACDP-0007). Registries MUST reject `unsupported_algorithm` for any algorithm not in their declared list.
+Implementations MUST support `ed25519` [RFC 8032]. Implementations MAY support additional algorithms (e.g. `ecdsa-p256`). A registry's supported algorithms MUST be declared in its capabilities document (RFC-ACDP-0007). Registries MUST reject `unsupported_algorithm` for any algorithm not in their declared list. The full algorithm vocabulary is maintained in [`registries/signature-algorithms.md`](../registries/signature-algorithms.md).
+
+### 5.11 Key Resolution
+
+To verify a producer signature, an implementation MUST resolve `signature.key_id` (a DID URL) to a public key. v0.0.1 mandates support for `did:web` only; producers MUST use `did:web` keys, and registries MUST resolve `did:web` keys.
+
+The resolution algorithm:
+
+1. **Parse the DID URL.** Split `signature.key_id` into the DID portion (everything before `#`) and the fragment (everything after `#`, REQUIRED). A `key_id` without a fragment MUST be rejected with `key_resolution_failed`.
+
+2. **Verify producer binding.** The DID portion MUST equal `body.agent_id`. Mismatch MUST be rejected with `key_not_authorized`.
+
+3. **Resolve the DID document.** For `did:web:<authority>[:<path>...]`:
+   - Construct the URL: `https://<authority>/.well-known/did.json` for a bare `did:web:<authority>`, or `https://<authority>/<path-with-colons-replaced-by-slashes>/did.json` for a path-bearing form.
+   - HTTPS is REQUIRED; HTTP requests MUST NOT be made. The certificate MUST be valid.
+   - The response MUST be a JSON object with `Content-Type: application/did+json` (or `application/json`).
+   - Failure to fetch (DNS, TLS, HTTP non-2xx, parse error) MUST be reported as `key_resolution_failed`.
+
+4. **Locate the verification method.** The DID document's `verificationMethod` array contains key entries. Find the entry whose `id` ends with `#<fragment>` (matching the parsed fragment from step 1). If no entry matches, return `key_resolution_failed`.
+
+5. **Verify authorization.** The verification method's `id` MUST be referenced by the DID document's `assertionMethod` array (either by full `id` URL or by relative `#<fragment>`). If not, return `key_not_authorized`.
+
+6. **Extract the public key bytes.** The verification method MUST have one of:
+   - `publicKeyMultibase` — base58-btc encoded, with the multibase `z` prefix and the multicodec algorithm prefix (e.g., `0xed01` for ed25519).
+   - `publicKeyJwk` — a JWK object with `kty`, `crv`, `x` (and `y` for `crv: P-256`).
+
+   Implementations MUST support `publicKeyJwk` and SHOULD support `publicKeyMultibase`. The verification method's `type` field SHOULD match the algorithm in `signature.algorithm` (`Ed25519VerificationKey2020` for ed25519, `JsonWebKey2020` for either); a mismatch MUST be rejected with `invalid_signature`.
+
+7. **Verify the signature.** Use the extracted public key to verify `signature.value` (base64-decoded bytes) against the ASCII bytes of `body.content_hash` (per §5.8).
+
+**Caching.** Implementations SHOULD cache resolved DID documents for at least 5 minutes and at most 24 hours. The cache key is the DID (not the full DID URL). Implementations MUST refresh on any verification failure that could plausibly be due to key rotation.
+
+**Future DID methods.** v0.1+ may add `did:key`, `did:jwk`, and other methods. The resolution algorithm above is `did:web`-specific; other methods will be specified separately.
 
 ---
 
