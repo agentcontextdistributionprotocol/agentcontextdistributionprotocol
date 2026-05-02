@@ -57,6 +57,47 @@ Single-call traversal of `derived_from` chains to avoid round-trip amplification
 
 Mechanisms for one registry to query another, or for registries to peer for replication. Out of scope for the protocol — these are likely operational concerns built on top of `acdp://` resolution.
 
+### 2.7 Registry receipts *(likely v0.1)*
+
+A future ACDP version will introduce **registry receipts**: registry-signed attestations binding registry-assigned identifiers to producer content_hash, providing cryptographic proof of publication beyond producer signature alone.
+
+#### Motivation
+
+ACDP v0.0.1 producer signatures bind producer-controlled content but do not bind `ctx_id`, `lineage_id`, `origin_registry`, or `created_at`. See RFC-ACDP-0008 §10.1 for the full discussion.
+
+#### Reserved structure
+
+Future versions will add a `registry_receipt` object to retrieval responses:
+
+```json
+{
+  "body": { ... },
+  "registry_state": { ... },
+  "registry_receipt": {
+    "registry_did": "did:web:registry.example.com",
+    "ctx_id": "acdp://registry.example.com/<uuid>",
+    "lineage_id": "lin:...",
+    "origin_registry": "registry.example.com",
+    "created_at": "2026-04-16T10:30:15.123Z",
+    "content_hash": "sha256:...",
+    "key_fingerprint": "sha256:<resolved-producer-key-digest>",
+    "signature": {
+      "algorithm": "ed25519",
+      "key_id": "did:web:registry.example.com#key-1",
+      "value": "..."
+    }
+  }
+}
+```
+
+#### Why not in v0.0.1
+
+Receipts add a second signing identity (the registry's), require key management for that identity, and introduce a new top-level retrieval shape. v0.0.1 keeps the trust model simple — producer signatures only — and acknowledges the resulting limitation honestly. Receipts are intended for ACDP v0.1.
+
+#### Reserved field names
+
+`registry_receipt` (top-level in retrieval response) and `key_fingerprint` (within signature objects) are RESERVED in v0.0.1 and MUST NOT be used by extensions.
+
 ---
 
 ## 3. Forward Compatibility
