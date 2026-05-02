@@ -172,6 +172,15 @@
           "supersedes": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/ctx_id" }
         }
       }
+    },
+    {
+      "if": { "properties": { "visibility": { "const": "public" } } },
+      "then": {
+        "anyOf": [
+          { "not": { "required": ["audience"] } },
+          { "properties": { "audience": { "maxItems": 0 } } }
+        ]
+      }
     }
   ]
 }

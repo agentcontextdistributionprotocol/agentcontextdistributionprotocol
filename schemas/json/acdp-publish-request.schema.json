@@ -121,6 +121,15 @@
     {
       "if": { "properties": { "version": { "const": 1 } } },
       "then": { "not": { "required": ["lineage_id"] } }
+    },
+    {
+      "if": { "properties": { "visibility": { "const": "public" } } },
+      "then": {
+        "anyOf": [
+          { "not": { "required": ["audience"] } },
+          { "properties": { "audience": { "maxItems": 0 } } }
+        ]
+      }
     }
   ]
 }

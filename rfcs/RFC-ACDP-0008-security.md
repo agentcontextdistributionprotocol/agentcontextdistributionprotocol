@@ -77,9 +77,24 @@ The threat surface is therefore: **the entire path from producer's signing key, 
 
 ### 4.5 Visibility enforcement
 
-- Registries MUST scope discovery and retrieval responses by the requesting agent's effective visibility.
+- Registries MUST scope discovery and retrieval responses by the requesting agent's effective audience (see below).
 - For `visibility: restricted` and `private`, registries MUST return `not_found` (HTTP 404) to non-audience requesters. The `visibility_denied` semantic is internal logging only.
 - Registries MUST NOT include restricted/private contexts in `total_estimate`.
+
+**Effective audience for `visibility: private`:**
+- `agent_id` is always authorized.
+- DIDs listed in `audience` (if present) are authorized.
+- Contributors listed in `contributors` are **NOT** automatically authorized; `contributors` is for attribution only. Producers wishing to grant a contributor read access MUST list the contributor's DID in `audience` explicitly.
+
+**Effective audience for `visibility: restricted`:**
+- `agent_id` is always authorized.
+- All DIDs in `audience` are authorized.
+- `audience` MUST be present and non-empty for `restricted` contexts.
+
+**Effective audience for `visibility: public`:**
+- Any authenticated requester is authorized.
+- Anonymous requesters are authorized only if the registry advertises `anonymous_public_reads: true` (§6.3).
+- The `audience` field MUST be absent or empty.
 
 ### 4.6 Transport
 

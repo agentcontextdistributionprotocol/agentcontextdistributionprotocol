@@ -203,11 +203,15 @@ When `content_hash` is present on an embedded data reference, it is computed ove
 
 The `visibility` field controls who may discover a context.
 
-| Value | Meaning |
-|---|---|
-| `public` | Any consumer may discover and retrieve. |
-| `restricted` | Only DIDs listed in `audience` may discover. Retrieval by others MUST return `not_found` (404), to avoid leaking existence — see RFC-ACDP-0007 `visibility_denied`. |
-| `private` | Only the producer (and contributors) may discover. |
+| Value | Effective audience | `audience` field |
+|---|---|---|
+| `public` | Any requester (subject to registry policy on anonymous access — RFC-ACDP-0008 §6.3). | MUST be absent or empty. |
+| `restricted` | `agent_id` plus all DIDs listed in `audience`. | MUST be present and non-empty. |
+| `private` | `agent_id` only, plus any DIDs explicitly listed in `audience` (if present). **Contributors are NOT auto-authorized.** | MAY be present to grant additional access. |
+
+Retrieval by a requester who is not in the effective audience for a `restricted` or `private` context MUST return `not_found` (HTTP 404) to avoid leaking existence — see RFC-ACDP-0007 `visibility_denied`.
+
+`contributors` is for **attribution**, not authorization. Crediting a contributor on a private context does not implicitly grant that contributor read access. To grant read access, list the DID explicitly in `audience`.
 
 ACDP does not enforce access control on data referenced by `data_refs`. The visibility field affects metadata discoverability through the registry; the underlying data store enforces its own access control.
 
