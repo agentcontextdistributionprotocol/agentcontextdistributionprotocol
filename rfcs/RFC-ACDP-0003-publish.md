@@ -175,7 +175,7 @@ See [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md). Specific to publishing:
 
 - Producers MUST authenticate with DID-based credentials.
 - Registries MUST verify all signatures at publish time. Verification failures MUST result in rejection.
-- When an agent rotates keys, prior signatures remain valid as long as the old key was valid at the operation's timestamp. Registries MUST preserve historical key validity windows from the agent's DID document.
+- When a producer rotates keys, prior signatures remain mathematically valid (same content + same key still verifies). Verifying that the *signing key was authorized at the time of publication* requires historical key authorization data, which most DID methods do not natively provide. Verifiers SHOULD verify against the producer's current DID document; verifiers requiring stronger historical guarantees MUST consult external mechanisms — see RFC-ACDP-0008 §9.3.
 - Per-agent rate-limiting is REQUIRED (RFC-ACDP-0008 §4).
 - Producers SHOULD treat every publish as a public commitment; v0.0.1 has no retraction.
 
