@@ -152,7 +152,7 @@ Implementations:
 |---|---|---|
 | **`ctx_id`** (context identifier) | `acdp://<authority>/<uuid>` where `<authority>` is a DNS hostname identifying the origin registry and `<uuid>` is a UUID v4 [RFC 4122]. | §5.5 |
 | **`lineage_id`** | `lin:<algorithm>:<digest>`. v0.0.1 form: `lin:sha256:<64-lowercase-hex>`. | §5.6 |
-| **`agent_id`** | A Decentralized Identifier [DID-CORE]. | RFC-ACDP-0002 |
+| **`agent_id`** | A Decentralized Identifier [DID-CORE]. v0.0.1 producers MUST use `did:web` so that any conformant registry can resolve their keys via §5.11. | RFC-ACDP-0002 |
 
 The `ctx_id` is assigned by the registry at publish time; producers MUST NOT supply a `ctx_id` in publish requests. The corresponding URI scheme `acdp` is registered in §11.
 

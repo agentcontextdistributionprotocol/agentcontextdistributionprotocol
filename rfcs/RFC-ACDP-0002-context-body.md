@@ -42,7 +42,7 @@ The canonical schema is [`schemas/json/acdp-context-body.schema.json`](../schema
 | `lineage_id` | string | Yes | Deterministically-derived identifier for the lineage. See RFC-ACDP-0001 §5.6. |
 | `version` | integer | Yes | Monotonically-increasing version number within the lineage, starting at 1. |
 | `supersedes` | string \| null | Yes | The `ctx_id` of the immediately previous version, or `null` for version 1. |
-| `agent_id` | string | Yes | The DID of the single signing identity for this context. |
+| `agent_id` | string | Yes | The DID of the single signing identity for this context. v0.0.1 producers MUST use `did:web` so that any conformant registry can resolve their keys (RFC-ACDP-0001 §5.4, §5.11). |
 | `contributors` | array of string | Yes | DIDs of agents that contributed to but did not sign this context. MAY be empty. |
 | `origin_registry` | string | Yes | DNS hostname of the registry that originally accepted this context. **Assigned by the registry**. |
 | `created_at` | string | Yes | RFC 3339 timestamp of registry acceptance. **Assigned by the registry**. |
