@@ -149,11 +149,11 @@ The response conforms to [`schemas/json/acdp-similarity-response.schema.json`](.
 
 ## 4. Visibility Scoping
 
-All discovery responses MUST be scoped to the requesting agent's effective visibility:
+All discovery responses MUST be scoped to the requesting agent's effective audience as defined in RFC-ACDP-0002 §7 and RFC-ACDP-0008 §4.5:
 
-- `visibility: public` — discoverable by anyone.
-- `visibility: restricted` — discoverable only by DIDs in `audience`.
-- `visibility: private` — discoverable only by the producer (and listed contributors).
+- `visibility: public` — discoverable by any authenticated requester (and by anonymous requesters if the registry advertises `anonymous_public_reads: true`).
+- `visibility: restricted` — discoverable by `agent_id` and the DIDs listed in `audience`.
+- `visibility: private` — discoverable by `agent_id` only, plus any DIDs explicitly listed in `audience` (if present). **Contributors are NOT auto-authorized:** `contributors` is for attribution, not authorization. Producers wishing to grant a contributor read access MUST list the DID in `audience` explicitly.
 
 A registry MUST scope keyword and similarity results identically. A registry MUST NOT include restricted/private contexts in `total_estimate` for unauthorized requesters.
 
