@@ -16,5 +16,6 @@
       "description": "The registry-maintained state. In v0.0.1 contains only the derived 'status' field."
     }
   },
-  "additionalProperties": false
+  "additionalProperties": true,
+  "$comment": "additionalProperties is true so future top-level keys (e.g. registry_receipt per RFC-ACDP-0009 §2.7) can be added without a schema bump. v0.0.1 consumers MUST tolerate unknown top-level keys."
 }

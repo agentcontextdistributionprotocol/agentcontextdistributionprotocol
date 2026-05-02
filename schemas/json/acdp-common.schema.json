@@ -80,12 +80,14 @@
         },
         "value": {
           "type": "string",
-          "description": "Base64-encoded signature bytes.",
+          "description": "Base64-encoded signature bytes. Length depends on algorithm (88 chars for ed25519 64-byte signatures with padding). Registries SHOULD validate length against the algorithm and reject mismatches with invalid_signature.",
           "pattern": "^[A-Za-z0-9+/]+=*$",
-          "minLength": 1
+          "minLength": 8,
+          "maxLength": 8192
         }
       },
-      "additionalProperties": false
+      "additionalProperties": true,
+      "$comment": "additionalProperties is true so future signature variants (proof chains, threshold attestations per RFC-ACDP-0009) can be added without a schema bump. v0.0.1 consumers MUST tolerate unknown signature object keys."
     },
 
     "tag": {
