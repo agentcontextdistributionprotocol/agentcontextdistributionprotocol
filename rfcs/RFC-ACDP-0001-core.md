@@ -123,7 +123,9 @@ The HTTP `Content-Type` for ACDP bodies is `application/acdp+json`. Implementati
 
 Cryptographic hashes over ACDP data structures use JSON Canonicalization Scheme (JCS) [RFC 8785]. Implementations MUST canonicalize using JCS before hashing for any normative cryptographic operation.
 
-Cross-language interoperability of canonicalization is the most common source of ACDP implementation bugs. The conformance fixture `can-001-jcs-vector.json` defines the authoritative test vectors; implementations failing those vectors MUST NOT claim conformance.
+Cross-language interoperability of canonicalization is the most common source of ACDP implementation bugs. The conformance fixtures under `schemas/conformance/can-*.json` define the authoritative test vectors; implementations failing those vectors MUST NOT claim conformance.
+
+**Implementer note — Python `json.dumps`.** Python's stdlib `json.dumps(obj, sort_keys=True, separators=(',', ':'), ensure_ascii=False)` is JCS-conformant for most input shapes but is **not conformant on negative zero**: it preserves `-0.0` as `-0.0` rather than emitting `0` per RFC 8785 §3.2.2.3. Implementations using stdlib will fail `can-001-jcs-vector.json`'s number-formatting vector. Use the `jcs` package on PyPI (https://pypi.org/project/jcs/), or pre-process input to normalize negative zero before serialization. Similar canonicalization gotchas exist in other languages (e.g., serializers that escape non-ASCII as `\uXXXX` by default); verify against the conformance fixtures before claiming conformance.
 
 ### 5.3 Time Format
 
