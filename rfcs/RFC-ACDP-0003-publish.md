@@ -103,7 +103,7 @@ On success, the registry returns:
 ```http
 HTTP/1.1 201 Created
 Content-Type: application/acdp+json
-Location: /contexts/acdp://<authority>/<uuid>
+Location: /contexts/acdp%3A%2F%2Fregistry.example.com%2F550e8400-e29b-41d4-a716-446655440000
 ```
 
 ```json
@@ -116,7 +116,9 @@ Location: /contexts/acdp://<authority>/<uuid>
 }
 ```
 
-The response MUST conform to [`schemas/json/acdp-publish-response.schema.json`](../schemas/json/acdp-publish-response.schema.json). The HTTP status code MUST be 201 Created on success.
+The `Location` header value is the canonical retrieval URL for the new context. The `ctx_id` in the URL path MUST be percent-encoded: `:` → `%3A`, `/` → `%2F`. This is the form clients pass to `GET /contexts/{ctx_id}` (RFC-ACDP-0004 §2). Implementations MUST emit the percent-encoded form in `Location` and MUST accept either form on `GET` retrieval (some clients percent-decode before re-sending). A `Location` header containing literal `://` and unencoded `/` inside a path segment will not parse correctly in many HTTP clients and proxies.
+
+The response body MUST conform to [`schemas/json/acdp-publish-response.schema.json`](../schemas/json/acdp-publish-response.schema.json). The HTTP status code MUST be 201 Created on success.
 
 ---
 
