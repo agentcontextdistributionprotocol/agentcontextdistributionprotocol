@@ -53,13 +53,19 @@
     },
     {
       "name": "JCS — number formatting",
-      "description": "Trailing zeros after the decimal are dropped; integers carry no decimal point; negative zero canonicalizes to positive zero.",
+      "description": "Trailing zeros after the decimal are dropped; integers carry no decimal point; negative zero canonicalizes to positive zero (RFC 8785 §3.2.2.3).",
       "input": {
         "values": [42, -7, 0, 1.10, 1.5, -0.0]
       },
       "expected": {
         "canonical_form": "{\"values\":[42,-7,0,1.1,1.5,0]}"
-      }
+      },
+      "implementer_notes": [
+        "Python implementations using stdlib `json.dumps(obj, sort_keys=True, separators=(',', ':'))` are NOT JCS-conformant on this vector: stdlib preserves -0.0 as '-0.0' rather than normalizing to '0'. Use the `jcs` library on PyPI (https://pypi.org/project/jcs/), or pre-process inputs to replace negative zero before serialization.",
+        "JavaScript: the `canonicalize` package on npm (https://www.npmjs.com/package/canonicalize) handles negative zero correctly.",
+        "Go: the `gowebpki/jcs` library is conformant.",
+        "If your implementation fails this vector, your JCS pipeline is non-conformant — fix it before claiming conformance with RFC-ACDP-0001."
+      ]
     },
     {
       "name": "JCS — array order preservation",
