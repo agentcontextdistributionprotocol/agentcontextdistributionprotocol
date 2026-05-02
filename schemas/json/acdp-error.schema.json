@@ -30,7 +30,8 @@
             "key_not_authorized",
             "not_implemented",
             "cursor_expired",
-            "invalid_cursor"
+            "invalid_cursor",
+            "duplicate_publish"
           ],
           "description": "A machine-readable error code from the ACDP standard error vocabulary."
         },

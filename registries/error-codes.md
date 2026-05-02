@@ -23,6 +23,7 @@ ACDP error codes returned in error envelopes (`error.code`). The envelope shape 
 | `not_implemented` | Stable | 501 | The requested endpoint or capability is not implemented by this registry. Returned with the standard error envelope (RFC-ACDP-0007 §4); see RFC-ACDP-0005 §3 for similarity-search not-implemented. | [RFC-ACDP-0005 §3](../rfcs/RFC-ACDP-0005-discovery.md#3-semantic-similarity) |
 | `cursor_expired` | Stable | 400 | A previously-issued pagination cursor is no longer valid. Client SHOULD restart pagination. | [RFC-ACDP-0005 §2.5.4](../rfcs/RFC-ACDP-0005-discovery.md#254-cursor-stability) |
 | `invalid_cursor` | Stable | 400 | A pagination cursor is malformed or unrecognized. | [RFC-ACDP-0005 §2.5.4](../rfcs/RFC-ACDP-0005-discovery.md#254-cursor-stability) |
+| `duplicate_publish` | Stable | 409 | An idempotent publish was retried with conflicting content (same `Idempotency-Key`, different `content_hash`). | [RFC-ACDP-0003 §6.2](../rfcs/RFC-ACDP-0003-publish.md#62-registry-behavior) |
 
 > Note: `visibility_denied` is an internal-only signal (logging/metrics). Visibility denial is always reported externally as `not_found` per RFC-ACDP-0008 §4.5. The wire-visible enum in `acdp-error.schema.json` does NOT include `visibility_denied`.
 

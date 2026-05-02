@@ -141,9 +141,29 @@ All errors use the envelope defined in RFC-ACDP-0007 §4 with codes from the reg
 
 ## 6. Idempotency
 
-Publishing the same body twice (same producer, same content) is permitted: the second request will succeed and produce a different `ctx_id` because `ctx_id` is registry-assigned. Producers SHOULD use a deterministic local key to deduplicate before submitting if they require single-publication semantics.
+Identical publish requests create distinct `ctx_id`s by default. Producers retrying after network errors can inadvertently create duplicate publications. Registries SHOULD support the `Idempotency-Key` HTTP header for safe retries.
 
-The body's `content_hash` is *content-deterministic* — implementations can use it as a deduplication key in their own systems.
+### 6.1 Producer behavior
+
+Producers MAY include an `Idempotency-Key` header on `POST /contexts`:
+
+- Value: opaque string, 1–256 ASCII printable characters.
+- Producers SHOULD use UUID v4 or similar high-entropy values.
+- Producers retrying a failed request SHOULD reuse the same key.
+
+### 6.2 Registry behavior
+
+Registries supporting idempotency:
+
+- MUST track `(agent_id, idempotency_key)` pairs for at least 24 hours.
+- On a repeated request with the same `(agent_id, idempotency_key)` AND the same `content_hash`: return the original publish response with **HTTP 200 OK** (instead of 201) and the original assigned identifiers (`ctx_id`, `lineage_id`, `version`, `created_at`, `status`).
+- On a repeated request with the same `(agent_id, idempotency_key)` BUT a different `content_hash`: return `duplicate_publish` (HTTP 409). The producer is reusing an idempotency key for new content, which is a programming error.
+
+Registries supporting idempotency MUST declare `"supports_idempotency_key": true` in capabilities (RFC-ACDP-0007 §3.2). Registries not supporting it MUST ignore the `Idempotency-Key` header (treat as absent).
+
+### 6.3 Content-deterministic deduplication
+
+Independent of `Idempotency-Key`, the body's `content_hash` is content-deterministic. Producers MAY use it as a local deduplication key (e.g. record `content_hash` after a successful publish; on retry, look up by hash before re-submitting). This is a producer-side optimization and does not require registry cooperation.
 
 ---
 
