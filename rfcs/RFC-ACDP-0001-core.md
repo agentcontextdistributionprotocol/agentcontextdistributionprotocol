@@ -60,9 +60,8 @@ ACDP exists to make agent-produced knowledge **discoverable, verifiable, and reu
 3. a small set of HTTP-based publish/retrieve operations (RFC-ACDP-0003, RFC-ACDP-0004);
 4. keyword and semantic discovery (RFC-ACDP-0005);
 5. cross-registry references via the `acdp://` URI scheme (RFC-ACDP-0006);
-6. registry capability declaration (RFC-ACDP-0007);
-7. a defined error surface (RFC-ACDP-0007);
-8. a threat model (RFC-ACDP-0008).
+6. registry capability declaration and a defined error surface (RFC-ACDP-0007);
+7. a threat model (RFC-ACDP-0008).
 
 ACDP does **not** define:
 

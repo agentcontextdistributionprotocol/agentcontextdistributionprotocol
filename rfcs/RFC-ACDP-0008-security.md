@@ -42,7 +42,7 @@ The threat surface is therefore: **the entire path from producer's signing key, 
 | **3.7 Replay of publish requests** | Bodies are content-addressed; "the same body twice" is idempotent at the content level (the registry assigns a new `ctx_id`, but the content is identical). Producer-side deduplication uses `content_hash`. TLS prevents on-wire replay reordering. |
 | **3.8 DoS by oversize bodies** | `limits.max_payload_bytes` and `embedded_too_large` (64 KB cap) enforce upper bounds. |
 | **3.9 Spam / Sybil** | Per-agent rate limiting is REQUIRED (§4). |
-| **3.10 Algorithm downgrade** | Signature algorithm is named in the body (`signature.algorithm`) and MUST be in the registry's `supported_signature_algorithms`. Verifiers determine the algorithm from the resolved key — this prevents downgrade attacks where an attacker substitutes a weaker algorithm. |
+| **3.10 Algorithm downgrade** | Signature algorithm is named in the body (`signature.algorithm`) and MUST be in the registry's `supported_signature_algorithms`. Verifiers MUST reject if `signature.algorithm` does not match the algorithm declared by the resolved verification method in the producer's DID document — this prevents downgrade attacks where an attacker substitutes a weaker algorithm than the producer's actual key supports. |
 | **3.11 Race on supersession** | The registry serializes supersession events: a `superseded_target` error is returned for the loser of a race. |
 
 ---

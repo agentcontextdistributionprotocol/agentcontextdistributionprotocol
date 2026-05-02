@@ -98,7 +98,9 @@
 
     "tag": {
       "title": "Tag",
+      "description": "A free-form keyword tag. Must start with an alphanumeric and contain only alphanumerics, hyphens, underscores, and dots.",
       "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
       "minLength": 1,
       "maxLength": 100
     },
@@ -124,7 +126,7 @@
 
     "data_period": {
       "title": "Data Period",
-      "description": "The time window the underlying data covers. Distinct from publication time and expiration time.",
+      "description": "The time window the underlying data covers. Distinct from publication time and expiration time. Schema does not compare timestamps; registries SHOULD reject `start > end` as `schema_violation` at runtime.",
       "type": "object",
       "required": ["start", "end"],
       "properties": {

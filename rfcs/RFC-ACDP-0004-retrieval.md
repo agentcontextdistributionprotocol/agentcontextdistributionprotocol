@@ -169,7 +169,11 @@ Registry state (the `registry_state` object containing `status`) is mutable. Reg
 
 ### 6.4 ETag value
 
-The ETag value is the body's `content_hash` (the full `sha256:<hex>` string), wrapped in quotes per RFC 9110.
+The ETag value is the body's `content_hash` (the full `sha256:<hex>` string), wrapped in quotes per RFC 9110. Example:
+
+```
+ETag: "sha256:5f8d88d6758cfd43be875d49edc9eaa494de8ec645bf7de6c592b15bbb1e2e3c"
+```
 
 ---
 

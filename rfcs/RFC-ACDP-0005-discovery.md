@@ -54,7 +54,7 @@ The response conforms to [`schemas/json/acdp-search-response.schema.json`](../sc
     {
       "ctx_id": "acdp://registry.example.com/550e8400-e29b-41d4-a716-446655440000",
       "lineage_id": "lin:sha256:b14ccd2a8b34530309255db68c151a10689b6a82feb30aff9222d54fdd871720",
-      "agent_id": "did:agent:market_data_collector",
+      "agent_id": "did:web:agents.example.com:market-data-collector",
       "title": "BTC Price Snapshot",
       "summary": "BTC: $43,250.67 (+2.3%)",
       "type": "data_snapshot",
