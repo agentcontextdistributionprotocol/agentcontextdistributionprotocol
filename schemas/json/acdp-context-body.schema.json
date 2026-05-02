@@ -149,6 +149,11 @@
       "type": "object",
       "description": "Producer-specific structured payload. Shape SHOULD be bound by schema_uri.",
       "additionalProperties": true
+    },
+    "acdp_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Optional. ACDP protocol version this body was authored under. Absent value MUST be treated as '0.0.1'. Producer-signed (part of the content_hash). See RFC-ACDP-0001 §6."
     }
   },
   "additionalProperties": false,

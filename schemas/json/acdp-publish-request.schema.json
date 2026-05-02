@@ -94,6 +94,11 @@
     "lineage_id": {
       "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/lineage_id",
       "description": "Optional. If supplied, the registry verifies it matches the deterministically-derived value."
+    },
+    "acdp_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Optional. ACDP protocol version this body was authored under. Absent value MUST be treated as '0.0.1'. Producer-signed (part of the content_hash). v0.1+ producers SHOULD include this field; v0.0.1 producers MAY include '0.0.1' explicitly. Verifiers use this field to determine which exclusion set (RFC-ACDP-0001 §5.7) and signature algorithm registry to apply."
     }
   },
   "additionalProperties": false,

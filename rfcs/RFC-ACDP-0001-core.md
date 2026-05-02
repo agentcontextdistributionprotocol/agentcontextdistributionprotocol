@@ -230,11 +230,12 @@ Implementations MUST support `ed25519` [RFC 8032]. Implementations MAY support a
 
 ACDP uses a layered compatibility model:
 
-- **Protocol version** is advertised in the registry capabilities document as `acdp_version` (e.g. `0.0.1`).
-- **Body extensibility** is forward-compatible only via additive fields. Breaking body changes require a new protocol version.
-- **Registry-state extensibility** is open: future versions add fields (lifecycle events, relationships, attestations); consumers MUST tolerate unknown fields in registry state.
+- **Registry protocol version** is advertised in the registry capabilities document as `acdp_version` (e.g. `0.0.1`). It tells consumers which protocol surface the registry implements.
+- **Body protocol version** is advertised optionally inside each body as `body.acdp_version`. The body field is producer-signed and bound to the body's `content_hash`. An absent `body.acdp_version` MUST be treated as `0.0.1`. v0.1+ producers SHOULD set the field explicitly so verifiers can apply the correct exclusion set (§5.7) and algorithm vocabulary.
+- **Body extensibility** is forward-compatible only via additive fields. Breaking body changes require a new protocol version, signaled by `body.acdp_version`.
+- **Registry-state extensibility** is open: future versions add fields (lifecycle events, relationships, attestations); consumers MUST tolerate unknown fields in registry state. Schema enums for known fields (e.g. `status`) use open string patterns so unknown values do not fail validation.
 
-Major protocol version mismatches are not compatible. Minor versions are expected to be backward compatible. Consumers receiving an unknown `acdp_version` SHOULD treat it as a higher version and degrade gracefully, using only operations defined in the version they understand.
+Major protocol version mismatches are not compatible. Minor versions are expected to be backward compatible. Consumers receiving an unknown `acdp_version` (in capabilities or in a body) SHOULD treat it as a higher version and degrade gracefully, using only operations defined in the version they understand.
 
 ---
 
