@@ -19,7 +19,6 @@
             "schema_violation",
             "not_authorized",
             "not_found",
-            "visibility_denied",
             "superseded_target",
             "unsupported_algorithm",
             "unsupported_embedding_model",

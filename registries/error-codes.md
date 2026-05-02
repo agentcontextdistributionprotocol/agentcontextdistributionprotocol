@@ -11,7 +11,6 @@ ACDP error codes returned in error envelopes (`error.code`). The envelope shape 
 | `schema_violation` | Stable | 400 | Request body or query failed structural validation. | [RFC-ACDP-0003 §2.1](../rfcs/RFC-ACDP-0003-publish.md#21-registry-processing) |
 | `not_authorized` | Stable | 403 | Agent lacks permission for the operation. | [RFC-ACDP-0003 §3.1](../rfcs/RFC-ACDP-0003-publish.md#31-supersession-constraints) |
 | `not_found` | Stable | 404 | Resource not found. | [RFC-ACDP-0004 §7](../rfcs/RFC-ACDP-0004-retrieval.md#7-errors) |
-| `visibility_denied` | Stable | 404 | Resource exists but is not visible to the requester (returned as 404 to avoid leaking existence). | [RFC-ACDP-0002 §7](../rfcs/RFC-ACDP-0002-context-body.md#7-visibility), [RFC-ACDP-0004 §2.3](../rfcs/RFC-ACDP-0004-retrieval.md#23-visibility-aware-response) |
 | `superseded_target` | Stable | 400 | The `supersedes` target is invalid (any reason — `details.reason` provides specifics). | [RFC-ACDP-0003 §3.1](../rfcs/RFC-ACDP-0003-publish.md#31-supersession-constraints) |
 | `unsupported_algorithm` | Stable | 400 | Signature algorithm not in the registry's `supported_signature_algorithms`. | [RFC-ACDP-0007 §3](../rfcs/RFC-ACDP-0007-capabilities.md#3-capabilities-document) |
 | `unsupported_embedding_model` | Stable | 400 | Embedding model not in the registry's `supported_embedding_models`. | [RFC-ACDP-0005 §3.1](../rfcs/RFC-ACDP-0005-discovery.md#31-similarity-by-reference) |
@@ -22,6 +21,8 @@ ACDP error codes returned in error envelopes (`error.code`). The envelope shape 
 | `key_resolution_failed` | Stable | 400 | The signing key referenced by `signature.key_id` could not be resolved (DID-document fetch failed, key not present in document, etc.). | [RFC-ACDP-0003 §2.1 step 6](../rfcs/RFC-ACDP-0003-publish.md#21-registry-processing) |
 | `key_not_authorized` | Stable | 403 | The DID portion of `signature.key_id` (everything before `#`) does not equal `body.agent_id`. | [RFC-ACDP-0003 §2.1 step 6](../rfcs/RFC-ACDP-0003-publish.md#21-registry-processing) |
 | `not_implemented` | Stable | 501 | The requested endpoint or capability is not implemented by this registry. Returned with the standard error envelope (RFC-ACDP-0007 §4); see RFC-ACDP-0005 §3 for similarity-search not-implemented. | [RFC-ACDP-0005 §3](../rfcs/RFC-ACDP-0005-discovery.md#3-semantic-similarity) |
+
+> Note: `visibility_denied` is an internal-only signal (logging/metrics). Visibility denial is always reported externally as `not_found` per RFC-ACDP-0008 §4.5. The wire-visible enum in `acdp-error.schema.json` does NOT include `visibility_denied`.
 
 ## `superseded_target` reason codes
 
