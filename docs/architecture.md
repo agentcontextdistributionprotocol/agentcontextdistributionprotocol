@@ -74,15 +74,13 @@ v1's body is unchanged.
 
 ## 3. The transport
 
-ACDP is JSON over HTTP, content type `application/acdp+json`. A canonical Protobuf mirror lives under `schemas/proto/acdp/v1/` for binary-transport bindings (gRPC, Avro-like binary frames).
+ACDP v0.0.1 is JSON over HTTP, content type `application/acdp+json`. All endpoints accept and emit this type.
 
 | Transport | Use |
 |---|---|
 | HTTPS / JSON | Normative. All endpoints. |
-| HTTPS / Protobuf | Permitted. The proto mirror tracks the JSON Schema 1:1. |
-| gRPC | Permitted with the proto mirror; service definitions are out of scope for v0.0.1. |
 
-Production deployments MUST use TLS (RFC-ACDP-0008 §4.6).
+Binary transport bindings are out of scope for v0.0.1 and may be specified in a future version. Production deployments MUST use TLS (RFC-ACDP-0008 §4.6).
 
 ## 4. Where state lives
 

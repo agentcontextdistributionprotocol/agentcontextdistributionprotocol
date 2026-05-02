@@ -2,7 +2,7 @@
 
 **Version:** 0.0.1-draft
 **Status:** Community Standards Track (Draft)
-**Wire format:** JSON over HTTP (canonical) with Protocol Buffers mirror
+**Wire format:** JSON over HTTP
 **Required JSON canonicalization:** [JCS — RFC 8785](https://datatracker.ietf.org/doc/html/rfc8785)
 
 ACDP is a protocol for autonomous AI agents to **publish, discover, and verify** units of contextual information ("contexts") across distributed systems and organizational boundaries. ACDP defines a wire format, a data model, and a small set of HTTP-based operations that let heterogeneous agents find and build upon each other's work without a coordination protocol or shared trust authority.
@@ -88,14 +88,6 @@ agentcontextdescriptionprotocol/
       acdp-capabilities.schema.json
       acdp-error.schema.json
       acdp-index.schema.json
-    proto/                           # Canonical Protobuf mirror
-      acdp/v1/
-        common.proto
-        context.proto
-        publish.proto
-        discovery.proto
-        capabilities.proto
-        error.proto
     conformance/
       README.md
       pub-001-invalid-signature.json
@@ -128,10 +120,8 @@ agentcontextdescriptionprotocol/
     RFC-PROCESS.md
 
   scripts/        # Validation scripts
-  packages/       # Per-language proto outputs (after make proto-gen-all)
   .github/        # CI, issue templates, PR template
 
-  buf.yaml        # Protobuf module config
   Makefile
   CHANGELOG.md  CONTRIBUTING.md  CODE_OF_CONDUCT.md
   LICENSE       VERSIONING.md     README.md
@@ -187,55 +177,29 @@ There is no producer-only profile: producers MUST be able to verify any context 
 ## Compatibility model
 
 - **Protocol version** governs the wire envelope (`acdp_version: 0.0.1`).
-- **Schema namespace** governs canonical Protobuf compatibility (`acdp.v1`).
 - **Registry capabilities** advertise per-registry options (algorithms, embedding models, limits).
 
 Major mismatches are not compatible. Minor versions are expected to be backward compatible. Unknown fields MUST be ignored on body and registry-state. See [VERSIONING.md](VERSIONING.md).
 
----
-
-## Using ACDP proto packages
-
-Generated outputs live under `packages/` after `make proto-gen-all`:
-
-```bash
-# TypeScript / Node.js
-npm install @acdp/proto
-
-# Python
-pip install acdp-proto
-
-# Go
-go get github.com/agentcontextdescriptionprotocol/acdp-proto-go@proto-v0.0.1
-
-# Java   (build.gradle.kts)
-# implementation("io.acdp:acdp-proto:0.0.1")
-
-# C#   (.csproj)
-# <PackageReference Include="Acdp.Proto" Version="0.0.1" />
-```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the release workflow.
+ACDP v0.0.1 is **JSON-only**. Binary transport bindings are out of scope for this version.
 
 ---
 
 ## Repository highlights
 
 - **Canonical JSON Schemas** under `schemas/json/` — the source of truth for the wire format.
-- **Canonical Protobuf schemas** under `schemas/proto/acdp/v1/` — the binary mirror.
 - **Conformance fixtures** under `schemas/conformance/`, validated in CI.
 - **Registries** under `registries/` evolve without destabilizing the core.
 - **Examples** under `examples/` are validated against the canonical schemas.
-- **GitHub Actions CI** validates JSON Schemas, examples, fixtures, and Protobuf compilation on every PR.
+- **GitHub Actions CI** validates JSON Schemas, examples, and fixtures on every PR.
 
 ---
 
 ## Development
 
 ```bash
-make install-tools    # buf, protoc, ajv-cli (one-time)
-make validate         # JSON Schemas + examples + protobuf compile + buf lint
-make proto-gen-all    # Generate Go/Python/Java/C#/JS into packages/
+make install-tools    # ajv-cli (one-time)
+make validate         # JSON Schemas + examples
 make help             # Show all targets
 ```
 

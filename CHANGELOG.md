@@ -4,6 +4,10 @@
 
 The first published version of ACDP. **Coordination-agnostic substrate from the start.** No retraction, no post-publication relationships, no push subscriptions in this version — those are deferred (see RFC-ACDP-0009 Extensions, reserved).
 
+### Iteration changes
+
+- **T0.1:** Removed binary-schema artifacts and tooling. ACDP v0.0.1 ships JSON-only; binary bindings deferred to a future version.
+
 ### Included
 
 - **Core** — identifiers, JCS canonicalization, content hashing, signatures, time format (RFC-ACDP-0001).

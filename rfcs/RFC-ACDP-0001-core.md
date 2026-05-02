@@ -4,7 +4,7 @@
 **Document:** RFC-ACDP-0001
 **Version:** 0.0.1-draft
 **Status:** Community Standards Track (Draft)
-**Canonical wire format:** JSON over HTTP (with Protocol Buffers mirror)
+**Canonical wire format:** JSON over HTTP
 **Required JSON canonicalization:** [RFC 8785 — JSON Canonicalization Scheme (JCS)](https://datatracker.ietf.org/doc/html/rfc8785)
 **Intended status:** Stable Core
 
@@ -207,8 +207,7 @@ Implementations MUST support `ed25519` [RFC 8032]. Implementations MAY support a
 ACDP uses a layered compatibility model:
 
 - **Protocol version** is advertised in the registry capabilities document as `acdp_version` (e.g. `0.0.1`).
-- **Schema namespace** governs canonical Protobuf compatibility (e.g. `acdp.v1`).
-- **Body extensibility** is forward-compatible only via additive fields. Breaking body changes require a new schema namespace.
+- **Body extensibility** is forward-compatible only via additive fields. Breaking body changes require a new protocol version.
 - **Registry-state extensibility** is open: future versions add fields (lifecycle events, relationships, attestations); consumers MUST tolerate unknown fields in registry state.
 
 Major protocol version mismatches are not compatible. Minor versions are expected to be backward compatible. Consumers receiving an unknown `acdp_version` SHOULD treat it as a higher version and degrade gracefully, using only operations defined in the version they understand.
@@ -224,7 +223,7 @@ ACDP operations are HTTP-based with JSON request and response bodies, content ty
 - RFC-ACDP-0005 — `GET /contexts/search`, `GET/POST /contexts/similar`.
 - RFC-ACDP-0007 — `GET /.well-known/acdp.json`.
 
-A canonical Protobuf mirror is published under `schemas/proto/acdp/v1/`. Binary-transport bindings (e.g. gRPC) MAY use the Protobuf mirror; the JSON mapping is the source of truth.
+ACDP v0.0.1 is JSON-only. Binary transport bindings are out of scope for this version and MAY be specified in a future release.
 
 All ACDP traffic MUST run over TLS in production deployments.
 

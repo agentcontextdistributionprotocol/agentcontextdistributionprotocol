@@ -19,7 +19,6 @@ body:
       options:
         - RFC (normative spec text)
         - JSON Schema
-        - Proto schema
         - Conformance fixture
         - Documentation
         - Build / CI

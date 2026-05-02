@@ -32,43 +32,10 @@ jobs:
           chmod +x scripts/validate-json.sh
           ./scripts/validate-json.sh
 
-      - name: Install protoc
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y protobuf-compiler
-
-      - name: Validate Protobuf compiles
-        run: |
-          chmod +x scripts/validate-proto.sh
-          ./scripts/validate-proto.sh
-
-  lint-protobuf:
-    name: Lint Protocol Buffers
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install buf
-        uses: bufbuild/buf-setup-action@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Lint protobuf with buf
-        run: buf lint
-
-      - name: Check for breaking changes (informational)
-        if: github.event_name == 'pull_request'
-        continue-on-error: true
-        run: |
-          git fetch origin main
-          buf breaking --against '.git#branch=origin/main'
-
   validate-all:
     name: All Validations Passed
     runs-on: ubuntu-latest
-    needs: [validate, lint-protobuf]
+    needs: [validate]
 
     steps:
       - name: Summary
@@ -76,5 +43,3 @@ jobs:
           echo "✓ All ACDP validations passed"
           echo "  - JSON Schemas valid"
           echo "  - JSON examples valid"
-          echo "  - Protobuf schemas compile"
-          echo "  - Protobuf lint clean"

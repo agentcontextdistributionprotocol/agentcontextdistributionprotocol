@@ -23,7 +23,7 @@ body:
     id: design
     attributes:
       label: Design
-      description: Proposal in detail. Include schema/proto changes, error-code additions, and security implications.
+      description: Proposal in detail. Include JSON Schema changes, error-code additions, and security implications.
     validations:
       required: true
 

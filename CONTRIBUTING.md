@@ -15,7 +15,7 @@ ACDP is a coordination-agnostic context-publication standard. All changes MUST p
 
 - Specification clarifications (non-normative)
 - New RFCs or amendments to existing RFCs
-- Schema updates (JSON Schema / Protobuf)
+- Schema updates (JSON Schema)
 - Conformance fixtures
 - Tooling and CI improvements
 - Documentation
@@ -30,7 +30,7 @@ Open a PR directly against the relevant document.
 
 1. Open an issue using the [RFC proposal template](.github/ISSUE_TEMPLATE/rfc_proposal.yml).
 2. Discuss motivation and compatibility.
-3. Submit a PR updating the relevant RFC and any affected schema/proto/fixtures.
+3. Submit a PR updating the relevant RFC and any affected schemas/fixtures.
 
 Breaking changes require:
 - A version bump on the affected RFC.
@@ -43,10 +43,8 @@ To add an entry to a registry (`registries/context-types.md`, `registries/error-
 
 ## Technical requirements
 
-- Protobuf MUST compile (`make proto-compile`).
 - JSON examples MUST validate against the relevant JSON Schema (`make json-validate`).
 - JSON Schemas MUST themselves be valid (`make json-schema-validate`).
-- `buf lint` MUST be clean.
 - Backward compatibility MUST be addressed explicitly in the PR description.
 
 ## Style
@@ -54,7 +52,6 @@ To add an entry to a registry (`registries/context-types.md`, `registries/error-
 - Use RFC 2119 keywords (MUST, SHOULD, MAY) consistently in normative text.
 - Use present tense ("Registries MUST verify…", not "Registries should verify…").
 - JSON examples MUST be valid against the corresponding schema.
-- Proto files MUST compile with `protoc`.
 
 ## Normative RFCs
 
