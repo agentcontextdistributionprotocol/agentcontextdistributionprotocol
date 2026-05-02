@@ -92,7 +92,57 @@ Registries MAY implement these as private optimizations — but they are not par
 
 ---
 
-## 7. Security Considerations
+## 7. Server-Side Request Forgery (SSRF) Protections
+
+When a registry performs server-side resolution of `acdp://` references on behalf of a consumer (for example, when validating `derived_from` chains during a publish, or proxying retrievals), the registry initiates HTTP requests to authority hosts derived from user-supplied data. This is an SSRF vector.
+
+Registries performing server-side `acdp://` resolution MUST implement the following defenses:
+
+### 7.1 IP-range filtering
+
+Resolve hostnames before connection and refuse to connect if any resolved IP is in:
+
+- RFC 1918 private ranges: `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`
+- Loopback: `127.0.0.0/8`, `::1`
+- Link-local: `169.254.0.0/16`, `fe80::/10`
+- Multicast: `224.0.0.0/4`, `ff00::/8`
+- The cloud-metadata endpoint: `169.254.169.254` (Google, AWS, Azure all use this)
+- Any locally-defined "private" range relevant to the deployment (e.g. internal corporate networks).
+
+Registries MUST refuse the resolution and MAY return `cross_registry_resolution_failed` (HTTP 502) to the requesting consumer.
+
+### 7.2 HTTPS-only
+
+Cross-registry calls MUST use `https://`. Plain HTTP, file://, ftp://, and other schemes MUST be refused without attempting connection.
+
+### 7.3 Response-size caps
+
+- Individual context retrievals (`GET /contexts/{ctx_id}`): MUST cap at 1 MB.
+- Capabilities documents (`/.well-known/acdp.json`) and DID documents: MUST cap at 64 KB.
+
+Exceeding either cap MUST cause the registry to abort the response and discard partial data. The cap MUST be enforced before any parse attempt to prevent memory-exhaustion attacks.
+
+### 7.4 Timeouts
+
+- Connection timeout: MUST NOT exceed 5 seconds.
+- Total request timeout (including TLS handshake and response read): MUST NOT exceed 30 seconds.
+
+Hung connections beyond these limits MUST be aborted.
+
+### 7.5 Redirect handling
+
+- HTTPS redirects MUST be capped at 3 follows.
+- All redirect targets MUST be on the **same authority** as the original request. Cross-authority redirects MUST be rejected.
+
+This prevents an attacker who controls a cooperating server from redirecting the registry to internal endpoints after passing the initial IP filter.
+
+### 7.6 DNS rebinding protection
+
+Registries MUST pin the resolved IP for the connection lifetime: a single DNS resolution per request, with the resolved IP used for both the IP-range filter check and the connection. A second resolution between filter check and connection (TOCTOU) MUST NOT be performed.
+
+---
+
+## 8. Security Considerations
 
 See [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md). Specific to cross-registry resolution:
 
@@ -103,7 +153,7 @@ See [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md). Specific to cross-regis
 
 ---
 
-## 8. References
+## 9. References
 
 - [RFC-ACDP-0001 Core](RFC-ACDP-0001-core.md)
 - [RFC-ACDP-0004 Retrieval](RFC-ACDP-0004-retrieval.md)

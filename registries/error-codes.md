@@ -24,6 +24,7 @@ ACDP error codes returned in error envelopes (`error.code`). The envelope shape 
 | `cursor_expired` | Stable | 400 | A previously-issued pagination cursor is no longer valid. Client SHOULD restart pagination. | [RFC-ACDP-0005 §2.5.4](../rfcs/RFC-ACDP-0005-discovery.md#254-cursor-stability) |
 | `invalid_cursor` | Stable | 400 | A pagination cursor is malformed or unrecognized. | [RFC-ACDP-0005 §2.5.4](../rfcs/RFC-ACDP-0005-discovery.md#254-cursor-stability) |
 | `duplicate_publish` | Stable | 409 | An idempotent publish was retried with conflicting content (same `Idempotency-Key`, different `content_hash`). | [RFC-ACDP-0003 §6.2](../rfcs/RFC-ACDP-0003-publish.md#62-registry-behavior) |
+| `cross_registry_resolution_failed` | Stable | 502 | A cross-registry resolution failed (DNS resolution refused by IP-range filter, response oversize, timeout, redirect-policy violation, or upstream registry unavailable). See RFC-ACDP-0006 §7. | [RFC-ACDP-0006 §7](../rfcs/RFC-ACDP-0006-cross-registry.md#7-server-side-request-forgery-ssrf-protections) |
 
 > Note: `visibility_denied` is an internal-only signal (logging/metrics). Visibility denial is always reported externally as `not_found` per RFC-ACDP-0008 §4.5. The wire-visible enum in `acdp-error.schema.json` does NOT include `visibility_denied`.
 

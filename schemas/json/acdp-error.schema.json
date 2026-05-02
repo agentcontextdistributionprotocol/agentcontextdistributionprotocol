@@ -31,7 +31,8 @@
             "not_implemented",
             "cursor_expired",
             "invalid_cursor",
-            "duplicate_publish"
+            "duplicate_publish",
+            "cross_registry_resolution_failed"
           ],
           "description": "A machine-readable error code from the ACDP standard error vocabulary."
         },
