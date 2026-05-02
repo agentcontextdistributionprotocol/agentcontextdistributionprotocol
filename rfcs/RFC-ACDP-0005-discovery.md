@@ -168,6 +168,8 @@ Content-Type: application/acdp+json
 
 `filters` accepts the same fields as keyword-search query parameters in §2.1.
 
+The request body conforms to [`schemas/json/acdp-similarity-request.schema.json`](../schemas/json/acdp-similarity-request.schema.json).
+
 ### 3.3 Response
 
 The response conforms to [`schemas/json/acdp-similarity-response.schema.json`](../schemas/json/acdp-similarity-response.schema.json):
