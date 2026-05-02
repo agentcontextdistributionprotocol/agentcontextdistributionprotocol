@@ -39,7 +39,12 @@
     "supported_embedding_models": {
       "type": "array",
       "items": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/embedding_model" },
-      "description": "Embedding model identifiers indexed by this registry. Empty if registry does not index embeddings."
+      "description": "Embedding model identifiers indexed by this registry today. Empty if registry does not index embeddings."
+    },
+    "previously_supported_embedding_models": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/embedding_model" },
+      "description": "Embedding models this registry previously indexed but no longer supports. Bodies signed with these models remain valid (their signature still verifies); similarity requests against them MUST return unsupported_embedding_model. Useful for consumers planning re-embedding or fallback to keyword search."
     },
     "read_authentication_methods": {
       "type": "array",

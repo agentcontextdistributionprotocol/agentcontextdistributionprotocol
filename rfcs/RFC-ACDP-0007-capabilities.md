@@ -50,7 +50,8 @@ Returns the registry's capability declaration. Conforms to [`schemas/json/acdp-c
 
 | Field | Type | Description |
 |---|---|---|
-| `supported_embedding_models` | array of string | Embedding model identifiers indexed by this registry. Empty if registry does not index embeddings (similarity endpoints return 501 Not Implemented). |
+| `supported_embedding_models` | array of string | Embedding model identifiers indexed by this registry today. Empty if registry does not index embeddings (similarity endpoints return 501 Not Implemented). |
+| `previously_supported_embedding_models` | array of string | Models the registry once indexed but has dropped. Bodies signed with these models remain valid; similarity requests against them MUST return `unsupported_embedding_model`. |
 | `read_authentication_methods` | array of string | Read-authentication methods supported by this registry. At least one MUST be declared if the registry serves any non-public contexts. Defined values: `http_signatures`, `mtls`, `oauth`. See RFC-ACDP-0008 §6.2. |
 | `anonymous_public_reads` | boolean | Whether anonymous (unauthenticated) reads are permitted for public contexts. Default `false`. See RFC-ACDP-0008 §6.3. |
 | `supports_idempotency_key` | boolean | Whether this registry honors the `Idempotency-Key` header on `POST /contexts`. Default `false`. See RFC-ACDP-0003 §6. |

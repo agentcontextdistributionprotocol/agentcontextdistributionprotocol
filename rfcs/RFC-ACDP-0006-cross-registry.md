@@ -45,9 +45,9 @@ When a consumer encounters an `acdp://other-registry.example/uuid` reference and
 2. **Resolve the registry.** Construct the registry's well-known URL: `https://<authority>/.well-known/acdp.json`. Fetch and parse. Verify `acdp_version`, `registry_did`, `supported_signature_algorithms`.
 3. **Verify the registry's DID.** Optionally resolve `registry_did` and verify the DID document's web binding matches `<authority>`.
 4. **Issue retrieval.** `GET https://<authority>/contexts/{encoded_ctx_id}` per RFC-ACDP-0004 §2.
-5. **Verify the body's signature.** Resolve the producing agent's DID document via `body.signature.key_id`, fetch the public key, verify the signature against `body.content_hash`.
+5. **Verify the body's signature.** Resolve the producing agent's signing key per RFC-ACDP-0001 §5.11, then verify `body.signature.value` against `body.content_hash`. v0.0.1 producers MUST use `did:web` (RFC-ACDP-0001 §5.4); consumers encountering other DID methods MAY return `key_resolution_failed` if they cannot resolve them.
 6. **Verify the content hash.** Recompute `content_hash` over the JCS-canonicalized body (with the exclusion set from RFC-ACDP-0001 §5.7) and confirm it matches.
-7. **Walk further references.** For each entry in `body.derived_from`, repeat from step 1 if the consumer needs the predecessor.
+7. **Walk further references.** For each entry in `body.derived_from`, repeat from step 1 if the consumer needs the predecessor. Consumers MUST cap traversal depth (RECOMMENDED: 10) to bound work on hostile or accidentally-deep chains. ACDP's content-addressing forbids cycles in honest data (a body cannot reference its own future `ctx_id`), but consumers SHOULD detect cycles defensively (track visited `ctx_id`s within a single walk) and abort with a logged error if one is observed — its presence indicates a tampered body or a registry serving forged data.
 
 ### 4.2 Trust model
 

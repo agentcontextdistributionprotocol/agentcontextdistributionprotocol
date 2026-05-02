@@ -216,7 +216,7 @@ All discovery responses MUST be scoped to the requesting agent's effective audie
 - `visibility: restricted` — discoverable by `agent_id` and the DIDs listed in `audience`.
 - `visibility: private` — discoverable by `agent_id` only, plus any DIDs explicitly listed in `audience` (if present). **Contributors are NOT auto-authorized:** `contributors` is for attribution, not authorization. Producers wishing to grant a contributor read access MUST list the DID in `audience` explicitly.
 
-A registry MUST scope keyword and similarity results identically. A registry MUST NOT include restricted/private contexts in `total_estimate` for unauthorized requesters.
+A registry MUST scope keyword and similarity results identically. A registry MUST NOT include restricted/private contexts in `total_estimate` for unauthorized requesters. Registries SHOULD make `total_estimate` deterministic per `(query, requester)` for a stable result set, OR omit it from responses entirely when visibility scoping is in play, to avoid leaking the existence of restricted contexts via timing or cross-requester variance analysis.
 
 ---
 

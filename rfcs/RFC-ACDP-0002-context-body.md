@@ -70,7 +70,7 @@ The canonical schema is [`schemas/json/acdp-context-body.schema.json`](../schema
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `data_refs` | array of object | Yes | References to the data this context describes. See §6. |
+| `data_refs` | array of object | Yes | References to the data this context describes. MAY be empty (`[]`) for self-contained contexts whose payload lives entirely in `metadata` and `summary`. See §6. |
 | `schema_uri` | string | No | URI of a JSON Schema describing the shape of `metadata`. |
 
 ### 3.5 Lineage Field

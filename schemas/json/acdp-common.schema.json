@@ -7,7 +7,7 @@
   "$defs": {
     "did": {
       "title": "Decentralized Identifier (plain DID)",
-      "description": "A plain DID per W3C DID Core specification, without fragment, query, or path. Used for principal identifiers (agent_id, contributors[], audience[], registry_did). ACDP does not constrain the DID method.",
+      "description": "A plain DID per W3C DID Core specification, without fragment, query, or path. Used for principal identifiers (agent_id, contributors[], audience[], registry_did). The pattern is intentionally loose — full method-specific validation (e.g. did:web hostname syntax, did:key multibase decoding) is delegated to the resolver per RFC-ACDP-0001 §5.11. Per RFC-ACDP-0001 §5.4, v0.0.1 producers MUST use did:web; this is enforced normatively in the RFC, not in the schema, so registries can accept other methods if they choose to.",
       "type": "string",
       "pattern": "^did:[a-z0-9]+:[A-Za-z0-9._:%-]+$",
       "minLength": 7,
@@ -162,9 +162,9 @@
 
     "match_summary": {
       "title": "Context Summary in Search Response",
-      "description": "A lightweight projection of a context, used in search and similarity responses.",
+      "description": "A lightweight projection of a context, used in search and similarity responses. lineage_id is required so consumers can deduplicate and group results by lineage without an extra retrieval round-trip.",
       "type": "object",
-      "required": ["ctx_id", "type", "agent_id", "title", "created_at", "status"],
+      "required": ["ctx_id", "lineage_id", "type", "agent_id", "title", "created_at", "status"],
       "properties": {
         "ctx_id": { "$ref": "#/$defs/ctx_id" },
         "lineage_id": { "$ref": "#/$defs/lineage_id" },

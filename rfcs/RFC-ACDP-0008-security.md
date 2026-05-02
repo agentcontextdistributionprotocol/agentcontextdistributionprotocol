@@ -37,7 +37,7 @@ The threat surface is therefore: **the entire path from producer's signing key, 
 | **3.2 Lineage forgery** | `lineage_id` is deterministically derived from the first version's `ctx_id`. The registry verifies producer-supplied `lineage_id` matches the derived value. The chain is part of the signed body. |
 | **3.3 Producer impersonation** | The signing key is bound to a DID. Verifiers resolve the key from the producer's DID document (e.g. `did:web` over HTTPS, with TLS verification). |
 | **3.4 Cross-registry impersonation** | `origin_registry` is a registry-assigned field, not producer-controlled. The serving registry's authority must match the URI authority. |
-| **3.5 Visibility leakage via similarity** | Embeddings can leak content. Restricted/private contexts SHOULD omit `embedding`; registries MUST scope similarity results by visibility. |
+| **3.5 Visibility leakage via similarity** | Embeddings can leak content. Producers SHOULD omit `embedding` on restricted/private contexts (defense in depth); registries MUST scope similarity results by visibility (no schema-level enforcement — it is a runtime obligation). |
 | **3.6 Existence-leak via 404 differentiation** | Visibility-restricted contexts return `not_found`/HTTP 404 indistinguishably from genuinely missing contexts. |
 | **3.7 Replay of publish requests** | Bodies are content-addressed; "the same body twice" is idempotent at the content level (the registry assigns a new `ctx_id`, but the content is identical). Producer-side deduplication uses `content_hash`. TLS prevents on-wire replay reordering. |
 | **3.8 DoS by oversize bodies** | `limits.max_payload_bytes` and `embedded_too_large` (64 KB cap) enforce upper bounds. |

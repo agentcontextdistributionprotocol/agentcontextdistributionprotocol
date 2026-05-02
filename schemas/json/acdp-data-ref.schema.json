@@ -41,12 +41,15 @@
         {
           "title": "URI String Form",
           "type": "string",
-          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9+.-]*:",
+          "minLength": 3,
+          "maxLength": 4096,
           "examples": [
             "postgres://analytics_db/sentiment_analysis?id=12345",
             "s3://bucket/path/to/object",
             "https://example.com/data.json"
-          ]
+          ],
+          "description": "URI with a valid scheme (RFC 3986). MUST NOT contain credentials in the userinfo component (RFC-ACDP-0002 §10)."
         },
         {
           "title": "Structured Locator Form",

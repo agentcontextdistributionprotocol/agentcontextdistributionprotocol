@@ -49,6 +49,8 @@ GET /contexts/{ctx_id}/body
 
 Returns only the body — useful for consumers wishing to verify the signed artifact without registry state. The body alone conforms to [`schemas/json/acdp-context-body.schema.json`](../schemas/json/acdp-context-body.schema.json).
 
+Error responses, visibility rules, path-encoding, and cache-header obligations are identical to §2.1 (full retrieval) except that the response body is the bare context body (no `registry_state` envelope). The body-only endpoint is the recommended cache-friendly retrieval form because it is not affected by `status` mutability (RFC-ACDP-0004 §6.3).
+
 ### 2.3 Visibility-aware response
 
 When the requesting agent is not in the context's effective audience:
@@ -129,7 +131,7 @@ The current version is the unique version `v` in the lineage such that no other 
 
 ### 5.3 Lineage scoping
 
-`GET /lineages/{lineage_id}` is scoped to the registry serving the request — it returns only versions persisted on that registry. A lineage that crosses registries (a producer published v1 on one registry and v2 on another) is uncommon and not specifically supported; consumers walking such lineages MUST follow `supersedes` references manually.
+`GET /lineages/{lineage_id}` is scoped to the registry serving the request — it returns only versions persisted on that registry. Because cross-registry supersession is forbidden in v0.0.1 (RFC-ACDP-0003 §3.1 step 2), every v0.0.1 lineage is wholly contained within one registry; per-registry scoping returns the complete lineage. Cross-registry lineage observability is reserved for RFC-ACDP-0009 §2.8.
 
 ---
 
