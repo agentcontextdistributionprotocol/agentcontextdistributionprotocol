@@ -99,7 +99,7 @@ The threat surface is therefore: **the entire path from producer's signing key, 
 ### 4.6 Transport
 
 - Production deployments MUST use TLS for all ACDP endpoints.
-- Registries SHOULD set strong cache headers on body responses (immutable) and short cache headers on registry-state responses.
+- Registries MUST set cache headers based on body visibility (RFC-ACDP-0004 §6). Public bodies MAY use `Cache-Control: public, max-age=31536000, immutable`; restricted and private bodies MUST use `Cache-Control: private, no-store` (or `private, max-age=<short>`). Registries MUST NOT serve `Cache-Control: public` on non-public bodies.
 - Registries MUST NOT echo unsanitized request content in `error.message`.
 
 ### 4.7 Cross-registry

@@ -131,14 +131,39 @@ The current version is the unique version `v` in the lineage such that no other 
 
 ## 6. Caching
 
-Bodies are immutable. Registries SHOULD set strong cache headers on body responses:
+Bodies are immutable, so they are highly cache-friendly — but cache directives MUST respect visibility. Registries MUST set cache headers based on the body's `visibility`:
+
+### 6.1 Public bodies
+
+For `visibility: public`:
 
 ```
 Cache-Control: public, max-age=31536000, immutable
-ETag: "sha256:<hex>"
+ETag: "<content_hash>"
 ```
 
-Registry state changes (status transitions); registries SHOULD use a shorter `Cache-Control` on full retrieval responses, or a separate caching policy that key on `status`. The body-only endpoint (§2.2) is the recommended cache-friendly retrieval form.
+These bodies may be cached by shared caches (CDNs, intermediary proxies) indefinitely.
+
+### 6.2 Restricted and private bodies
+
+For `visibility: restricted` and `visibility: private`:
+
+```
+Cache-Control: private, no-store
+ETag: "<content_hash>"
+```
+
+`private` prevents shared caches from storing the response. `no-store` prevents any caching, including by the requesting agent's local cache, on the conservative assumption that visibility membership may change. Registries MAY use `Cache-Control: private, max-age=<short>` (e.g. 60 seconds) instead of `no-store` if their visibility model is stable; this is a registry-policy decision.
+
+Registries MUST NOT serve a `Cache-Control: public` directive on a non-public body under any circumstances. Doing so violates the visibility model and may leak content to unauthorized consumers via shared caches.
+
+### 6.3 Registry state
+
+Registry state (the `registry_state` object containing `status`) is mutable. Registries SHOULD use a short `Cache-Control: max-age` (e.g. 60–300 seconds) on full retrieval responses (`GET /contexts/{ctx_id}`), or use the body-only endpoint (`GET /contexts/{ctx_id}/body`) when long-lived caching is desired.
+
+### 6.4 ETag value
+
+The ETag value is the body's `content_hash` (the full `sha256:<hex>` string), wrapped in quotes per RFC 9110.
 
 ---
 
