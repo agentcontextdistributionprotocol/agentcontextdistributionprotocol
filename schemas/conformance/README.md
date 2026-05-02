@@ -55,6 +55,9 @@ The runner interface is implementation-defined.
 | `pub-001` | Producer signature does not verify | failure: `invalid_signature` |
 | `pub-002` | Recomputed `content_hash` ≠ submitted `content_hash` | failure: `hash_mismatch` |
 | `pub-003` | Supersession target's `lineage_id` ≠ computed lineage of new context | failure: `superseded_target` (`details.reason: lineage_mismatch`) |
+| `pub-004` | First-version publish illegally includes `lineage_id` | failure: `schema_violation` |
+| `pub-005` | `visibility: restricted` with no `audience` | failure: `schema_violation` |
+| `pub-006` | `signature.key_id` DID portion ≠ `body.agent_id` | failure: `key_not_authorized` |
 
 ### Retrieval (RFC-ACDP-0004)
 
