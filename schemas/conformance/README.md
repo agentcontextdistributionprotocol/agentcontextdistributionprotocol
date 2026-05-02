@@ -11,6 +11,7 @@ conformance/
 ├── README.md
 ├── pub-*.json    Publish-flow scenarios (RFC-ACDP-0003)
 ├── ret-*.json    Retrieval scenarios (RFC-ACDP-0004)
+├── vis-*.json    Visibility-leak prevention scenarios (RFC-ACDP-0002, RFC-ACDP-0008)
 └── can-*.json    Canonicalization / cryptographic test vectors (RFC-ACDP-0001)
 ```
 
@@ -64,6 +65,13 @@ The runner interface is implementation-defined.
 | ID | Description | Outcome |
 |---|---|---|
 | `ret-001` | `ctx_id` does not exist | failure: `not_found` |
+
+### Visibility (RFC-ACDP-0002, RFC-ACDP-0008)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `vis-001` | Restricted retrieval — authorized=200, unauthorized=404 indistinguishably from genuinely-missing; contributors NOT auto-authorized | mixed (per-scenario; unauthorized cases use `not_found`) |
+| `vis-002` | Search excludes restricted contexts from BOTH `matches` AND `total_estimate`; anonymous requests handled per `anonymous_public_reads` capability | mixed (per-scenario) |
 
 ### Canonicalization & hashing (RFC-ACDP-0001)
 
