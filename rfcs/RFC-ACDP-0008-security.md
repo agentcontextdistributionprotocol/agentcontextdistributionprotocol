@@ -73,7 +73,7 @@ The threat surface is therefore: **the entire path from producer's signing key, 
 
 - Registries MUST verify producer signatures at publish time. Verification failures MUST result in rejection with `invalid_signature`.
 - Consumers MUST verify producer signatures on every retrieved context they rely on. Trusting the registry alone is **not** sufficient.
-- When a producer rotates keys, prior signatures remain mathematically valid (the same content + same key still verifies). Verifying that the *signing key was authorized at the time of publication* requires historical key validity, which most DID methods do not natively provide. Verifiers SHOULD verify against the producer's current DID document; verifiers requiring stronger historical guarantees MUST consult external mechanisms (see §10.3).
+- When a producer rotates keys, prior signatures remain mathematically valid (the same content + same key still verifies). Verifying that the *signing key was authorized at the time of publication* requires historical key validity, which most DID methods do not natively provide. Verifiers SHOULD verify against the producer's current DID document; verifiers requiring stronger historical guarantees MUST consult external mechanisms (see §9.3).
 
 ### 4.5 Visibility enforcement
 
@@ -169,14 +169,14 @@ Registries MAY allow anonymous reads of `visibility: public` contexts. Anonymous
 
 **Setup.** Producer P signed `acdp://reg.example/<uuid>` with key K1 at `created_at=t1`. P later rotates to K2; K1 is removed from P's DID document at `t2`. A consumer at `t3 > t2` retrieves the context and tries to verify it.
 
-**Result (v0.0.1, with the documented limitation in §10.3).** The consumer resolves P's *current* DID document and finds only K2. The K1 signature on the old context does not verify against K2. Without an external mechanism (DID-document snapshotting, transparency log, or registry receipt — none of which v0.0.1 specifies), the consumer **cannot** assert that K1 was authorized at `t1`.
+**Result (v0.0.1, with the documented limitation in §9.3).** The consumer resolves P's *current* DID document and finds only K2. The K1 signature on the old context does not verify against K2. Without an external mechanism (DID-document snapshotting, transparency log, or registry receipt — none of which v0.0.1 specifies), the consumer **cannot** assert that K1 was authorized at `t1`.
 
 Two acceptable v0.0.1 responses for the consumer:
 
 - **Strict.** Reject the context. Old contexts whose signing keys have been rotated out are no longer locally verifiable.
 - **Pragmatic.** Trust the producer's current DID document's claim about key rotation timeline (if any), or defer to an out-of-band attestation. The consumer accepts the residual risk that K1 was rotated *because* it was compromised, in which case signatures from K1 should not have been honored after `t2`.
 
-A future ACDP version (RFC-ACDP-0009 §2.7 reserves registry receipts) will let the registry attest to *which producer key was current at the time of acceptance*, removing the historical-key dependency entirely. Until then, deployments where this matters SHOULD use external transparency logs as documented in §10.2.
+A future ACDP version (RFC-ACDP-0009 §2.7 reserves registry receipts) will let the registry attest to *which producer key was current at the time of acceptance*, removing the historical-key dependency entirely. Until then, deployments where this matters SHOULD use external transparency logs as documented in §9.2.
 
 ### 7.4 Replay of a captured publish
 
@@ -210,15 +210,15 @@ These three pillars are the minimum. Implementations MUST NOT relax any of them.
 
 ---
 
-## 10. Known Limitations
+## 9. Known Limitations
 
-### 10.1 Producer signatures do not bind registry-assigned fields
+### 9.1 Producer signatures do not bind registry-assigned fields
 
 ACDP v0.0.1 producer signatures cover producer-controlled fields. They do not cover registry-assigned identifiers (`ctx_id`, `lineage_id`, `origin_registry`, `created_at`). A consumer can verify content authorship by `agent_id` but **cannot** cryptographically verify which registry first accepted the content, what `ctx_id` the producer intended, or when publication occurred. These facts rely on registry honesty.
 
 A malicious or compromised registry could republish a producer's signed content under a different `ctx_id` or `origin_registry` (the signature would still verify), or backdate `created_at`. A malicious registry **cannot** forge content from a producer, modify a body after publication, or forge a `derived_from` lineage.
 
-### 10.2 Mitigations and future work
+### 9.2 Mitigations and future work
 
 Deployments where this binding gap matters SHOULD use:
 
@@ -227,13 +227,13 @@ Deployments where this binding gap matters SHOULD use:
 
 A future ACDP version will introduce **registry receipts**: registry-signed attestations binding `(ctx_id, lineage_id, origin_registry, created_at, content_hash)` to the registry's DID. The reservation is in [RFC-ACDP-0009 §2.7](RFC-ACDP-0009-extensions.md#27-registry-receipts-likely-v01).
 
-### 10.3 Historical key validity
+### 9.3 Historical key validity
 
 Verifying a context whose producer has rotated keys requires knowing which key was valid at `created_at`. Most DID methods do not expose reliable historical key validity. ACDP v0.0.1 SHOULD verify against the producer's current DID document; verifiers requiring historical accuracy MUST employ external mechanisms (DID-document snapshotting at publish time, transparency logs, archival proofs). A future ACDP version will define a normative DID-document snapshot mechanism.
 
 ---
 
-## 11. References
+## 10. References
 
 - [RFC-ACDP-0001 Core](RFC-ACDP-0001-core.md)
 - [RFC-ACDP-0002 Context Body](RFC-ACDP-0002-context-body.md)
