@@ -55,10 +55,10 @@ The registry MUST execute steps 1–8 before any persistence. Steps 9–13 are a
 
 Producers building a publish request MUST:
 
-1. Construct the body without `ctx_id`, `lineage_id`, `origin_registry`, `created_at`, `signature`.
-2. Compute `content_hash` over the JCS-canonicalized body, with the exclusion set from RFC-ACDP-0001 §5.7. (Note: at this stage, the body also has no `signature` field; the same exclusion set applies because `signature` is in the exclusion list.)
+1. Construct the publish request without `ctx_id`, `lineage_id`, `origin_registry`, `created_at`, `content_hash`, `signature`.
+2. Compute `content_hash` over the JCS-canonicalized publish-request body, with the full exclusion set from RFC-ACDP-0001 §5.7: `content_hash`, `signature`, `ctx_id`, `lineage_id`, `origin_registry`, `created_at`. At this stage, the body has neither `content_hash` nor `signature` set; both are added in steps 3–4 below.
 3. Sign `content_hash` (the lowercase hex bytes) with the producer's signing key.
-4. Set `signature` and submit the resulting object as the request body.
+4. Set `content_hash` and `signature` and submit the resulting object as the request body.
 
 Producers MAY supply `lineage_id` to assert their own derivation; the registry will verify and reject on mismatch. Producers SHOULD NOT supply `lineage_id` for first versions (the registry derives it deterministically).
 

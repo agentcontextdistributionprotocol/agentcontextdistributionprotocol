@@ -163,12 +163,13 @@ For first versions, the registry computes `lineage_id` from the `ctx_id` it just
 
 ### 5.7 Content Hash
 
-The `content_hash` field of a body is the lowercase hexadecimal SHA-256 [FIPS 180-4] digest of the JCS-canonicalized body, with the following fields **excluded**:
+The `content_hash` field of a body is the lowercase hexadecimal SHA-256 [FIPS 180-4] digest of the JCS-canonicalized **producer content**, where producer content is the publish request body with the following fields removed:
 
+- `content_hash` itself (a field cannot contain its own hash);
 - `signature` (the signature is over the hash, so cannot be in the hashed input);
-- `ctx_id`, `lineage_id`, `origin_registry`, `created_at` (assigned by the registry at publish time, not known to the producer).
+- `ctx_id`, `lineage_id`, `origin_registry`, `created_at` (registry-assigned, not known to the producer at signing time).
 
-All other body fields are included in the hash input.
+All other fields present in the publish request are included in the hash input. The producer computes `content_hash` over this reduced object, then sets the `content_hash` and `signature` fields on the request before submission.
 
 The exclusion list permits the producer to compute `content_hash` and sign before the registry assigns identifiers. The producer commits to the content; the registry separately binds the identifiers.
 
