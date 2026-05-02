@@ -117,6 +117,10 @@
           "supersedes": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/ctx_id" }
         }
       }
+    },
+    {
+      "if": { "properties": { "version": { "const": 1 } } },
+      "then": { "not": { "required": ["lineage_id"] } }
     }
   ]
 }

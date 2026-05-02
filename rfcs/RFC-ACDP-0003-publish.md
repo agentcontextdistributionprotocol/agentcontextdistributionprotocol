@@ -60,7 +60,9 @@ Producers building a publish request MUST:
 3. Sign `content_hash` (the lowercase hex bytes) with the producer's signing key.
 4. Set `content_hash` and `signature` and submit the resulting object as the request body.
 
-Producers MAY supply `lineage_id` to assert their own derivation; the registry will verify and reject on mismatch. Producers SHOULD NOT supply `lineage_id` for first versions (the registry derives it deterministically).
+Producers publishing a first version (`supersedes = null`) **MUST NOT** include `lineage_id` in the publish request. Registries MUST reject first-version requests containing `lineage_id` with `schema_violation` (HTTP 400). The registry derives `lineage_id` from the assigned `ctx_id` (RFC-ACDP-0001 §5.6); producers cannot supply a correct value because they do not know the registry-assigned `ctx_id` at signing time.
+
+Producers publishing a subsequent version (`supersedes != null`) MAY include `lineage_id` for self-verification. If supplied, the registry MUST verify it matches the deterministically-derived value and reject with `superseded_target` (`details.reason = "lineage_mismatch"`) on mismatch.
 
 ---
 
