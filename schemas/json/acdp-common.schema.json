@@ -36,9 +36,9 @@
 
     "content_hash": {
       "title": "Content Hash",
-      "description": "Lowercase hexadecimal SHA-256 digest, optionally prefixed with sha256:.",
+      "description": "SHA-256 digest with explicit algorithm prefix. Form: 'sha256:' followed by 64 lowercase hexadecimal characters. Future ACDP versions may add other algorithms via different prefixes.",
       "type": "string",
-      "pattern": "^(sha256:)?[0-9a-f]{64}$"
+      "pattern": "^sha256:[0-9a-f]{64}$"
     },
 
     "rfc3339_timestamp": {
@@ -54,7 +54,7 @@
 
     "signature": {
       "title": "Detached Signature",
-      "description": "A cryptographic signature over a content_hash. Signs the lowercase hex string of the digest, not raw hash bytes.",
+      "description": "A cryptographic signature over a content_hash. Signs the bytes of the full content_hash string ('sha256:<hex>'), not raw hash bytes.",
       "type": "object",
       "required": ["algorithm", "key_id", "value"],
       "properties": {

@@ -163,7 +163,7 @@ For first versions, the registry computes `lineage_id` from the `ctx_id` it just
 
 ### 5.7 Content Hash
 
-The `content_hash` field of a body is the lowercase hexadecimal SHA-256 [FIPS 180-4] digest of the JCS-canonicalized **producer content**, where producer content is the publish request body with the following fields removed:
+The `content_hash` field of a body is the SHA-256 [FIPS 180-4] digest of the JCS-canonicalized **producer content**, encoded as the literal string `sha256:` followed by 64 lowercase hexadecimal characters. Producer content is the publish request body with the following fields removed:
 
 - `content_hash` itself (a field cannot contain its own hash);
 - `signature` (the signature is over the hash, so cannot be in the hashed input);
@@ -185,7 +185,7 @@ The `signature` field of a body is a JSON object:
 | `key_id` | string | Yes | DID URL identifying the signing key. |
 | `value` | string | Yes | Base64-encoded signature bytes. |
 
-The signature value is computed over the bytes of the **lowercase hexadecimal `content_hash` string** (over the ASCII representation of the hex digest, not the raw hash bytes).
+The signature value is computed over the bytes of the full `content_hash` string — that is, the ASCII bytes of `sha256:` followed by the 64 lowercase hex characters. Implementations MUST NOT sign the raw hash bytes alone.
 
 Registries MUST verify the signature at publish time. A context whose signature does not verify MUST be rejected with the `invalid_signature` error code (RFC-ACDP-0007).
 

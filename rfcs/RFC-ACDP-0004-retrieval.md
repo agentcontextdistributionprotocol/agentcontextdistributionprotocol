@@ -135,7 +135,7 @@ Bodies are immutable. Registries SHOULD set strong cache headers on body respons
 
 ```
 Cache-Control: public, max-age=31536000, immutable
-ETag: "<content_hash>"
+ETag: "sha256:<hex>"
 ```
 
 Registry state changes (status transitions); registries SHOULD use a shorter `Cache-Control` on full retrieval responses, or a separate caching policy that key on `status`. The body-only endpoint (§2.2) is the recommended cache-friendly retrieval form.

@@ -17,7 +17,8 @@
       },
       "expected": {
         "canonical_form": "{\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_refs\":[],\"supersedes\":null,\"title\":\"Minimal\",\"type\":\"data_snapshot\",\"version\":1}",
-        "sha256_hex": "5f8d88d6758cfd43be875d49edc9eaa494de8ec645bf7de6c592b15bbb1e2e3c"
+        "sha256_hex": "5f8d88d6758cfd43be875d49edc9eaa494de8ec645bf7de6c592b15bbb1e2e3c",
+        "content_hash_field_value": "sha256:5f8d88d6758cfd43be875d49edc9eaa494de8ec645bf7de6c592b15bbb1e2e3c"
       }
     },
     {
