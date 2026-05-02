@@ -49,7 +49,7 @@ The registry MUST execute the following steps in order:
 13. **Persistence.** Persist the body. Initialize the derived `status` per RFC-ACDP-0004 §4.
 14. **Response.** Return a publish response (§4).
 
-The registry MUST execute steps 1–8 before any persistence. Steps 9–13 are atomic with respect to other concurrent publications: when two publications target the same `supersedes` value, the registry MUST accept exactly one (the first to fully validate and reach step 12), and MUST reject every subsequent attempt with `superseded_target` (`details.reason = "already_superseded"`, HTTP 400).
+The registry MUST execute steps 1–8 before any persistence. Steps 9–13 are atomic with respect to other concurrent publications: when two publications target the same `supersedes` value, the registry MUST accept exactly one (the first to fully validate and reach step 12), and MUST reject every subsequent attempt with `superseded_target` (`details.reason = "already_superseded"`, HTTP 409 Conflict).
 
 ### 2.2 Producer-side flow
 
@@ -78,8 +78,8 @@ For a publish request with `supersedes = <prev_ctx_id>`, the registry MUST:
 2. If `<prev_ctx_id>` lives in a different origin registry, the registry MUST reject the publish request with `superseded_target` (`details.reason = "cross_registry_supersession_unsupported"`, HTTP 400). **Cross-registry supersession is out of scope for v0.0.1**: the verification semantics (remote identity authentication, lineage continuity over the network, race protection across registries, recovery on partial failure) require additional protocol machinery not yet specified. A producer migrating a logical lineage between registries MUST start a new lineage on the target registry (with `supersedes: null`) and reference the prior lineage via `derived_from`. The reservation for a future cross-registry supersession protocol is in [RFC-ACDP-0009 §2.8](RFC-ACDP-0009-extensions.md).
 3. Verify `agent_id` of the new context matches `agent_id` of the superseded context. If not, return `not_authorized` (HTTP 403). (Delegation is out of scope for v0.0.1.)
 4. Verify the computed `lineage_id` of the new context matches the superseded context's `lineage_id`. If not, return `superseded_target` with `details.reason = "lineage_mismatch"` (HTTP 400).
-5. Verify `version = previous.version + 1`. If not, return `superseded_target` with `details.reason = "version_mismatch"` (HTTP 400).
-6. Verify the new context is the first to supersede `<prev_ctx_id>`. If another context already supersedes it, return `superseded_target` with `details.reason = "already_superseded"` (HTTP 400). This makes lineages strictly linear.
+5. Verify `version = previous.version + 1`. If not, return `superseded_target` with `details.reason = "version_mismatch"` (HTTP 409 Conflict — race condition between two producers attempting to supersede the same version).
+6. Verify the new context is the first to supersede `<prev_ctx_id>`. If another context already supersedes it, return `superseded_target` with `details.reason = "already_superseded"` (HTTP 409 Conflict — race condition). This makes lineages strictly linear.
 
 ### 3.2 Effect on prior version
 
@@ -132,11 +132,19 @@ All errors use the envelope defined in RFC-ACDP-0007 §4 with codes from the reg
 | Signature failed verification | `invalid_signature` | 400 |
 | Recomputed hash ≠ `content_hash` | `hash_mismatch` | 400 |
 | Algorithm not supported | `unsupported_algorithm` | 400 |
+| Key resolution failed (permanent) | `key_resolution_failed` | 400 |
+| Key resolution unreachable (transient) | `key_resolution_unreachable` | 502 |
+| Signing key DID does not match `agent_id` | `key_not_authorized` | 403 |
 | Embedding model not indexed | `unsupported_embedding_model` | 400 |
 | Embedded data > 64 KB | `embedded_too_large` | 413 |
 | Payload > registry limit | `payload_too_large` | 413 |
-| Supersedes target invalid (any reason) | `superseded_target` | 400 |
+| `supersedes` target not found | `superseded_target` (`reason: not_found`) | 400 |
+| `lineage_id` mismatch on supersession | `superseded_target` (`reason: lineage_mismatch`) | 400 |
+| Cross-registry supersession | `superseded_target` (`reason: cross_registry_supersession_unsupported`) | 400 |
+| `version` not previous + 1 (race) | `superseded_target` (`reason: version_mismatch`) | **409** |
+| Target already superseded (race) | `superseded_target` (`reason: already_superseded`) | **409** |
 | `agent_id` mismatch on supersession | `not_authorized` | 403 |
+| Idempotency key reused with different content | `duplicate_publish` | 409 |
 | Per-agent rate limit hit | `rate_limited` | 429 |
 
 ---

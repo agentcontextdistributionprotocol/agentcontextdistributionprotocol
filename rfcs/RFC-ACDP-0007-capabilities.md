@@ -134,7 +134,7 @@ The full registry is maintained in [`registries/error-codes.md`](../registries/e
 | `schema_violation` | 400 | Request body or query failed structural validation. | RFC-ACDP-0003 §2.1 |
 | `not_authorized` | 403 | Agent lacks permission for the operation. | RFC-ACDP-0003 §3.1 |
 | `not_found` | 404 | Resource not found. (Also returned for visibility-restricted contexts to non-audience requesters; see RFC-ACDP-0008 §4.5.) | RFC-ACDP-0004 §7 |
-| `superseded_target` | 400 | The `supersedes` target is invalid. `details.reason` provides specifics. | RFC-ACDP-0003 §3.1 |
+| `superseded_target` | 400 / 409 | The `supersedes` target is invalid. `details.reason` provides specifics. HTTP 400 for static violations (`not_found`, `lineage_mismatch`, `cross_registry_supersession_unsupported`); HTTP 409 Conflict for race conditions (`already_superseded`, `version_mismatch`). | RFC-ACDP-0003 §3.1 |
 | `unsupported_algorithm` | 400 | Signature algorithm not in the registry's `supported_signature_algorithms`. | RFC-ACDP-0007 §3 |
 | `unsupported_embedding_model` | 400 | Embedding model not in the registry's `supported_embedding_models`. | RFC-ACDP-0005 §3.1 |
 | `rate_limited` | 429 | Per-agent rate limit exceeded. | RFC-ACDP-0008 §4.3 |
