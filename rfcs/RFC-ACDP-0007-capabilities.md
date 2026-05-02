@@ -49,6 +49,8 @@ Returns the registry's capability declaration. Conforms to [`schemas/json/acdp-c
 | Field | Type | Description |
 |---|---|---|
 | `supported_embedding_models` | array of string | Embedding model identifiers indexed by this registry. Empty if registry does not index embeddings (similarity endpoints return 501 Not Implemented). |
+| `read_authentication_methods` | array of string | Read-authentication methods supported by this registry. At least one MUST be declared if the registry serves any non-public contexts. Defined values: `http_signatures`, `mtls`, `oauth`. See RFC-ACDP-0008 §6.2. |
+| `anonymous_public_reads` | boolean | Whether anonymous (unauthenticated) reads are permitted for public contexts. Default `false`. See RFC-ACDP-0008 §6.3. |
 
 ### 3.3 Forward-compatible additions
 

@@ -50,4 +50,4 @@ The full normative threat model is [RFC-ACDP-0008 Security](../rfcs/RFC-ACDP-000
 ### 6. Embedding-based reconstruction on a restricted context
 **Result.** Conformant registry scopes similarity by visibility. Defense-in-depth: producers SHOULD omit `embedding` on highly sensitive contexts.
 
-See [RFC-ACDP-0008 Security](../rfcs/RFC-ACDP-0008-security.md) §6 for the full scenarios.
+See [RFC-ACDP-0008 Security](../rfcs/RFC-ACDP-0008-security.md) §7 for the full scenarios.

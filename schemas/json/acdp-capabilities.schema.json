@@ -35,6 +35,17 @@
       "items": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/embedding_model" },
       "description": "Embedding model identifiers indexed by this registry. Empty if registry does not index embeddings."
     },
+    "read_authentication_methods": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["http_signatures", "mtls", "oauth"] },
+      "uniqueItems": true,
+      "description": "Read-authentication methods supported by this registry. At least one MUST be declared if the registry serves any non-public contexts. See RFC-ACDP-0008 §6.2."
+    },
+    "anonymous_public_reads": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether anonymous (unauthenticated) reads are permitted for public contexts. See RFC-ACDP-0008 §6.3."
+    },
     "limits": {
       "type": "object",
       "required": ["max_payload_bytes", "max_embedded_bytes"],

@@ -110,39 +110,65 @@ The threat surface is therefore: **the entire path from producer's signing key, 
 
 ---
 
-## 6. Attack Scenarios
+## 6. Request Authentication
 
-### 6.1 Hostile registry serves a tampered body
+ACDP defines two authentication contexts: writes (publish) and reads (retrieval, search, similarity).
+
+### 6.1 Write authentication
+
+The producer's signature on the request body authenticates the writer. The registry derives `effective_requester_did` for write operations from `body.agent_id`, after verifying the body signature per RFC-ACDP-0003 §2.1 steps 4–7.
+
+Implementations MAY layer HTTP-level authentication (mTLS, bearer tokens) for additional protections such as rate limiting and abuse prevention, but the body signature is the protocol-level authoritative source.
+
+### 6.2 Read authentication
+
+Read operations have no body signature. Registries serving non-public contexts MUST establish the requester's DID via one of:
+
+- **HTTP Message Signatures** [RFC 9421] using a key bound to the requester's DID document.
+- **mTLS** with a client certificate bound to the requester's DID document.
+- **OAuth 2.0 / OIDC** producing a token whose subject is bound to the requester's DID.
+
+Registries MUST declare which read-authentication methods they support in `/.well-known/acdp.json` (capability field `read_authentication_methods`). The output of read authentication is `effective_requester_did`, used for visibility checks (§4.5), per-agent rate limiting (§4.3), and audit logging.
+
+### 6.3 Anonymous reads
+
+Registries MAY allow anonymous reads of `visibility: public` contexts. Anonymous requests have no `effective_requester_did`; registries MUST treat such requests as having empty audience membership and MUST NOT return any restricted or private context to an anonymous requester. A registry supporting anonymous public reads MUST declare `"anonymous_public_reads": true` in capabilities; otherwise unauthenticated requests MUST be rejected with `not_authorized` (HTTP 403).
+
+---
+
+## 7. Attack Scenarios
+
+### 7.1 Hostile registry serves a tampered body
 
 **Setup.** A consumer fetches `acdp://hostile.example/uuid`. The registry returns a modified body.
 
 **Result.** The consumer recomputes `content_hash` over the JCS-canonicalized body and compares against `body.content_hash`. Mismatch ⇒ rejected. **Or**, the consumer verifies `body.signature` against the producer's resolved public key and gets a verification failure ⇒ rejected.
 
-### 6.2 DNS spoof against a producer DID
+### 7.2 DNS spoof against a producer DID
 
 **Setup.** An attacker spoofs DNS for `did:web:producer.example`. The consumer resolves what the attacker wants.
 
 **Result.** TLS certificate validation at the producer's HTTPS endpoint catches the spoof unless the attacker has also obtained a valid TLS cert for the hostname. With DNSSEC + cert pinning, both are required to forge a context. Even with a forged DID document, the attacker must also produce a signature under the **real** producer's private key for any context the consumer is asking to verify — the existing signed contexts are tamper-evident.
 
-### 6.3 Producer rotates keys; old context still valid
+### 7.3 Producer rotates keys; old context still valid
 
 **Setup.** Producer P signed `ctx://reg/abc` with key K1 at `created_at=t1`. P later rotates to K2; K1 is removed from P's DID document at `t2`.
 
 **Result.** A consumer at `t3 > t2` verifying the context resolves P's DID document, finds the historical key validity window for K1 (`[t0, t2]`), confirms `created_at=t1` falls within it, and verifies the signature with K1. The context remains valid.
 
-### 6.4 Replay of a captured publish
+### 7.4 Replay of a captured publish
 
 **Setup.** An attacker captures a producer's `POST /contexts` request and replays it.
 
 **Result.** Replay produces a duplicate publication. The body is content-addressed; the duplicate has identical `content_hash`. The registry assigns a new `ctx_id` (collision is statistically impossible). Idempotent at the content level. Producers wishing to suppress duplicate publication SHOULD deduplicate locally on `content_hash`.
 
-### 6.5 Visibility-restricted lookup by unauthorized consumer
+### 7.5 Visibility-restricted lookup by unauthorized consumer
 
 **Setup.** Consumer C requests `GET /contexts/{ctx_id}` for a context with `visibility: restricted` and `audience` not including C's DID.
 
 **Result.** Registry returns `not_found` (HTTP 404). C cannot distinguish "doesn't exist" from "exists but you can't see it".
 
-### 6.6 Embedding-based content reconstruction on a restricted context
+### 7.6 Embedding-based content reconstruction on a restricted context
 
 **Setup.** A restricted context includes an `embedding`. An unauthorized consumer crafts similarity queries to reconstruct the underlying content.
 
@@ -150,7 +176,7 @@ The threat surface is therefore: **the entire path from producer's signing key, 
 
 ---
 
-## 7. Security Considerations Summary
+## 8. Security Considerations Summary
 
 ACDP's security model rests on three pillars:
 
@@ -162,7 +188,7 @@ These three pillars are the minimum. Implementations MUST NOT relax any of them.
 
 ---
 
-## 8. References
+## 9. References
 
 - [RFC-ACDP-0001 Core](RFC-ACDP-0001-core.md)
 - [RFC-ACDP-0002 Context Body](RFC-ACDP-0002-context-body.md)
