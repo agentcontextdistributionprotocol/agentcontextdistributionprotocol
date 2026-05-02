@@ -12,7 +12,7 @@
     "signature": {
       "algorithm": "ed25519",
       "key_id": "did:web:agents.example.com:anomaly-detector#key-1",
-      "value": "YW5vbWFseV9hbGVydF9zaWduYXR1cmVfcGxhY2Vob2xkZXI="
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
     },
     "title": "Anomaly detected in production stream",
     "type": "alert",

@@ -13,7 +13,7 @@
       "signature": {
         "algorithm": "ed25519",
         "key_id": "did:web:agents.example.com:test-producer#key-1",
-        "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
       },
       "title": "Minimal",
       "type": "data_snapshot",

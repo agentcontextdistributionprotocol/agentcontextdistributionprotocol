@@ -15,7 +15,7 @@
     "signature": {
       "algorithm": "ed25519",
       "key_id": "did:web:agents.example.com:research-lab-publisher#key-1",
-      "value": "Y29hdXRob3JlZF9hbmFseXNpc19zaWduYXR1cmVfcGxhY2Vob2xkZXI="
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
     },
     "title": "BTC Sentiment-Based Price Prediction",
     "type": "prediction",

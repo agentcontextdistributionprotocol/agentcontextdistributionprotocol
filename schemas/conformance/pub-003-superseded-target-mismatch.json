@@ -20,7 +20,7 @@
       "signature": {
         "algorithm": "ed25519",
         "key_id": "did:web:agents.example.com:test-producer#key-1",
-        "value": "c3VwZXJzZWRlc190ZXN0X3NpZ25hdHVyZQ=="
+        "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
       },
       "title": "v2 with mismatched lineage",
       "type": "analysis",

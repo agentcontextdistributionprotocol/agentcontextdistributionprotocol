@@ -12,7 +12,7 @@
     "signature": {
       "algorithm": "ed25519",
       "key_id": "did:web:agents.example.com:market-data-collector#key-1",
-      "value": "c2lnbmF0dXJlX3BsYWNlaG9sZGVyX2RvX25vdF92ZXJpZnk="
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
     },
     "title": "BTC Price Snapshot",
     "type": "data_snapshot",
