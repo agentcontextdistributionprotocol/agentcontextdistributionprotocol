@@ -1,4 +1,4 @@
-.PHONY: help validate validate-all json-validate json-schema-validate clean install-tools docs
+.PHONY: help validate validate-all json-validate json-schema-validate conformance clean install-tools docs
 
 # ── Default ───────────────────────────────────────────────────────────────────
 
@@ -19,8 +19,12 @@ help:
 
 # ── Validation ────────────────────────────────────────────────────────────────
 
-validate: json-schema-validate json-validate
+validate: json-schema-validate json-validate conformance
 	@echo "✓ All validations passed"
+
+conformance:
+	@echo "Running executable conformance vectors..."
+	@python3 scripts/conformance-runner.py
 
 validate-all: validate
 	@echo "✓ All validations completed"

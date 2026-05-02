@@ -32,6 +32,17 @@ jobs:
           chmod +x scripts/validate-json.sh
           ./scripts/validate-json.sh
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install conformance runner dependencies
+        run: pip install jcs cryptography
+
+      - name: Run executable conformance vectors
+        run: python3 scripts/conformance-runner.py
+
   validate-all:
     name: All Validations Passed
     runs-on: ubuntu-latest
@@ -43,3 +54,4 @@ jobs:
           echo "✓ All ACDP validations passed"
           echo "  - JSON Schemas valid"
           echo "  - JSON examples valid"
+          echo "  - Executable conformance vectors passed"
