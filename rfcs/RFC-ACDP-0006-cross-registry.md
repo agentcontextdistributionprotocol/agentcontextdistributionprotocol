@@ -74,7 +74,7 @@ Bodies are immutable. Consumers MAY cache fetched bodies indefinitely, keyed by 
 | Retrieval returns 404 | The reference is unresolvable. The consumer MUST NOT infer that the context never existed; only that it is not currently retrievable. |
 | Signature verification fails | The retrieved body is **untrustworthy**. The consumer MUST NOT use it as evidence regardless of which registry served it. |
 | Hash mismatch | Same as signature failure — body is corrupt. |
-| Visibility-restricted (404 with `visibility_denied` semantic) | The reference is not accessible to the consumer. |
+| Visibility-restricted (404 `not_found` returned indistinguishably) | The reference is not accessible to the consumer. The serving registry returns `not_found`; consumers cannot distinguish from a genuinely missing context. |
 
 ---
 

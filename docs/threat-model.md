@@ -11,7 +11,7 @@ The full normative threat model is [RFC-ACDP-0008 Security](../rfcs/RFC-ACDP-000
 | Producer impersonation | DID-bound signing key; verifiers resolve from the producer's DID document. |
 | Cross-registry impersonation | `origin_registry` is registry-assigned, not producer-controlled. |
 | Visibility leakage via similarity | Visibility-scoped similarity index; producers SHOULD omit `embedding` from sensitive contexts. |
-| Existence leak via 404 differentiation | `visibility_denied` returns indistinguishable HTTP 404 / `not_found`. |
+| Existence leak via 404 differentiation | Visibility-restricted contexts return `not_found` (HTTP 404) indistinguishably from genuinely missing contexts. `visibility_denied` is internal logging only. |
 | Replay of publish requests | Content-addressed bodies; idempotent at the content level. |
 | DoS via oversize bodies | `limits.max_payload_bytes` and 64 KB embedded cap. |
 | Spam / Sybil | Per-agent rate limiting required. |

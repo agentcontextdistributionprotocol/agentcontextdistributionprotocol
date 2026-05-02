@@ -209,7 +209,7 @@ The `visibility` field controls who may discover a context.
 | `restricted` | `agent_id` plus all DIDs listed in `audience`. | MUST be present and non-empty. |
 | `private` | `agent_id` only, plus any DIDs explicitly listed in `audience` (if present). **Contributors are NOT auto-authorized.** | MAY be present to grant additional access. |
 
-Retrieval by a requester who is not in the effective audience for a `restricted` or `private` context MUST return `not_found` (HTTP 404) to avoid leaking existence — see RFC-ACDP-0007 `visibility_denied`.
+Retrieval by a requester who is not in the effective audience for a `restricted` or `private` context MUST return `not_found` (HTTP 404) to avoid leaking existence — see RFC-ACDP-0008 §4.5.
 
 `contributors` is for **attribution**, not authorization. Crediting a contributor on a private context does not implicitly grant that contributor read access. To grant read access, list the DID explicitly in `audience`.
 

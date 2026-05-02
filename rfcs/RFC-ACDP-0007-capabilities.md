@@ -132,7 +132,6 @@ The full registry is maintained in [`registries/error-codes.md`](../registries/e
 | `schema_violation` | 400 | Request body or query failed structural validation. | RFC-ACDP-0003 §2.1 |
 | `not_authorized` | 403 | Agent lacks permission for the operation. | RFC-ACDP-0003 §3.1 |
 | `not_found` | 404 | Resource not found. | RFC-ACDP-0004 §7 |
-| `visibility_denied` | 404 | Resource exists but is not visible to the requester (returned as 404 to avoid leaking existence). | RFC-ACDP-0002 §7, RFC-ACDP-0004 §2.3 |
 | `superseded_target` | 400 | The `supersedes` target is invalid (any reason — `details.reason` provides specifics). | RFC-ACDP-0003 §3.1 |
 | `unsupported_algorithm` | 400 | Signature algorithm not supported by the registry. | RFC-ACDP-0003 §2.1 |
 | `unsupported_embedding_model` | 400 | Embedding model not indexed by the registry. | RFC-ACDP-0003 §2.1, RFC-ACDP-0005 §3.1 |
@@ -149,7 +148,7 @@ New codes are added via the [RFC process](../governance/RFC-PROCESS.md). Codes M
 
 Registries MUST NOT reveal which specific policy check failed beyond the registered code. The `error.message` string is informational only and MUST NOT be used in automated decision-making by consumers.
 
-For visibility-restricted contexts, registries MUST return `not_found` with HTTP 404 (the `visibility_denied` semantic) — they MUST NOT distinguish "not found" from "not authorized" externally.
+For visibility-restricted contexts, registries MUST return `not_found` (HTTP 404) — they MUST NOT distinguish "not found" from "not authorized" externally. The internal label `visibility_denied` MAY be used in registry logs or metrics for auditing purposes but MUST NOT appear in wire responses.
 
 ---
 

@@ -54,7 +54,7 @@ Returns only the body — useful for consumers wishing to verify the signed arti
 When the requesting agent is not in the context's effective audience:
 
 - For `visibility: public` — return as normal (HTTP 200).
-- For `visibility: restricted` and the requester's DID is not in `audience` — return `not_found` (HTTP 404). Registries MUST NOT distinguish "not found" from "not authorized" externally; this is the `visibility_denied` semantic in RFC-ACDP-0007.
+- For `visibility: restricted` and the requester's DID is not in `audience` — return `not_found` (HTTP 404). Registries MUST NOT distinguish "not found" from "not authorized" externally. The internal label `visibility_denied` MAY be used in registry logs but MUST NOT appear on the wire (RFC-ACDP-0008 §4.5).
 - For `visibility: private` and the requester is not the producer or a contributor — return `not_found` (HTTP 404).
 
 The HTTP status code is the same in both "really doesn't exist" and "exists but you can't see it"; the difference is internal logging only.
