@@ -255,12 +255,15 @@ All ACDP traffic MUST run over TLS in production deployments.
 
 ## 8. Registry Hooks
 
-ACDP maintains four registries under [`registries/`](../registries/):
+ACDP maintains the following registries under [`registries/`](../registries/):
 
 - **context-types** — registered values for `Body.type`.
 - **error-codes** — protocol-level error codes returned in error envelopes.
 - **media-types** — content types used in transport bindings.
 - **locator-schemes** — well-known dotted-namespace schemes for structured `data_refs.location`.
+- **signature-algorithms** — open vocabulary for `signature.algorithm` and `capabilities.supported_signature_algorithms`.
+- **auth-methods** — open vocabulary for `capabilities.read_authentication_methods`.
+- **profiles** — open vocabulary for `capabilities.profiles`.
 
 New entries are added via the [RFC process](../governance/RFC-PROCESS.md). Experimental identifiers SHOULD use reverse-domain notation.
 

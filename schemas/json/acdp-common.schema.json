@@ -69,8 +69,10 @@
       "properties": {
         "algorithm": {
           "type": "string",
-          "description": "Signature algorithm. ed25519 is mandatory to support; other algorithms MAY be declared by registries.",
-          "enum": ["ed25519", "ecdsa-p256"]
+          "description": "Signature algorithm. Lowercase identifier; current registered values are 'ed25519' and 'ecdsa-p256' (see registries/signature-algorithms.md). 'ed25519' is mandatory to support per RFC-ACDP-0001 §5.10. Pattern is intentionally open so future algorithms (ed448, post-quantum) can be added without a schema bump; runtime gating is via the registry's supported_signature_algorithms.",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "minLength": 2,
+          "maxLength": 64
         },
         "key_id": {
           "$ref": "#/$defs/did_url",

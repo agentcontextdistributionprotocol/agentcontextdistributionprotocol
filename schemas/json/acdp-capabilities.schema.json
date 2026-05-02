@@ -27,12 +27,14 @@
       "type": "array",
       "items": {
         "type": "string",
-        "enum": ["ed25519", "ecdsa-p256"]
+        "pattern": "^[a-z][a-z0-9-]*$",
+        "minLength": 2,
+        "maxLength": 64
       },
       "minItems": 1,
       "uniqueItems": true,
       "contains": { "const": "ed25519" },
-      "description": "Signature algorithms accepted on publish. MUST contain 'ed25519' (RFC-ACDP-0001 §5.10)."
+      "description": "Signature algorithms accepted on publish. MUST contain 'ed25519' (RFC-ACDP-0001 §5.10). Open vocabulary; see registries/signature-algorithms.md."
     },
     "supported_embedding_models": {
       "type": "array",
@@ -41,9 +43,14 @@
     },
     "read_authentication_methods": {
       "type": "array",
-      "items": { "type": "string", "enum": ["http_signatures", "mtls", "oauth"] },
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$",
+        "minLength": 2,
+        "maxLength": 64
+      },
       "uniqueItems": true,
-      "description": "Read-authentication methods supported by this registry. At least one MUST be declared if the registry serves any non-public contexts. See RFC-ACDP-0008 §6.2."
+      "description": "Read-authentication methods supported by this registry. Open vocabulary; current registered values are 'http_signatures', 'mtls', 'oauth' (see registries/auth-methods.md). At least one MUST be declared if the registry serves any non-public contexts. See RFC-ACDP-0008 §6.2."
     },
     "anonymous_public_reads": {
       "type": "boolean",
@@ -67,17 +74,14 @@
       "type": "array",
       "items": {
         "type": "string",
-        "enum": [
-          "acdp-registry-core",
-          "acdp-registry-discovery",
-          "acdp-registry-federated",
-          "acdp-consumer"
-        ]
+        "pattern": "^acdp-[a-z][a-z0-9-]*$",
+        "minLength": 6,
+        "maxLength": 64
       },
       "uniqueItems": true,
       "minItems": 1,
       "contains": { "const": "acdp-registry-core" },
-      "description": "Profile(s) this implementation claims conformance to. MUST contain 'acdp-registry-core' for any registry. See RFC-ACDP-0001 §9."
+      "description": "Profile(s) this implementation claims conformance to. MUST contain 'acdp-registry-core' for any registry. Current registered profiles are 'acdp-registry-core', 'acdp-registry-discovery', 'acdp-registry-federated', 'acdp-consumer' (see RFC-ACDP-0001 §9.1). Open vocabulary so future profiles (e.g. 'acdp-registry-receipts') can be added without a schema bump."
     },
     "limits": {
       "type": "object",
