@@ -53,6 +53,40 @@ The first published version of ACDP. **Coordination-agnostic substrate from the 
 - **Tship-C2:** Added `scripts/conformance-runner.py` and wired into CI. Conformance vectors are now executed, not just structurally validated.
 - **Tship-D1:** This entry.
 
+### Iteration 4 changes (post-audit hardening)
+
+Iteration 4 addresses the audit findings from "what remains" review of iteration-3. Five focus areas: forward-compat (open closed enums to keep RFC-0001 §6 promise), interoperability (specify did:web resolution), spec-completeness gaps (idempotency TTL, cursor scoping, error-envelope coverage), wire-payload examples (visibility/lineage/idempotency), and miscellaneous tightening.
+
+#### Forward-compatibility (Phase F)
+
+- **Tship-F1:** Opened closed enums to patterns: `signature.algorithm`, `capabilities.supported_signature_algorithms`, `capabilities.profiles`, `capabilities.read_authentication_methods`. Added named open-vocabulary registries: `registries/signature-algorithms.md`, `registries/auth-methods.md`, `registries/profiles.md`. The `contains` constraints (mandatory `ed25519`, `did:web`, `acdp-registry-core`) remain enforced.
+- **Tship-F2:** Opened `status` enum to a string pattern; documented that v0.0.1 consumers MUST tolerate unknown status values and SHOULD treat them as `active` (forward-compat path for v0.1 `retracted`).
+- **Tship-F3:** Set `additionalProperties: true` on `acdp-context.schema.json` (top-level) and `signature` def. Lets v0.1 add `registry_receipt` (RFC-0009 §2.7) and signature proof chains without a v0.0.1 schema bump.
+- **Tship-F4:** Renamed `lin:<hex>` to `lin:sha256:<hex>` for hash-algorithm namespacing. Updated all fixtures, examples, and the conformance runner. Future ACDP versions can adopt `lin:sha3-256:`, `lin:blake3:`, etc., without colliding with v0.0.1 lineage_ids.
+- **Tship-F5:** Added optional producer-signed `body.acdp_version` field (defaults to `0.0.1` when absent). v0.0.1 fixtures continue to validate without changes; v0.1+ producers can self-identify so verifiers apply the right exclusion set.
+
+#### DID resolution and signature integrity (Phase G)
+
+- **Tship-G1:** Specified the `did:web` resolution algorithm in RFC-0001 §5.11 — URL construction, fragment matching against `verificationMethod`, `assertionMethod` authorization check, key-encoding extraction (`publicKeyMultibase`/`publicKeyJwk`), caching guidance. Closes the largest interop gap: two implementations now resolve keys the same way.
+- **Tship-G2:** Constrained v0.0.1 producers to `did:web` (matches the registry-side `did:web` mandate). Other DID methods may be supported by individual registries but interop is only guaranteed via `did:web`.
+- **Tship-G3:** Tightened `signature.value` length to exactly 88 base64 chars for `ed25519` and `ecdsa-p256` (their 64-byte signatures). Normalized all fixture placeholder signatures to 88 chars.
+
+#### Spec-completeness gaps (Phase H)
+
+- **Tship-H1:** RFC-0004 §4 — reworded "consumer can independently verify status" to "status is registry-attested" (consumers cannot verify the registry's own supersession index without trusting the registry). Added §4.1 forward-compat for unknown status values.
+- **Tship-H2:** Bounded idempotency-key TTL to [24h, 168h] and added required `limits.idempotency_key_ttl_seconds` capability advertisement when `supports_idempotency_key: true`. Cursor rule: registries MUST re-scope to the current requester on every page (replay by another principal MUST get that principal's visibility).
+- **Tship-H3:** Added `internal_error` (HTTP 500) and `key_resolution_unreachable` (HTTP 502) error codes. Split `key_resolution_failed` into permanent (400, missing key) vs transient (502, network/DNS/TLS) for correct retry semantics. RFC-0007 §4 now says envelope MUST be returned on every failure response, including 5xx.
+- **Tship-H4:** RFC-0002 §7.1 — visibility is permanent for a given body (`audience` is signed and immutable; revocation requires a successor). RFC-0001 §5.3 — clock-skew tolerance ±60s for consumer-side `expired` checks. (B12 done in H3.)
+- **Tship-H5:** B6/B7/B8/B9/B10/B15/B17/B18/B19/B20/B21/B22 — embedding-model deprecation via `previously_supported_embedding_models`; supersession-race wording cleanup; empty `data_refs` documented; publish step 6 reordering note; `derived_from` depth + cycle-detection guidance; `total_estimate` determinism guard against side-channel inference; `did` regex comment; `data_refs[].location` URI-string requires a scheme; body-only retrieval errors clarified; lineage scoping clarified given v0.0.1 supersession constraints; embedding-on-restricted SHOULD reaffirmed; `match_summary.lineage_id` elevated to required.
+
+#### Examples and fixture corrections (Phase I)
+
+- **Tship-I:** Fixed pub-001 and pub-003 to use arithmetically derived hashes/lineage_ids (audit C12, C13). Added `examples/visibility/{restricted,private}-body.json`, `examples/lineage/multi-step-derivation.json`, `examples/idempotency/idempotency-key-cycle.json`, `schemas/conformance/err-001-internal-error.json`. Documented `details` shape per error code in `acdp-error.schema.json`. Updated `schemas/conformance/README.md` to list `sig-*` and `err-*` fixture families.
+
+#### Cleanup polish (Phase J)
+
+- **Tship-J:** RFC-0001 §3 merged duplicate RFC-0007 reference. RFC-0004 §6.4 ETag literal example. RFC-0008 §3.10 algorithm-downgrade now correctly inverts the dependency (algorithm in body MUST match algorithm of resolved key). RFC-0006 §3 strengthens `registry_did` resolution to SHOULD. Tag regex tightened. `data_period` runtime check note added. `did:agent:` test convention documented in conformance README.
+
 ### Included
 
 - **Core** — identifiers, JCS canonicalization, content hashing, signatures, time format (RFC-ACDP-0001).
