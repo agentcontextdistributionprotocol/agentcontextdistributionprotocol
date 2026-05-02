@@ -131,14 +131,21 @@ The full registry is maintained in [`registries/error-codes.md`](../registries/e
 | `hash_mismatch` | 400 | `content_hash` does not match the canonicalized body. | RFC-ACDP-0001 §5.7, RFC-ACDP-0003 §2.1 |
 | `schema_violation` | 400 | Request body or query failed structural validation. | RFC-ACDP-0003 §2.1 |
 | `not_authorized` | 403 | Agent lacks permission for the operation. | RFC-ACDP-0003 §3.1 |
-| `not_found` | 404 | Resource not found. | RFC-ACDP-0004 §7 |
-| `superseded_target` | 400 | The `supersedes` target is invalid (any reason — `details.reason` provides specifics). | RFC-ACDP-0003 §3.1 |
-| `unsupported_algorithm` | 400 | Signature algorithm not supported by the registry. | RFC-ACDP-0003 §2.1 |
-| `unsupported_embedding_model` | 400 | Embedding model not indexed by the registry. | RFC-ACDP-0003 §2.1, RFC-ACDP-0005 §3.1 |
-| `rate_limited` | 429 | Per-agent rate limit exceeded. | RFC-ACDP-0008 §4 |
-| `payload_too_large` | 413 | Request body exceeds registry limits. | RFC-ACDP-0003 §2.1 |
+| `not_found` | 404 | Resource not found. (Also returned for visibility-restricted contexts to non-audience requesters; see RFC-ACDP-0008 §4.5.) | RFC-ACDP-0004 §7 |
+| `superseded_target` | 400 | The `supersedes` target is invalid. `details.reason` provides specifics. | RFC-ACDP-0003 §3.1 |
+| `unsupported_algorithm` | 400 | Signature algorithm not in the registry's `supported_signature_algorithms`. | RFC-ACDP-0007 §3 |
+| `unsupported_embedding_model` | 400 | Embedding model not in the registry's `supported_embedding_models`. | RFC-ACDP-0005 §3.1 |
+| `rate_limited` | 429 | Per-agent rate limit exceeded. | RFC-ACDP-0008 §4.3 |
+| `payload_too_large` | 413 | Request body exceeds `limits.max_payload_bytes`. | RFC-ACDP-0007 §3.1 |
 | `embedded_too_large` | 413 | An embedded data reference exceeds 64 KB. | RFC-ACDP-0002 §6.3 |
 | `immutable_field` | 400 | Attempted mutation of an immutable field. | RFC-ACDP-0002 §3 |
+| `key_resolution_failed` | 400 | The signing key referenced by `signature.key_id` could not be resolved (DID-document fetch failed; key not present in document). | RFC-ACDP-0003 §2.1 step 6 |
+| `key_not_authorized` | 403 | The DID portion of `signature.key_id` does not equal `body.agent_id`. | RFC-ACDP-0003 §2.1 step 6 |
+| `not_implemented` | 501 | Endpoint or capability not implemented by this registry. Returned with the standard error envelope. | RFC-ACDP-0005 §3 |
+| `cursor_expired` | 400 | A previously-issued pagination cursor is no longer valid. Client SHOULD restart pagination. | RFC-ACDP-0005 §2.5.4 |
+| `invalid_cursor` | 400 | A pagination cursor is malformed or unrecognized. | RFC-ACDP-0005 §2.5.4 |
+| `duplicate_publish` | 409 | An idempotent publish was retried with conflicting content (same `Idempotency-Key`, different `content_hash`). | RFC-ACDP-0003 §6.2 |
+| `cross_registry_resolution_failed` | 502 | A cross-registry resolution failed (DNS resolution refused, response oversize, timeout, redirect-policy violation, or upstream registry unavailable). | RFC-ACDP-0006 §7 |
 
 ### 5.1 Adding a code
 
