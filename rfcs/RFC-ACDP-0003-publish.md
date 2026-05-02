@@ -29,26 +29,27 @@ The request body conforms to [`schemas/json/acdp-publish-request.schema.json`](.
 The registry MUST execute the following steps in order:
 
 1. **Schema validation.** Validate the request body against `acdp-publish-request.schema.json`. On failure, return `schema_violation` (HTTP 400).
-2. **Algorithm check.** If `signature.algorithm` is not in the registry's `supported_signature_algorithms` (RFC-ACDP-0007), return `unsupported_algorithm` (HTTP 400).
-3. **Signature verification.** Resolve the signing key via `signature.key_id` (a DID URL) and verify `signature.value` against the bytes of the `content_hash` hex string. On failure, return `invalid_signature` (HTTP 400).
-4. **Hash recomputation.** Compute SHA-256 over the JCS-canonicalized request body, with the exclusion set from RFC-ACDP-0001 §5.7. If the computed hash does not equal `content_hash`, return `hash_mismatch` (HTTP 400).
-5. **Embedded-size validation.** For each `data_refs[].embedded`, verify decoded size ≤ 65536 bytes. On overflow, return `embedded_too_large` (HTTP 413).
-6. **Payload-size validation.** Verify total request size ≤ `limits.max_payload_bytes` (RFC-ACDP-0007). On overflow, return `payload_too_large` (HTTP 413).
-7. **Embedding-model check.** If `embedding` is present, verify `embedding_model` is in the registry's `supported_embedding_models` (RFC-ACDP-0007). On failure, return `unsupported_embedding_model` (HTTP 400).
-8. **Identifier assignment.** Assign:
+2. **Payload-size validation.** Verify total request size ≤ `limits.max_payload_bytes` (RFC-ACDP-0007). On overflow, return `payload_too_large` (HTTP 413).
+3. **Embedded-size validation.** For each `data_refs[].embedded`, verify decoded size ≤ 65536 bytes. On overflow, return `embedded_too_large` (HTTP 413).
+4. **Hash recomputation.** Compute SHA-256 over the JCS-canonicalized request body, with the exclusion set from RFC-ACDP-0001 §5.7. If the computed hash does not equal `content_hash`, return `hash_mismatch` (HTTP 400). **This step happens before signature verification:** verifying a signature against an untrusted submitted hash proves nothing — the registry must independently recompute the hash before treating it as the signing input.
+5. **Algorithm check.** If `signature.algorithm` is not in the registry's `supported_signature_algorithms` (RFC-ACDP-0007), return `unsupported_algorithm` (HTTP 400).
+6. **Key resolution and key-id binding.** Resolve the signing key via `signature.key_id` (a DID URL). Verify that the DID portion of `signature.key_id` (everything before `#`) equals `body.agent_id`. On unresolvable key, return `key_resolution_failed` (HTTP 400). On `key_id`-DID-vs-`agent_id` mismatch, return `key_not_authorized` (HTTP 403). (See RFC-ACDP-0008 for normative DID-method support.)
+7. **Signature verification.** Verify `signature.value` against the bytes of the `content_hash` string using the resolved key. On failure, return `invalid_signature` (HTTP 400).
+8. **Embedding-model check.** If `embedding` is present, verify `embedding_model` is in the registry's `supported_embedding_models` (RFC-ACDP-0007). On failure, return `unsupported_embedding_model` (HTTP 400).
+9. **Identifier assignment.** Assign:
    - `ctx_id = acdp://<own_authority>/<freshly_generated_uuidv4>`
    - `origin_registry = <own_authority>`
    - `created_at = <current_time_in_canonical_rfc3339>`
-9. **Lineage computation.** Per RFC-ACDP-0001 §5.6:
-   - For first versions (`supersedes = null`), `lineage_id = "lin:" + lowercase_hex(SHA-256(ctx_id))`.
-   - For subsequent versions, walk back through `supersedes` to find the version-1 `ctx_id` and apply the same formula.
-   - If the producer supplied `lineage_id`, verify it matches the computed value; on mismatch, return `superseded_target` (HTTP 400).
-10. **Supersession validation.** If `supersedes` is non-null, validate per §3 below.
-11. **Visibility validation.** If `visibility = "restricted"`, verify `audience` is a non-empty array of DIDs; if `visibility = "private"`, the registry MUST treat the producer (and listed contributors, if any) as the only authorized audience.
-12. **Persistence.** Persist the body. Initialize the derived `status` per RFC-ACDP-0004 §4.
-13. **Response.** Return a publish response (§4).
+10. **Lineage computation.** Per RFC-ACDP-0001 §5.6:
+    - For first versions (`supersedes = null`), `lineage_id = "lin:" + lowercase_hex(SHA-256(ctx_id))`.
+    - For subsequent versions, walk back through `supersedes` to find the version-1 `ctx_id` and apply the same formula.
+    - If the producer supplied `lineage_id`, verify it matches the computed value; on mismatch, return `superseded_target` (HTTP 400).
+11. **Supersession validation.** If `supersedes` is non-null, validate per §3 below.
+12. **Visibility validation.** If `visibility = "restricted"`, verify `audience` is a non-empty array of DIDs. If `visibility = "private"`, the registry MUST treat **only `agent_id`** plus any DIDs explicitly listed in `audience` (if present) as authorized; **`contributors` are NOT auto-authorized** — `contributors` is for attribution, not authorization (see RFC-ACDP-0008 §6.4).
+13. **Persistence.** Persist the body. Initialize the derived `status` per RFC-ACDP-0004 §4.
+14. **Response.** Return a publish response (§4).
 
-The registry MUST execute steps 1–7 before any persistence. Steps 8–12 are atomic with respect to other concurrent publications: two publications targeting the same `supersedes` value are racing — the registry MUST either accept exactly one, or accept the first and return `superseded_target` for the second.
+The registry MUST execute steps 1–8 before any persistence. Steps 9–13 are atomic with respect to other concurrent publications: two publications targeting the same `supersedes` value are racing — the registry MUST either accept exactly one, or accept the first and return `superseded_target` for the second.
 
 ### 2.2 Producer-side flow
 
