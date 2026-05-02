@@ -114,6 +114,7 @@ Cursors are opaque strings. They:
 - MUST NOT include client-decodable visibility information (an unauthorized client cracking the cursor MUST NOT learn anything about restricted contexts).
 - MAY become invalid before 1 hour due to result-set changes; registries MUST return `cursor_expired` (HTTP 400) in that case.
 - MAY be malformed by a buggy or malicious client; registries MUST return `invalid_cursor` (HTTP 400) for cursors they cannot parse.
+- MUST be re-scoped to the current requester on every page. Registries MUST NOT use cursors as a way to "remember" the original requester's identity. If the effective requester DID changes between pages (different authentication credentials), the registry MUST recompute visibility from scratch using the current requester. Equivalently, a cursor returned to requester A and replayed by requester B MUST produce results visible to B (not A).
 
 Results MAY include or exclude contexts published mid-iteration; cross-page consistency is not guaranteed. A consumer requiring snapshot semantics MUST issue a single request with a large `limit` (subject to registry caps).
 

@@ -157,7 +157,7 @@ Producers MAY include an `Idempotency-Key` header on `POST /contexts`:
 
 Registries supporting idempotency:
 
-- MUST track `(agent_id, idempotency_key)` pairs for at least 24 hours.
+- MUST track `(agent_id, idempotency_key)` pairs for at least 24 hours and at most 168 hours (7 days). Registries MUST advertise their actual TTL in the capabilities document as `limits.idempotency_key_ttl_seconds` so producers can scope retry windows correctly.
 - On a repeated request with the same `(agent_id, idempotency_key)` AND the same `content_hash`: return the original publish response with **HTTP 200 OK** (instead of 201) and the original assigned identifiers (`ctx_id`, `lineage_id`, `version`, `created_at`, `status`).
 - On a repeated request with the same `(agent_id, idempotency_key)` BUT a different `content_hash`: return `duplicate_publish` (HTTP 409). The producer is reusing an idempotency key for new content, which is a programming error.
 

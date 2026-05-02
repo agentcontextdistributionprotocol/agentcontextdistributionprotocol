@@ -108,6 +108,12 @@
           "minimum": 1,
           "default": 100,
           "description": "Maximum top_k accepted in similarity requests. See RFC-ACDP-0005 §3.5."
+        },
+        "idempotency_key_ttl_seconds": {
+          "type": "integer",
+          "minimum": 86400,
+          "maximum": 604800,
+          "description": "How long this registry retains (agent_id, Idempotency-Key) → response mappings. MUST be advertised when supports_idempotency_key is true. Range: 24h to 7d (RFC-ACDP-0003 §6.2)."
         }
       },
       "additionalProperties": false

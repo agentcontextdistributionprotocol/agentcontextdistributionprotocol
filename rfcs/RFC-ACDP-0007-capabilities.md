@@ -54,6 +54,7 @@ Returns the registry's capability declaration. Conforms to [`schemas/json/acdp-c
 | `read_authentication_methods` | array of string | Read-authentication methods supported by this registry. At least one MUST be declared if the registry serves any non-public contexts. Defined values: `http_signatures`, `mtls`, `oauth`. See RFC-ACDP-0008 §6.2. |
 | `anonymous_public_reads` | boolean | Whether anonymous (unauthenticated) reads are permitted for public contexts. Default `false`. See RFC-ACDP-0008 §6.3. |
 | `supports_idempotency_key` | boolean | Whether this registry honors the `Idempotency-Key` header on `POST /contexts`. Default `false`. See RFC-ACDP-0003 §6. |
+| `limits.idempotency_key_ttl_seconds` | integer | How long this registry retains idempotency-key mappings, in seconds. MUST be present when `supports_idempotency_key` is true. Range 86400 (24h) to 604800 (7d). |
 | `limits.max_embedding_dimensions` | integer | Maximum embedding vector dimensionality accepted on similarity requests. Default 4096. See RFC-ACDP-0005 §3.5. |
 | `limits.max_top_k` | integer | Maximum `top_k` accepted on similarity requests. Default 100. See RFC-ACDP-0005 §3.5. |
 
