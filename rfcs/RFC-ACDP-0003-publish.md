@@ -56,8 +56,8 @@ The registry MUST execute steps 1–8 before any persistence. Steps 9–13 are a
 Producers building a publish request MUST:
 
 1. Construct the publish request without `ctx_id`, `lineage_id`, `origin_registry`, `created_at`, `content_hash`, `signature`.
-2. Compute `content_hash` over the JCS-canonicalized publish-request body, with the full exclusion set from RFC-ACDP-0001 §5.7: `content_hash`, `signature`, `ctx_id`, `lineage_id`, `origin_registry`, `created_at`. At this stage, the body has neither `content_hash` nor `signature` set; both are added in steps 3–4 below.
-3. Sign `content_hash` (the lowercase hex bytes) with the producer's signing key.
+2. Compute `content_hash` over the JCS-canonicalized publish-request body, with the full exclusion set from RFC-ACDP-0001 §5.7: `content_hash`, `signature`, `ctx_id`, `lineage_id`, `origin_registry`, `created_at`. At this stage, the body has neither `content_hash` nor `signature` set; both are added in steps 3–4 below. The resulting `content_hash` value is the literal string `sha256:` followed by 64 lowercase hex characters.
+3. Sign the bytes of the **full `content_hash` string** — the ASCII bytes of `sha256:` followed by the 64 lowercase hex characters — with the producer's signing key, per RFC-ACDP-0001 §5.8. Producers MUST NOT sign the raw 32-byte hash digest, and MUST NOT sign the hex-only substring without the `sha256:` prefix.
 4. Set `content_hash` and `signature` and submit the resulting object as the request body.
 
 Producers publishing a first version (`supersedes = null`) **MUST NOT** include `lineage_id` in the publish request. Registries MUST reject first-version requests containing `lineage_id` with `schema_violation` (HTTP 400). The registry derives `lineage_id` from the assigned `ctx_id` (RFC-ACDP-0001 §5.6); producers cannot supply a correct value because they do not know the registry-assigned `ctx_id` at signing time.
