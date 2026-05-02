@@ -27,12 +27,14 @@
             "embedded_too_large",
             "immutable_field",
             "key_resolution_failed",
+            "key_resolution_unreachable",
             "key_not_authorized",
             "not_implemented",
             "cursor_expired",
             "invalid_cursor",
             "duplicate_publish",
-            "cross_registry_resolution_failed"
+            "cross_registry_resolution_failed",
+            "internal_error"
           ],
           "description": "A machine-readable error code from the ACDP standard error vocabulary."
         },

@@ -118,7 +118,7 @@ All error responses use the following structure, conforming to [`schemas/json/ac
 | `error.message` | string | Yes | Human-readable description, suitable for logs. MUST NOT be used for automated decisions. |
 | `error.details` | object | No | Optional structured details. Shape is error-code-specific. |
 
-`Content-Type` MUST be `application/acdp+json`. The HTTP status code is per the table in §5.
+`Content-Type` MUST be `application/acdp+json`. The HTTP status code is per the table in §5. The error envelope MUST be returned for **every** failure response from an ACDP endpoint, including 4xx, 5xx, 501 Not Implemented, and 502 Bad Gateway responses. Registries MUST NOT return empty bodies, framework default error pages, or non-`application/acdp+json` content types on ACDP endpoints. The corresponding fixture is `err-001-internal-error.json` (illustrating a 500 envelope).
 
 ---
 
@@ -140,13 +140,15 @@ The full registry is maintained in [`registries/error-codes.md`](../registries/e
 | `payload_too_large` | 413 | Request body exceeds `limits.max_payload_bytes`. | RFC-ACDP-0007 §3.1 |
 | `embedded_too_large` | 413 | An embedded data reference exceeds 64 KB. | RFC-ACDP-0002 §6.3 |
 | `immutable_field` | 400 | Attempted mutation of an immutable field. | RFC-ACDP-0002 §3 |
-| `key_resolution_failed` | 400 | The signing key referenced by `signature.key_id` could not be resolved (DID-document fetch failed; key not present in document). | RFC-ACDP-0003 §2.1 step 6 |
-| `key_not_authorized` | 403 | The DID portion of `signature.key_id` does not equal `body.agent_id`. | RFC-ACDP-0003 §2.1 step 6 |
+| `key_resolution_failed` | 400 | The signing key referenced by `signature.key_id` could not be resolved due to a permanent condition (DID document parsed successfully but does not contain the requested key fragment, or fragment is missing from `key_id`). Producer error; not retryable. | RFC-ACDP-0003 §2.1 step 6 |
+| `key_resolution_unreachable` | 502 | The signing key could not be resolved due to a transient condition (DNS failure, TLS error, HTTP non-2xx, network timeout fetching the DID document). Retryable with backoff. | RFC-ACDP-0003 §2.1 step 6 |
+| `key_not_authorized` | 403 | The DID portion of `signature.key_id` does not equal `body.agent_id`, or the resolved verification method is not in the DID document's `assertionMethod` array. | RFC-ACDP-0003 §2.1 step 6 |
 | `not_implemented` | 501 | Endpoint or capability not implemented by this registry. Returned with the standard error envelope. | RFC-ACDP-0005 §3 |
 | `cursor_expired` | 400 | A previously-issued pagination cursor is no longer valid. Client SHOULD restart pagination. | RFC-ACDP-0005 §2.5.4 |
 | `invalid_cursor` | 400 | A pagination cursor is malformed or unrecognized. | RFC-ACDP-0005 §2.5.4 |
 | `duplicate_publish` | 409 | An idempotent publish was retried with conflicting content (same `Idempotency-Key`, different `content_hash`). | RFC-ACDP-0003 §6.2 |
 | `cross_registry_resolution_failed` | 502 | A cross-registry resolution failed (DNS resolution refused, response oversize, timeout, redirect-policy violation, or upstream registry unavailable). | RFC-ACDP-0006 §7 |
+| `internal_error` | 500 | The registry encountered an unexpected internal condition. The standard error envelope MUST be used; `error.message` MUST NOT leak stack traces or sensitive context. Retryable. | RFC-ACDP-0007 §4 |
 
 ### 5.1 Adding a code
 
