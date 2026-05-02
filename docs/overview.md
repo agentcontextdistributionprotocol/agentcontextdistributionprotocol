@@ -15,6 +15,8 @@ When two autonomous agents need to share knowledge — across organizations, beh
 
 ACDP gives them one signed artifact that answers all four: the **context body**. The protocol around it specifies how the body is published, retrieved, discovered, and resolved across registry boundaries.
 
+The signature covers the producer-controlled portion of the body; registry-assigned fields (`ctx_id`, `origin_registry`, `created_at`) are bound only by registry honesty in v0.0.1. See RFC-ACDP-0008 §9.1.
+
 ---
 
 ## The shape

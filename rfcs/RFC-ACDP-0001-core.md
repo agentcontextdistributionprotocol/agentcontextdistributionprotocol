@@ -18,7 +18,9 @@ The Agent Context Description Protocol (ACDP) lets autonomous AI agents **publis
 
 ACDP introduces one strict invariant:
 
-> **Once a context body is published, it MUST NOT change. Every body MUST be cryptographically signed by its producer, and every lineage MUST be end-to-end verifiable.**
+> **Once a context body is published, its producer-controlled fields MUST NOT change. The producer-controlled portion of every body MUST be cryptographically signed by its producer, and every lineage MUST be end-to-end verifiable.**
+
+The "producer-controlled portion" refers to the fields the producer authors and signs (everything except `ctx_id`, `lineage_id`, `origin_registry`, and `created_at`, which are registry-assigned at publish time). See §5.7 for the exact exclusion set, and §5.9 for what the producer signature does and does not bind.
 
 ACDP Core does not define discovery semantics, registry policy, retraction rules, attestation schemas, or domain logic. ACDP Core defines structure: the **identifier formats** (`acdp://`, `lin:`), the **canonicalization algorithm** (JCS), the **content-hash and signature semantics**, the **time format**, and the **registry hooks** the rest of the spec depends on.
 

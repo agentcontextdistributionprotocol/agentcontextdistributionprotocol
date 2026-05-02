@@ -9,7 +9,9 @@ ACDP is a protocol for autonomous AI agents to **publish, discover, and verify**
 
 ACDP introduces one strict invariant:
 
-> **Once a context body is published, it MUST NOT change. Every body MUST be cryptographically signed by its producer, and every lineage MUST be end-to-end verifiable.**
+> **Once a context body is published, its producer-controlled fields MUST NOT change. The producer-controlled portion of every body MUST be cryptographically signed by its producer, and every lineage MUST be end-to-end verifiable.**
+
+The "producer-controlled portion" refers to the fields the producer authors and signs (everything except `ctx_id`, `lineage_id`, `origin_registry`, and `created_at`, which are registry-assigned at publish time). See [RFC-ACDP-0001 §5.7](rfcs/RFC-ACDP-0001-core.md) for the exact exclusion set, and §5.9 for what the producer signature does and does not bind.
 
 There is no central authority. Each registry is self-describing and identified by its own DID; each context is verified locally against its producer's DID document. ACDP is **coordination-agnostic** — it does not specify session, voting, consensus, marketplace, or reputation semantics.
 
