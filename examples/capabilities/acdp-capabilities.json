@@ -2,11 +2,18 @@
   "acdp_version": "0.0.1",
   "registry_did": "did:web:registry.example.com",
   "supported_signature_algorithms": ["ed25519"],
+  "supported_did_methods": ["did:web"],
   "supported_embedding_models": [
     "text-embedding-3-large@2026-02"
   ],
+  "read_authentication_methods": ["http_signatures"],
+  "anonymous_public_reads": true,
+  "supports_idempotency_key": true,
+  "profiles": ["acdp-registry-core", "acdp-registry-discovery"],
   "limits": {
     "max_payload_bytes": 1048576,
-    "max_embedded_bytes": 65536
+    "max_embedded_bytes": 65536,
+    "max_embedding_dimensions": 4096,
+    "max_top_k": 100
   }
 }

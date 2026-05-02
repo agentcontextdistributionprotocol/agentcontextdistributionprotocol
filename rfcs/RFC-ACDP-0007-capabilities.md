@@ -41,6 +41,8 @@ Returns the registry's capability declaration. Conforms to [`schemas/json/acdp-c
 | `acdp_version` | string | The ACDP specification version this registry implements. Form: `<major>.<minor>.<patch>`. |
 | `registry_did` | string | The registry's own DID, typically `did:web:<hostname>`. |
 | `supported_signature_algorithms` | array of string | Signature algorithms accepted on publish. MUST contain at least `"ed25519"`. |
+| `supported_did_methods` | array of string | DID methods this registry can resolve. MUST be non-empty and MUST include `"did:web"`. See RFC-ACDP-0008 §4.7. |
+| `profiles` | array of string | Profile(s) this implementation claims conformance to. Any registry MUST declare at least `"acdp-registry-core"`. See RFC-ACDP-0001 §9. |
 | `limits.max_payload_bytes` | integer | Maximum size of a publish request body in bytes. |
 | `limits.max_embedded_bytes` | integer | Maximum decoded size of any embedded data reference. **Fixed at 65536 by the spec.** |
 
@@ -51,6 +53,9 @@ Returns the registry's capability declaration. Conforms to [`schemas/json/acdp-c
 | `supported_embedding_models` | array of string | Embedding model identifiers indexed by this registry. Empty if registry does not index embeddings (similarity endpoints return 501 Not Implemented). |
 | `read_authentication_methods` | array of string | Read-authentication methods supported by this registry. At least one MUST be declared if the registry serves any non-public contexts. Defined values: `http_signatures`, `mtls`, `oauth`. See RFC-ACDP-0008 §6.2. |
 | `anonymous_public_reads` | boolean | Whether anonymous (unauthenticated) reads are permitted for public contexts. Default `false`. See RFC-ACDP-0008 §6.3. |
+| `supports_idempotency_key` | boolean | Whether this registry honors the `Idempotency-Key` header on `POST /contexts`. Default `false`. See RFC-ACDP-0003 §6. |
+| `limits.max_embedding_dimensions` | integer | Maximum embedding vector dimensionality accepted on similarity requests. Default 4096. See RFC-ACDP-0005 §3.5. |
+| `limits.max_top_k` | integer | Maximum `top_k` accepted on similarity requests. Default 100. See RFC-ACDP-0005 §3.5. |
 
 ### 3.3 Forward-compatible additions
 
@@ -63,12 +68,19 @@ The capabilities document is `additionalProperties: true` to support forward com
   "acdp_version": "0.0.1",
   "registry_did": "did:web:registry.example.com",
   "supported_signature_algorithms": ["ed25519"],
+  "supported_did_methods": ["did:web"],
   "supported_embedding_models": [
     "text-embedding-3-large@2026-02"
   ],
+  "read_authentication_methods": ["http_signatures"],
+  "anonymous_public_reads": true,
+  "supports_idempotency_key": true,
+  "profiles": ["acdp-registry-core", "acdp-registry-discovery"],
   "limits": {
     "max_payload_bytes": 1048576,
-    "max_embedded_bytes": 65536
+    "max_embedded_bytes": 65536,
+    "max_embedding_dimensions": 4096,
+    "max_top_k": 100
   }
 }
 ```

@@ -9,6 +9,8 @@
     "acdp_version",
     "registry_did",
     "supported_signature_algorithms",
+    "supported_did_methods",
+    "profiles",
     "limits"
   ],
   "properties": {
@@ -46,6 +48,33 @@
       "default": false,
       "description": "Whether anonymous (unauthenticated) reads are permitted for public contexts. See RFC-ACDP-0008 §6.3."
     },
+    "supported_did_methods": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "DID methods this registry can resolve (for producer DID-document and key lookups). MUST include 'did:web' (RFC-ACDP-0008 §4.7). Examples: 'did:web', 'did:key'."
+    },
+    "supports_idempotency_key": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this registry honors the Idempotency-Key header on POST /contexts. See RFC-ACDP-0003 §6."
+    },
+    "profiles": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "acdp-registry-core",
+          "acdp-registry-discovery",
+          "acdp-registry-federated",
+          "acdp-consumer"
+        ]
+      },
+      "uniqueItems": true,
+      "minItems": 1,
+      "description": "Profile(s) this implementation claims conformance to. See RFC-ACDP-0001 §9. Any registry MUST declare 'acdp-registry-core'."
+    },
     "limits": {
       "type": "object",
       "required": ["max_payload_bytes", "max_embedded_bytes"],
@@ -59,6 +88,18 @@
           "type": "integer",
           "const": 65536,
           "description": "Maximum decoded size of any embedded data reference. Fixed at 64 KB by the spec."
+        },
+        "max_embedding_dimensions": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 4096,
+          "description": "Maximum embedding vector dimensionality accepted by this registry on similarity requests. See RFC-ACDP-0005 §3.5."
+        },
+        "max_top_k": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 100,
+          "description": "Maximum top_k accepted in similarity requests. See RFC-ACDP-0005 §3.5."
         }
       },
       "additionalProperties": false
