@@ -1,0 +1,65 @@
+{
+  "id": "sig-001",
+  "description": "Real Ed25519 signing/verification golden vector. Produces and verifies a complete publish-request body with correct content_hash and signature. Test keypair MUST NOT be used in production.",
+  "tags": ["signature", "happy-path", "golden"],
+  "test_keypair": {
+    "warning": "TEST ONLY. The private seed is publicly known. Never use this keypair for real publications.",
+    "private_seed_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+    "public_key_hex": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29",
+    "public_key_base64": "O2onvM62pC1io6jQKm8Nc2UyFXcd4kOmOsBIoYtZ2ik="
+  },
+  "vectors": [
+    {
+      "name": "Minimal first-version publish request, signed",
+      "producer_content": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:web:agents.example.com:test-producer",
+        "contributors": [],
+        "title": "Golden test vector — minimal first version",
+        "type": "data_snapshot",
+        "data_refs": [],
+        "derived_from": [],
+        "visibility": "public"
+      },
+      "expected": {
+        "canonical_form": "{\"agent_id\":\"did:web:agents.example.com:test-producer\",\"contributors\":[],\"data_refs\":[],\"derived_from\":[],\"supersedes\":null,\"title\":\"Golden test vector — minimal first version\",\"type\":\"data_snapshot\",\"version\":1,\"visibility\":\"public\"}",
+        "content_hash": "sha256:f170150ddbf59d99794e7797824591b374d459782084597b644ecc57a41031b5",
+        "signature_input": "sha256:f170150ddbf59d99794e7797824591b374d459782084597b644ecc57a41031b5",
+        "signature_value_hex": "12b91b57e154767e3d4e0177cc9dd105edc09b21b12d501074c8e585a6d47ccf7aa9e9dd996c1d568757fd25773b768a2f2a5b52eea099be4da6ddceff0ee70d",
+        "signature_value_base64": "ErkbV+FUdn49TgF3zJ3RBe3AmyGxLVAQdMjlhabUfM96qendmWwdVodX/SV3O3aKLypbUu6gmb5Npt3O/w7nDQ==",
+        "publish_request_body": {
+          "version": 1,
+          "supersedes": null,
+          "agent_id": "did:web:agents.example.com:test-producer",
+          "contributors": [],
+          "title": "Golden test vector — minimal first version",
+          "type": "data_snapshot",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public",
+          "content_hash": "sha256:f170150ddbf59d99794e7797824591b374d459782084597b644ecc57a41031b5",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:web:agents.example.com:test-producer#key-1",
+            "value": "ErkbV+FUdn49TgF3zJ3RBe3AmyGxLVAQdMjlhabUfM96qendmWwdVodX/SV3O3aKLypbUu6gmb5Npt3O/w7nDQ=="
+          }
+        }
+      },
+      "registry_assigned": {
+        "ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234",
+        "lineage_id": "lin:c7fef01c000f8edaa9cb46122ceb5d7bca38328f002fb0f40e362e3b289bbb2a",
+        "origin_registry": "registry.example.com",
+        "created_at": "2026-04-16T10:30:15.123Z"
+      },
+      "verification_steps": [
+        "1. Strip exclusion set from publish_request_body to produce producer_content.",
+        "2. JCS-canonicalize producer_content; result MUST equal expected.canonical_form.",
+        "3. SHA-256 of canonical_form (UTF-8 bytes); hex of digest with 'sha256:' prefix MUST equal expected.content_hash.",
+        "4. Sign ASCII bytes of expected.content_hash with the test private key; result (raw 64 bytes, base64-encoded) MUST equal expected.signature_value_base64.",
+        "5. Verify the signature with the test public key over the ASCII bytes of body.content_hash; verification MUST succeed.",
+        "6. Compute lin: + lowercase_hex(SHA-256(registry_assigned.ctx_id)) ; result MUST equal registry_assigned.lineage_id."
+      ]
+    }
+  ]
+}
