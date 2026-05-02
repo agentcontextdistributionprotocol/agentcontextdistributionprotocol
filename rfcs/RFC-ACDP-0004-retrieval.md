@@ -57,7 +57,7 @@ When the requesting agent is not in the context's effective audience:
 
 - For `visibility: public` — return as normal (HTTP 200).
 - For `visibility: restricted` and the requester's DID is not in `audience` — return `not_found` (HTTP 404). Registries MUST NOT distinguish "not found" from "not authorized" externally. The internal label `visibility_denied` MAY be used in registry logs but MUST NOT appear on the wire (RFC-ACDP-0008 §4.5).
-- For `visibility: private` and the requester is not the producer or a contributor — return `not_found` (HTTP 404).
+- For `visibility: private` and the requester is not `body.agent_id` and not explicitly listed in `audience` (if present) — return `not_found` (HTTP 404). Contributors are NOT auto-authorized; `contributors` is for attribution only (RFC-ACDP-0008 §4.5, RFC-ACDP-0003 §2.1 step 12).
 
 The HTTP status code is the same in both "really doesn't exist" and "exists but you can't see it"; the difference is internal logging only.
 
