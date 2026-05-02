@@ -104,7 +104,7 @@ See [docs/non-goals.md](../docs/non-goals.md) for the full non-goals list and ra
 
 Each role's responsibilities:
 
-- **Producer.** Builds a body, computes `content_hash` over the JCS-canonicalized body (excluding registry-assigned fields), signs the hash with its DID-bound key, and submits a publish request.
+- **Producer.** Builds a body, computes `content_hash` over the JCS-canonicalized body (excluding the fields listed in §5.7 — `content_hash`, `signature`, and the registry-assigned identity fields), signs the hash with its DID-bound key, and submits a publish request.
 - **Registry.** Verifies the signature, recomputes `content_hash`, assigns `ctx_id` / `lineage_id` / `origin_registry` / `created_at`, validates supersession constraints, persists the body, derives `status`.
 - **Consumer.** Fetches a context, verifies the producer's signature against the producer's DID document, walks `derived_from` references via cross-registry resolution.
 
