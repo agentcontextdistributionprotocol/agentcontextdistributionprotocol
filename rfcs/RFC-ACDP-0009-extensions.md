@@ -98,6 +98,20 @@ Receipts add a second signing identity (the registry's), require key management 
 
 `registry_receipt` (top-level in retrieval response) and `key_fingerprint` (within signature objects) are RESERVED in v0.0.1 and MUST NOT be used by extensions.
 
+### 2.8 Cross-registry supersession *(likely v0.1)*
+
+ACDP v0.0.1 forbids supersession across registries (RFC-ACDP-0003 §3.1 step 2): if a producer attempts to publish a v2 on registry B with `supersedes` pointing at v1 on registry A, registry B MUST reject with `superseded_target` (`details.reason = "cross_registry_supersession_unsupported"`).
+
+The verification semantics required to make this safe are not normatively defined in v0.0.1. A future version will specify:
+
+- A protocol for the publishing registry to verify the remote `agent_id` identity and the producer's DID-document state at supersession time (consistent across the two registries).
+- A protocol for verifying the remote context's signature, `content_hash`, and `lineage_id` continuity across the network.
+- Race-protection semantics: the original registry must serialize supersession events for the target context, even when the publishing registry is different. This requires either a coordination handshake or a transparency-log mechanism.
+- Recovery behavior when the original registry becomes unreachable mid-supersession.
+- Fee / authorization model: which registry is authoritative for the lineage, who pays for storage, etc.
+
+Until that version, all supersessions MUST occur within a single registry. Producers needing to migrate a logical lineage between registries MUST start a new lineage on the target registry (with `supersedes: null`) and reference the prior lineage via `derived_from`. This produces a soft, signed link without making cross-registry continuity claims that v0.0.1 cannot verify.
+
 ---
 
 ## 3. Forward Compatibility

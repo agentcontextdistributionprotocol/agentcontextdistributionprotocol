@@ -85,7 +85,7 @@ The following are not specified by ACDP and are intentional non-goals (RFC-ACDP-
 - **Federation peering** between registries.
 - **Cross-registry query forwarding** (search/discovery across registries from a single endpoint).
 - **Cross-registry caching protocols** beyond plain HTTP caching.
-- **Cross-registry supersession** (publishing a v2 on a different registry from v1). Optional for v0.0.1; see RFC-ACDP-0003 §3.1.
+- **Cross-registry supersession** (publishing a v2 on a different registry from v1). **Forbidden** in v0.0.1 — registries MUST reject with `superseded_target` (`details.reason = "cross_registry_supersession_unsupported"`). See RFC-ACDP-0003 §3.1 step 2 and the reservation in RFC-ACDP-0009 §2.8.
 - **Server-side traversal** (`/walk`). Reserved in RFC-ACDP-0009.
 
 Registries MAY implement these as private optimizations — but they are not part of the protocol.
