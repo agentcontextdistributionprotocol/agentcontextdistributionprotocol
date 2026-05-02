@@ -80,6 +80,43 @@ The registry MAY return fewer results than `limit` even when more exist — `nex
 
 The `derived_from` filter is the foundation for lineage-based discovery. An agent that has published a context can periodically query with `derived_from=<my_ctx_id>` to discover what has been built on it. In v0.0.1 this is a polling pattern; future versions (RFC-ACDP-0009) will support push notification.
 
+### 2.5 Search semantics
+
+#### 2.5.1 Required search fields
+
+Conformant registries MUST search the following body fields against `q`:
+
+- `title`
+- `summary`
+- `description`
+- `tags` (multi-valued; any tag matching counts)
+- `type`
+- `domain`
+- `agent_id`
+
+Registries MAY additionally search `metadata` (when bound by `schema_uri`) or other producer-defined fields. Registries searching additional fields SHOULD declare them in capabilities under a `search_extended_fields` array (reserved namespace; out of scope for v0.0.1).
+
+#### 2.5.2 Tokenization and matching
+
+`q` is tokenized by whitespace into terms. A context matches if **all** terms are present in **at least one** searched field (AND-of-terms across the union of fields). Matching is case-insensitive. Diacritic normalization is registry-defined.
+
+Registries MUST NOT interpret special characters in `q` as boolean operators in v0.0.1. `AND`, `OR`, parentheses, quoted phrases, and similar are treated as literal terms. (Boolean and phrase semantics are reserved for a future version.)
+
+#### 2.5.3 Ranking
+
+Result ordering is registry-defined and not guaranteed across implementations. Registries SHOULD order by relevance descending, with ties broken by `created_at` descending. Registries MAY change ranking algorithms between deployments without protocol-version impact; consumers MUST NOT rely on specific ranking properties.
+
+#### 2.5.4 Cursor stability
+
+Cursors are opaque strings. They:
+
+- MUST remain valid across a single iteration session of at most 1 hour.
+- MUST NOT include client-decodable visibility information (an unauthorized client cracking the cursor MUST NOT learn anything about restricted contexts).
+- MAY become invalid before 1 hour due to result-set changes; registries MUST return `cursor_expired` (HTTP 400) in that case.
+- MAY be malformed by a buggy or malicious client; registries MUST return `invalid_cursor` (HTTP 400) for cursors they cannot parse.
+
+Results MAY include or exclude contexts published mid-iteration; cross-page consistency is not guaranteed. A consumer requiring snapshot semantics MUST issue a single request with a large `limit` (subject to registry caps).
+
 ---
 
 ## 3. Semantic Similarity

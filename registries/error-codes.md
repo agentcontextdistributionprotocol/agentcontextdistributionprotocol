@@ -21,6 +21,8 @@ ACDP error codes returned in error envelopes (`error.code`). The envelope shape 
 | `key_resolution_failed` | Stable | 400 | The signing key referenced by `signature.key_id` could not be resolved (DID-document fetch failed, key not present in document, etc.). | [RFC-ACDP-0003 §2.1 step 6](../rfcs/RFC-ACDP-0003-publish.md#21-registry-processing) |
 | `key_not_authorized` | Stable | 403 | The DID portion of `signature.key_id` (everything before `#`) does not equal `body.agent_id`. | [RFC-ACDP-0003 §2.1 step 6](../rfcs/RFC-ACDP-0003-publish.md#21-registry-processing) |
 | `not_implemented` | Stable | 501 | The requested endpoint or capability is not implemented by this registry. Returned with the standard error envelope (RFC-ACDP-0007 §4); see RFC-ACDP-0005 §3 for similarity-search not-implemented. | [RFC-ACDP-0005 §3](../rfcs/RFC-ACDP-0005-discovery.md#3-semantic-similarity) |
+| `cursor_expired` | Stable | 400 | A previously-issued pagination cursor is no longer valid. Client SHOULD restart pagination. | [RFC-ACDP-0005 §2.5.4](../rfcs/RFC-ACDP-0005-discovery.md#254-cursor-stability) |
+| `invalid_cursor` | Stable | 400 | A pagination cursor is malformed or unrecognized. | [RFC-ACDP-0005 §2.5.4](../rfcs/RFC-ACDP-0005-discovery.md#254-cursor-stability) |
 
 > Note: `visibility_denied` is an internal-only signal (logging/metrics). Visibility denial is always reported externally as `not_found` per RFC-ACDP-0008 §4.5. The wire-visible enum in `acdp-error.schema.json` does NOT include `visibility_denied`.
 
