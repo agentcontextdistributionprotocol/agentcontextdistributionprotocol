@@ -273,6 +273,50 @@ A conformant ACDP consumer MUST:
 3. Treat `status: superseded` and `status: expired` as signals that a context's conclusions may not be current.
 4. Resolve cross-registry `acdp://` references per RFC-ACDP-0006 if it follows them.
 
+### 9.1 Implementation Profiles
+
+ACDP defines profiles to allow partial implementations to declare conformance honestly. Implementations declare their profile(s) in the capabilities document `profiles` field (RFC-ACDP-0007 §3.1). Each profile is a strict superset of its prerequisite.
+
+#### `acdp-registry-core`
+
+The minimum profile for any registry. Implementations MUST:
+
+- Implement `POST /contexts` per RFC-ACDP-0003 (full validation pipeline §2.1, supersession §3, idempotency §6 if `supports_idempotency_key` is advertised).
+- Implement `GET /contexts/{ctx_id}` and `GET /contexts/{ctx_id}/body` per RFC-ACDP-0004 §2.
+- Implement `GET /lineages/{lineage_id}` and `GET /lineages/{lineage_id}/current` per RFC-ACDP-0004 §5.
+- Implement `GET /.well-known/acdp.json` per RFC-ACDP-0007 §3.
+- Apply visibility rules per RFC-ACDP-0008 §4.5.
+- Pass all conformance fixtures in `schemas/conformance/` (publish, retrieval, visibility, canonicalization).
+
+#### `acdp-registry-discovery`
+
+Adds keyword search. Implementations MUST:
+
+- Be `acdp-registry-core` conformant.
+- Implement `GET /contexts/search` per RFC-ACDP-0005 §2 (search semantics §2.5 — required fields, AND-of-terms, ranking, cursor stability).
+- Pass discovery and visibility-discovery conformance fixtures (notably `vis-002`).
+
+Similarity search is OPTIONAL within this profile. Registries declaring `acdp-registry-discovery` MAY return `not_implemented` (HTTP 501 with the standard envelope) for similarity endpoints; if they implement similarity, they MUST follow RFC-ACDP-0005 §3 including the §3.5 vector input constraints.
+
+#### `acdp-registry-federated`
+
+Adds cross-registry resolution. Implementations MUST:
+
+- Be `acdp-registry-discovery` conformant.
+- Resolve `acdp://` references in `derived_from` chains per RFC-ACDP-0006 §4.
+- Implement SSRF protections per RFC-ACDP-0006 §7 (IP-range filtering, HTTPS-only, response/timeout caps, redirect cap, DNS-rebinding pin).
+
+#### `acdp-consumer`
+
+A consumer of contexts (not a registry). Implementations MUST:
+
+- Verify producer signatures end-to-end on every retrieved context they rely on.
+- Resolve cross-registry `acdp://` references per RFC-ACDP-0006 if they follow them (and apply the SSRF protections of §7 if they perform server-side resolution).
+- Apply visibility rules per RFC-ACDP-0008 §4.5 when retrieving (do not assume a registry's results are scoped on their behalf — verify locally where possible).
+- Tolerate unknown fields in body and registry state.
+
+There is no producer-only profile: producers MUST be able to verify their own publications, which requires the same cryptographic core as a consumer.
+
 ---
 
 ## 10. Security Considerations
