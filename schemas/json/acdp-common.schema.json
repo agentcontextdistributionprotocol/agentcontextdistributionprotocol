@@ -93,7 +93,7 @@
         }
       ],
       "additionalProperties": false,
-      "$comment": "additionalProperties is false in v0.0.1: signature is in the body, so unknown signature fields would change the JCS canonical form (signature is not in the hash exclusion set's body image; only signature.value is excluded from preimage construction). Future signature variants (proof chains, threshold attestations per RFC-ACDP-0009) require an explicit schema bump."
+      "$comment": "additionalProperties is false in v0.0.1: the entire signature object is excluded from ProducerContent (the hash preimage) per RFC-ACDP-0001 §5.7. However, since signature is part of the stored Body, unknown signature fields would still change the JCS canonical form of the Body and could affect future Body-level processing. Keeping the signature schema closed avoids that complexity. Future signature variants (proof chains, threshold attestations per RFC-ACDP-0009) require an explicit schema bump."
     },
 
     "tag": {
