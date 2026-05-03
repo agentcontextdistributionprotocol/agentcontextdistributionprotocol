@@ -2,7 +2,7 @@
 # Agent Context Description Protocol (ACDP) — Context Body
 
 **Document:** RFC-ACDP-0002
-**Version:** 0.0.1-draft
+**Version:** 0.0.1-rc1
 **Status:** Community Standards Track (Draft)
 
 This RFC specifies the immutable, signed body of an ACDP context. It depends on RFC-ACDP-0001 Core (identifiers, JCS, content hash, signature).

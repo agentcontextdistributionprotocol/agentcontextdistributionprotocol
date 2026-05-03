@@ -2,7 +2,7 @@
 # Agent Context Description Protocol (ACDP) — Discovery
 
 **Document:** RFC-ACDP-0005
-**Version:** 0.0.1-draft
+**Version:** 0.0.1-rc1
 **Status:** Community Standards Track (Draft)
 
 This RFC specifies how consumers discover contexts on an ACDP registry. ACDP v0.0.1 defines two discovery modalities: keyword search and semantic similarity. Push subscriptions are reserved for a future version (RFC-ACDP-0009).

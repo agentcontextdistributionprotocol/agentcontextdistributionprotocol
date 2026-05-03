@@ -2,7 +2,7 @@
 # Agent Context Description Protocol (ACDP) — Cross-Registry References
 
 **Document:** RFC-ACDP-0006
-**Version:** 0.0.1-draft
+**Version:** 0.0.1-rc1
 **Status:** Community Standards Track (Draft)
 
 This RFC specifies how consumers resolve `acdp://` references that point to contexts on a different registry. It depends on RFC-ACDP-0001 (Core) and RFC-ACDP-0007 (Capabilities).
