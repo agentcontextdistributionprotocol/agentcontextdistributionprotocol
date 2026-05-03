@@ -2,7 +2,7 @@
 # Agent Context Description Protocol (ACDP) — Retrieval & Lineage
 
 **Document:** RFC-ACDP-0004
-**Version:** 0.0.1-rc1
+**Version:** 0.0.1
 **Status:** Community Standards Track (Release Candidate 1)
 
 This RFC specifies how consumers retrieve contexts and lineages from ACDP registries, and how registries derive `status`. It depends on RFC-ACDP-0001 (Core) and RFC-ACDP-0002 (Context Body).

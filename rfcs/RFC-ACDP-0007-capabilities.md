@@ -2,7 +2,7 @@
 # Agent Context Description Protocol (ACDP) — Capabilities & Errors
 
 **Document:** RFC-ACDP-0007
-**Version:** 0.0.1-rc1
+**Version:** 0.0.1
 **Status:** Community Standards Track (Release Candidate 1)
 
 This RFC specifies the registry capability declaration document and the standard error envelope used by all ACDP endpoints.

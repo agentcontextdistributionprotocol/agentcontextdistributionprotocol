@@ -2,7 +2,7 @@
 # Agent Context Description Protocol (ACDP) — Security & Threat Model
 
 **Document:** RFC-ACDP-0008
-**Version:** 0.0.1-rc1
+**Version:** 0.0.1
 **Status:** Community Standards Track (Release Candidate 1)
 
 This RFC specifies the threat model for ACDP v0.0.1 and the defenses every implementation MUST provide. It depends on the entire core RFC stack (0001–0007).
