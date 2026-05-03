@@ -10,7 +10,7 @@ The schema vocabulary is open. Profiles are normatively defined in [RFC-ACDP-000
 |---|---|---|---|
 | `acdp-registry-core` | Mandatory for any registry | RFC-ACDP-0001 §9.1 | — |
 | `acdp-registry-discovery` | Optional | RFC-ACDP-0001 §9.1 | `acdp-registry-core` |
-| `acdp-registry-federated` | Optional | RFC-ACDP-0001 §9.1 | `acdp-registry-discovery` |
+| `acdp-registry-federated` | Optional | RFC-ACDP-0001 §9.1 | `acdp-registry-core` |
 | `acdp-consumer` | For consumer deployments | RFC-ACDP-0001 §9.1 | — |
 
 ## Adding a profile
