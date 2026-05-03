@@ -55,7 +55,7 @@ agentcontextdescriptionprotocol/
     RFC-ACDP-0003-publish.md         # Publication and supersession
     RFC-ACDP-0004-retrieval.md       # Retrieval and lineage queries
     RFC-ACDP-0005-discovery.md       # Keyword search and similarity
-    RFC-ACDP-0006-cross-registry.md  # ctx:// resolution across registries
+    RFC-ACDP-0006-cross-registry.md  # acdp:// cross-registry reference resolution
     RFC-ACDP-0007-capabilities.md    # /.well-known/acdp.json + errors
     RFC-ACDP-0008-security.md        # Threat model and required defenses
     RFC-ACDP-0009-extensions.md      # Reserved — retraction, attestations…
