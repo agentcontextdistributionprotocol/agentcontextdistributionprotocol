@@ -25,7 +25,7 @@ GET /contexts/search
 
 | Parameter | Type | Description |
 |---|---|---|
-| `q` | string | Full-text search over `title`, `description`, `summary`. |
+| `q` | string | Full-text search across the body fields enumerated in §2.5.1. |
 | `type` | string | Filter by context type. |
 | `domain` | string | Filter by domain. |
 | `tags` | string | Comma-separated tags. Results match if **all** listed tags are present (AND semantics). |
