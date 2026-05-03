@@ -162,6 +162,52 @@ for path in sorted(CONFORMANCE.glob("*.json")):
     # pub-, vis-, ret- fixtures describe scenarios (request → expected error code), not arithmetic
     # vectors. Their conformance is checked by registry implementations, not by this static runner.
 
+
+def check_golden_retrieval_example():
+    """Verify examples/retrieval/golden-context.json end-to-end against sig-001's test keypair.
+
+    Treats the example as a derivative of sig-001: the body's signature MUST verify against
+    the test public key, and the recomputed content_hash MUST match the body's content_hash.
+    """
+    name = "golden-context.json (derivative of sig-001)"
+    fixture = "examples/retrieval"
+    sig_001 = json.loads((CONFORMANCE / "sig-001-ed25519-golden.json").read_text())
+    keypair = sig_001["test_keypair"]
+    pub_key_hex = keypair["public_key_hex"]
+
+    example_path = ROOT / "examples" / "retrieval" / "golden-context.json"
+    example = json.loads(example_path.read_text())
+    body = example["body"]
+
+    EXCLUSION_SET = {"ctx_id", "lineage_id", "origin_registry", "created_at", "content_hash", "signature"}
+    producer_content = {k: v for k, v in body.items() if k not in EXCLUSION_SET}
+
+    canonical = jcs.canonicalize(producer_content)
+    recomputed = "sha256:" + hashlib.sha256(canonical).hexdigest()
+    if recomputed != body["content_hash"]:
+        fail(fixture, name, f"content_hash mismatch. body={body['content_hash']} recomputed={recomputed}")
+        return False
+
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+    pub = Ed25519PublicKey.from_public_bytes(bytes.fromhex(pub_key_hex))
+    sig_bytes = base64.b64decode(body["signature"]["value"])
+    try:
+        pub.verify(sig_bytes, body["content_hash"].encode("ascii"))
+    except Exception as e:
+        fail(fixture, name, f"signature verification failed: {e}")
+        return False
+
+    derived_lineage = "lin:sha256:" + hashlib.sha256(body["ctx_id"].encode("utf-8")).hexdigest()
+    if derived_lineage != body["lineage_id"]:
+        fail(fixture, name, f"lineage_id mismatch. body={body['lineage_id']} derived={derived_lineage}")
+        return False
+
+    return True
+
+
+if check_golden_retrieval_example():
+    passes += 1
+
 if failures:
     print(f"\n✗ {len(failures)} conformance failure(s):", file=sys.stderr)
     for f in failures:

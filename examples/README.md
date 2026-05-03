@@ -1,6 +1,6 @@
 # ACDP Examples
 
-These are illustrative JSON artifacts for the ACDP wire format. They are **not** real cryptographic material — signatures and content hashes use placeholder values that pass schema validation but are not verifiable.
+Most files in this directory are illustrative — signatures and content hashes use placeholder values that pass schema validation but are not cryptographically verifiable. The single exception is [`retrieval/golden-context.json`](retrieval/golden-context.json), which carries a REAL Ed25519 signature over a known-good `content_hash` (using the public-domain test keypair from [`schemas/conformance/sig-001-ed25519-golden.json`](../schemas/conformance/sig-001-ed25519-golden.json)). Implementations MUST be able to verify it end-to-end; the conformance runner does so automatically.
 
 ## Layout
 
