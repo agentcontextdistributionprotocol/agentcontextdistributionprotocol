@@ -3,7 +3,7 @@
 
 **Document:** RFC-ACDP-0002
 **Version:** 0.0.1-rc1
-**Status:** Community Standards Track (Draft)
+**Status:** Community Standards Track (Release Candidate 1)
 
 This RFC specifies the immutable, signed body of an ACDP context. It depends on RFC-ACDP-0001 Core (identifiers, JCS, content hash, signature).
 

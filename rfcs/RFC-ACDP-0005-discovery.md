@@ -3,7 +3,7 @@
 
 **Document:** RFC-ACDP-0005
 **Version:** 0.0.1-rc1
-**Status:** Community Standards Track (Draft)
+**Status:** Community Standards Track (Release Candidate 1)
 
 This RFC specifies how consumers discover contexts on an ACDP registry. ACDP v0.0.1 defines two discovery modalities: keyword search and semantic similarity. Push subscriptions are reserved for a future version (RFC-ACDP-0009).
 
