@@ -154,7 +154,7 @@ Implementations:
 
 | Identifier | Form | Spec |
 |---|---|---|
-| **`ctx_id`** (context identifier) | `acdp://<authority>/<uuid>` where `<authority>` is a DNS hostname identifying the origin registry and `<uuid>` is a UUID v4 [RFC 4122]. | §5.5 |
+| **`ctx_id`** (context identifier) | `acdp://<authority>/<uuid>` where `<authority>` is a DNS hostname identifying the origin registry and `<uuid>` is a UUID v4 [RFC 9562]. | §5.5 |
 | **`lineage_id`** | `lin:<algorithm>:<digest>`. v0.0.1 form: `lin:sha256:<64-lowercase-hex>`. | §5.6 |
 | **`agent_id`** | A Decentralized Identifier [DID-CORE]. v0.0.1 producers MUST use `did:web` so that any conformant registry can resolve their keys via §5.11. | RFC-ACDP-0002 |
 
@@ -399,7 +399,7 @@ This document requests provisional registration of the `acdp` URI scheme:
 - **Contact:** Zer07 Labs `<specifications@zer07labs.com>`
 - **Change controller:** Zer07 Labs
 - **References:** This document
-- **Syntax:** `acdp://<authority>/<uuid>`, where `<authority>` is a DNS hostname per [RFC 1035] and `<uuid>` is a UUID per [RFC 4122]
+- **Syntax:** `acdp://<authority>/<uuid>`, where `<authority>` is a DNS hostname per [RFC 1035] and `<uuid>` is a UUID v4 per [RFC 9562]
 - **Security considerations:** See RFC-ACDP-0008
 - **Encoding considerations:** See §5
 
@@ -433,7 +433,7 @@ This document requests provisional registration of the `acdp` URI scheme:
 - [RFC 2119] Bradner, S., "Key words for use in RFCs to Indicate Requirement Levels", BCP 14, RFC 2119, March 1997.
 - [RFC 3339] Klyne, G. and C. Newman, "Date and Time on the Internet: Timestamps", RFC 3339, July 2002.
 - [RFC 3629] Yergeau, F., "UTF-8, a transformation format of ISO 10646", STD 63, RFC 3629, November 2003.
-- [RFC 4122] Leach, P., Mealling, M., and R. Salz, "A Universally Unique IDentifier (UUID) URN Namespace", RFC 4122, July 2005.
+- [RFC 9562] Davis, K., Peabody, B., and P. Leach, "Universally Unique IDentifiers (UUIDs)", RFC 9562, May 2024. Obsoletes RFC 4122.
 - [RFC 8032] Josefsson, S. and I. Liusvaara, "Edwards-Curve Digital Signature Algorithm (EdDSA)", RFC 8032, January 2017.
 - [RFC 8174] Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words", BCP 14, RFC 8174, May 2017.
 - [RFC 8259] Bray, T., "The JavaScript Object Notation (JSON) Data Interchange Format", STD 90, RFC 8259, December 2017.

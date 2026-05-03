@@ -115,7 +115,7 @@ Future versions of ACDP will add post-publication relationships (third-party `bu
 
 ### 4.1 ctx_id
 
-A context's `ctx_id` MUST conform to the form `acdp://<authority>/<uuid>` where `<authority>` is the DNS hostname of the origin registry and `<uuid>` is a UUID v4 [RFC 4122]. The registry MUST assign `ctx_id` at publish time; producers MUST NOT supply a `ctx_id` in publish requests.
+A context's `ctx_id` MUST conform to the form `acdp://<authority>/<uuid>` where `<authority>` is the DNS hostname of the origin registry and `<uuid>` is a UUID v4 [RFC 9562]. The registry MUST assign `ctx_id` at publish time; producers MUST NOT supply a `ctx_id` in publish requests.
 
 ### 4.2 lineage_id
 
@@ -295,4 +295,4 @@ See [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md). Key points relevant to 
 - [RFC-ACDP-0004 Retrieval](RFC-ACDP-0004-retrieval.md)
 - [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md)
 - [DID-CORE] W3C, "Decentralized Identifiers (DIDs) v1.0".
-- [RFC 4122] Leach, P., Mealling, M., and R. Salz, "A Universally Unique IDentifier (UUID) URN Namespace".
+- [RFC 9562] Davis, K., Peabody, B., and P. Leach, "Universally Unique IDentifiers (UUIDs)", RFC 9562, May 2024. Obsoletes RFC 4122.
