@@ -28,6 +28,36 @@ ACDP v0.0.1, final. Builds on rc1 with a closing pass on real bugs, citation acc
 - **Tfinal-B5:** Documented "schema-valid ≠ publish-valid" implementer note in RFC-0003 §2.
 - **Tfinal-C1:** Added real Ed25519 golden retrieval example (`examples/retrieval/golden-context.json`) verified end-to-end by the conformance runner.
 
+### Final cleanup pass (rc1 stamp → 0.0.1 ship)
+
+Two rounds of close-reading found real bugs and documentation drift between the RFCs, schemas, registries, and READMEs that survived earlier iterations. All checks remain green: `make validate` 30/30, conformance runner 14/14, cross-RFC §X.Y references all resolve.
+
+**Round 1 — schema and citation fixes:**
+
+- **Tcleanup-1:** Opened `additionalProperties: true` on `acdp-context-body.schema.json`. Consumers MUST tolerate unknown body fields per RFC-0001 §9 and RFC-0002 §9.3, but the closed schema would have rejected forward-compatible v0.1 bodies. `acdp-publish-request.schema.json` remains closed (publish stays strict).
+- **Tcleanup-2:** Fixed wrong `$comment` in `acdp-common.schema.json` signature `$def`. The entire signature object is excluded from ProducerContent (RFC-0001 §5.7), not just `signature.value`.
+- **Tcleanup-3:** Replaced `ctx://` typo with `acdp://` in the README file tree comment.
+- **Tcleanup-4:** Updated `rfcs/README.md` index table from `Draft` to `Release Candidate 1` for RFCs 0001–0008.
+- **Tcleanup-5:** Updated top-level README `Status:` line to `Community Standards Track (Release Candidate 1)`.
+- **Tcleanup-6:** Removed duplicate similarity paragraph in RFC-0001 §9.1; the precise capability-document gating sentence (added in Tv1-6) remains as the single statement.
+- **Tcleanup-7:** RFC-0001 §11.2 IANA media-type registration now says `Optional parameters: None`. The protocol version is carried in JSON (`acdp_version`), not in the Content-Type. Removes the contradiction with `registries/media-types.md` (set in Tfinal-B4).
+- **Tcleanup-8:** Removed `immutable_field` row from RFC-0007 §5 error table — already removed from the wire schema enum in Tv1-4. Added an explicit "Reserved codes" note below the table noting it is reserved for v0.1+ retraction/attestation endpoints.
+- **Tcleanup-9:** Marked `examples/lineage/multi-step-derivation.json` as a tutorial document with a `_note` field; documented the syntax-only exclusion in `scripts/validate-json.sh`.
+
+**Round 2 — registry/RFC alignment and version stamps:**
+
+- **T1:** Fixed `registries/profiles.md` — `acdp-registry-federated` prerequisite is `acdp-registry-core`, not `acdp-registry-discovery`. Aligns the registry with RFC-0001 §9.1 (corrected in Tv1-3).
+- **T2:** Aligned the §1 "Status of This Memo" body text in every normative RFC (0001–0008) to "Release Candidate 1". Earlier alignment only updated frontmatter `Status:` lines.
+- **T3:** Added `idempotency_key_ttl_seconds: 86400` to the RFC-0007 §3 inline capabilities example. The example previously set `supports_idempotency_key: true` without the required TTL.
+- **T4:** Added a "What the bundled conformance runner verifies" section to `schemas/conformance/README.md`. Clarifies that `scripts/conformance-runner.py` checks arithmetic + cryptographic vectors only; behavioral fixtures (`pub-*`, `vis-*`, `ret-*`, `err-*`) require a live registry to execute.
+- **T5:** Bumped RFC-0002 through RFC-0008 `Version:` stamps from `0.0.1-rc1` → `0.0.1`. RFC-0001 was already at `0.0.1`; RFC-0009 stays `0.0.1-reserved`. This supersedes Tfinal-A3 (which had set them to rc1 during the iteration).
+
+**Round 3 — documentation drift:**
+
+- **Tcleanup-10:** Aligned README file trees with actual directory contents. README.md, `registries/README.md`, and `examples/README.md` had stale snapshots — added the missing entries for `auth-methods.md`, `profiles.md`, `signature-algorithms.md`, `acdp-similarity-request.schema.json`, `idempotency/`, `lineage/`, `visibility/`, and replaced the partial conformance fixture list with a glob summary.
+- **Tcleanup-11:** Added `Release Candidate N` and `Reserved` rows to the VERSIONING.md status ladder; updated the RFC `Version:` example from the obsolete `0.0.1-draft` to `0.0.1` with `-rcN`/`-reserved` suffix guidance.
+- **Tcleanup-12:** This entry — recorded the cleanup pass in the changelog.
+
 ### Deferred to v0.0.2 (informed by implementer feedback)
 
 - Field-level body cuts (`expires_at`, `data_period`, `summary`, `domain` consolidation).
