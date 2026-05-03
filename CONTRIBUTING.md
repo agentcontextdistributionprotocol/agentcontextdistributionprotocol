@@ -11,6 +11,23 @@ ACDP is a coordination-agnostic context-publication standard. All changes MUST p
 - Cross-registry references resolve via the `acdp://` URI scheme, and the producing agent's signature — not the serving registry — is the trust anchor.
 - Registries do not retract; supersession is the only correction mechanism in v0.0.1.
 
+## Local development
+
+Run once to install dev dependencies:
+
+```bash
+make bootstrap
+```
+
+This installs `ajv-cli` (Node.js, for JSON Schema validation) and Python packages (`jcs`, `cryptography`, `jsonschema`, `referencing`) for the conformance runner.
+
+Once bootstrapped:
+
+```bash
+make validate     # Run all validations (schema + JSON + conformance)
+make help         # Show all targets
+```
+
 ## Types of contributions
 
 - Specification clarifications (non-normative)

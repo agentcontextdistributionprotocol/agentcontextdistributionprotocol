@@ -1,21 +1,26 @@
-.PHONY: help validate validate-all json-validate json-schema-validate conformance clean install-tools docs
+.PHONY: help bootstrap validate validate-all json-validate json-schema-validate conformance clean install-tools install-python-deps docs
 
 # ── Default ───────────────────────────────────────────────────────────────────
 
 help:
 	@echo "ACDP Development Commands"
 	@echo
+	@echo "Setup (one-time):"
+	@echo "  make bootstrap             Install all dev dependencies (ajv-cli + Python)"
+	@echo
 	@echo "Validation:"
 	@echo "  make validate              Run all validations"
 	@echo "  make json-schema-validate  Validate JSON Schema itself"
 	@echo "  make json-validate         Validate JSON examples / fixtures against schemas"
+	@echo "  make conformance           Run executable conformance vectors"
 	@echo
 	@echo "Docs:"
 	@echo "  make docs                  Print the docs reading order"
 	@echo
 	@echo "Utilities:"
 	@echo "  make clean                 Remove generated files"
-	@echo "  make install-tools         Install required development tools"
+	@echo "  make install-tools         Install ajv-cli only"
+	@echo "  make install-python-deps   Install Python conformance-runner deps only"
 
 # ── Validation ────────────────────────────────────────────────────────────────
 
@@ -63,14 +68,23 @@ clean:
 
 # ── Tooling install ──────────────────────────────────────────────────────────
 
-install-tools:
-	@echo "Installing development tools..."
+bootstrap: install-tools install-python-deps
 	@echo
+	@echo "✓ All dev dependencies installed."
+	@echo "  Run: make validate"
+
+install-tools:
 	@echo "Installing ajv-cli and ajv-formats..."
 	@if command -v npm >/dev/null 2>&1; then \
 		npm install -g ajv-cli ajv-formats; \
 	else \
-		echo "Please install Node.js and npm, then run: npm install -g ajv-cli ajv-formats"; \
+		echo "ERROR: npm required (see https://nodejs.org)"; exit 1; \
 	fi
-	@echo
-	@echo "✓ Tool installation complete"
+
+install-python-deps:
+	@echo "Installing Python conformance-runner dependencies..."
+	@if command -v pip3 >/dev/null 2>&1; then \
+		pip3 install --user --quiet -r requirements-dev.txt; \
+	else \
+		echo "ERROR: pip3 required"; exit 1; \
+	fi

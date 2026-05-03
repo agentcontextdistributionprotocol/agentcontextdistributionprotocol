@@ -1,0 +1,4 @@
+jcs>=0.2.1
+cryptography>=41.0.0
+jsonschema>=4.20.0
+referencing>=0.30.0

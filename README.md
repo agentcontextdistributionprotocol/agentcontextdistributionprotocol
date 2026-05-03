@@ -200,8 +200,8 @@ ACDP v0.0.1 is **JSON-only**. Binary transport bindings are out of scope for thi
 ## Development
 
 ```bash
-make install-tools    # ajv-cli (one-time)
-make validate         # JSON Schemas + examples
+make bootstrap        # Install dev deps: ajv-cli + Python (one-time)
+make validate         # JSON Schemas + examples + conformance runner
 make help             # Show all targets
 ```
 
