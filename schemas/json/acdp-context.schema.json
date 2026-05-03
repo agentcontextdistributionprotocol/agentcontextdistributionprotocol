@@ -9,7 +9,7 @@
   "properties": {
     "body": {
       "$ref": "https://schemas.acdp.io/v0.0.1/acdp-context-body.schema.json",
-      "description": "The immutable signed body. End-to-end verifiable via the producer's signature."
+      "description": "The immutable Body. ProducerContent (body minus content_hash, signature, and registry-assigned fields) is end-to-end verifiable via the producer's signature. Registry-assigned identity fields (ctx_id, lineage_id, origin_registry, created_at) rely on registry honesty in v0.0.1."
     },
     "registry_state": {
       "$ref": "https://schemas.acdp.io/v0.0.1/acdp-registry-state.schema.json",
