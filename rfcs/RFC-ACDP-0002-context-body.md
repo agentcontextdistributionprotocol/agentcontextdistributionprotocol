@@ -66,7 +66,13 @@ The canonical schema is [`schemas/json/acdp-context-body.schema.json`](../schema
 | `summary` | string | No | Short producer-supplied summary for search results. Maximum 1000 characters. |
 | `metadata` | object | No | Producer-specific structured payload. Shape SHOULD be bound by `schema_uri`. |
 
-`metadata` is bounded structurally (maximum 100 top-level properties) and indirectly by total request size (`limits.max_payload_bytes` from RFC-ACDP-0007 §3.1). Producers requiring larger structured payloads SHOULD use `data_refs` instead.
+`metadata` is bounded structurally:
+
+- At most 100 top-level properties (`maxProperties: 100`).
+- At most 8 levels of nesting (depth: top-level keys are level 1; their object values count as level 2; etc.).
+- Total serialized JCS form MUST NOT exceed 64 KB.
+
+Producers requiring richer or larger structured metadata SHOULD use `data_refs` instead. Registries MUST reject violations with `schema_violation` (HTTP 400). JSON Schema 2020-12 cannot natively express "max nesting depth" or "max serialized bytes"; these checks MUST happen at runtime, and the schema's metadata description marks them as normative runtime checks.
 
 ### 3.4 Content Fields
 
