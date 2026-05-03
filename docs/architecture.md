@@ -22,7 +22,24 @@ Producer ◀── 201 Created ──── Registry
                             (ctx_id, lineage_id, status)
 ```
 
-Registry processing in order: schema validate → algorithm check → signature verify → hash recompute → embedded-size check → payload-size check → embedding-model check → assign identifiers → compute lineage → validate supersession → persist → respond.
+Registry processing in order (RFC-ACDP-0003 §2.1):
+
+1. schema validation
+2. payload-size validation
+3. embedded-size validation
+4. **hash recomputation** (before any signature work — verifying a signature against an untrusted submitted hash proves nothing)
+5. algorithm check
+6. key-id binding and key resolution
+7. signature verification (against the registry-recomputed hash)
+8. embedding-model check
+9. identifier assignment (`ctx_id`, `origin_registry`, `created_at`)
+10. lineage computation
+11. supersession validation
+12. visibility validation
+13. persistence
+14. response
+
+Steps 1–8 are "validation"; the registry MUST complete all of them before any persistent state changes.
 
 ### 2.2 Retrieval
 
