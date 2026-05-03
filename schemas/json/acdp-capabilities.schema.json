@@ -125,5 +125,20 @@
     }
   },
   "additionalProperties": true,
-  "$comment": "additionalProperties is true to support forward compatibility — future versions will add capability flags here."
+  "$comment": "additionalProperties is true to support forward compatibility — future versions will add capability flags here.",
+  "allOf": [
+    {
+      "if": {
+        "properties": { "supports_idempotency_key": { "const": true } },
+        "required": ["supports_idempotency_key"]
+      },
+      "then": {
+        "properties": {
+          "limits": {
+            "required": ["idempotency_key_ttl_seconds"]
+          }
+        }
+      }
+    }
+  ]
 }
