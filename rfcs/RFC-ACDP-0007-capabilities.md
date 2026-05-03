@@ -82,7 +82,8 @@ The capabilities document is `additionalProperties: true` to support forward com
     "max_payload_bytes": 1048576,
     "max_embedded_bytes": 65536,
     "max_embedding_dimensions": 4096,
-    "max_top_k": 100
+    "max_top_k": 100,
+    "idempotency_key_ttl_seconds": 86400
   }
 }
 ```
