@@ -217,6 +217,16 @@ Producers requiring true end-to-end visibility on data MUST ensure the reference
 
 For embedded `data_refs` (where `content` is in the body itself), visibility applies fully because the content is part of the registry record.
 
+### 6.6 Transport security for data_refs
+
+For `data_refs[].location` values that are URIs (URL form per §6.2):
+
+- Producers SHOULD use `https://` (or another transport-encrypted scheme like `s3://` with TLS) rather than `http://`. Plaintext transport leaves the data integrity-vulnerable to network adversaries; ACDP's `content_hash` covers the body, NOT the data referenced from the body.
+- For `http://` locations, producers SHOULD include a `data_refs[].content_hash` (the SHA-256 of the actual referenced data) so consumers can verify integrity even when transport doesn't.
+- Producers in trusted-network deployments MAY use `http://` without `content_hash`; this is a deployment-policy decision but reduces the verifiable-trust budget.
+
+Consumers fetching `data_refs[].location` MUST treat the result as untrusted until verified. If `data_refs[].content_hash` is present, consumers MUST verify the fetched bytes match before treating the data as authentic. If absent and the location is `http://`, consumers SHOULD treat the data as untrusted indefinitely.
+
 ---
 
 ## 7. Visibility
