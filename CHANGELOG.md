@@ -4,6 +4,26 @@
 
 Release candidate 1 of ACDP v0.0.1. Final pre-RC pass tightening contradictions, terminology, and documentation surfaced during the release-readiness audit.
 
+### Iteration Final changes (rc1 → final)
+
+- **Tfinal-A1:** Fixed validation order in docs/architecture.md to match RFC-0003 §2.1 (hash recompute now precedes signature verification).
+- **Tfinal-A2:** Enforced `idempotency_key_ttl_seconds` requirement when `supports_idempotency_key: true`. Added schema conditional and updated example.
+- **Tfinal-A3:** Aligned all normative RFCs (0001–0008) at 0.0.1-rc1; RFC-0009 stays 0.0.1-reserved.
+- **Tfinal-A4:** Marked `immutable_field` as reserved for v0.1+ endpoints (no v0.0.1 endpoint produces it).
+- **Tfinal-A5:** Required registry DID verification for `acdp-registry-federated` profile conformance (RFC-0001 §9.1, RFC-0006 §4 step 3).
+- **Tfinal-B1:** Locked `signature` schema with `additionalProperties: false`. Future signature variants require an explicit schema bump.
+- **Tfinal-B2:** Added metadata depth (max 8 levels) and serialized-size (max 64 KB) limits as runtime checks (RFC-0002 §3.3).
+- **Tfinal-B3:** Recommended HTTPS for `data_refs.location`; required `content_hash` for `http://` references (RFC-0002 §6.6).
+- **Tfinal-B4:** Dropped `; version=` from media-types registry; protocol version is carried in JSON only.
+- **Tfinal-B5:** Documented "schema-valid ≠ publish-valid" implementer note in RFC-0003 §2.
+- **Tfinal-C1:** Added real Ed25519 golden retrieval example (`examples/retrieval/golden-context.json`) verified end-to-end by the conformance runner.
+
+### Deferred to v0.0.2 (informed by implementer feedback)
+
+- Field-level body cuts (`expires_at`, `data_period`, `summary`, `domain` consolidation).
+- Similarity search reorganization (currently OPTIONAL within `acdp-registry-discovery`).
+- RFC 4122 → RFC 9562 citation update (immaterial; UUID v4 wire format unchanged).
+
 ### Iteration RC1 changes (final pre-RC pass)
 
 **Phase A — RC1 blockers**
