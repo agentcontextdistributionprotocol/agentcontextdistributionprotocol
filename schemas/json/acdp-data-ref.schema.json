@@ -81,7 +81,13 @@
           "description": "The embedded data. Type depends on encoding: any JSON value for 'json'; string for 'utf8' and 'base64'."
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "encoding": { "enum": ["utf8", "base64"] } } },
+          "then": { "properties": { "content": { "type": "string" } } }
+        }
+      ]
     }
   },
   "oneOf": [
