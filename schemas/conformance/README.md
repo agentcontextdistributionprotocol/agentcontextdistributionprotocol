@@ -19,6 +19,21 @@ conformance/
 
 ---
 
+## What the bundled conformance runner verifies
+
+`scripts/conformance-runner.py` verifies **arithmetic and cryptographic** vectors only:
+
+- `can-*.json` — JCS canonicalization, SHA-256 hashing, lineage_id derivation
+- `sig-*.json` — Ed25519 sign/verify golden vectors
+
+**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`). Those fixtures define request/response scenarios that require a running registry to execute. They are machine-readable specifications for registry implementers to validate against their implementation.
+
+To claim full conformance a registry MUST:
+1. Pass `python3 scripts/conformance-runner.py` (arithmetic/cryptographic)
+2. Separately execute all `pub-*`, `vis-*`, `ret-*`, and `err-*` fixture scenarios against a live registry instance
+
+---
+
 ## Fixture Format
 
 ```json
