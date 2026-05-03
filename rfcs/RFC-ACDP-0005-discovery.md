@@ -122,7 +122,7 @@ Results MAY include or exclude contexts published mid-iteration; cross-page cons
 
 ## 3. Semantic Similarity
 
-Semantic similarity is OPTIONAL. A registry that does not index embeddings MUST advertise an empty `supported_embedding_models` array in capabilities (RFC-ACDP-0007). For requests to similarity endpoints, such a registry MUST return HTTP 501 Not Implemented with the standard error envelope:
+Semantic similarity is OPTIONAL — the `acdp-registry-discovery` profile (RFC-ACDP-0001 §9.1) is satisfied by an implementation that returns `not_implemented` for similarity endpoints. Consumers MUST check the `supported_embedding_models` array in the registry's capability document before issuing a similarity request. A registry that does not index embeddings MUST advertise an empty `supported_embedding_models` array in capabilities (RFC-ACDP-0007). For requests to similarity endpoints, such a registry MUST return HTTP 501 Not Implemented with the standard error envelope:
 
 ```json
 { "error": { "code": "not_implemented", "message": "Similarity search is not implemented." } }

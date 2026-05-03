@@ -356,6 +356,7 @@ Adds keyword search. Implementations MUST:
 - Be `acdp-registry-core` conformant.
 - Implement `GET /contexts/search` per RFC-ACDP-0005 §2 (search semantics §2.5 — required fields, AND-of-terms, ranking, cursor stability).
 - Pass discovery and visibility-discovery conformance fixtures (notably `vis-002`).
+- Similarity search (RFC-ACDP-0005 §3) is OPTIONAL within this profile. Capability to support similarity is declared via the `supported_embedding_models` array in the capabilities document (RFC-ACDP-0007 §3): an empty array means similarity is not supported, and similarity endpoints MUST return `not_implemented` (HTTP 501 with standard envelope). Consumers MUST check the capability document, not the profile declaration, to determine whether similarity search is available.
 
 Similarity search is OPTIONAL within this profile. Registries declaring `acdp-registry-discovery` MAY return `not_implemented` (HTTP 501 with the standard envelope) for similarity endpoints; if they implement similarity, they MUST follow RFC-ACDP-0005 §3 including the §3.5 vector input constraints.
 
