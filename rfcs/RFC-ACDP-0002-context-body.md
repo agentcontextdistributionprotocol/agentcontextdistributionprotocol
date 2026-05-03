@@ -85,6 +85,8 @@ The canonical schema is [`schemas/json/acdp-context-body.schema.json`](../schema
 
 Future versions of ACDP will add post-publication relationships (third-party `builds_on` claims). v0.0.1 supports lineage-based discovery via the `derived_from` search filter (RFC-ACDP-0005 §2) but does not support post-publication relationship creation.
 
+`derived_from` is REQUIRED on the wire even when empty (`derived_from: []`). This is for JCS canonicalization stability: an absent field and an empty array produce different canonical bytes (and therefore different `content_hash` values), so requiring the field uniformly removes ambiguity across implementations and ACDP versions. Producers with no upstream contexts MUST send `derived_from: []`.
+
 ### 3.6 Discovery Aid Fields
 
 | Field | Type | Required | Description |
