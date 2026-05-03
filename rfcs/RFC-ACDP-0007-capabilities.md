@@ -140,7 +140,7 @@ The full registry is maintained in [`registries/error-codes.md`](../registries/e
 | `rate_limited` | 429 | Per-agent rate limit exceeded. | RFC-ACDP-0008 §4.3 |
 | `payload_too_large` | 413 | Request body exceeds `limits.max_payload_bytes`. | RFC-ACDP-0007 §3.1 |
 | `embedded_too_large` | 413 | An embedded data reference exceeds 64 KB. | RFC-ACDP-0002 §6.3 |
-| `immutable_field` | 400 | Attempted mutation of an immutable field. | RFC-ACDP-0002 §3 |
+| `immutable_field` | 400 | Reserved for future endpoints (v0.1+). No v0.0.1 endpoint produces this code. | RFC-ACDP-0009 §2.1 |
 | `key_resolution_failed` | 400 | The signing key referenced by `signature.key_id` could not be resolved due to a permanent condition (DID document parsed successfully but does not contain the requested key fragment, or fragment is missing from `key_id`). Producer error; not retryable. | RFC-ACDP-0003 §2.1 step 6 |
 | `key_resolution_unreachable` | 502 | The signing key could not be resolved due to a transient condition (DNS failure, TLS error, HTTP non-2xx, network timeout fetching the DID document). Retryable with backoff. | RFC-ACDP-0003 §2.1 step 6 |
 | `key_not_authorized` | 403 | The DID portion of `signature.key_id` does not equal `body.agent_id`, or the resolved verification method is not in the DID document's `assertionMethod` array. | RFC-ACDP-0003 §2.1 step 6 |
