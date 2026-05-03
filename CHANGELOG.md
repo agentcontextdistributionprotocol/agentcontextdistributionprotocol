@@ -1,6 +1,42 @@
 # Changelog
 
-## v0.0.1 (Draft) — current
+## v0.0.1-rc1 — current
+
+Release candidate 1 of ACDP v0.0.1. Final pre-RC pass tightening contradictions, terminology, and documentation surfaced during the release-readiness audit.
+
+### Iteration RC1 changes (final pre-RC pass)
+
+**Phase A — RC1 blockers**
+
+- **TA1:** Fixed RFC-0004 §2.3 contributor authorization. `visibility: private` no longer mistakenly auto-authorizes contributors; the rule now matches RFC-0002 §7 and RFC-0008 §4.5 (only `agent_id` and explicitly-listed `audience` members are authorized).
+- **TA2:** Tightened RFC-0001 §4 architecture summary to point at the §5.7 exclusion set explicitly (instead of just "registry-assigned fields", which elided `content_hash` and `signature`). §5.9 cryptographic-vs-registry-honesty distinction was already in place from iteration-3.
+- **TA3:** (Already done in iteration-3.) Cache headers are visibility-aware: `public, immutable` for public bodies, `private, no-store` for restricted/private; never `Cache-Control: public` on a non-public body.
+- **TA4:** Supersession races (`already_superseded`, `version_mismatch`) now return HTTP 409 Conflict — they are concurrent-state failures, not malformed input. Static supersession violations keep HTTP 400. RFC-0003 §5 publish-error table now enumerates each supersession reason with its specific HTTP status. RFC-0007 §5 `superseded_target` row updated to "400 / 409".
+- **TA5:** (Already done in iteration-3.) Integration guide producer/consumer hash + signature flow uses `sha256:<hex>` form, signs ASCII bytes of the full prefixed string, and EXCLUDE set includes `content_hash`.
+- **TA6:** Introduced **Body** / **ProducerContent** / **RegistryState** terminology in RFC-0001 §2. The Body is the immutable stored object; ProducerContent is the §5.7-stripped signature/hash preimage; RegistryState is the mutable registry-derived object. Light propagation in RFC-0001 §5.7/§5.9, RFC-0002 §2, RFC-0003 §2.2, README.
+- **TA7:** (Already done in iteration-3 as Tship-C1.) Real Ed25519 golden cryptographic vector at `schemas/conformance/sig-001-ed25519-golden.json`.
+- **TA8:** Added `make bootstrap` target chaining ajv-cli + Python conformance-runner deps. New `requirements-dev.txt` lists `jcs`, `cryptography`, `jsonschema`, `referencing`. CONTRIBUTING.md gains a "Local development" section; README.md "Development" leads with `make bootstrap`.
+- **TA9:** Fixed RFC-0005 §2.1 vs §2.5.1 contradiction. The `q` parameter row no longer claims a 3-field search (title/description/summary) — it now points at §2.5.1 for the canonical 7-field list.
+
+**Phase B — release polish**
+
+- **TB1:** (Already done in iteration-3.) `ctx_id` schema constrained to lowercase authority + RFC 4122 v4 UUID via tightened pattern.
+- **TB2:** (Already done in iteration-3.) Capabilities schema uses `contains` to enforce mandatory `ed25519`, `did:web`, `acdp-registry-core`.
+- **TB3:** (Already done in iteration-3.) `audience` MUST be non-empty when `visibility: restricted`; enforced via `if/then` in publish-request and context-body schemas.
+- **TB4:** (Already done in iteration-3 as Tship-B5.) `acdp-similarity-request.schema.json` exists and is referenced from RFC-0005 §3.2.
+- **TB5:** (Already done in iteration-3 as Tship-C2.) Executable conformance runner at `scripts/conformance-runner.py`; wired into `make validate`.
+- **TB6:** Added RFC-0002 §6.5 "Visibility scope" — ACDP `visibility` controls registry-record access, not external `data_refs[].location` ACLs. A producer publishing `visibility: private` while pointing at a public S3 URL has effectively published the data publicly; only metadata is private. §7 gains a callout pointing at §6.5.
+- **TB7:** Enforced `embedded.encoding` / `embedded.content` type pairing in `acdp-data-ref.schema.json`. `utf8` and `base64` encodings now require `content` to be a string; `json` encoding is unconstrained.
+- **TB8:** Bounded `metadata` with `maxProperties: 100` in both `acdp-context-body` and `acdp-publish-request` schemas. RFC-0002 §3.3 documents the structural cap and recommends `data_refs` for larger payloads.
+- **TB9:** Aligned replay/idempotency wording across RFCs 0001/0003/0008. RFC-0001 §5.9 now explicitly distinguishes content-level idempotency (intrinsic) from publication-level idempotency (requires `Idempotency-Key`). RFC-0008 §3.7 row uses the same terminology.
+- **TB10:** Clarified registry DID is **endpoint identity**, not content authenticity. Added RFC-0006 §3.1 contrasting registry DID ("you are talking to the right server") with producer signature ("this body is from the right producer").
+- **TB11:** README and `docs/overview.md` discovery summaries now state that search ranking within results is registry-defined; ACDP does not normatively specify a ranking algorithm.
+- **TB12:** Documented why `derived_from` is REQUIRED on the wire even when empty (`derived_from: []`). RFC-0002 §3.5 now explains: an absent field and an empty array produce different JCS canonical bytes (and therefore different `content_hash` values), so requiring the field uniformly removes ambiguity.
+- **TB13:** This entry. Version bumped from 0.0.1-draft to 0.0.1-rc1.
+
+---
+
+## v0.0.1 (Draft) — historical
 
 The first published version of ACDP. **Coordination-agnostic substrate from the start.** No retraction, no post-publication relationships, no push subscriptions in this version — those are deferred (see RFC-ACDP-0009 Extensions, reserved).
 
