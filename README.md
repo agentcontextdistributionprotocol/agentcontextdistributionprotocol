@@ -71,51 +71,51 @@ agentcontextdescriptionprotocol/
 
   registries/
     README.md
+    auth-methods.md
     context-types.md
     error-codes.md
-    media-types.md
     locator-schemes.md
+    media-types.md
+    profiles.md
+    signature-algorithms.md
 
   schemas/
     json/                            # Canonical JSON Schemas
+      acdp-capabilities.schema.json
       acdp-common.schema.json
       acdp-context-body.schema.json
       acdp-context.schema.json
       acdp-data-ref.schema.json
-      acdp-registry-state.schema.json
-      acdp-publish-request.schema.json
-      acdp-publish-response.schema.json
-      acdp-search-response.schema.json
-      acdp-similarity-response.schema.json
-      acdp-capabilities.schema.json
       acdp-error.schema.json
       acdp-index.schema.json
-    conformance/
+      acdp-publish-request.schema.json
+      acdp-publish-response.schema.json
+      acdp-registry-state.schema.json
+      acdp-search-response.schema.json
+      acdp-similarity-request.schema.json
+      acdp-similarity-response.schema.json
+    conformance/                     # Pass/fail behavioral fixtures + golden vectors
       README.md
-      pub-001-invalid-signature.json
-      pub-002-hash-mismatch.json
-      pub-003-superseded-target-mismatch.json
-      ret-001-not-found.json
-      can-001-jcs-vector.json
+      can-*.json                     # JCS canonicalization / hashing vectors
+      err-*.json                     # Error envelope fixtures
+      pub-*.json                     # Publish-flow scenarios
+      ret-*.json                     # Retrieval scenarios
+      sig-*.json                     # Ed25519 cryptographic golden vectors
+      vis-*.json                     # Visibility-leak prevention scenarios
 
   examples/
     README.md
-    publish/
-      data-snapshot-publish-request.json
-    retrieval/
-      data-snapshot-context.json
-      coauthored-analysis-context.json
-    supersession/
-      v2-supersedes-v1.json
-    search/
-      keyword-search-response.json
-      similarity-response.json
-    capabilities/
-      acdp-capabilities.json
-    error/
-      invalid-signature.json
-    mixed-data-refs/
-      alert-mixed-data-refs.json
+    capabilities/                    # /.well-known/acdp.json (RFC-ACDP-0007)
+    error/                           # Error envelope examples
+    idempotency/                     # Idempotency-Key cycles (RFC-ACDP-0003 §6)
+    lineage/                         # derived_from chain walk (tutorial)
+    mixed-data-refs/                 # All three data_refs forms in one body
+    publish/                         # POST /contexts requests (RFC-ACDP-0003)
+    retrieval/                       # Full retrieval responses (RFC-ACDP-0004)
+                                     #   — golden-context.json carries a real Ed25519 signature
+    search/                          # Keyword + similarity responses (RFC-ACDP-0005)
+    supersession/                    # v2 superseding v1 (RFC-ACDP-0003 §3)
+    visibility/                      # restricted / private body examples
 
   governance/
     GOVERNANCE.md

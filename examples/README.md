@@ -6,25 +6,32 @@ Most files in this directory are illustrative — signatures and content hashes 
 
 ```
 examples/
-├── publish/                Publish requests (POST /contexts body — RFC-ACDP-0003)
-├── retrieval/              Full retrieval responses (RFC-ACDP-0004)
-├── supersession/           v2 superseding v1 (RFC-ACDP-0003 §3)
-├── search/                 Keyword and similarity responses (RFC-ACDP-0005)
 ├── capabilities/           /.well-known/acdp.json documents (RFC-ACDP-0007)
 ├── error/                  Error envelope examples (RFC-ACDP-0007 §4)
-└── mixed-data-refs/        Contexts demonstrating all three data_refs forms
+├── idempotency/            Idempotency-Key cycles (RFC-ACDP-0003 §6) — tutorial
+├── lineage/                derived_from chain walks (RFC-ACDP-0002 §3.5) — tutorial
+├── mixed-data-refs/        Contexts demonstrating all three data_refs forms
+├── publish/                Publish requests (POST /contexts body — RFC-ACDP-0003)
+├── retrieval/              Full retrieval responses (RFC-ACDP-0004)
+│                           — golden-context.json carries a real Ed25519 signature
+├── search/                 Keyword and similarity responses (RFC-ACDP-0005)
+├── supersession/           v2 superseding v1 (RFC-ACDP-0003 §3)
+└── visibility/             restricted / private body examples (RFC-ACDP-0002 §7)
 ```
+
+Tutorial directories (`idempotency/`, `lineage/`) hold narrative documents that illustrate multi-step flows; they are syntax-checked but not validated against a wire schema. All other directories validate against the schema listed below.
 
 ## Validation
 
 These examples are validated by `scripts/validate-json.sh` against:
 
-- `schemas/json/acdp-publish-request.schema.json` — `publish/` directory
-- `schemas/json/acdp-context.schema.json` — `retrieval/`, `supersession/`, `mixed-data-refs/` directories
+- `schemas/json/acdp-publish-request.schema.json` — `publish/`
+- `schemas/json/acdp-context.schema.json` — `retrieval/`, `supersession/`, `mixed-data-refs/`, `visibility/`
 - `schemas/json/acdp-search-response.schema.json` — `search/keyword-search-response.json`
 - `schemas/json/acdp-similarity-response.schema.json` — `search/similarity-response.json`
-- `schemas/json/acdp-capabilities.schema.json` — `capabilities/` directory
-- `schemas/json/acdp-error.schema.json` — `error/` directory
+- `schemas/json/acdp-capabilities.schema.json` — `capabilities/`
+- `schemas/json/acdp-error.schema.json` — `error/`
+- syntax-check only — `idempotency/`, `lineage/` (tutorial documents)
 
 Run `make json-validate` to validate the full set.
 
