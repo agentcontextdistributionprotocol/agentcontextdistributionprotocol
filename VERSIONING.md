@@ -11,7 +11,7 @@ ACDP uses a layered versioning model so that the wire format, the canonical sche
 | Protocol version | `acdp_version` field on the capabilities document | `0.0.1` | Major mismatch ⇒ consumer SHOULD treat as a higher unknown version and degrade gracefully. |
 | Body version | Implicit via the protocol version on the registry that accepted it | n/a | Body fields are stable; future versions add fields only. |
 | Registry-state extensibility | Open object | n/a | Future versions add fields (lifecycle, relationships, attestations). Consumers MUST tolerate unknown fields. |
-| RFC version | RFC document `Version:` header | `0.0.1-draft` | Tracks status (`-draft`, `-rc`, `-final`). |
+| RFC version | RFC document `Version:` header | `0.0.1` | Stable RFCs carry the bare semver string. Pre-final candidates use `-rcN` during the Release Candidate window; reserved-numbering RFCs without normative text use `-reserved` (e.g. `0.0.1-reserved` for RFC-ACDP-0009). |
 
 ## Change classes
 
@@ -42,5 +42,7 @@ Downstream consumers pin to a specific tag and upgrade on their own schedule.
 | `Draft` | Open for substantive change. |
 | `Review` | Under shepherded review. No structural changes during the FCP window. |
 | `Final Comment Period` | Last call. Editorial fixes only. |
+| `Release Candidate N` | A specific candidate (`rc1`, `rc2`, …) intended for implementation testing. Backward-incompatible changes remain possible until `Final`. ACDP v0.0.1 RFCs 0001–0008 are at Release Candidate 1. |
 | `Final` | Stable. Breaking changes require a new RFC. |
+| `Reserved` | Numbering pinned, no normative text yet (e.g. RFC-ACDP-0009). Implementations MUST NOT depend on its identifiers until promoted out of `Reserved`. |
 | `Deprecated` | Superseded by another RFC; retained for archaeology. |
