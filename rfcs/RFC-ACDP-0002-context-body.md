@@ -11,7 +11,7 @@ This RFC specifies the immutable, signed body of an ACDP context. It depends on 
 
 ## 1. Status of This Memo
 
-Draft. Backward-incompatible changes remain possible until Final.
+Release Candidate 1. Backward-incompatible changes remain possible until Final.
 
 ---
 

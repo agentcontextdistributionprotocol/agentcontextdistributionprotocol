@@ -11,7 +11,7 @@ This RFC specifies how consumers retrieve contexts and lineages from ACDP regist
 
 ## 1. Status of This Memo
 
-Draft. Backward-incompatible changes remain possible until Final.
+Release Candidate 1. Backward-incompatible changes remain possible until Final.
 
 ---
 

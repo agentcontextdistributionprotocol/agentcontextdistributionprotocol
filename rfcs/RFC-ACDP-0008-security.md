@@ -11,7 +11,7 @@ This RFC specifies the threat model for ACDP v0.0.1 and the defenses every imple
 
 ## 1. Status of This Memo
 
-Draft. Backward-incompatible changes remain possible until Final.
+Release Candidate 1. Backward-incompatible changes remain possible until Final.
 
 ---
 

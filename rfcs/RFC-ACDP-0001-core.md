@@ -28,7 +28,7 @@ ACDP Core does not define discovery semantics, registry policy, retraction rules
 
 ## 1. Status of This Memo
 
-This document is Draft Standards Track. Implementations MAY adopt it experimentally. Backward-incompatible changes remain possible until Final status.
+This document is Release Candidate 1. It is intended for implementation testing; incompatible changes remain possible until Final status.
 
 This is the **first published version** of ACDP. The numbering scheme treats `acdp/0.0.1` as the inaugural release.
 
