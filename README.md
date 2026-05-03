@@ -168,7 +168,7 @@ There is no producer-only profile: producers MUST be able to verify any context 
 - **RFC-ACDP-0002 Context Body** — immutable signed body, context types, data references, visibility.
 - **RFC-ACDP-0003 Publish** — `POST /contexts`, supersession constraints, registry-assigned fields.
 - **RFC-ACDP-0004 Retrieval** — `GET /contexts/{ctx_id}`, body-only retrieval, lineage queries.
-- **RFC-ACDP-0005 Discovery** — keyword and similarity search semantics, cursor pagination.
+- **RFC-ACDP-0005 Discovery** — keyword and similarity search semantics, cursor pagination. Search ranking within results is registry-defined; ACDP does not normatively specify a ranking algorithm.
 - **RFC-ACDP-0006 Cross-Registry** — `acdp://` URI scheme, resolution flow, federation non-goals.
 - **RFC-ACDP-0007 Capabilities** — `/.well-known/acdp.json`, error envelope, error code registry.
 - **RFC-ACDP-0008 Security** — threat model and required defenses for v0.0.1.
