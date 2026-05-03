@@ -224,6 +224,13 @@ A future ACDP version will introduce **registry receipts** (RFC-ACDP-0009 §2.7)
 
 **Replay** at the wire level is mitigated by HTTPS transport security. ACDP itself does not specify per-request nonces — the body's content hash makes "the same body twice" content-level idempotent. Registries SHOULD implement `Idempotency-Key` (RFC-ACDP-0003 §6) for true publication-level idempotency.
 
+Distinguish two senses of idempotency:
+
+- **Content-level idempotency:** identical bodies produce identical `content_hash` values. This is automatic and intrinsic to ACDP.
+- **Publication-level idempotency:** identical publish requests produce identical `ctx_id`s and do not create duplicate registry records. This requires the optional `Idempotency-Key` mechanism (RFC-ACDP-0003 §6).
+
+Without `Idempotency-Key`, replaying a publish request creates a new `ctx_id` for the same content. Producers SHOULD deduplicate locally on `content_hash`.
+
 ### 5.10 Signature Algorithms
 
 Implementations MUST support `ed25519` [RFC 8032]. Implementations MAY support additional algorithms (e.g. `ecdsa-p256`). A registry's supported algorithms MUST be declared in its capabilities document (RFC-ACDP-0007). Registries MUST reject `unsupported_algorithm` for any algorithm not in their declared list. The full algorithm vocabulary is maintained in [`registries/signature-algorithms.md`](../registries/signature-algorithms.md).
