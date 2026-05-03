@@ -147,7 +147,8 @@
     },
     "metadata": {
       "type": "object",
-      "description": "Producer-specific structured payload. Shape SHOULD be bound by schema_uri.",
+      "maxProperties": 100,
+      "description": "Producer-specific structured payload. Shape SHOULD be bound by schema_uri. Capped at 100 top-level properties; total serialized size is bounded indirectly by limits.max_payload_bytes (RFC-ACDP-0007).",
       "additionalProperties": true
     },
     "acdp_version": {

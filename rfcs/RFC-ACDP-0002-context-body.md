@@ -66,6 +66,8 @@ The canonical schema is [`schemas/json/acdp-context-body.schema.json`](../schema
 | `summary` | string | No | Short producer-supplied summary for search results. Maximum 1000 characters. |
 | `metadata` | object | No | Producer-specific structured payload. Shape SHOULD be bound by `schema_uri`. |
 
+`metadata` is bounded structurally (maximum 100 top-level properties) and indirectly by total request size (`limits.max_payload_bytes` from RFC-ACDP-0007 §3.1). Producers requiring larger structured payloads SHOULD use `data_refs` instead.
+
 ### 3.4 Content Fields
 
 | Field | Type | Required | Description |

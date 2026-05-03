@@ -89,6 +89,7 @@
     },
     "metadata": {
       "type": "object",
+      "maxProperties": 100,
       "additionalProperties": true
     },
     "lineage_id": {
