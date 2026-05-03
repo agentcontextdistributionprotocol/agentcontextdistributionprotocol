@@ -1,7 +1,7 @@
 # Agent Context Description Protocol (ACDP)
 
 **Version:** 0.0.1
-**Status:** Community Standards Track (Draft)
+**Status:** Community Standards Track (Release Candidate 1)
 **Wire format:** JSON over HTTP
 **Required JSON canonicalization:** [JCS — RFC 8785](https://datatracker.ietf.org/doc/html/rfc8785)
 
