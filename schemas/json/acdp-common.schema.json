@@ -92,8 +92,8 @@
           "then": { "properties": { "value": { "minLength": 88, "maxLength": 88 } } }
         }
       ],
-      "additionalProperties": true,
-      "$comment": "additionalProperties is true so future signature variants (proof chains, threshold attestations per RFC-ACDP-0009) can be added without a schema bump. v0.0.1 consumers MUST tolerate unknown signature object keys."
+      "additionalProperties": false,
+      "$comment": "additionalProperties is false in v0.0.1: signature is in the body, so unknown signature fields would change the JCS canonical form (signature is not in the hash exclusion set's body image; only signature.value is excluded from preimage construction). Future signature variants (proof chains, threshold attestations per RFC-ACDP-0009) require an explicit schema bump."
     },
 
     "tag": {
