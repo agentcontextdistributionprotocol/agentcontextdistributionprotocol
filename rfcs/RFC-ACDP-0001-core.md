@@ -363,7 +363,7 @@ Similarity search is OPTIONAL within this profile. Registries declaring `acdp-re
 
 Adds cross-registry resolution. Implementations MUST:
 
-- Be `acdp-registry-discovery` conformant.
+- Be `acdp-registry-core` conformant.
 - Resolve `acdp://` references in `derived_from` chains per RFC-ACDP-0006 §4.
 - Verify the upstream registry's DID at resolution time: fetch `https://<authority>/.well-known/acdp.json`, extract `registry_did`, resolve the DID document, and confirm the DID's web binding matches `<authority>`. On mismatch, treat the cross-registry resolution as failed and return `cross_registry_resolution_failed` (RFC-ACDP-0007).
 - Implement SSRF protections per RFC-ACDP-0006 §7 (IP-range filtering, HTTPS-only, response/timeout caps, redirect cap, DNS-rebinding pin).
