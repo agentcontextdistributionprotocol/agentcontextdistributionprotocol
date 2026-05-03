@@ -1,8 +1,18 @@
 # Changelog
 
-## v0.0.1-rc1 — current
+## v0.0.1 — current
 
-Release candidate 1 of ACDP v0.0.1. Final pre-RC pass tightening contradictions, terminology, and documentation surfaced during the release-readiness audit.
+ACDP v0.0.1, final. Builds on rc1 with a closing pass on real bugs, citation accuracy, and terminology precision.
+
+### v0.0.1-rc1 → v0.0.1 (final pre-ship pass)
+
+- **Tv1-1:** Fixed RFC-0001 §4 registry role summary — hash recomputation now shown before signature verification.
+- **Tv1-2:** Aligned RFC-0002 through RFC-0008 Status lines to "Release Candidate 1".
+- **Tv1-3:** Federated profile now depends on `acdp-registry-core`, not `acdp-registry-discovery`. Cross-registry resolution does not require keyword search.
+- **Tv1-4:** Removed `immutable_field` from wire schema enum; remains reserved for v0.1+ endpoints in registries doc.
+- **Tv1-5:** Updated UUID citations from RFC 4122 to RFC 9562.
+- **Tv1-6:** Clarified similarity profile gating — consumers check `supported_embedding_models` in the capability document, not the profile name.
+- **Tv1-7:** Fixed schema descriptions to distinguish Body from ProducerContent where the imprecision could mislead implementers.
 
 ### Iteration Final changes (rc1 → final)
 
@@ -22,7 +32,6 @@ Release candidate 1 of ACDP v0.0.1. Final pre-RC pass tightening contradictions,
 
 - Field-level body cuts (`expires_at`, `data_period`, `summary`, `domain` consolidation).
 - Similarity search reorganization (currently OPTIONAL within `acdp-registry-discovery`).
-- RFC 4122 → RFC 9562 citation update (immaterial; UUID v4 wire format unchanged).
 
 ### Iteration RC1 changes (final pre-RC pass)
 
