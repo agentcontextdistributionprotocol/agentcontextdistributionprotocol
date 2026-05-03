@@ -407,7 +407,7 @@ This document requests provisional registration of the `acdp` URI scheme:
 - **Type:** `application`
 - **Subtype:** `acdp+json`
 - **Required parameters:** None
-- **Optional parameters:** `version` (ACDP specification version)
+- **Optional parameters:** None. Protocol version is carried in JSON: `acdp_version` in the capabilities document (RFC-ACDP-0007 §3) and optional `body.acdp_version` in context bodies (§6). The media type does NOT carry a `version` parameter; doing so would create two competing version sources.
 - **Encoding considerations:** UTF-8 per [RFC 8259]
 - **Security considerations:** See RFC-ACDP-0008
 - **Published specification:** This document
