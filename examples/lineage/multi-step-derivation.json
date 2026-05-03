@@ -1,4 +1,5 @@
 {
+  "_note": "TUTORIAL ONLY — not a wire-shape document. This illustrates a three-step derived_from chain for documentation purposes. See schemas/conformance/sig-001-ed25519-golden.json for a real golden context conformance fixture.",
   "description": "A three-context derivation chain illustrating how a downstream consumer walks `derived_from`. v1 (raw snapshot) → v1' (analysis derived_from snapshot) → v1'' (alert derived_from analysis). Each context is independently signed by its own producer; the consumer verifies each one end-to-end.",
   "chain": [
     {
