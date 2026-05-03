@@ -33,6 +33,17 @@ Every ACDP registry MUST have:
 
 Two registries MUST NOT share an authority. The DNS hostname is the unique key.
 
+### 3.1 What registry DID authenticates
+
+The registry's DID identifies the registry **endpoint**, not the content it serves. Verifying the registry DID confirms "this `https://<authority>/.well-known/acdp.json` is operated by `did:web:<authority>`" — i.e., that you are talking to who you think. It does NOT prove that the content the registry serves is authentic — that requires the producer signature on the body.
+
+In short:
+
+- **Registry DID:** "you are talking to the right server."
+- **Producer signature (RFC-ACDP-0001 §5.8):** "this body is from the right producer."
+
+Both are required to trust an ACDP context end-to-end. RFC-ACDP-0008 §9.1 details what the producer signature does and does not bind, including the v0.0.1 limitation that registry-assigned identifiers (`ctx_id`, `lineage_id`, `origin_registry`, `created_at`) are not cryptographically bound by the producer signature.
+
 ---
 
 ## 4. Resolution
