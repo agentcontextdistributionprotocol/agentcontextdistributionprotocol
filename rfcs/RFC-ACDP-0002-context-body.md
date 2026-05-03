@@ -197,6 +197,16 @@ When `content_hash` is present on an embedded data reference, it is computed ove
 - For `encoding: "utf8"`: over the bytes of the UTF-8 encoding.
 - For `encoding: "json"`: over the bytes of the JCS-canonicalized form.
 
+### 6.5 Visibility scope
+
+ACDP `visibility` (§7) protects access to the **registry record**: the body and any indexes the registry maintains. It does **NOT** control access to external data referenced by `data_refs[].location`.
+
+If `data_refs` points to an external URL (e.g. `https://`, `s3://`, `postgres://`), access to that URL is governed by the external system's ACLs — NOT by ACDP. A producer publishing `visibility: private` while referencing a public S3 object has effectively published the data publicly; only the registry metadata is private.
+
+Producers requiring true end-to-end visibility on data MUST ensure the referenced storage system enforces equivalent access controls. ACDP does not enforce or verify this.
+
+For embedded `data_refs` (where `content` is in the body itself), visibility applies fully because the content is part of the registry record.
+
 ---
 
 ## 7. Visibility
@@ -214,6 +224,8 @@ Retrieval by a requester who is not in the effective audience for a `restricted`
 `contributors` is for **attribution**, not authorization. Crediting a contributor on a private context does not implicitly grant that contributor read access. To grant read access, list the DID explicitly in `audience`.
 
 ACDP does not enforce access control on data referenced by `data_refs`. The visibility field affects metadata discoverability through the registry; the underlying data store enforces its own access control.
+
+> **Visibility scope reminder.** Visibility protects the registry record (body and indexes). External data targets in `data_refs` are governed by their own ACLs (see §6.5).
 
 ### 7.1 Visibility is permanent for a given body
 
