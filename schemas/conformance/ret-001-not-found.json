@@ -1,0 +1,14 @@
+{
+  "id": "ret-001",
+  "description": "Retrieval of a ctx_id that does not exist on the registry. Registry MUST return not_found (HTTP 404). Note: visibility-restricted contexts requested by an unauthorized consumer MUST return the same response indistinguishably (the visibility_denied semantic is internal logging only).",
+  "tags": ["failure", "retrieval"],
+  "input": {
+    "endpoint": "GET /contexts/{ctx_id}",
+    "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-000000000000"
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 404,
+    "error_code": "not_found"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.0.1/acdp-registry-state.schema.json",
+  "title": "ACDP Registry State (v0.0.1)",
+  "description": "The registry-maintained portion of a context, returned alongside the body on retrieval. In v0.0.1 this contains only the derived 'status' field. Future versions will add lifecycle_events, relationships, and attestations. Consumers MUST tolerate unknown fields for forward compatibility.",
+
+  "type": "object",
+  "required": ["status"],
+  "properties": {
+    "status": {
+      "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/status",
+      "description": "Derived from supersession queries and the clock. The registry computes and serves this; consumers can verify independently."
+    }
+  },
+  "additionalProperties": true
+}

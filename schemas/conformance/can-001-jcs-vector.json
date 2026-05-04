@@ -1,0 +1,92 @@
+{
+  "id": "can-001",
+  "description": "Canonicalization and hashing test vectors. Implementations MUST reproduce these outputs exactly. Failure to reproduce is non-conformance with RFC-ACDP-0001.",
+  "tags": ["happy-path", "canonicalization", "hashing"],
+  "vectors": [
+    {
+      "name": "Body canonicalization and SHA-256",
+      "description": "Producer-supplied body fields with the RFC-ACDP-0001 §5.7 exclusion set already removed. Apply JCS, then SHA-256, hex-encode lowercase.",
+      "input": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:agent:test",
+        "contributors": [],
+        "title": "Minimal",
+        "type": "data_snapshot",
+        "data_refs": []
+      },
+      "expected": {
+        "canonical_form": "{\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_refs\":[],\"supersedes\":null,\"title\":\"Minimal\",\"type\":\"data_snapshot\",\"version\":1}",
+        "sha256_hex": "5f8d88d6758cfd43be875d49edc9eaa494de8ec645bf7de6c592b15bbb1e2e3c",
+        "content_hash_field_value": "sha256:5f8d88d6758cfd43be875d49edc9eaa494de8ec645bf7de6c592b15bbb1e2e3c"
+      }
+    },
+    {
+      "name": "Lineage identifier derivation — vector 1",
+      "description": "lineage_id = 'lin:sha256:' + lowercase_hex(SHA-256(utf8(ctx_id))).",
+      "input": {
+        "ctx_id": "acdp://reg.example/00000000-0000-4000-8000-000000000001"
+      },
+      "expected": {
+        "lineage_id": "lin:sha256:766b44a63adb664a46a205e19e9f9c19e0ba60512f402b0d97f5211cc7e3e878"
+      },
+      "notes": "Hash input is the UTF-8 bytes of the ctx_id string, including the 'acdp://' prefix."
+    },
+    {
+      "name": "Lineage identifier derivation — vector 2",
+      "input": {
+        "ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234"
+      },
+      "expected": {
+        "lineage_id": "lin:sha256:c7fef01c000f8edaa9cb46122ceb5d7bca38328f002fb0f40e362e3b289bbb2a"
+      }
+    },
+    {
+      "name": "Lineage identifier derivation — vector 3",
+      "input": {
+        "ctx_id": "acdp://other.registry.io/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
+      },
+      "expected": {
+        "lineage_id": "lin:sha256:d534b03c95757c75c512aff8c3e4616040ee97293fbb066fd511e04ba0443f58"
+      }
+    },
+    {
+      "name": "JCS — number formatting",
+      "description": "Trailing zeros after the decimal are dropped; integers carry no decimal point; negative zero canonicalizes to positive zero (RFC 8785 §3.2.2.3).",
+      "input": {
+        "values": [42, -7, 0, 1.10, 1.5, -0.0]
+      },
+      "expected": {
+        "canonical_form": "{\"values\":[42,-7,0,1.1,1.5,0]}"
+      },
+      "implementer_notes": [
+        "Python implementations using stdlib `json.dumps(obj, sort_keys=True, separators=(',', ':'))` are NOT JCS-conformant on this vector: stdlib preserves -0.0 as '-0.0' rather than normalizing to '0'. Use the `jcs` library on PyPI (https://pypi.org/project/jcs/), or pre-process inputs to replace negative zero before serialization.",
+        "JavaScript: the `canonicalize` package on npm (https://www.npmjs.com/package/canonicalize) handles negative zero correctly.",
+        "Go: the `gowebpki/jcs` library is conformant.",
+        "If your implementation fails this vector, your JCS pipeline is non-conformant — fix it before claiming conformance with RFC-ACDP-0001."
+      ]
+    },
+    {
+      "name": "JCS — array order preservation",
+      "description": "JCS sorts object keys but preserves array element order.",
+      "input": {
+        "tags": ["zebra", "apple", "mango"]
+      },
+      "expected": {
+        "canonical_form": "{\"tags\":[\"zebra\",\"apple\",\"mango\"]}"
+      }
+    },
+    {
+      "name": "JCS — empty / null distinction",
+      "description": "Presence of \"field\": null produces a different hash than the absence of the field. Empty arrays and empty objects are preserved.",
+      "input": {
+        "a": null,
+        "b": [],
+        "c": {}
+      },
+      "expected": {
+        "canonical_form": "{\"a\":null,\"b\":[],\"c\":{}}"
+      }
+    }
+  ]
+}

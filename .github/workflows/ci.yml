@@ -1,0 +1,57 @@
+name: ACDP CI
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  validate:
+    name: Validate Schemas, Examples, and Conformance
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install ajv-cli
+        run: npm install -g ajv-cli ajv-formats
+
+      - name: Validate JSON Schemas (meta)
+        run: |
+          chmod +x scripts/validate-json-schema.sh
+          ./scripts/validate-json-schema.sh
+
+      - name: Validate JSON examples and conformance fixtures
+        run: |
+          chmod +x scripts/validate-json.sh
+          ./scripts/validate-json.sh
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install conformance runner dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run executable conformance vectors
+        run: python3 scripts/conformance-runner.py
+
+  validate-all:
+    name: All Validations Passed
+    runs-on: ubuntu-latest
+    needs: [validate]
+
+    steps:
+      - name: Summary
+        run: |
+          echo "✓ All ACDP validations passed"
+          echo "  - JSON Schemas valid"
+          echo "  - JSON examples valid"
+          echo "  - Executable conformance vectors passed"

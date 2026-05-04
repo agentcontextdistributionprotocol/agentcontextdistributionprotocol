@@ -1,0 +1,92 @@
+{
+  "id": "vis-002",
+  "description": "Restricted contexts MUST NOT appear in search results for unauthorized requesters AND MUST NOT count toward total_estimate. The count itself leaks existence; both 'matches' and 'total_estimate' MUST be scoped by visibility.",
+  "tags": ["discovery", "visibility", "leak-prevention"],
+  "setup": {
+    "contexts_published": [
+      {
+        "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-000000000001",
+        "title": "Public alpha",
+        "visibility": "public"
+      },
+      {
+        "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-000000000002",
+        "title": "Restricted alpha",
+        "visibility": "restricted",
+        "audience": ["did:agent:authorized"]
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "name": "Authorized requester (in audience) sees both contexts",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/search?q=alpha",
+        "effective_requester_did": "did:agent:authorized"
+      },
+      "expected": {
+        "status": 200,
+        "matches_count": 2,
+        "total_estimate": 2,
+        "matches_ctx_ids": [
+          "acdp://registry.example.com/00000000-0000-4000-8000-000000000001",
+          "acdp://registry.example.com/00000000-0000-4000-8000-000000000002"
+        ]
+      }
+    },
+    {
+      "name": "Unauthorized requester sees only the public context",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/search?q=alpha",
+        "effective_requester_did": "did:agent:other"
+      },
+      "expected": {
+        "status": 200,
+        "matches_count": 1,
+        "total_estimate": 1,
+        "matches_ctx_ids": [
+          "acdp://registry.example.com/00000000-0000-4000-8000-000000000001"
+        ]
+      },
+      "notes": "MUST be matches_count=1 AND total_estimate=1. Including the restricted context in total_estimate (even without listing it in matches) leaks its existence to the unauthorized requester. Registry MUST scope BOTH the matches array AND the total_estimate count."
+    },
+    {
+      "name": "Anonymous requester (registry advertises anonymous_public_reads=true)",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/search?q=alpha",
+        "effective_requester_did": null,
+        "registry_capabilities_subset": {
+          "anonymous_public_reads": true
+        }
+      },
+      "expected": {
+        "status": 200,
+        "matches_count": 1,
+        "total_estimate": 1,
+        "matches_ctx_ids": [
+          "acdp://registry.example.com/00000000-0000-4000-8000-000000000001"
+        ]
+      },
+      "notes": "Anonymous requesters see only public contexts. Same scoping rule as authenticated unauthorized requesters."
+    },
+    {
+      "name": "Anonymous requester (registry does not advertise anonymous_public_reads)",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/search?q=alpha",
+        "effective_requester_did": null,
+        "registry_capabilities_subset": {
+          "anonymous_public_reads": false
+        }
+      },
+      "expected": {
+        "status": 403,
+        "error_code": "not_authorized"
+      },
+      "notes": "Registry that does not advertise anonymous_public_reads MUST reject anonymous requests outright (RFC-ACDP-0008 §6.3)."
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "id": "pub-005",
+  "description": "Publish with visibility: restricted MUST require non-empty audience. The acdp-publish-request.schema.json's allOf clause enforces 'if visibility=restricted, audience is required'; the registry rejects at step 1 (schema validation).",
+  "tags": ["publish", "negative", "visibility"],
+  "request": {
+    "method": "POST",
+    "path": "/contexts",
+    "content_type": "application/acdp+json",
+    "body": {
+      "version": 1,
+      "supersedes": null,
+      "agent_id": "did:agent:test",
+      "contributors": [],
+      "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "signature": {
+        "algorithm": "ed25519",
+        "key_id": "did:agent:test#key-1",
+        "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+      },
+      "title": "Restricted test",
+      "type": "data_snapshot",
+      "data_refs": [],
+      "derived_from": [],
+      "visibility": "restricted"
+    }
+  },
+  "expected": {
+    "status": 400,
+    "error_code": "schema_violation"
+  },
+  "notes": "audience field is required (and non-empty) when visibility=restricted. Schema rejects at step 1."
+}

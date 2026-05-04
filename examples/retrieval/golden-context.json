@@ -1,0 +1,27 @@
+{
+  "body": {
+    "ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234",
+    "lineage_id": "lin:sha256:c7fef01c000f8edaa9cb46122ceb5d7bca38328f002fb0f40e362e3b289bbb2a",
+    "version": 1,
+    "supersedes": null,
+    "agent_id": "did:web:agents.example.com:test-producer",
+    "contributors": [],
+    "origin_registry": "registry.example.com",
+    "created_at": "2026-04-16T10:30:15.123Z",
+    "content_hash": "sha256:f170150ddbf59d99794e7797824591b374d459782084597b644ecc57a41031b5",
+    "signature": {
+      "algorithm": "ed25519",
+      "key_id": "did:web:agents.example.com:test-producer#key-1",
+      "value": "ErkbV+FUdn49TgF3zJ3RBe3AmyGxLVAQdMjlhabUfM96qendmWwdVodX/SV3O3aKLypbUu6gmb5Npt3O/w7nDQ=="
+    },
+    "title": "Golden test vector — minimal first version",
+    "type": "data_snapshot",
+    "data_refs": [],
+    "derived_from": [],
+    "visibility": "public"
+  },
+  "registry_state": {
+    "status": "active"
+  },
+  "_test_keypair_note": "This example uses the public-domain test keypair from schemas/conformance/sig-001-ed25519-golden.json. Private seed is 32 zero bytes; public key is 3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29 (hex). DO NOT use this keypair for real publications. The signature here is REAL Ed25519 over the bytes of the content_hash string and verifies against the test public key."
+}

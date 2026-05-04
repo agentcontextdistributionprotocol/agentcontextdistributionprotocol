@@ -1,0 +1,42 @@
+{
+  "id": "pub-003",
+  "description": "A new context attempts to supersede a target that exists, but the new context's computed lineage_id does not equal the target's lineage_id. Registry MUST reject with superseded_target (HTTP 400) and details.reason = 'lineage_mismatch'.",
+  "tags": ["failure", "publish", "supersession"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "preconditions": {
+      "existing_context": {
+        "ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111",
+        "lineage_id": "lin:sha256:4c63394418b2e784aef68f5a091535c557453c21231f5905f21a38c02913cd86",
+        "version": 1
+      }
+    },
+    "body": {
+      "version": 2,
+      "supersedes": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111",
+      "agent_id": "did:web:agents.example.com:test-producer",
+      "contributors": [],
+      "content_hash": "sha256:abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+      "signature": {
+        "algorithm": "ed25519",
+        "key_id": "did:web:agents.example.com:test-producer#key-1",
+        "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+      },
+      "title": "v2 with mismatched lineage",
+      "type": "analysis",
+      "data_refs": [],
+      "derived_from": [],
+      "visibility": "public",
+      "lineage_id": "lin:sha256:9999999999999999999999999999999999999999999999999999999999999999"
+    },
+    "notes": "The supplied lineage_id (9999...) does not match the computed lineage_id (4c63...) of the supersession target. The target's lineage_id is the SHA-256 of the target's ctx_id per RFC-ACDP-0001 §5.6."
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 400,
+    "error_code": "superseded_target",
+    "details": {
+      "reason": "lineage_mismatch"
+    }
+  }
+}

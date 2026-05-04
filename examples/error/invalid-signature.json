@@ -1,0 +1,10 @@
+{
+  "error": {
+    "code": "invalid_signature",
+    "message": "Producer signature failed verification.",
+    "details": {
+      "key_id": "did:web:agents.example.com:market-data-collector#key-1",
+      "algorithm": "ed25519"
+    }
+  }
+}

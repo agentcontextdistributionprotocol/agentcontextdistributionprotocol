@@ -1,0 +1,32 @@
+{
+  "id": "pub-006",
+  "description": "Publish with signature.key_id whose DID portion does not match agent_id MUST be rejected with key_not_authorized (HTTP 403). Tests RFC-ACDP-0003 §2.1 step 6: the registry verifies the DID portion of key_id (everything before '#') equals agent_id, and rejects before signature verification.",
+  "tags": ["publish", "negative", "auth"],
+  "request": {
+    "method": "POST",
+    "path": "/contexts",
+    "content_type": "application/acdp+json",
+    "body": {
+      "version": 1,
+      "supersedes": null,
+      "agent_id": "did:agent:alice",
+      "contributors": [],
+      "content_hash": "sha256:5f8d88d6758cfd43be875d49edc9eaa494de8ec645bf7de6c592b15bbb1e2e3c",
+      "signature": {
+        "algorithm": "ed25519",
+        "key_id": "did:agent:bob#key-1",
+        "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+      },
+      "title": "Test",
+      "type": "data_snapshot",
+      "data_refs": [],
+      "derived_from": [],
+      "visibility": "public"
+    }
+  },
+  "expected": {
+    "status": 403,
+    "error_code": "key_not_authorized"
+  },
+  "notes": "agent_id is alice but signature.key_id is under bob's DID. Registries MUST reject before attempting signature verification."
+}

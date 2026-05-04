@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.0.1/acdp-index.schema.json",
+  "title": "ACDP Schemas Index (v0.0.1)",
+  "description": "Discoverable list of all JSON Schemas defined for ACDP v0.0.1.",
+
+  "type": "object",
+  "properties": {
+    "version": { "const": "0.0.1" },
+    "schemas": {
+      "type": "object",
+      "properties": {
+        "common": { "const": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json" },
+        "data_ref": { "const": "https://schemas.acdp.io/v0.0.1/acdp-data-ref.schema.json" },
+        "context_body": { "const": "https://schemas.acdp.io/v0.0.1/acdp-context-body.schema.json" },
+        "registry_state": { "const": "https://schemas.acdp.io/v0.0.1/acdp-registry-state.schema.json" },
+        "context": { "const": "https://schemas.acdp.io/v0.0.1/acdp-context.schema.json" },
+        "publish_request": { "const": "https://schemas.acdp.io/v0.0.1/acdp-publish-request.schema.json" },
+        "publish_response": { "const": "https://schemas.acdp.io/v0.0.1/acdp-publish-response.schema.json" },
+        "search_response": { "const": "https://schemas.acdp.io/v0.0.1/acdp-search-response.schema.json" },
+        "capabilities": { "const": "https://schemas.acdp.io/v0.0.1/acdp-capabilities.schema.json" },
+        "error": { "const": "https://schemas.acdp.io/v0.0.1/acdp-error.schema.json" }
+      }
+    }
+  },
+  "examples": [
+    {
+      "version": "0.0.1",
+      "schemas": {
+        "common": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json",
+        "data_ref": "https://schemas.acdp.io/v0.0.1/acdp-data-ref.schema.json",
+        "context_body": "https://schemas.acdp.io/v0.0.1/acdp-context-body.schema.json",
+        "registry_state": "https://schemas.acdp.io/v0.0.1/acdp-registry-state.schema.json",
+        "context": "https://schemas.acdp.io/v0.0.1/acdp-context.schema.json",
+        "publish_request": "https://schemas.acdp.io/v0.0.1/acdp-publish-request.schema.json",
+        "publish_response": "https://schemas.acdp.io/v0.0.1/acdp-publish-response.schema.json",
+        "search_response": "https://schemas.acdp.io/v0.0.1/acdp-search-response.schema.json",
+        "capabilities": "https://schemas.acdp.io/v0.0.1/acdp-capabilities.schema.json",
+        "error": "https://schemas.acdp.io/v0.0.1/acdp-error.schema.json"
+      }
+    }
+  ]
+}

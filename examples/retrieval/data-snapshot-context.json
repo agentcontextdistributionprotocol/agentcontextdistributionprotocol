@@ -1,0 +1,41 @@
+{
+  "body": {
+    "ctx_id": "acdp://registry.example.com/123e4567-e89b-42d3-a456-426614174000",
+    "lineage_id": "lin:sha256:9d5694da9b985ae44832c256d5fd1333654ecf10a59682c83c67b3d22e2023a4",
+    "version": 1,
+    "supersedes": null,
+    "agent_id": "did:web:agents.example.com:market-data-collector",
+    "contributors": [],
+    "origin_registry": "registry.example.com",
+    "created_at": "2026-04-16T10:15:00.000Z",
+    "content_hash": "sha256:5f8d88d6758cfd43be875d49edc9eaa494de8ec645bf7de6c592b15bbb1e2e3c",
+    "signature": {
+      "algorithm": "ed25519",
+      "key_id": "did:web:agents.example.com:market-data-collector#key-1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    "title": "BTC Price Snapshot",
+    "type": "data_snapshot",
+    "domain": "financial_markets",
+    "data_refs": [
+      {
+        "type": "primary_result",
+        "location": "postgres://prices_db/snapshots?timestamp=2026-04-16T10:15:00Z",
+        "description": "OHLCV data for BTC-USD",
+        "format": "json"
+      }
+    ],
+    "derived_from": [],
+    "tags": ["bitcoin", "price", "market_open"],
+    "data_period": {
+      "start": "2026-04-16T10:15:00.000Z",
+      "end": "2026-04-16T10:15:00.000Z"
+    },
+    "expires_at": "2026-04-16T16:15:00.000Z",
+    "visibility": "public",
+    "summary": "BTC: $43,250.67 (+2.3%), Volume: 15,423 BTC"
+  },
+  "registry_state": {
+    "status": "active"
+  }
+}

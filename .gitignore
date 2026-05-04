@@ -1,0 +1,100 @@
+# Claude Code AI assistant files
+CLAUDE.md
+.claude/
+/plans/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# Compiled protobuf files (only generated stubs)
+*.pb.go
+*_pb2.py
+*_pb2.pyi
+*.pb.cc
+*.pb.h
+generated/
+
+# Gradle / build artifacts
+.gradle/
+build/
+.build/
+dist/
+target/
+out/
+
+# Dependency directories
+node_modules/
+vendor/
+.pnp/
+
+# Env files
+.env
+.env.local
+.env.*.local
+
+# Logs / tmp
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Go
+*.test
+*.out
+go.work
+
+# Rust
+Cargo.lock
+target/
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Test coverage
+coverage/
+*.lcov
+temp/
+plans/
