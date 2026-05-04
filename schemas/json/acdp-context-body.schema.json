@@ -114,14 +114,6 @@
       "maxItems": 200,
       "description": "Free-form tags for keyword discovery."
     },
-    "embedding": {
-      "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/embedding",
-      "description": "Vector representation for similarity discovery."
-    },
-    "embedding_model": {
-      "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/embedding_model",
-      "description": "Required if embedding is present."
-    },
     "data_period": {
       "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/data_period",
       "description": "Time window the data covers. Distinct from created_at and expires_at."
@@ -159,10 +151,6 @@
   },
   "additionalProperties": true,
   "allOf": [
-    {
-      "if": { "properties": { "embedding": { "type": "array" } }, "required": ["embedding"] },
-      "then": { "required": ["embedding_model"] }
-    },
     {
       "if": { "properties": { "visibility": { "const": "restricted" } } },
       "then": {

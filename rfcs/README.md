@@ -8,7 +8,7 @@ This directory contains the normative RFCs that define the Agent Context Descrip
 | [RFC-ACDP-0002](RFC-ACDP-0002-context-body.md) | Context Body | Release Candidate 1 |
 | [RFC-ACDP-0003](RFC-ACDP-0003-publish.md) | Publish & Supersession | Release Candidate 1 |
 | [RFC-ACDP-0004](RFC-ACDP-0004-retrieval.md) | Retrieval & Lineage | Release Candidate 1 |
-| [RFC-ACDP-0005](RFC-ACDP-0005-discovery.md) | Discovery (keyword + similarity) | Release Candidate 1 |
+| [RFC-ACDP-0005](RFC-ACDP-0005-discovery.md) | Discovery (keyword search) | Release Candidate 1 |
 | [RFC-ACDP-0006](RFC-ACDP-0006-cross-registry.md) | Cross-Registry References | Release Candidate 1 |
 | [RFC-ACDP-0007](RFC-ACDP-0007-capabilities.md) | Capabilities & Errors | Release Candidate 1 |
 | [RFC-ACDP-0008](RFC-ACDP-0008-security.md) | Security & Threat Model | Release Candidate 1 |
@@ -22,7 +22,7 @@ The numbering matches dependency order. Read top-to-bottom:
 2. **[RFC-ACDP-0002 Context Body](RFC-ACDP-0002-context-body.md)** — the immutable signed body; context types; data references; visibility.
 3. **[RFC-ACDP-0003 Publish](RFC-ACDP-0003-publish.md)** — `POST /contexts`, supersession constraints, registry-assigned fields.
 4. **[RFC-ACDP-0004 Retrieval](RFC-ACDP-0004-retrieval.md)** — `GET /contexts/{ctx_id}` and lineage queries.
-5. **[RFC-ACDP-0005 Discovery](RFC-ACDP-0005-discovery.md)** — keyword and similarity search.
+5. **[RFC-ACDP-0005 Discovery](RFC-ACDP-0005-discovery.md)** — keyword search.
 6. **[RFC-ACDP-0006 Cross-Registry](RFC-ACDP-0006-cross-registry.md)** — `acdp://` URI scheme and resolution flow.
 7. **[RFC-ACDP-0007 Capabilities](RFC-ACDP-0007-capabilities.md)** — `/.well-known/acdp.json` and the error envelope.
 8. **[RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md)** — threat model and required defenses.

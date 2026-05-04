@@ -18,7 +18,6 @@
         "publish_request": { "const": "https://schemas.acdp.io/v0.0.1/acdp-publish-request.schema.json" },
         "publish_response": { "const": "https://schemas.acdp.io/v0.0.1/acdp-publish-response.schema.json" },
         "search_response": { "const": "https://schemas.acdp.io/v0.0.1/acdp-search-response.schema.json" },
-        "similarity_response": { "const": "https://schemas.acdp.io/v0.0.1/acdp-similarity-response.schema.json" },
         "capabilities": { "const": "https://schemas.acdp.io/v0.0.1/acdp-capabilities.schema.json" },
         "error": { "const": "https://schemas.acdp.io/v0.0.1/acdp-error.schema.json" }
       }
@@ -36,7 +35,6 @@
         "publish_request": "https://schemas.acdp.io/v0.0.1/acdp-publish-request.schema.json",
         "publish_response": "https://schemas.acdp.io/v0.0.1/acdp-publish-response.schema.json",
         "search_response": "https://schemas.acdp.io/v0.0.1/acdp-search-response.schema.json",
-        "similarity_response": "https://schemas.acdp.io/v0.0.1/acdp-similarity-response.schema.json",
         "capabilities": "https://schemas.acdp.io/v0.0.1/acdp-capabilities.schema.json",
         "error": "https://schemas.acdp.io/v0.0.1/acdp-error.schema.json"
       }

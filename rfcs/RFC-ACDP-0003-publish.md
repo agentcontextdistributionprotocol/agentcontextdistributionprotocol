@@ -24,7 +24,7 @@ Content-Type: application/acdp+json
 
 The request body conforms to [`schemas/json/acdp-publish-request.schema.json`](../schemas/json/acdp-publish-request.schema.json). It contains the producer-supplied portion of the context body — all fields except those assigned by the registry (`ctx_id`, `origin_registry`, `created_at`). The producer MUST include `content_hash` and `signature`. The producer MAY include `lineage_id` for self-verification.
 
-> **Implementer note: schema-valid ≠ publish-valid.** Passing `acdp-publish-request.schema.json` validation is necessary but NOT sufficient for a publish to succeed. The schema enforces structural validity only. Cryptographic correctness (`hash_mismatch`, `invalid_signature`), key resolution (`key_resolution_failed`, `key_not_authorized`), supersession races (`superseded_target` with `version_mismatch` / `already_superseded`), unsupported algorithms or DID methods, embedding-model availability, and rate limits are all checked at runtime by the registry per §2.1. A schema-valid request MAY still be rejected with any of these codes.
+> **Implementer note: schema-valid ≠ publish-valid.** Passing `acdp-publish-request.schema.json` validation is necessary but NOT sufficient for a publish to succeed. The schema enforces structural validity only. Cryptographic correctness (`hash_mismatch`, `invalid_signature`), key resolution (`key_resolution_failed`, `key_not_authorized`), supersession races (`superseded_target` with `version_mismatch` / `already_superseded`), unsupported algorithms or DID methods, and rate limits are all checked at runtime by the registry per §2.1. A schema-valid request MAY still be rejected with any of these codes.
 
 ### 2.1 Registry processing
 
@@ -37,21 +37,20 @@ The registry MUST execute the following steps in order:
 5. **Algorithm check.** If `signature.algorithm` is not in the registry's `supported_signature_algorithms` (RFC-ACDP-0007), return `unsupported_algorithm` (HTTP 400).
 6. **Key-id binding and key resolution.** First, verify that the DID portion of `signature.key_id` (everything before `#`) equals `body.agent_id`; on mismatch, return `key_not_authorized` (HTTP 403). This sub-check is a string comparison and registries MAY perform it earlier (before step 4) as an optimization to reject obvious mismatches without paying the SHA-256 cost. Then resolve the signing key per RFC-ACDP-0001 §5.11. On a permanent resolution failure (DID document fetched but missing the requested key fragment, or `key_id` lacks a fragment), return `key_resolution_failed` (HTTP 400). On a transient failure (DNS, TLS, HTTP non-2xx, timeout fetching the DID document), return `key_resolution_unreachable` (HTTP 502). On successful resolution, verify the resolved verification method is in the DID document's `assertionMethod` array; if not, return `key_not_authorized` (HTTP 403).
 7. **Signature verification.** Verify `signature.value` against the bytes of the `content_hash` string using the resolved key. On failure, return `invalid_signature` (HTTP 400).
-8. **Embedding-model check.** If `embedding` is present, verify `embedding_model` is in the registry's `supported_embedding_models` (RFC-ACDP-0007). On failure, return `unsupported_embedding_model` (HTTP 400).
-9. **Identifier assignment.** Assign:
+8. **Identifier assignment.** Assign:
    - `ctx_id = acdp://<own_authority>/<freshly_generated_uuidv4>`
    - `origin_registry = <own_authority>`
    - `created_at = <current_time_in_canonical_rfc3339>`
-10. **Lineage computation.** Per RFC-ACDP-0001 §5.6:
+9. **Lineage computation.** Per RFC-ACDP-0001 §5.6:
     - For first versions (`supersedes = null`), `lineage_id = "lin:sha256:" + lowercase_hex(SHA-256(ctx_id))`.
     - For subsequent versions, walk back through `supersedes` to find the version-1 `ctx_id` and apply the same formula.
     - If the producer supplied `lineage_id`, verify it matches the computed value; on mismatch, return `superseded_target` (HTTP 400).
-11. **Supersession validation.** If `supersedes` is non-null, validate per §3 below.
-12. **Visibility validation.** If `visibility = "restricted"`, verify `audience` is a non-empty array of DIDs. If `visibility = "private"`, the registry MUST treat **only `agent_id`** plus any DIDs explicitly listed in `audience` (if present) as authorized; **`contributors` are NOT auto-authorized** — `contributors` is for attribution, not authorization (see RFC-ACDP-0008 §4.5).
-13. **Persistence.** Persist the body. Initialize the derived `status` per RFC-ACDP-0004 §4.
-14. **Response.** Return a publish response (§4).
+10. **Supersession validation.** If `supersedes` is non-null, validate per §3 below.
+11. **Visibility validation.** If `visibility = "restricted"`, verify `audience` is a non-empty array of DIDs. If `visibility = "private"`, the registry MUST treat **only `agent_id`** plus any DIDs explicitly listed in `audience` (if present) as authorized; **`contributors` are NOT auto-authorized** — `contributors` is for attribution, not authorization (see RFC-ACDP-0008 §4.5).
+12. **Persistence.** Persist the body. Initialize the derived `status` per RFC-ACDP-0004 §4.
+13. **Response.** Return a publish response (§4).
 
-The registry MUST execute steps 1–8 before any persistence. Steps 9–13 are atomic with respect to other concurrent publications: when two publications target the same `supersedes` value, the registry MUST accept exactly one (the first to fully validate and reach step 12), and MUST reject every subsequent attempt with `superseded_target` (`details.reason = "already_superseded"`, HTTP 409 Conflict).
+The registry MUST execute steps 1–7 before any persistence. Steps 8–12 are atomic with respect to other concurrent publications: when two publications target the same `supersedes` value, the registry MUST accept exactly one (the first to fully validate and reach step 11), and MUST reject every subsequent attempt with `superseded_target` (`details.reason = "already_superseded"`, HTTP 409 Conflict).
 
 ### 2.2 Producer-side flow
 
@@ -137,7 +136,6 @@ All errors use the envelope defined in RFC-ACDP-0007 §4 with codes from the reg
 | Key resolution failed (permanent) | `key_resolution_failed` | 400 |
 | Key resolution unreachable (transient) | `key_resolution_unreachable` | 502 |
 | Signing key DID does not match `agent_id` | `key_not_authorized` | 403 |
-| Embedding model not indexed | `unsupported_embedding_model` | 400 |
 | Embedded data > 64 KB | `embedded_too_large` | 413 |
 | Payload > registry limit | `payload_too_large` | 413 |
 | `supersedes` target not found | `superseded_target` (`reason: not_found`) | 400 |

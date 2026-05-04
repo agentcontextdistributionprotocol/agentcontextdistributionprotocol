@@ -54,7 +54,7 @@ A context body is JCS-canonicalized, SHA-256 hashed, and signed by the producer.
 | **0002 Context Body** | The immutable signed body — fields, types, data references, visibility. |
 | **0003 Publish** | `POST /contexts`, supersession constraints, registry-assigned fields. |
 | **0004 Retrieval** | `GET /contexts/{ctx_id}`, body-only retrieval, lineage queries, derived `status`. |
-| **0005 Discovery** | Keyword search and (optional) semantic similarity. Search ranking within results is registry-defined; results are scoped to the requesting agent's effective audience. |
+| **0005 Discovery** | Keyword search. Ranking within results is registry-defined; results are scoped to the requesting agent's effective audience. Semantic similarity is reserved for v0.1 (RFC-ACDP-0009 §2.9). |
 | **0006 Cross-Registry** | `acdp://` resolution flow; the producer signature is the trust anchor, not the registry. |
 | **0007 Capabilities** | `/.well-known/acdp.json` and the standard error envelope. |
 | **0008 Security** | Threat model and required defenses for v0.0.1. |

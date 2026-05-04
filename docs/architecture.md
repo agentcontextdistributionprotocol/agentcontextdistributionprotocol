@@ -31,15 +31,14 @@ Registry processing in order (RFC-ACDP-0003 §2.1):
 5. algorithm check
 6. key-id binding and key resolution
 7. signature verification (against the registry-recomputed hash)
-8. embedding-model check
-9. identifier assignment (`ctx_id`, `origin_registry`, `created_at`)
-10. lineage computation
-11. supersession validation
-12. visibility validation
-13. persistence
-14. response
+8. identifier assignment (`ctx_id`, `origin_registry`, `created_at`)
+9. lineage computation
+10. supersession validation
+11. visibility validation
+12. persistence
+13. response
 
-Steps 1–8 are "validation"; the registry MUST complete all of them before any persistent state changes.
+Steps 1–7 are "validation"; the registry MUST complete all of them before any persistent state changes.
 
 ### 2.2 Retrieval
 
@@ -134,7 +133,7 @@ If a consumer needs anything else to verify a context, the system is doing too m
 2. [RFC-ACDP-0002 Context Body](../rfcs/RFC-ACDP-0002-context-body.md) — body fields and constraints.
 3. [RFC-ACDP-0003 Publish](../rfcs/RFC-ACDP-0003-publish.md) — POST flow and supersession.
 4. [RFC-ACDP-0004 Retrieval](../rfcs/RFC-ACDP-0004-retrieval.md) — GET, lineage, derived status.
-5. [RFC-ACDP-0005 Discovery](../rfcs/RFC-ACDP-0005-discovery.md) — search and similarity.
+5. [RFC-ACDP-0005 Discovery](../rfcs/RFC-ACDP-0005-discovery.md) — keyword search.
 6. [RFC-ACDP-0006 Cross-Registry](../rfcs/RFC-ACDP-0006-cross-registry.md) — `acdp://` resolution.
 7. [RFC-ACDP-0007 Capabilities](../rfcs/RFC-ACDP-0007-capabilities.md) — well-known doc + errors.
 8. [RFC-ACDP-0008 Security](../rfcs/RFC-ACDP-0008-security.md) — what you must enforce.

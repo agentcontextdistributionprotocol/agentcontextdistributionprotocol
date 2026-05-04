@@ -19,7 +19,7 @@ Release Candidate 1. Backward-incompatible changes remain possible until Final.
 
 Two pieces of information must be discoverable about every registry:
 
-1. **What does it support?** — Which signature algorithms, embedding models, and limits.
+1. **What does it support?** — Which signature algorithms, profiles, and limits.
 2. **How does it report failures?** — A consistent error envelope and code registry, so consumers can react programmatically.
 
 Both must be discoverable without prior bilateral configuration. The well-known capabilities document and the standard error envelope serve those needs respectively.
@@ -50,14 +50,10 @@ Returns the registry's capability declaration. Conforms to [`schemas/json/acdp-c
 
 | Field | Type | Description |
 |---|---|---|
-| `supported_embedding_models` | array of string | Embedding model identifiers indexed by this registry today. Empty if registry does not index embeddings (similarity endpoints return 501 Not Implemented). |
-| `previously_supported_embedding_models` | array of string | Models the registry once indexed but has dropped. Bodies signed with these models remain valid; similarity requests against them MUST return `unsupported_embedding_model`. |
 | `read_authentication_methods` | array of string | Read-authentication methods supported by this registry. At least one MUST be declared if the registry serves any non-public contexts. Defined values: `http_signatures`, `mtls`, `oauth`. See RFC-ACDP-0008 §6.2. |
 | `anonymous_public_reads` | boolean | Whether anonymous (unauthenticated) reads are permitted for public contexts. Default `false`. See RFC-ACDP-0008 §6.3. |
 | `supports_idempotency_key` | boolean | Whether this registry honors the `Idempotency-Key` header on `POST /contexts`. Default `false`. See RFC-ACDP-0003 §6. |
 | `limits.idempotency_key_ttl_seconds` | integer | How long this registry retains idempotency-key mappings, in seconds. MUST be present when `supports_idempotency_key` is true. Range 86400 (24h) to 604800 (7d). |
-| `limits.max_embedding_dimensions` | integer | Maximum embedding vector dimensionality accepted on similarity requests. Default 4096. See RFC-ACDP-0005 §3.5. |
-| `limits.max_top_k` | integer | Maximum `top_k` accepted on similarity requests. Default 100. See RFC-ACDP-0005 §3.5. |
 
 ### 3.3 Forward-compatible additions
 
@@ -71,9 +67,6 @@ The capabilities document is `additionalProperties: true` to support forward com
   "registry_did": "did:web:registry.example.com",
   "supported_signature_algorithms": ["ed25519"],
   "supported_did_methods": ["did:web"],
-  "supported_embedding_models": [
-    "text-embedding-3-large@2026-02"
-  ],
   "read_authentication_methods": ["http_signatures"],
   "anonymous_public_reads": true,
   "supports_idempotency_key": true,
@@ -81,8 +74,6 @@ The capabilities document is `additionalProperties: true` to support forward com
   "limits": {
     "max_payload_bytes": 1048576,
     "max_embedded_bytes": 65536,
-    "max_embedding_dimensions": 4096,
-    "max_top_k": 100,
     "idempotency_key_ttl_seconds": 86400
   }
 }
@@ -137,21 +128,20 @@ The full registry is maintained in [`registries/error-codes.md`](../registries/e
 | `not_found` | 404 | Resource not found. (Also returned for visibility-restricted contexts to non-audience requesters; see RFC-ACDP-0008 §4.5.) | RFC-ACDP-0004 §7 |
 | `superseded_target` | 400 / 409 | The `supersedes` target is invalid. `details.reason` provides specifics. HTTP 400 for static violations (`not_found`, `lineage_mismatch`, `cross_registry_supersession_unsupported`); HTTP 409 Conflict for race conditions (`already_superseded`, `version_mismatch`). | RFC-ACDP-0003 §3.1 |
 | `unsupported_algorithm` | 400 | Signature algorithm not in the registry's `supported_signature_algorithms`. | RFC-ACDP-0007 §3 |
-| `unsupported_embedding_model` | 400 | Embedding model not in the registry's `supported_embedding_models`. | RFC-ACDP-0005 §3.1 |
 | `rate_limited` | 429 | Per-agent rate limit exceeded. | RFC-ACDP-0008 §4.3 |
 | `payload_too_large` | 413 | Request body exceeds `limits.max_payload_bytes`. | RFC-ACDP-0007 §3.1 |
 | `embedded_too_large` | 413 | An embedded data reference exceeds 64 KB. | RFC-ACDP-0002 §6.3 |
 | `key_resolution_failed` | 400 | The signing key referenced by `signature.key_id` could not be resolved due to a permanent condition (DID document parsed successfully but does not contain the requested key fragment, or fragment is missing from `key_id`). Producer error; not retryable. | RFC-ACDP-0003 §2.1 step 6 |
 | `key_resolution_unreachable` | 502 | The signing key could not be resolved due to a transient condition (DNS failure, TLS error, HTTP non-2xx, network timeout fetching the DID document). Retryable with backoff. | RFC-ACDP-0003 §2.1 step 6 |
 | `key_not_authorized` | 403 | The DID portion of `signature.key_id` does not equal `body.agent_id`, or the resolved verification method is not in the DID document's `assertionMethod` array. | RFC-ACDP-0003 §2.1 step 6 |
-| `not_implemented` | 501 | Endpoint or capability not implemented by this registry. Returned with the standard error envelope. | RFC-ACDP-0005 §3 |
+| `not_implemented` | 501 | Endpoint or capability not implemented by this registry. Returned with the standard error envelope. | RFC-ACDP-0007 §4 |
 | `cursor_expired` | 400 | A previously-issued pagination cursor is no longer valid. Client SHOULD restart pagination. | RFC-ACDP-0005 §2.5.4 |
 | `invalid_cursor` | 400 | A pagination cursor is malformed or unrecognized. | RFC-ACDP-0005 §2.5.4 |
 | `duplicate_publish` | 409 | An idempotent publish was retried with conflicting content (same `Idempotency-Key`, different `content_hash`). | RFC-ACDP-0003 §6.2 |
 | `cross_registry_resolution_failed` | 502 | A cross-registry resolution failed (DNS resolution refused, response oversize, timeout, redirect-policy violation, or upstream registry unavailable). | RFC-ACDP-0006 §7 |
 | `internal_error` | 500 | The registry encountered an unexpected internal condition. The standard error envelope MUST be used; `error.message` MUST NOT leak stack traces or sensitive context. Retryable. | RFC-ACDP-0007 §4 |
 
-> **Reserved codes (not in this table or the v0.0.1 wire enum):** `immutable_field` is reserved for v0.1+ mutation endpoints (retraction, attestation updates — see RFC-ACDP-0009 §2.1). Implementations MUST NOT emit it in v0.0.1 responses.
+> **Reserved codes (not in this table or the v0.0.1 wire enum):** `immutable_field` is reserved for v0.1+ mutation endpoints (retraction, attestation updates — see RFC-ACDP-0009 §2.1). `unsupported_embedding_model` is reserved for v0.1+ similarity endpoints (see RFC-ACDP-0009 §2.9). Implementations MUST NOT emit either in v0.0.1 responses.
 
 ### 5.1 Adding a code
 

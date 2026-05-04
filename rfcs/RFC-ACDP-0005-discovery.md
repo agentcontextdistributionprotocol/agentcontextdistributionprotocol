@@ -5,7 +5,7 @@
 **Version:** 0.0.1
 **Status:** Community Standards Track (Release Candidate 1)
 
-This RFC specifies how consumers discover contexts on an ACDP registry. ACDP v0.0.1 defines two discovery modalities: keyword search and semantic similarity. Push subscriptions are reserved for a future version (RFC-ACDP-0009).
+This RFC specifies how consumers discover contexts on an ACDP registry. ACDP v0.0.1 defines one discovery modality: keyword search. Semantic similarity and push subscriptions are reserved for a future version (RFC-ACDP-0009 §2.4, §2.9).
 
 ---
 
@@ -120,95 +120,7 @@ Results MAY include or exclude contexts published mid-iteration; cross-page cons
 
 ---
 
-## 3. Semantic Similarity
-
-Semantic similarity is OPTIONAL — the `acdp-registry-discovery` profile (RFC-ACDP-0001 §9.1) is satisfied by an implementation that returns `not_implemented` for similarity endpoints. Consumers MUST check the `supported_embedding_models` array in the registry's capability document before issuing a similarity request. A registry that does not index embeddings MUST advertise an empty `supported_embedding_models` array in capabilities (RFC-ACDP-0007). For requests to similarity endpoints, such a registry MUST return HTTP 501 Not Implemented with the standard error envelope:
-
-```json
-{ "error": { "code": "not_implemented", "message": "Similarity search is not implemented." } }
-```
-
-Implementations MUST NOT return a 501 response with an empty body for ACDP endpoints; the standard error envelope is required so consumers can react programmatically.
-
-### 3.1 Similarity by reference
-
-```
-GET /contexts/similar?ctx_id=...&top_k=20&embedding_model=...
-```
-
-Query parameters:
-
-| Parameter | Type | Description |
-|---|---|---|
-| `ctx_id` | string | Reference context. The registry uses its embedding as the query. |
-| `embedding_model` | string | Required. Must be in the registry's `supported_embedding_models`. |
-| `top_k` | integer | Maximum results. Registry-capped. |
-| `status` | string | Filter by status. Default: `active`. |
-
-If the reference context does not have an embedding for the requested model, return `unsupported_embedding_model` (HTTP 400).
-
-### 3.2 Similarity by embedding
-
-```
-POST /contexts/similar
-Content-Type: application/acdp+json
-```
-
-```json
-{
-  "embedding": [0.012, -0.045, 0.078, ...],
-  "embedding_model": "text-embedding-3-large@2026-02",
-  "top_k": 20,
-  "filters": {
-    "type": "analysis",
-    "domain": "financial_markets",
-    "status": "active"
-  }
-}
-```
-
-`filters` accepts the same fields as keyword-search query parameters in §2.1.
-
-The request body conforms to [`schemas/json/acdp-similarity-request.schema.json`](../schemas/json/acdp-similarity-request.schema.json).
-
-### 3.3 Response
-
-The response conforms to [`schemas/json/acdp-similarity-response.schema.json`](../schemas/json/acdp-similarity-response.schema.json):
-
-```json
-{
-  "matches": [
-    {
-      "ctx_id": "acdp://registry.example.com/...",
-      "similarity": 0.92,
-      "summary": { ... }
-    }
-  ]
-}
-```
-
-### 3.4 Similarity values
-
-`similarity` values are in `[-1, 1]` for cosine similarity but are typically `[0, 1]` for normalized embeddings. Similarity values are **not comparable across embedding models**. Implementations MUST NOT mix results from different embedding models in a single response.
-
-### 3.5 Vector input constraints
-
-The `embedding` field of similarity requests:
-
-- MUST contain only finite IEEE 754 double-precision values. NaN, +Infinity, and -Infinity are invalid.
-- MUST have length matching the dimension of the requested `embedding_model`.
-- MUST NOT exceed the registry's `limits.max_embedding_dimensions` (RFC-ACDP-0007 §3.2).
-
-The `top_k` parameter:
-
-- MUST be an integer ≥ 1.
-- MUST NOT exceed the registry's `limits.max_top_k` (RFC-ACDP-0007 §3.2).
-
-Registries MUST reject violations with `schema_violation` (HTTP 400). Producers SHOULD canonicalize and normalize their embedding vectors before submission; registries MAY reject vectors with norms outside an implementation-defined range as `schema_violation`.
-
----
-
-## 4. Visibility Scoping
+## 3. Visibility Scoping
 
 All discovery responses MUST be scoped to the requesting agent's effective audience as defined in RFC-ACDP-0002 §7 and RFC-ACDP-0008 §4.5:
 
@@ -216,33 +128,30 @@ All discovery responses MUST be scoped to the requesting agent's effective audie
 - `visibility: restricted` — discoverable by `agent_id` and the DIDs listed in `audience`.
 - `visibility: private` — discoverable by `agent_id` only, plus any DIDs explicitly listed in `audience` (if present). **Contributors are NOT auto-authorized:** `contributors` is for attribution, not authorization. Producers wishing to grant a contributor read access MUST list the DID in `audience` explicitly.
 
-A registry MUST scope keyword and similarity results identically. A registry MUST NOT include restricted/private contexts in `total_estimate` for unauthorized requesters. Registries SHOULD make `total_estimate` deterministic per `(query, requester)` for a stable result set, OR omit it from responses entirely when visibility scoping is in play, to avoid leaking the existence of restricted contexts via timing or cross-requester variance analysis.
+A registry MUST NOT include restricted/private contexts in `total_estimate` for unauthorized requesters. Registries SHOULD make `total_estimate` deterministic per `(query, requester)` for a stable result set, OR omit it from responses entirely when visibility scoping is in play, to avoid leaking the existence of restricted contexts via timing or cross-requester variance analysis.
 
 ---
 
-## 5. Errors
+## 4. Errors
 
 | Cause | Code | HTTP |
 |---|---|---|
 | Filter value malformed | `schema_violation` | 400 |
-| Unsupported embedding model | `unsupported_embedding_model` | 400 |
-| Similarity not implemented | `not_implemented` | 501 |
 | Per-agent rate limit hit | `rate_limited` | 429 |
 
 ---
 
-## 6. Security Considerations
+## 5. Security Considerations
 
 See [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md). Specific to discovery:
 
-- Embeddings can leak information about underlying content. Producers publishing restricted/private contexts SHOULD NOT include embeddings unless the registry's similarity index respects visibility constraints.
-- Registries MUST scope similarity search results by the requesting agent's effective audience (RFC-ACDP-0008 §4.5).
+- Registries MUST scope keyword search results by the requesting agent's effective audience (RFC-ACDP-0008 §4.5).
 - `total_estimate` is informational and SHOULD NOT be relied upon for exact counts.
 - Cross-registry discovery is out of scope for v0.0.1; consumers wishing to search across registries MUST query each registry separately.
 
 ---
 
-## 7. References
+## 6. References
 
 - [RFC-ACDP-0001 Core](RFC-ACDP-0001-core.md)
 - [RFC-ACDP-0002 Context Body](RFC-ACDP-0002-context-body.md)

@@ -61,7 +61,7 @@ ACDP exists to make agent-produced knowledge **discoverable, verifiable, and reu
 1. content-addressed, cryptographically-signed bodies;
 2. a deterministic lineage model for versioning;
 3. a small set of HTTP-based publish/retrieve operations (RFC-ACDP-0003, RFC-ACDP-0004);
-4. keyword and semantic discovery (RFC-ACDP-0005);
+4. keyword discovery (RFC-ACDP-0005);
 5. cross-registry references via the `acdp://` URI scheme (RFC-ACDP-0006);
 6. registry capability declaration and a defined error surface (RFC-ACDP-0007);
 7. a threat model (RFC-ACDP-0008).
@@ -288,7 +288,7 @@ ACDP operations are HTTP-based with JSON request and response bodies, content ty
 
 - RFC-ACDP-0003 — `POST /contexts`, supersession.
 - RFC-ACDP-0004 — `GET /contexts/{ctx_id}`, `GET /contexts/{ctx_id}/body`, `GET /lineages/{lineage_id}`, `GET /lineages/{lineage_id}/current`.
-- RFC-ACDP-0005 — `GET /contexts/search`, `GET/POST /contexts/similar`.
+- RFC-ACDP-0005 — `GET /contexts/search`.
 - RFC-ACDP-0007 — `GET /.well-known/acdp.json`.
 
 ACDP v0.0.1 is JSON-only. Binary transport bindings are out of scope for this version and MAY be specified in a future release.
@@ -356,7 +356,6 @@ Adds keyword search. Implementations MUST:
 - Be `acdp-registry-core` conformant.
 - Implement `GET /contexts/search` per RFC-ACDP-0005 §2 (search semantics §2.5 — required fields, AND-of-terms, ranking, cursor stability).
 - Pass discovery and visibility-discovery conformance fixtures (notably `vis-002`).
-- Similarity search (RFC-ACDP-0005 §3) is OPTIONAL within this profile. Capability to support similarity is declared via the `supported_embedding_models` array in the capabilities document (RFC-ACDP-0007 §3): an empty array means similarity is not supported, and similarity endpoints MUST return `not_implemented` (HTTP 501 with standard envelope). Consumers MUST check the capability document, not the profile declaration, to determine whether similarity search is available.
 
 #### `acdp-registry-federated`
 

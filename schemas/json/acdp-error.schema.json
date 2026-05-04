@@ -21,7 +21,6 @@
             "not_found",
             "superseded_target",
             "unsupported_algorithm",
-            "unsupported_embedding_model",
             "rate_limited",
             "payload_too_large",
             "embedded_too_large",
@@ -35,7 +34,7 @@
             "cross_registry_resolution_failed",
             "internal_error"
           ],
-          "description": "A machine-readable error code from the ACDP standard error vocabulary. Codes reserved for future versions (not in this enum): immutable_field (v0.1+ mutation endpoints)."
+          "description": "A machine-readable error code from the ACDP standard error vocabulary. Codes reserved for future versions (not in this enum): immutable_field (v0.1+ mutation endpoints), unsupported_embedding_model (v0.1+ similarity endpoints)."
         },
         "message": {
           "type": "string",

@@ -105,25 +105,6 @@
       "maxLength": 100
     },
 
-    "embedding": {
-      "title": "Semantic Embedding Vector",
-      "description": "A vector representation of the context's content for similarity discovery.",
-      "type": "array",
-      "items": { "type": "number" },
-      "minItems": 1,
-      "maxItems": 16384
-    },
-
-    "embedding_model": {
-      "title": "Embedding Model Identifier",
-      "description": "Form: <model_name>@<version>. Cross-model similarity is undefined.",
-      "type": "string",
-      "pattern": "^[A-Za-z0-9_.-]+@[A-Za-z0-9_.-]+$",
-      "examples": [
-        "text-embedding-3-large@2026-02"
-      ]
-    },
-
     "data_period": {
       "title": "Data Period",
       "description": "The time window the underlying data covers. Distinct from publication time and expiration time. Schema does not compare timestamps; registries SHOULD reject `start > end` as `schema_violation` at runtime.",
@@ -164,7 +145,7 @@
 
     "match_summary": {
       "title": "Context Summary in Search Response",
-      "description": "A lightweight projection of a context, used in search and similarity responses. lineage_id is required so consumers can deduplicate and group results by lineage without an extra retrieval round-trip.",
+      "description": "A lightweight projection of a context, used in search responses. lineage_id is required so consumers can deduplicate and group results by lineage without an extra retrieval round-trip.",
       "type": "object",
       "required": ["ctx_id", "lineage_id", "type", "agent_id", "title", "created_at", "status"],
       "properties": {

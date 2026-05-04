@@ -37,13 +37,12 @@ The threat surface is therefore: **the entire path from producer's signing key, 
 | **3.2 Lineage forgery** | `lineage_id` is deterministically derived from the first version's `ctx_id`. The registry verifies producer-supplied `lineage_id` matches the derived value. The chain is part of the signed body. |
 | **3.3 Producer impersonation** | The signing key is bound to a DID. Verifiers resolve the key from the producer's DID document (e.g. `did:web` over HTTPS, with TLS verification). |
 | **3.4 Cross-registry impersonation** | `origin_registry` is a registry-assigned field, not producer-controlled. The serving registry's authority must match the URI authority. |
-| **3.5 Visibility leakage via similarity** | Embeddings can leak content. Producers SHOULD omit `embedding` on restricted/private contexts (defense in depth); registries MUST scope similarity results by visibility (no schema-level enforcement — it is a runtime obligation). |
-| **3.6 Existence-leak via 404 differentiation** | Visibility-restricted contexts return `not_found`/HTTP 404 indistinguishably from genuinely missing contexts. |
-| **3.7 Replay of publish requests** | TLS prevents on-wire replay reordering. At the application level, replay creates a duplicate publication with a new `ctx_id` but identical `content_hash`. This is **content-level idempotent** but not **publication-level idempotent**: the registry assigns a new `ctx_id` unless the producer used `Idempotency-Key` (RFC-ACDP-0003 §6) for true publication-level deduplication. Producers SHOULD also deduplicate locally on `content_hash`. |
-| **3.8 DoS by oversize bodies** | `limits.max_payload_bytes` and `embedded_too_large` (64 KB cap) enforce upper bounds. |
-| **3.9 Spam / Sybil** | Per-agent rate limiting is REQUIRED (§4). |
-| **3.10 Algorithm downgrade** | Signature algorithm is named in the body (`signature.algorithm`) and MUST be in the registry's `supported_signature_algorithms`. Verifiers MUST reject if `signature.algorithm` does not match the algorithm declared by the resolved verification method in the producer's DID document — this prevents downgrade attacks where an attacker substitutes a weaker algorithm than the producer's actual key supports. |
-| **3.11 Race on supersession** | The registry serializes supersession events: a `superseded_target` error is returned for the loser of a race. |
+| **3.5 Existence-leak via 404 differentiation** | Visibility-restricted contexts return `not_found`/HTTP 404 indistinguishably from genuinely missing contexts. |
+| **3.6 Replay of publish requests** | TLS prevents on-wire replay reordering. At the application level, replay creates a duplicate publication with a new `ctx_id` but identical `content_hash`. This is **content-level idempotent** but not **publication-level idempotent**: the registry assigns a new `ctx_id` unless the producer used `Idempotency-Key` (RFC-ACDP-0003 §6) for true publication-level deduplication. Producers SHOULD also deduplicate locally on `content_hash`. |
+| **3.7 DoS by oversize bodies** | `limits.max_payload_bytes` and `embedded_too_large` (64 KB cap) enforce upper bounds. |
+| **3.8 Spam / Sybil** | Per-agent rate limiting is REQUIRED (§4). |
+| **3.9 Algorithm downgrade** | Signature algorithm is named in the body (`signature.algorithm`) and MUST be in the registry's `supported_signature_algorithms`. Verifiers MUST reject if `signature.algorithm` does not match the algorithm declared by the resolved verification method in the producer's DID document — this prevents downgrade attacks where an attacker substitutes a weaker algorithm than the producer's actual key supports. |
+| **3.10 Race on supersession** | The registry serializes supersession events: a `superseded_target` error is returned for the loser of a race. |
 
 ---
 
@@ -127,7 +126,7 @@ The threat surface is therefore: **the entire path from producer's signing key, 
 
 ## 6. Request Authentication
 
-ACDP defines two authentication contexts: writes (publish) and reads (retrieval, search, similarity).
+ACDP defines two authentication contexts: writes (publish) and reads (retrieval, search).
 
 ### 6.1 Write authentication
 
@@ -190,12 +189,6 @@ A future ACDP version (RFC-ACDP-0009 §2.7 reserves registry receipts) will let 
 
 **Result.** Registry returns `not_found` (HTTP 404). C cannot distinguish "doesn't exist" from "exists but you can't see it".
 
-### 7.6 Embedding-based content reconstruction on a restricted context
-
-**Setup.** A restricted context includes an `embedding`. An unauthorized consumer crafts similarity queries to reconstruct the underlying content.
-
-**Result.** Conformant registries scope similarity search by visibility. The unauthorized consumer's `POST /contexts/similar` requests will not surface the restricted context in results. **Producers SHOULD additionally omit embeddings from highly sensitive contexts, even on conformant registries, as defense in depth.**
-
 ---
 
 ## 8. Security Considerations Summary
@@ -204,7 +197,7 @@ ACDP's security model rests on three pillars:
 
 1. **Content addressing.** Bodies are JCS-canonicalized and SHA-256 hashed; any change is detectable.
 2. **Producer signatures.** The trust anchor is the producer's DID document, not the registry. Registries are availability layers.
-3. **Visibility scoping.** Registries enforce audience-based visibility on discovery and retrieval; embeddings are not exempt.
+3. **Visibility scoping.** Registries enforce audience-based visibility on discovery and retrieval.
 
 These three pillars are the minimum. Implementations MUST NOT relax any of them. Operators deploying ACDP in regulated environments SHOULD layer additional controls (egress policy, DID-document pinning, hardware-backed signing keys) on top of the protocol minimum.
 

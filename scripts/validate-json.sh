@@ -16,7 +16,6 @@ CONTEXT_SCHEMA="${SCHEMA_DIR}/acdp-context.schema.json"
 PUBLISH_REQUEST_SCHEMA="${SCHEMA_DIR}/acdp-publish-request.schema.json"
 PUBLISH_RESPONSE_SCHEMA="${SCHEMA_DIR}/acdp-publish-response.schema.json"
 SEARCH_RESPONSE_SCHEMA="${SCHEMA_DIR}/acdp-search-response.schema.json"
-SIMILARITY_RESPONSE_SCHEMA="${SCHEMA_DIR}/acdp-similarity-response.schema.json"
 CAPABILITIES_SCHEMA="${SCHEMA_DIR}/acdp-capabilities.schema.json"
 ERROR_SCHEMA="${SCHEMA_DIR}/acdp-error.schema.json"
 
@@ -132,31 +131,7 @@ syntax_check_dir() {
 syntax_check_dir "${EXAMPLES_DIR}/lineage"     "lineage"
 syntax_check_dir "${EXAMPLES_DIR}/idempotency" "idempotency"
 
-# search/ contains two distinct shapes — validate per-file
-SEARCH_DIR="${EXAMPLES_DIR}/search"
-if [ -d "$SEARCH_DIR" ]; then
-    echo "── search examples (${SEARCH_DIR}) ──"
-    for f in "${SEARCH_DIR}"/*.json; do
-        [ -f "$f" ] || continue
-        TOTAL=$((TOTAL + 1))
-        base=$(basename "$f")
-        echo "  ${base}"
-        case "$base" in
-            similarity*)        SCHEMA="${SIMILARITY_RESPONSE_SCHEMA}" ; LABEL="similarity-response" ;;
-            keyword*|search*)   SCHEMA="${SEARCH_RESPONSE_SCHEMA}"     ; LABEL="search-response"     ;;
-            *)                  SCHEMA="${SEARCH_RESPONSE_SCHEMA}"     ; LABEL="search-response"     ;;
-        esac
-        if ajv validate -s "${SCHEMA}" "${REFS[@]}" -d "${f}" --spec=draft2020 --strict=false >/dev/null 2>&1; then
-            VALIDATED=$((VALIDATED + 1))
-            echo "    ✓ Valid against ${LABEL}"
-        else
-            echo "    ✗ Invalid against ${LABEL} schema"
-            ajv validate -s "${SCHEMA}" "${REFS[@]}" -d "${f}" --spec=draft2020 --strict=false || true
-            exit 1
-        fi
-    done
-    echo
-fi
+validate_dir_against "${EXAMPLES_DIR}/search"           "${SEARCH_RESPONSE_SCHEMA}"      "search-response"
 
 if [ $TOTAL -eq 0 ]; then
     echo "Warning: No JSON example or fixture files found"

@@ -72,8 +72,6 @@
       "uniqueItems": true,
       "maxItems": 200
     },
-    "embedding": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/embedding" },
-    "embedding_model": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/embedding_model" },
     "data_period": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/data_period" },
     "expires_at": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/rfc3339_timestamp" },
     "visibility": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/visibility" },
@@ -104,10 +102,6 @@
   },
   "additionalProperties": false,
   "allOf": [
-    {
-      "if": { "properties": { "embedding": { "type": "array" } }, "required": ["embedding"] },
-      "then": { "required": ["embedding_model"] }
-    },
     {
       "if": { "properties": { "visibility": { "const": "restricted" } } },
       "then": {

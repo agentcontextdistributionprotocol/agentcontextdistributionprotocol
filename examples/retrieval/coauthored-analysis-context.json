@@ -33,8 +33,6 @@
       "acdp://registry.example.com/123e4567-e89b-42d3-a456-426614174000"
     ],
     "tags": ["bitcoin", "prediction", "sentiment"],
-    "embedding": [0.012, -0.045, 0.078, 0.131, -0.022, 0.019],
-    "embedding_model": "text-embedding-3-large@2026-02",
     "data_period": {
       "start": "2026-04-16T08:00:00.000Z",
       "end": "2026-04-16T10:30:00.000Z"

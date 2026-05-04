@@ -194,7 +194,6 @@ See [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md). Specific to retrieval:
 
 - Consumers MUST verify the body's signature on every retrieval. Trusting the registry alone is **not** sufficient — the registry could serve a tampered body.
 - Visibility enforcement is the registry's responsibility; consumers cannot independently determine they were served the full result set, only that what they received is authentic.
-- Embeddings can leak information about restricted contexts. Registries MUST scope similarity search by visibility (RFC-ACDP-0005 §4).
 
 ---
 

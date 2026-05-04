@@ -14,7 +14,7 @@ examples/
 ├── publish/                Publish requests (POST /contexts body — RFC-ACDP-0003)
 ├── retrieval/              Full retrieval responses (RFC-ACDP-0004)
 │                           — golden-context.json carries a real Ed25519 signature
-├── search/                 Keyword and similarity responses (RFC-ACDP-0005)
+├── search/                 Keyword search responses (RFC-ACDP-0005)
 ├── supersession/           v2 superseding v1 (RFC-ACDP-0003 §3)
 └── visibility/             restricted / private body examples (RFC-ACDP-0002 §7)
 ```
@@ -28,7 +28,6 @@ These examples are validated by `scripts/validate-json.sh` against:
 - `schemas/json/acdp-publish-request.schema.json` — `publish/`
 - `schemas/json/acdp-context.schema.json` — `retrieval/`, `supersession/`, `mixed-data-refs/`, `visibility/`
 - `schemas/json/acdp-search-response.schema.json` — `search/keyword-search-response.json`
-- `schemas/json/acdp-similarity-response.schema.json` — `search/similarity-response.json`
 - `schemas/json/acdp-capabilities.schema.json` — `capabilities/`
 - `schemas/json/acdp-error.schema.json` — `error/`
 - syntax-check only — `idempotency/`, `lineage/` (tutorial documents)

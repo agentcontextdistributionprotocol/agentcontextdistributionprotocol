@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.acdp.io/v0.0.1/acdp-capabilities.schema.json",
   "title": "ACDP Registry Capabilities (v0.0.1)",
-  "description": "The capability declaration document served at /.well-known/acdp.json. Tells consumers what algorithms, embedding models, and limits the registry supports.",
+  "description": "The capability declaration document served at /.well-known/acdp.json. Tells consumers what algorithms, profiles, and limits the registry supports.",
 
   "type": "object",
   "required": [
@@ -35,16 +35,6 @@
       "uniqueItems": true,
       "contains": { "const": "ed25519" },
       "description": "Signature algorithms accepted on publish. MUST contain 'ed25519' (RFC-ACDP-0001 §5.10). Open vocabulary; see registries/signature-algorithms.md."
-    },
-    "supported_embedding_models": {
-      "type": "array",
-      "items": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/embedding_model" },
-      "description": "Embedding model identifiers indexed by this registry today. Empty if registry does not index embeddings."
-    },
-    "previously_supported_embedding_models": {
-      "type": "array",
-      "items": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/embedding_model" },
-      "description": "Embedding models this registry previously indexed but no longer supports. Bodies signed with these models remain valid (their signature still verifies); similarity requests against them MUST return unsupported_embedding_model. Useful for consumers planning re-embedding or fallback to keyword search."
     },
     "read_authentication_methods": {
       "type": "array",
@@ -101,18 +91,6 @@
           "type": "integer",
           "const": 65536,
           "description": "Maximum decoded size of any embedded data reference. Fixed at 64 KB by the spec."
-        },
-        "max_embedding_dimensions": {
-          "type": "integer",
-          "minimum": 1,
-          "default": 4096,
-          "description": "Maximum embedding vector dimensionality accepted by this registry on similarity requests. See RFC-ACDP-0005 §3.5."
-        },
-        "max_top_k": {
-          "type": "integer",
-          "minimum": 1,
-          "default": 100,
-          "description": "Maximum top_k accepted in similarity requests. See RFC-ACDP-0005 §3.5."
         },
         "idempotency_key_ttl_seconds": {
           "type": "integer",

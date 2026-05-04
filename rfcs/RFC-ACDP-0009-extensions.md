@@ -112,6 +112,21 @@ The verification semantics required to make this safe are not normatively define
 
 Until that version, all supersessions MUST occur within a single registry. Producers needing to migrate a logical lineage between registries MUST start a new lineage on the target registry (with `supersedes: null`) and reference the prior lineage via `derived_from`. This produces a soft, signed link without making cross-registry continuity claims that v0.0.1 cannot verify.
 
+### 2.9 Semantic Similarity and Embeddings *(likely v0.1)*
+
+ACDP v0.0.1 does not include semantic similarity search. The feature was scoped out to keep the first release minimal and keyword-only.
+
+A future ACDP version will define:
+
+- `embedding` and `embedding_model` body fields (producer-signed vector representations).
+- A `POST /contexts/similar` endpoint for vector similarity search by reference or by raw embedding.
+- Capability fields: `supported_embedding_models`, `previously_supported_embedding_models`, `limits.max_embedding_dimensions`, `limits.max_top_k`.
+- An `unsupported_embedding_model` error code (HTTP 400).
+- Similarity privacy requirements (visibility-scoped vector indexing; producer guidance on omitting embeddings from sensitive contexts).
+- Embedding-model retirement / deprecation semantics.
+
+Reserved profile name: `acdp-registry-similarity` (added to a future RFC-ACDP-0001 §9.1; current registries advertising similarity gating remain non-conformant in v0.0.1).
+
 ---
 
 ## 3. Forward Compatibility

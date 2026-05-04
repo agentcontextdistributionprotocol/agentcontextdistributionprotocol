@@ -97,8 +97,6 @@ Future versions of ACDP will add post-publication relationships (third-party `bu
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `embedding` | array of number | No | Vector representation for similarity discovery. |
-| `embedding_model` | string | Conditional | REQUIRED if `embedding` is present. Form: `<model_name>@<version>`. |
 | `data_period` | object | No | Object with `start` and `end` RFC 3339 timestamps describing the time window the data covers. |
 | `expires_at` | string | No | RFC 3339 timestamp after which the context's conclusions should not be relied upon. |
 
@@ -283,7 +281,6 @@ See [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md). Key points relevant to 
 
 - The body is signed end-to-end. Tampering is detected by recomputing `content_hash`.
 - `derived_from` is part of the signed body and cannot be backfilled.
-- `embedding` can leak content; restricted/private contexts SHOULD omit it unless the registry's similarity index respects visibility.
 - `data_refs.location` MUST NOT contain credentials.
 
 ---

@@ -16,7 +16,7 @@ This document is non-normative. It explains what ACDP intentionally does not add
 
 **Rationale.** Demand-pull conflates discovery (what already exists) with commissioning (asking for something to be created). The latter is an agent-to-agent interaction; the substrate doesn't dictate how those happen.
 
-**What ACDP does instead.** Provides keyword and similarity search for what already exists; commissioning lives in coordination protocols.
+**What ACDP does instead.** Provides keyword search for what already exists; commissioning lives in coordination protocols.
 
 ## 3. Marketplaces and payment
 

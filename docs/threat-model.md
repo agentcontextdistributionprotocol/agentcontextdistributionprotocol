@@ -10,7 +10,6 @@ The full normative threat model is [RFC-ACDP-0008 Security](../rfcs/RFC-ACDP-000
 | Lineage forgery | Deterministic `lineage_id` derivation; `derived_from` is part of the signed body. |
 | Producer impersonation | DID-bound signing key; verifiers resolve from the producer's DID document. |
 | Cross-registry impersonation | `origin_registry` is registry-assigned, not producer-controlled. |
-| Visibility leakage via similarity | Visibility-scoped similarity index; producers SHOULD omit `embedding` from sensitive contexts. |
 | Existence leak via 404 differentiation | Visibility-restricted contexts return `not_found` (HTTP 404) indistinguishably from genuinely missing contexts. `visibility_denied` is internal logging only. |
 | Replay of publish requests | Content-addressed bodies; idempotent at the content level. |
 | DoS via oversize bodies | `limits.max_payload_bytes` and 64 KB embedded cap. |
@@ -46,8 +45,5 @@ The full normative threat model is [RFC-ACDP-0008 Security](../rfcs/RFC-ACDP-000
 
 ### 5. Visibility-restricted lookup by an unauthorized consumer
 **Result.** Registry returns `not_found` (HTTP 404). Consumer cannot distinguish "doesn't exist" from "exists but you can't see it".
-
-### 6. Embedding-based reconstruction on a restricted context
-**Result.** Conformant registry scopes similarity by visibility. Defense-in-depth: producers SHOULD omit `embedding` on highly sensitive contexts.
 
 See [RFC-ACDP-0008 Security](../rfcs/RFC-ACDP-0008-security.md) §7 for the full scenarios.

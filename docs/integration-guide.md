@@ -187,21 +187,7 @@ matches = resp.json()["matches"]
 # Each match has ctx_id, agent_id, title, summary, etc. — fetch each one for the full body.
 ```
 
-Similarity (only on registries that index embeddings):
-
-```python
-resp = httpx.post(
-    "https://registry.example.com/contexts/similar",
-    json={
-        "embedding": my_query_vector,
-        "embedding_model": "text-embedding-3-large@2026-02",
-        "top_k": 20,
-        "filters": {"type": "analysis", "domain": "financial_markets"},
-    },
-)
-```
-
-If the registry returns 501 Not Implemented, fall back to keyword search.
+Semantic similarity is reserved for a future ACDP version (RFC-ACDP-0009 §2.9); v0.0.1 implementations expose keyword search only.
 
 ---
 
