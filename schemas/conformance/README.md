@@ -76,6 +76,27 @@ The runner interface is implementation-defined.
 | `pub-004` | First-version publish illegally includes `lineage_id` | failure: `schema_violation` |
 | `pub-005` | `visibility: restricted` with no `audience` | failure: `schema_violation` |
 | `pub-006` | `signature.key_id` DID portion ≠ `body.agent_id` | failure: `key_not_authorized` |
+| `pub-007` | Publish response shape — exactly five fields, no `content_hash` or other body fields echoed back | success: HTTP 201; response object pinned to `{ctx_id, lineage_id, version, created_at, status}` |
+
+### Metadata limits (RFC-ACDP-0002 §3.3)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `meta-001` | Metadata nesting depth > 8 levels | failure: `schema_violation` |
+| `meta-002` | JCS-canonicalized metadata > 65536 bytes | failure: `schema_violation` |
+| `meta-003` | Metadata at exactly depth 8 (boundary) | success |
+
+### DataRef validation (RFC-ACDP-0002 §6.6)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `data-ref-001` | Neither `location` nor `embedded` present | failure: `schema_violation` |
+| `data-ref-002` | Both `location` and `embedded` present | failure: `schema_violation` |
+| `data-ref-003` | URI location contains userinfo credentials | failure: `schema_violation` |
+| `data-ref-004` | Structured location object missing `scheme` field | failure: `schema_violation` |
+| `data-ref-005` | Embedded decoded size > 65536 bytes | failure: `embedded_too_large` |
+| `data-ref-006` | `embedded.encoding` is `utf8` or `base64` but `content` is not a string | failure: `schema_violation` |
+| `data-ref-007` | `embedded.content_hash` present but does not match decoded bytes | failure: `hash_mismatch` |
 
 ### Retrieval (RFC-ACDP-0004)
 
@@ -89,6 +110,7 @@ The runner interface is implementation-defined.
 |---|---|---|
 | `vis-001` | Restricted retrieval — authorized=200, unauthorized=404 indistinguishably from genuinely-missing; contributors NOT auto-authorized | mixed (per-scenario; unauthorized cases use `not_found`) |
 | `vis-002` | Search excludes restricted contexts from BOTH `matches` AND `total_estimate`; anonymous requests handled per `anonymous_public_reads` capability | mixed (per-scenario) |
+| `vis-003` | Search response wrapping key MUST be `matches` (not `results`); registry MUST emit, consumer MUST reject substitutes | mixed (per-scenario; both sides exercised) |
 
 ### Canonicalization & hashing (RFC-ACDP-0001)
 
@@ -99,6 +121,7 @@ The runner interface is implementation-defined.
 | `can-003` | Body with `metadata` object — verifies nested-key sorting | success: byte-exact reproduction |
 | `can-004` | Body with embedded JSON data ref — verifies key sorting inside `data_refs[].embedded` | success: byte-exact reproduction |
 | `can-005` | Empty-vs-absent field distinction (`tags: []` vs no `tags` key) | success: distinct hashes; absent-tags vector hash matches `can-001` vector 1 |
+| `can-006` | Timestamp precision — nanosecond vs millisecond hash divergence (RFC-ACDP-0001 §5.3 producers MUST truncate) | success: byte-exact reproduction of both vectors |
 
 **Test DIDs.** The `can-*` canonicalization fixtures use `did:agent:test` as a deliberately short, fictitious DID method to keep canonical-form expected values readable. The precomputed `canonical_form` and `sha256_hex` values depend on the exact string. v0.0.1 wire deployments MUST use `did:web` (RFC-ACDP-0001 §5.4) — `did:agent:` is a test-only convention and is not a registered DID method.
 

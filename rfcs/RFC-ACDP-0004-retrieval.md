@@ -93,7 +93,15 @@ Because `status` is derived, it MUST NOT be persisted into the body. The body's 
 
 ### 4.1 Forward compatibility
 
-Future ACDP versions will add new `status` values (e.g. `retracted` per RFC-ACDP-0009 §2.1). v0.0.1 consumers receiving an unknown `status` value MUST NOT reject the response — they SHOULD treat the value as `active` for decision-making and log it for operator review. v0.0.1 schemas use an open string pattern for `status` to support this forward-compatibility (RFC-ACDP-0001 §6).
+Future ACDP versions will add new `status` values (e.g. `retracted` per RFC-ACDP-0009 §2.1). v0.0.1 consumers MUST NOT fail on unknown `status` values. If a registry returns a `status` value not listed in the table above, consumers SHOULD treat it as `active` for functional decision-making and SHOULD log a warning for operator review. v0.0.1 schemas use an open string pattern for `status` (`^[a-z][a-z0-9_]*$`) to enable this forward compatibility (RFC-ACDP-0001 §6).
+
+**Library implementation requirement.** Library authors MUST implement `status` as an open string type (or an open enum that gracefully accepts unknown values) — NOT as a closed enum. A closed-enum implementation will deserialize-fail when a registry returns a future status value, breaking every consumer that depends on the library. Concretely:
+
+- **Rust (serde):** model as `String` or use `#[serde(other)]` on a catch-all variant; do **not** use `#[serde(deny_unknown_fields)]`-style closed enums for this field.
+- **Python (pydantic v2):** type as `str` (with optional Literal-aliased helpers) or set `model_config = {"extra": "allow"}` on the registry-state model; do not type the wire field as a closed `Literal["active","superseded","expired"]`.
+- **TypeScript:** type as `"active" | "superseded" | "expired" | (string & {})` or simply `string`; runtime decoders (zod, valibot) MUST accept unknown values.
+
+This is the same forward-compat policy applied to capabilities-document fields (RFC-ACDP-0007 §3.3) and registry-state extensions (RFC-ACDP-0001 §6).
 
 ---
 

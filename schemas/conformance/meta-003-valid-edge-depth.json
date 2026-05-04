@@ -1,0 +1,29 @@
+{
+  "id": "meta-003",
+  "description": "metadata at exactly the depth-8 boundary. The deepest key sits at depth 8 (still legal). Registry MUST accept this body (assuming all other validations pass). This pins the boundary so registries do not implement an off-by-one closed-interval check (max < 8 instead of max ≤ 8).",
+  "tags": ["happy-path", "publish", "metadata", "limits", "boundary"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "metadata_under_test": {
+      "L1": {
+        "L2": {
+          "L3": {
+            "L4": {
+              "L5": {
+                "L6": {
+                  "L7": {
+                    "L8": "this string sits at depth 8 — at the cap, still legal"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "expected": {
+    "outcome": "success",
+    "rule": "RFC-ACDP-0002 §3.3 — metadata depth ≤ 8 (inclusive). The cap is `≤ 8`, not `< 8`."
+  }
+}

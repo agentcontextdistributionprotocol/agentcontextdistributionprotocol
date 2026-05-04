@@ -1,0 +1,18 @@
+{
+  "id": "data-ref-001",
+  "description": "DataRef has neither `location` nor `embedded`. Registry MUST reject with schema_violation. Enforced by acdp-data-ref.schema.json's oneOf at schema-validation step.",
+  "tags": ["failure", "publish", "data-refs"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "data_ref_under_test": {
+      "type": "primary_result",
+      "description": "missing both location and embedded"
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 400,
+    "error_code": "schema_violation",
+    "checklist_step": 2
+  }
+}

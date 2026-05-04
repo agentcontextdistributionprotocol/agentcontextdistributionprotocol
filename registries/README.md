@@ -5,7 +5,8 @@ This directory tracks the well-known identifiers used in ACDP. Each registry is 
 | Registry | File | Authority RFC |
 |---|---|---|
 | Authentication methods | [auth-methods.md](auth-methods.md) | [RFC-ACDP-0007](../rfcs/RFC-ACDP-0007-capabilities.md), [RFC-ACDP-0008](../rfcs/RFC-ACDP-0008-security.md) |
-| Context types | [context-types.md](context-types.md) | [RFC-ACDP-0002](../rfcs/RFC-ACDP-0002-context-body.md) |
+| Context types | [context-types.md](context-types.md) | [RFC-ACDP-0002 §5](../rfcs/RFC-ACDP-0002-context-body.md) |
+| DataRef types | [data-ref-types.md](data-ref-types.md) | [RFC-ACDP-0002 §6](../rfcs/RFC-ACDP-0002-context-body.md) |
 | Error codes | [error-codes.md](error-codes.md) | [RFC-ACDP-0007](../rfcs/RFC-ACDP-0007-capabilities.md) |
 | Implementation profiles | [profiles.md](profiles.md) | [RFC-ACDP-0001 §9.1](../rfcs/RFC-ACDP-0001-core.md) |
 | Locator schemes | [locator-schemes.md](locator-schemes.md) | [RFC-ACDP-0002](../rfcs/RFC-ACDP-0002-context-body.md) |

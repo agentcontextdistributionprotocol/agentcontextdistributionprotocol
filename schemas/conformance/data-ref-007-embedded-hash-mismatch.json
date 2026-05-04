@@ -1,0 +1,23 @@
+{
+  "id": "data-ref-007",
+  "description": "DataRef.embedded.content_hash is present but does not match the SHA-256 of the decoded bytes for the declared encoding. Registry MUST reject with hash_mismatch. Decoding rules per RFC-ACDP-0002 §6.3: base64 → decoded bytes; utf8 → UTF-8 bytes; json → JCS canonical bytes.",
+  "tags": ["failure", "publish", "data-refs", "integrity"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "data_ref_under_test": {
+      "type": "raw_data",
+      "embedded": {
+        "encoding": "utf8",
+        "content": "hello world",
+        "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "_correct_hash_for_content": "sha256:b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9"
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 400,
+    "error_code": "hash_mismatch",
+    "checklist_step": 8
+  }
+}

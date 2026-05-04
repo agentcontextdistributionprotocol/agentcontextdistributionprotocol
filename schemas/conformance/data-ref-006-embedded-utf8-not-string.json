@@ -1,0 +1,21 @@
+{
+  "id": "data-ref-006",
+  "description": "DataRef.embedded.encoding is `utf8` but `embedded.content` is not a JSON string (e.g., an object or array). Registry MUST reject with schema_violation. The same rule applies to `encoding: base64`. Only `encoding: json` permits non-string content.",
+  "tags": ["failure", "publish", "data-refs"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "data_ref_under_test": {
+      "type": "primary_result",
+      "embedded": {
+        "encoding": "utf8",
+        "content": { "k": 1 }
+      }
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 400,
+    "error_code": "schema_violation",
+    "checklist_step": 7
+  }
+}

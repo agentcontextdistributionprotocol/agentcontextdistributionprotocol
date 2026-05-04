@@ -76,24 +76,29 @@ The threat surface is therefore: **the entire path from producer's signing key, 
 
 ### 4.5 Visibility enforcement
 
-- Registries MUST scope discovery and retrieval responses by the requesting agent's effective audience (see below).
-- For `visibility: restricted` and `private`, registries MUST return `not_found` (HTTP 404) to non-audience requesters. The `visibility_denied` semantic is internal logging only.
-- Registries MUST NOT include restricted/private contexts in `total_estimate`.
+- Registries MUST scope discovery and retrieval responses by the requesting agent's effective audience (see below). Effective audience is computed independently for **retrieval** and **search**; the two MAY differ for `visibility: private` (see below).
+- For `visibility: restricted` and `private`, registries MUST return `not_found` (HTTP 404) to non-audience requesters on retrieval. The `visibility_denied` semantic is internal logging only.
+- Registries MUST NOT include restricted contexts in `total_estimate` for non-audience requesters, and MUST NOT include private contexts in `total_estimate` for any requester other than the producer.
 
 **Effective audience for `visibility: private`:**
-- `agent_id` is always authorized.
-- DIDs listed in `audience` (if present) are authorized.
-- Contributors listed in `contributors` are **NOT** automatically authorized; `contributors` is for attribution only. Producers wishing to grant a contributor read access MUST list the contributor's DID in `audience` explicitly.
+
+- For **retrieval**: `agent_id` is always authorized; DIDs listed in `audience` (if present) are authorized.
+- For **search/discovery**: only `agent_id` is authorized. DIDs listed in `audience` are NOT authorized for search — they can retrieve a `ctx_id` they already know, but they MUST NOT find the context via `GET /contexts/search` or any other discovery surface. Search visibility is strictly narrower than retrieval visibility for `private`.
+- Contributors listed in `contributors` are **NOT** automatically authorized for either retrieval or search; `contributors` is for attribution only. Producers wishing to grant a contributor read access MUST list the contributor's DID in `audience` explicitly (still retrieval-only).
+- Producers wanting both retrieval AND search access for a defined cohort MUST use `visibility: restricted` instead.
 
 **Effective audience for `visibility: restricted`:**
-- `agent_id` is always authorized.
-- All DIDs in `audience` are authorized.
+
+- For both retrieval and search: `agent_id` is always authorized; all DIDs in `audience` are authorized.
 - `audience` MUST be present and non-empty for `restricted` contexts.
 
 **Effective audience for `visibility: public`:**
-- Any authenticated requester is authorized.
-- Anonymous requesters are authorized only if the registry advertises `anonymous_public_reads: true` (§6.3).
-- The `audience` field MUST be absent or empty.
+
+- Any authenticated requester is authorized for both retrieval and search.
+- Anonymous requesters are authorized only if the registry advertises `anonymous_public_reads: true` (§6.3); otherwise registries MUST reject unauthenticated requests with `not_authorized` (HTTP 403).
+- The `audience` field MUST be absent or empty (RFC-ACDP-0002 §7); the publish-request schema rejects `public` with non-empty `audience` as `schema_violation`.
+
+The full visibility matrix (retrieval × search × visibility level × requester role) is in [RFC-ACDP-0002 §7](RFC-ACDP-0002-context-body.md#7-visibility).
 
 ### 4.6 Transport
 

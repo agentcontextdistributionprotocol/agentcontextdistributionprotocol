@@ -141,12 +141,14 @@ The **canonical emission form** uses millisecond precision:
 2026-04-16T10:30:15.123Z
 ```
 
+**Timestamp precision (MUST).** Producers MUST truncate every timestamp value in a publish request to millisecond precision **before** computing `content_hash`. Because timestamps are part of the JCS-canonicalized body, a timestamp with microsecond or nanosecond precision produces a different canonical string than its millisecond-truncated equivalent — and therefore a different `content_hash` that no other conformant implementation can reproduce from the same logical timestamp. Library authors MUST apply millisecond truncation automatically in every API surface that accepts a timestamp on the producer path (`expires_at`, `data_period.start`, `data_period.end`, and any `data_refs` timestamps). Standard-library types in many languages (`time.Time` in Go, `datetime` in Python, `chrono::DateTime` in Rust, `Date` / `Temporal.Instant` in JS) default to higher precision and silently emit nanosecond strings unless explicitly truncated; this is the most common source of cross-implementation hash divergence.
+
 Implementations:
 - MUST emit timestamps in canonical form when generating new timestamps.
 - MUST accept any valid RFC 3339 date-time on input. This includes timestamps with no fractional seconds, microsecond, or nanosecond precision.
 - SHOULD normalize accepted timestamps to canonical form on storage.
 
-**Producer note.** Because timestamps are part of the JCS-canonicalized body, two contexts with timestamps differing only in fractional precision will produce different `content_hash` values. Producers MUST use canonical millisecond form for timestamps in publish requests.
+**Producer note.** Because timestamps are part of the JCS-canonicalized body, two contexts with timestamps differing only in fractional precision will produce different `content_hash` values. The canonical millisecond form is mandatory for the producer path; the conformance fixture `can-006-timestamp-precision.json` pins a nanosecond-precision input and locks in the hash that the *exact serialized string* produces, making the "hash binds the bytes, not the logical instant" rule explicit.
 
 **Clock and skew.** Registries SHOULD use NTP-synchronized UTC clocks. The registry's clock is authoritative for `created_at` (registry-assigned) and for the `status: expired` derivation (RFC-ACDP-0004 §4). Consumers computing `expired` locally MAY apply a skew tolerance of up to ±60 seconds against `expires_at`; consumers comparing a registry's `created_at` against their own local clock SHOULD allow the same tolerance. Producers MUST set `expires_at` and `data_period.{start,end}` based on their own UTC clock; small skew between producer and registry is expected and harmless because these fields are signed (not derived).
 
@@ -179,6 +181,25 @@ For first versions, the registry computes `lineage_id` from the `ctx_id` it just
 A producer publishing a first version (`supersedes: null`) MUST NOT include `lineage_id` in the publish request — the producer cannot know the registry-assigned `ctx_id` at signing time, so any supplied value would be a guess. Registries MUST reject first-version requests containing `lineage_id` with `schema_violation` (RFC-ACDP-0003 §2.2).
 
 A producer publishing a subsequent version (`supersedes != null`) MAY include `lineage_id` for self-verification. If supplied, the registry MUST verify it matches the deterministically-derived value and MUST reject mismatches with `superseded_target` (`details.reason = "lineage_mismatch"`, RFC-ACDP-0003 §3.1 step 4).
+
+#### 5.6.1 Lineage walk failure
+
+If, while walking back through `supersedes` references to compute `lineage_id` for a subsequent-version publish, the registry cannot retrieve an intermediate context, the registry MUST reject the publish request with `superseded_target` (`details.reason = "lineage_walk_failed"`, HTTP 400). In v0.0.1 this most commonly means the immediate-predecessor chain is intact (RFC-ACDP-0003 §3.1 step 1 already gates the head with `details.reason = "not_found"` if absent) but a deeper intermediate is missing — for example because of out-of-band administrative deletion (which ACDP itself forbids). Cross-registry intermediate cases cannot arise in v0.0.1 because cross-registry supersession is rejected at §3.1 step 2 with `cross_registry_supersession_unsupported` before any walk runs; the trigger is reserved here for forward compatibility with v0.1+ cross-registry supersession (RFC-ACDP-0009 §2.8). The error envelope SHOULD include the failing intermediate `ctx_id` in `details` for debuggability:
+
+```json
+{
+  "error": {
+    "code": "superseded_target",
+    "message": "Could not retrieve intermediate context while walking the supersession chain.",
+    "details": {
+      "reason": "lineage_walk_failed",
+      "unreachable_ctx_id": "acdp://reg.example/2dffa0..."
+    }
+  }
+}
+```
+
+This reason is reserved for the lineage-walk path; it does NOT cover the immediate-target case (RFC-ACDP-0003 §3.1 step 1 returns `details.reason = "not_found"` for that) and it does NOT cover the cross-registry case (§3.1 step 2 returns `cross_registry_supersession_unsupported`).
 
 ### 5.7 Content Hash
 

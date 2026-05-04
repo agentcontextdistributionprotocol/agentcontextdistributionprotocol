@@ -1,0 +1,53 @@
+{
+  "id": "can-006",
+  "description": "Timestamp precision is part of the JCS-canonicalized byte string. Two bodies whose timestamps represent the same logical instant but differ in fractional precision produce different canonical strings and therefore different content_hash values. The producer MUST truncate every timestamp to canonical millisecond form (RFC-ACDP-0001 §5.3) before computing content_hash. This vector locks in both the nanosecond-string hash AND the millisecond-truncated hash so that implementations can verify they would produce the millisecond hash on a normal producer path AND can demonstrate the nanosecond divergence as a negative case.",
+  "tags": ["canonicalization", "hashing", "timestamps", "precision"],
+  "vectors": [
+    {
+      "name": "Nanosecond-precision expires_at — DIVERGENT (illustrative; producers MUST NOT emit this form)",
+      "description": "If a producer fails to truncate timestamps before signing, the resulting content_hash binds to the exact serialized string. Reproducible implementations of `chrono`, `datetime`, etc. with default high-precision output land here.",
+      "input": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:agent:test",
+        "contributors": [],
+        "title": "Nanosecond timestamp vector",
+        "type": "data_snapshot",
+        "data_refs": [],
+        "derived_from": [],
+        "visibility": "public",
+        "expires_at": "2026-04-16T10:30:15.123456789Z"
+      },
+      "expected": {
+        "canonical_form": "{\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_refs\":[],\"derived_from\":[],\"expires_at\":\"2026-04-16T10:30:15.123456789Z\",\"supersedes\":null,\"title\":\"Nanosecond timestamp vector\",\"type\":\"data_snapshot\",\"version\":1,\"visibility\":\"public\"}",
+        "sha256_hex": "26004640ded19ed8d12397661ed705489a89d66694e1c34bca07591372222a85",
+        "content_hash_field_value": "sha256:26004640ded19ed8d12397661ed705489a89d66694e1c34bca07591372222a85"
+      },
+      "producer_compliance": "non-conformant",
+      "rationale": "If your library's API accepts a `chrono::DateTime<Utc>::now()` (nanosecond precision) and passes it through to JCS without truncation, this is the hash you produce. No other conformant implementation can reproduce it from the logical instant alone."
+    },
+    {
+      "name": "Millisecond-truncated expires_at — CANONICAL (the form producers MUST emit)",
+      "description": "Same logical instant, truncated to canonical millisecond form per RFC-ACDP-0001 §5.3. This is the byte string a conformant producer commits to.",
+      "input": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:agent:test",
+        "contributors": [],
+        "title": "Nanosecond timestamp vector",
+        "type": "data_snapshot",
+        "data_refs": [],
+        "derived_from": [],
+        "visibility": "public",
+        "expires_at": "2026-04-16T10:30:15.123Z"
+      },
+      "expected": {
+        "canonical_form": "{\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_refs\":[],\"derived_from\":[],\"expires_at\":\"2026-04-16T10:30:15.123Z\",\"supersedes\":null,\"title\":\"Nanosecond timestamp vector\",\"type\":\"data_snapshot\",\"version\":1,\"visibility\":\"public\"}",
+        "sha256_hex": "8574128391f252441968d0de216488e93f020b92cce195512d2c498ca3699de1",
+        "content_hash_field_value": "sha256:8574128391f252441968d0de216488e93f020b92cce195512d2c498ca3699de1"
+      },
+      "producer_compliance": "conformant",
+      "rationale": "Library APIs MUST automatically apply this truncation. Producers SHOULD never see the nanosecond form on the publish path."
+    }
+  ]
+}

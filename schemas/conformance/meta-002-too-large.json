@@ -1,0 +1,16 @@
+{
+  "id": "meta-002",
+  "description": "JCS-canonicalized metadata exceeds 65536 bytes. Registry MUST reject with schema_violation (HTTP 400). The cap applies to the JCS canonical form (the bytes that feed content_hash), not the raw wire bytes.",
+  "tags": ["failure", "publish", "metadata", "limits"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "metadata_under_test_summary": "A metadata object whose JCS canonical form is > 65536 bytes. Concrete payload omitted; one workable construction is { 'k0' .. 'k99': '<a 700-byte ASCII string>' } which canonicalizes to ~70KB.",
+    "constraint": "len(jcs_canonicalize(metadata)) > 65536"
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 400,
+    "error_code": "schema_violation",
+    "rule": "RFC-ACDP-0002 §3.3 — metadata JCS bytes ≤ 65536"
+  }
+}

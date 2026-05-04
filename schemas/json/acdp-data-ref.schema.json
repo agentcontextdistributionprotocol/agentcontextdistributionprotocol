@@ -42,6 +42,7 @@
           "title": "URI String Form",
           "type": "string",
           "pattern": "^[a-z][a-z0-9+.-]*:",
+          "not": { "pattern": "^[a-z][a-z0-9+.-]*://[^/?#@]+@" },
           "minLength": 3,
           "maxLength": 4096,
           "examples": [
@@ -49,7 +50,7 @@
             "s3://bucket/path/to/object",
             "https://example.com/data.json"
           ],
-          "description": "URI with a valid scheme (RFC 3986). MUST NOT contain credentials in the userinfo component (RFC-ACDP-0002 §10)."
+          "description": "URI with a valid scheme (RFC 3986). MUST NOT contain credentials in the userinfo component (the `user[:password]@` portion before the host). The body is signed and immutable, so secrets persisted in `location` cannot be redacted later. See RFC-ACDP-0002 §6.6 (DataRef validation checklist) and §10 (security considerations)."
         },
         {
           "title": "Structured Locator Form",

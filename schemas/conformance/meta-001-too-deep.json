@@ -1,0 +1,33 @@
+{
+  "id": "meta-001",
+  "description": "metadata nesting depth exceeds 8 levels (top-level key is level 1; the object it points to is level 2; etc). Registry MUST reject with schema_violation (HTTP 400). This check is runtime-only — JSON Schema 2020-12 cannot express max nesting depth.",
+  "tags": ["failure", "publish", "metadata", "limits"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "metadata_under_test": {
+      "L1": {
+        "L2": {
+          "L3": {
+            "L4": {
+              "L5": {
+                "L6": {
+                  "L7": {
+                    "L8": {
+                      "L9": "this key sits at depth 9 — over the cap"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 400,
+    "error_code": "schema_violation",
+    "rule": "RFC-ACDP-0002 §3.3 — metadata depth ≤ 8 levels"
+  }
+}

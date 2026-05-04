@@ -63,16 +63,23 @@ The canonical schema is [`schemas/json/acdp-context-body.schema.json`](../schema
 | `type` | string | Yes | Context type. See §5. |
 | `domain` | string | No | Subject domain identifier. Free-form. |
 | `tags` | array of string | No | Free-form tags for keyword discovery. |
-| `summary` | string | No | Short producer-supplied summary for search results. Maximum 1000 characters. |
+| `summary` | string | No | Short producer-supplied summary for display in search results and previews. RECOMMENDED ≤ 200 characters; hard limit 1000 characters. See note below. |
 | `metadata` | object | No | Producer-specific structured payload. Shape SHOULD be bound by `schema_uri`. |
 
-`metadata` is bounded structurally:
+`summary` is **producer-controlled**: it is part of ProducerContent (RFC-ACDP-0001 §2, §5.7) and is included in `content_hash`. Distinguishing `summary` from `description`:
 
-- At most 100 top-level properties (`maxProperties: 100`).
-- At most 8 levels of nesting (depth: top-level keys are level 1; their object values count as level 2; etc.).
-- Total serialized JCS form MUST NOT exceed 64 KB.
+- `description` is the long-form prose (max 5000 characters) — the human-readable explanation of the context.
+- `summary` is a short display string (recommended ≤ 200 characters; hard cap 1000) for search result rows, link previews, and notification cards.
 
-Producers requiring richer or larger structured metadata SHOULD use `data_refs` instead. Registries MUST reject violations with `schema_violation` (HTTP 400). JSON Schema 2020-12 cannot natively express "max nesting depth" or "max serialized bytes"; these checks MUST happen at runtime, and the schema's metadata description marks them as normative runtime checks.
+If `summary` is absent, registries MAY generate a display string from `description` for **search indexing or response rendering only**; this generated value MUST NOT be persisted into the body and MUST NOT alter `content_hash`. Once a body is signed, no field — including a registry-derived display summary — may modify it.
+
+`metadata` is bounded structurally. Registries MUST enforce the following runtime limits on every publish request:
+
+- **Maximum 100 top-level properties.** Schema-enforced (`maxProperties: 100` in `acdp-publish-request.schema.json`). Violations fail at RFC-ACDP-0003 §2.1 step 1.
+- **Maximum nesting depth: 8 levels.** Top-level keys are level 1; the object values they point to count as level 2; arrays nested inside count as the next level; and so on. The depth of any path through `metadata` MUST be ≤ 8. Registries MUST reject deeper structures with `schema_violation` (HTTP 400). This check is runtime-only — JSON Schema 2020-12 cannot express it natively.
+- **Maximum JCS-canonicalized byte size: 65536 bytes (64 KB).** `len(JCS(metadata)) > 65536` MUST fail with `schema_violation` (HTTP 400). The cap is on the JCS canonical form (the same bytes that feed `content_hash`), not the raw on-the-wire bytes; payload-level escaping or whitespace differences are irrelevant.
+
+Producers requiring richer or larger structured metadata SHOULD use `data_refs` instead. The runtime checks above are conformance-tested by the `meta-*` fixtures under [`schemas/conformance/`](../schemas/conformance/).
 
 ### 3.4 Content Fields
 
@@ -164,7 +171,7 @@ Each entry in `data_refs` is a JSON object describing one piece of data that the
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `type` | string | Yes | One of `primary_result`, `raw_data`, `supporting_info`, `derived_data`. |
+| `type` | string | Yes | One of `primary_result`, `raw_data`, `supporting_info`, `derived_data`. The full registry, including selection guidance, is in [`registries/data-ref-types.md`](../registries/data-ref-types.md). v0.0.1 defines a **closed set**: custom or namespaced `DataRef.type` values are NOT supported (the schema's `enum` enforces this). Extensibility is reserved for a future ACDP version. |
 | `description` | string | No | Human-readable description. |
 | `size_bytes` | integer | No | Size of the referenced data in bytes. |
 | `format` | string | No | Format identifier (e.g., `json`, `csv`, `parquet`, `binary`). |
@@ -231,11 +238,30 @@ For `data_refs[].location` values that are URIs (URL form per §6.2):
 
 Consumers fetching `data_refs[].location` MUST treat the result as untrusted until verified. If `data_refs[].content_hash` is present, consumers MUST verify the fetched bytes match before treating the data as authentic. If absent and the location is `http://`, consumers SHOULD treat the data as untrusted indefinitely.
 
+### 6.6 DataRef Validation Checklist
+
+Several `DataRef` constraints cannot be expressed in JSON Schema 2020-12 and have historically been missed by reference implementations. Registries MUST execute the following ordered checks for each entry in `data_refs[]`:
+
+| # | Check | Failure code |
+|---|---|---|
+| 1 | `type` is present and equals one of the registered values (`primary_result`, `raw_data`, `supporting_info`, `derived_data` — see [`registries/data-ref-types.md`](../registries/data-ref-types.md)). | `schema_violation` |
+| 2 | Exactly one of `location` or `embedded` is present (not both, not neither). | `schema_violation` |
+| 3 | If `location` is a URI string: it has a non-empty scheme matching `^[a-z][a-z0-9+.-]*:`, total length ≤ 4096 characters. | `schema_violation` |
+| 4 | If `location` is a URI string: it MUST NOT contain credentials in the userinfo component (no `user:password@authority` form). Producers MUST NOT embed secrets in URIs; secrets in `data_refs[].location` are persisted in the signed body forever. | `schema_violation` |
+| 5 | If `location` is a structured object: `scheme` is present and matches the dotted-namespace pattern `^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)+$`. | `schema_violation` |
+| 6 | If `embedded` is present: the decoded byte length of `embedded.content` is ≤ 65536. Decoding rules: `base64` → decode as RFC 4648 base64 then count bytes; `utf8` → encode the string as UTF-8 then count bytes; `json` → emit JCS canonical form then count bytes. | `embedded_too_large` |
+| 7 | If `embedded.encoding` is `utf8` or `base64`: `embedded.content` MUST be a JSON string (not an object, array, number, etc.). For `embedded.encoding: "json"`, `embedded.content` MAY be any JSON value. | `schema_violation` |
+| 8 | If `embedded.content_hash` is present: the registry MUST verify it against the decoded bytes per §6.3 (base64 → decoded bytes; utf8 → UTF-8 bytes; json → JCS-canonicalized bytes). Mismatch is a publish-time failure. | `hash_mismatch` |
+
+Checks 1, 3, 5, and 7 are also expressible as JSON Schema constraints in `acdp-data-ref.schema.json` and produce schema-validation failures at step 1 of the publish pipeline (RFC-ACDP-0003 §2.1). Check 2 is expressed via `oneOf` in the schema. Checks 4, 6, and 8 are runtime-only and execute after schema validation; they fail with the codes shown above.
+
+The corresponding negative-case conformance fixtures are listed in [`schemas/conformance/README.md`](../schemas/conformance/README.md) under "DataRef validation". Registries claiming `acdp-registry-core` conformance MUST pass all of them.
+
 ---
 
 ## 7. Visibility
 
-The `visibility` field controls who may discover a context.
+The `visibility` field controls who may retrieve and discover a context.
 
 | Value | Effective audience | `audience` field |
 |---|---|---|
@@ -243,9 +269,28 @@ The `visibility` field controls who may discover a context.
 | `restricted` | `agent_id` plus all DIDs listed in `audience`. | MUST be present and non-empty. |
 | `private` | `agent_id` only, plus any DIDs explicitly listed in `audience` (if present). **Contributors are NOT auto-authorized.** | MAY be present to grant additional access. |
 
+**`public` MUST NOT carry an `audience`.** A `public` context with a non-empty `audience` field is a `schema_violation` (HTTP 400). This is enforced by the publish-request schema (`acdp-publish-request.schema.json`) via an `if/then` clause and MUST be rejected at RFC-ACDP-0003 §2.1 step 1. Including `audience` on a `public` context is a category error: `public` already grants every authorized requester access; an `audience` listing would imply a narrowing the protocol does not honor.
+
+**For `private`, `audience` is OPTIONAL.** If present, it MUST be a non-empty array of DIDs. Listing a DID in `audience` on a `private` context grants that DID **retrieval** access but **NOT search** visibility — `private` contexts are invisible to discovery for everyone except the producing agent. To make a context discoverable to a defined cohort, use `restricted` (which grants both retrieval and search visibility to the listed DIDs).
+
 Retrieval by a requester who is not in the effective audience for a `restricted` or `private` context MUST return `not_found` (HTTP 404) to avoid leaking existence — see RFC-ACDP-0008 §4.5.
 
 `contributors` is for **attribution**, not authorization. Crediting a contributor on a private context does not implicitly grant that contributor read access. To grant read access, list the DID explicitly in `audience`.
+
+### Visibility matrix
+
+The complete combination of visibility level, requester role, retrieval, and search behavior:
+
+| Visibility | Anonymous read | Authenticated read (non-audience) | Audience read | Producer (`agent_id`) read | Appears in search for requester |
+|---|---|---|---|---|---|
+| `public` | Allowed only if `anonymous_public_reads: true` (RFC-ACDP-0008 §6.3); otherwise `not_authorized` (HTTP 403) | Allowed | Allowed (audience MUST be absent — see above) | Allowed | Yes |
+| `restricted` | `not_found` (HTTP 404) | `not_found` (HTTP 404) | Allowed (HTTP 200) | Allowed (HTTP 200) | Yes for the producer and for DIDs listed in `audience`; otherwise No |
+| `private` | `not_found` (HTTP 404) | `not_found` (HTTP 404) | Allowed (HTTP 200) iff DID is in `audience` | Allowed (HTTP 200) | **Producer only** — never appears in search results for any other DID, even DIDs listed in `audience` |
+
+Notes on the matrix:
+- HTTP 404 `not_found` is mandated for both "really doesn't exist" and "exists but you can't see it" to prevent existence leakage (RFC-ACDP-0008 §4.5). The internal label `visibility_denied` MAY appear in registry logs but MUST NOT appear on the wire.
+- Search visibility is strictly equal to or narrower than retrieval visibility: anything you can find in search you can retrieve, but not vice versa (specifically for `private` + `audience`, where audience members can retrieve but cannot find via search).
+- For `restricted`, registries MUST exclude non-audience contexts from `total_estimate` (RFC-ACDP-0005 §3) to avoid leaking counts.
 
 ACDP does not enforce access control on data referenced by `data_refs`. The visibility field affects metadata discoverability through the registry; the underlying data store enforces its own access control.
 

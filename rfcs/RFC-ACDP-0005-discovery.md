@@ -48,7 +48,9 @@ Filters not listed here MUST be ignored (forward compatibility for future filter
 
 ### 2.2 Response
 
-The response conforms to [`schemas/json/acdp-search-response.schema.json`](../schemas/json/acdp-search-response.schema.json):
+The response conforms to [`schemas/json/acdp-search-response.schema.json`](../schemas/json/acdp-search-response.schema.json).
+
+The response object MUST use the key `matches` for the result array. The field name `results` is **not conformant**. Registries MUST emit `matches`; consumers MUST NOT accept `results` as a substitute for `matches`. The schema is `additionalProperties: false`, so a registry that emits `results` (or any other alternative spelling) violates the schema and produces a non-conformant response.
 
 ```json
 {
@@ -124,13 +126,13 @@ Results MAY include or exclude contexts published mid-iteration; cross-page cons
 
 ## 3. Visibility Scoping
 
-All discovery responses MUST be scoped to the requesting agent's effective audience as defined in RFC-ACDP-0002 §7 and RFC-ACDP-0008 §4.5:
+All discovery responses MUST be scoped per the visibility matrix in RFC-ACDP-0002 §7. Search visibility is **strictly equal to or narrower than** retrieval visibility:
 
 - `visibility: public` — discoverable by any authenticated requester (and by anonymous requesters if the registry advertises `anonymous_public_reads: true`).
-- `visibility: restricted` — discoverable by `agent_id` and the DIDs listed in `audience`.
-- `visibility: private` — discoverable by `agent_id` only, plus any DIDs explicitly listed in `audience` (if present). **Contributors are NOT auto-authorized:** `contributors` is for attribution, not authorization. Producers wishing to grant a contributor read access MUST list the DID in `audience` explicitly.
+- `visibility: restricted` — discoverable by `agent_id` and the DIDs listed in `audience`. Same set as retrieval.
+- `visibility: private` — discoverable **only** by `agent_id`. DIDs listed in `audience` (if present) are granted **retrieval** access but NOT search visibility — `private` contexts never appear in another DID's search results, even when that DID is in `audience`. To make a context discoverable to a defined cohort, producers MUST use `restricted` instead. **Contributors are NOT auto-authorized for either retrieval or search:** `contributors` is for attribution, not authorization. Producers wishing to grant a contributor read access MUST list the DID in `audience` explicitly (still retrieval-only for `private`; both retrieval and search for `restricted`).
 
-A registry MUST NOT include restricted/private contexts in `total_estimate` for unauthorized requesters. Registries SHOULD make `total_estimate` deterministic per `(query, requester)` for a stable result set, OR omit it from responses entirely when visibility scoping is in play, to avoid leaking the existence of restricted contexts via timing or cross-requester variance analysis.
+A registry MUST NOT include restricted contexts in `total_estimate` for non-audience requesters, and MUST NOT include private contexts in `total_estimate` for any requester other than the producer. Registries SHOULD make `total_estimate` deterministic per `(query, requester)` for a stable result set, OR omit it from responses entirely when visibility scoping is in play, to avoid leaking the existence of restricted contexts via timing or cross-requester variance analysis.
 
 ---
 

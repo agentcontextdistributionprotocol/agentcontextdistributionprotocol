@@ -11,7 +11,7 @@ ACDP error codes returned in error envelopes (`error.code`). The envelope shape 
 | `schema_violation` | Stable | 400 | Request body or query failed structural validation. | [RFC-ACDP-0003 §2.1](../rfcs/RFC-ACDP-0003-publish.md#21-registry-processing) |
 | `not_authorized` | Stable | 403 | Agent lacks permission for the operation. Call sites: supersession by a different `agent_id` (RFC-ACDP-0003 §3.1 step 3); unauthenticated read on a registry that does not advertise `anonymous_public_reads` (RFC-ACDP-0008 §6.3). | [RFC-ACDP-0003 §3.1](../rfcs/RFC-ACDP-0003-publish.md#31-supersession-constraints), [RFC-ACDP-0008 §6.3](../rfcs/RFC-ACDP-0008-security.md#63-anonymous-reads) |
 | `not_found` | Stable | 404 | Resource not found. | [RFC-ACDP-0004 §7](../rfcs/RFC-ACDP-0004-retrieval.md#7-errors) |
-| `superseded_target` | Stable | 400 / 409 | The `supersedes` target is invalid (any reason — `details.reason` provides specifics). HTTP 400 for static violations; HTTP 409 Conflict for race conditions (`already_superseded`, `version_mismatch`). | [RFC-ACDP-0003 §2.1 step 9](../rfcs/RFC-ACDP-0003-publish.md#21-registry-processing), [§3.1](../rfcs/RFC-ACDP-0003-publish.md#31-supersession-constraints) |
+| `superseded_target` | Stable | 400 / 409 | The `supersedes` target is invalid (any reason — `details.reason` provides specifics). HTTP 400 for static violations; HTTP 409 Conflict for race conditions (`already_superseded`, `version_mismatch`). | [RFC-ACDP-0001 §5.6.1](../rfcs/RFC-ACDP-0001-core.md#561-lineage-walk-failure), [RFC-ACDP-0003 §2.1 steps 9–10](../rfcs/RFC-ACDP-0003-publish.md#21-registry-processing), [§3.1](../rfcs/RFC-ACDP-0003-publish.md#31-supersession-constraints) |
 | `unsupported_algorithm` | Stable | 400 | Signature algorithm not in the registry's `supported_signature_algorithms`. | [RFC-ACDP-0001 §5.10](../rfcs/RFC-ACDP-0001-core.md#510-signature-algorithms), [RFC-ACDP-0003 §2.1 step 5](../rfcs/RFC-ACDP-0003-publish.md#21-registry-processing) |
 | `rate_limited` | Stable | 429 | Per-agent rate limit exceeded. | [RFC-ACDP-0008 §4.3](../rfcs/RFC-ACDP-0008-security.md#43-rate-limiting) |
 | `payload_too_large` | Stable | 413 | Request body exceeds `limits.max_payload_bytes`. | [RFC-ACDP-0003 §2.1 step 2](../rfcs/RFC-ACDP-0003-publish.md#21-registry-processing) |
@@ -48,6 +48,7 @@ When returning `superseded_target`, registries SHOULD include `details.reason` t
 | `version_mismatch` | The new context's `version` ≠ `previous.version + 1`. |
 | `already_superseded` | Another context already supersedes the target. |
 | `cross_registry_supersession_unsupported` | Registry does not support cross-registry supersession. |
+| `lineage_walk_failed` | The registry could not retrieve an intermediate context while walking back through `supersedes` to compute `lineage_id`. See [RFC-ACDP-0001 §5.6.1](../rfcs/RFC-ACDP-0001-core.md#561-lineage-walk-failure). |
 
 ## Adding a code
 

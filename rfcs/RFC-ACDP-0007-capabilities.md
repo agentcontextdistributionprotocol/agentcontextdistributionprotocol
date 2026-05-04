@@ -59,6 +59,16 @@ Returns the registry's capability declaration. Conforms to [`schemas/json/acdp-c
 
 The capabilities document is `additionalProperties: true` to support forward compatibility — future versions of ACDP will add capability flags here as new features become available. Consumers MUST tolerate unknown fields.
 
+**Implementer note.** The `CapabilitiesDocument` model MUST be deserialized with unknown-field tolerance enabled. Concrete patterns:
+
+- **Rust (serde):** add `#[serde(flatten)] pub extensions: serde_json::Map<String, serde_json::Value>` (or a typed `BTreeMap<String, Value>`) to capture unknown keys; do NOT annotate the struct with `#[serde(deny_unknown_fields)]`.
+- **Python (pydantic v2):** set `model_config = ConfigDict(extra="allow")` on the capabilities model, OR keep the model loose and operate on `dict[str, Any]` for unknown keys.
+- **Python (dataclasses or attrs):** keep an explicit catch-all field (e.g. `extensions: dict[str, Any] = field(default_factory=dict)`) and route unknown keys into it.
+- **TypeScript:** no action needed by default — object types are open. Runtime decoders (zod, valibot) MUST use a passthrough or partial-strict mode (e.g. zod's `.passthrough()`); decoders configured to strip or fail unknown keys MUST NOT be used.
+- **Go:** unmarshalling into `map[string]any` or a struct with an `Extensions json.RawMessage` field both work; do NOT use `json.UnmarshalDisallowUnknownFields`.
+
+Libraries that throw, panic, or strip unknown fields will break silently the next time ACDP adds a capability flag — for example, when push subscriptions ship in v0.1, registries will start advertising `supports_push_subscriptions: true`, and a strict-decoder consumer will fail to read the document at all. The same forward-compat policy applies to the `status` field on registry state (RFC-ACDP-0004 §4.1).
+
 ### 3.4 Example
 
 ```json
@@ -126,7 +136,7 @@ The full registry is maintained in [`registries/error-codes.md`](../registries/e
 | `schema_violation` | 400 | Request body or query failed structural validation. | RFC-ACDP-0003 §2.1 |
 | `not_authorized` | 403 | Agent lacks permission for the operation. Returned for supersession by a different `agent_id`, and for unauthenticated reads on a registry that does not advertise `anonymous_public_reads`. | RFC-ACDP-0003 §3.1, RFC-ACDP-0008 §6.3 |
 | `not_found` | 404 | Resource not found. (Also returned for visibility-restricted contexts to non-audience requesters; see RFC-ACDP-0008 §4.5.) | RFC-ACDP-0004 §7 |
-| `superseded_target` | 400 / 409 | The `supersedes` target is invalid. `details.reason` provides specifics. HTTP 400 for static violations (`not_found`, `lineage_mismatch`, `cross_registry_supersession_unsupported`); HTTP 409 Conflict for race conditions (`already_superseded`, `version_mismatch`). | RFC-ACDP-0003 §2.1 step 9, §3.1 |
+| `superseded_target` | 400 / 409 | The `supersedes` target is invalid. `details.reason` provides specifics. HTTP 400 for static violations (`not_found`, `lineage_mismatch`, `cross_registry_supersession_unsupported`, `lineage_walk_failed`); HTTP 409 Conflict for race conditions (`already_superseded`, `version_mismatch`). | RFC-ACDP-0001 §5.6.1, RFC-ACDP-0003 §2.1 steps 9–10, §3.1 |
 | `unsupported_algorithm` | 400 | Signature algorithm not in the registry's `supported_signature_algorithms`. | RFC-ACDP-0001 §5.10, RFC-ACDP-0003 §2.1 step 5 |
 | `rate_limited` | 429 | Per-agent rate limit exceeded. | RFC-ACDP-0008 §4.3 |
 | `payload_too_large` | 413 | Request body exceeds `limits.max_payload_bytes`. | RFC-ACDP-0003 §2.1 step 2 |

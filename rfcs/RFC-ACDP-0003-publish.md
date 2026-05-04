@@ -32,7 +32,9 @@ The registry MUST execute the following steps in order:
 
 1. **Schema validation.** Validate the request body against `acdp-publish-request.schema.json`. On failure, return `schema_violation` (HTTP 400).
 2. **Payload-size validation.** Verify total request size ≤ `limits.max_payload_bytes` (RFC-ACDP-0007). On overflow, return `payload_too_large` (HTTP 413).
-3. **Embedded-size validation.** For each `data_refs[].embedded`, verify decoded size ≤ 65536 bytes. On overflow, return `embedded_too_large` (HTTP 413).
+3. **Embedded validation.** For each `data_refs[].embedded`:
+    - Verify decoded size ≤ 65536 bytes (per RFC-ACDP-0002 §6.3 decoding rules: `base64` → RFC 4648 decoded byte count; `utf8` → UTF-8 byte count; `json` → JCS-canonicalized byte count). On overflow, return `embedded_too_large` (HTTP 413).
+    - If `embedded.content_hash` is present, recompute the SHA-256 of the decoded bytes (same encoding-aware decoding) and verify it matches. On mismatch, return `hash_mismatch` (HTTP 400). This is distinct from the body-level `content_hash` check in step 4: step 3's hash-check binds an individual embedded payload to its declared digest; step 4 binds the whole producer-controlled body. Per-embedded `content_hash` is OPTIONAL on publish (the producer commits to whatever `embedded.content` they sign in step 4 either way), but present-and-mismatching is a hard error per RFC-ACDP-0002 §6.6 Check 8.
 4. **Hash recomputation.** Compute SHA-256 over the JCS-canonicalized request body, with the exclusion set from RFC-ACDP-0001 §5.7. If the computed hash does not equal `content_hash`, return `hash_mismatch` (HTTP 400). **This step happens before signature verification:** verifying a signature against an untrusted submitted hash proves nothing — the registry must independently recompute the hash before treating it as the signing input.
 5. **Algorithm check.** If `signature.algorithm` is not in the registry's `supported_signature_algorithms` (RFC-ACDP-0007), return `unsupported_algorithm` (HTTP 400).
 6. **Key-id binding and key resolution.** First, verify that the DID portion of `signature.key_id` (everything before `#`) equals `body.agent_id`; on mismatch, return `key_not_authorized` (HTTP 403). This sub-check is a string comparison and registries MAY perform it earlier (before step 4) as an optimization to reject obvious mismatches without paying the SHA-256 cost. Then resolve the signing key per RFC-ACDP-0001 §5.11. On a permanent resolution failure (DID document fetched but JSON parse error, missing the requested key fragment in `verificationMethod`, or `key_id` lacks a fragment), return `key_resolution_failed` (HTTP 400). On a transient failure (DNS, TLS, HTTP non-2xx, timeout fetching the DID document), return `key_resolution_unreachable` (HTTP 502). On successful resolution, verify the resolved verification method is in the DID document's `assertionMethod` array; if not, return `key_not_authorized` (HTTP 403).
@@ -50,7 +52,7 @@ The registry MUST execute the following steps in order:
 12. **Persistence.** Persist the body. Initialize the derived `status` per RFC-ACDP-0004 §4.
 13. **Response.** Return a publish response (§4).
 
-The registry MUST execute steps 1–7 before any persistence. Steps 8–12 are atomic with respect to other concurrent publications: when two publications target the same `supersedes` value, the registry MUST accept exactly one (the first to fully validate and reach step 11), and MUST reject every subsequent attempt with `superseded_target` (`details.reason = "already_superseded"`, HTTP 409 Conflict).
+The registry MUST execute steps 1–7 before any persistence. Steps 8–12 are atomic with respect to other concurrent publications: when two publications target the same `supersedes` value, the registry MUST accept exactly one (the first to fully validate and reach step 12 (persistence)), and MUST reject every subsequent attempt with `superseded_target` (`details.reason = "already_superseded"`, HTTP 409 Conflict).
 
 ### 2.2 Producer-side flow
 
@@ -64,6 +66,8 @@ Producers building a publish request MUST:
 Producers publishing a first version (`supersedes = null`) **MUST NOT** include `lineage_id` in the publish request. Registries MUST reject first-version requests containing `lineage_id` with `schema_violation` (HTTP 400). The registry derives `lineage_id` from the assigned `ctx_id` (RFC-ACDP-0001 §5.6); producers cannot supply a correct value because they do not know the registry-assigned `ctx_id` at signing time.
 
 Producers publishing a subsequent version (`supersedes != null`) MAY include `lineage_id` for self-verification. If supplied, the registry MUST verify it matches the deterministically-derived value and reject with `superseded_target` (`details.reason = "lineage_mismatch"`) on mismatch.
+
+> **Note on the optional `lineage_id` in supersession publish requests.** The optional `lineage_id` here is a **producer assertion for self-verification**, NOT a registry assignment. Its purpose is to let the producer catch lineage-continuity errors at publish time: if the producer's understanding of the lineage does not match the value the registry computes from walking the `supersedes` chain, the registry returns `superseded_target` (`details.reason = "lineage_mismatch"`) and the producer can investigate before retrying. Producers that omit `lineage_id` on supersession are **not** in error — the registry derives and verifies `lineage_id` unconditionally from the `supersedes` chain regardless. This is a defensive correctness check, not a required part of the publish surface. (A future ACDP version may rename this field to `expected_lineage_id` to make the producer-assertion semantics unmissable; v0.0.1 keeps the original name to remain compatible with existing producer libraries.)
 
 ---
 
@@ -120,6 +124,18 @@ Location: /contexts/acdp%3A%2F%2Fregistry.example.com%2F550e8400-e29b-41d4-a716-
 The `Location` header value is the canonical retrieval URL for the new context. The `ctx_id` in the URL path MUST be percent-encoded: `:` → `%3A`, `/` → `%2F`. This is the form clients pass to `GET /contexts/{ctx_id}` (RFC-ACDP-0004 §2). Implementations MUST emit the percent-encoded form in `Location` and MUST accept either form on `GET` retrieval (some clients percent-decode before re-sending). A `Location` header containing literal `://` and unencoded `/` inside a path segment will not parse correctly in many HTTP clients and proxies.
 
 The response body MUST conform to [`schemas/json/acdp-publish-response.schema.json`](../schemas/json/acdp-publish-response.schema.json). The HTTP status code MUST be 201 Created on success.
+
+The publish response object has exactly the following fields:
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `ctx_id` | string | Yes | Registry-assigned context identifier in the form `acdp://<authority>/<uuid>` (RFC-ACDP-0001 §5.5). |
+| `lineage_id` | string | Yes | Computed lineage identifier (RFC-ACDP-0001 §5.6). |
+| `version` | integer | Yes | Version number of the newly published context (1 for first version, `previous.version + 1` otherwise). |
+| `created_at` | string | Yes | Registry-assigned creation timestamp (RFC 3339, canonical millisecond form per RFC-ACDP-0001 §5.3). |
+| `status` | string | Yes | Initial lifecycle status. MUST be `"active"` (a newly-published context cannot already be `superseded` or `expired`). |
+
+Registries MUST NOT include `content_hash`, `signature`, or any other body field in the publish response. `content_hash` is part of ProducerContent (RFC-ACDP-0001 §2, §5.7); the producer already submitted it and signed it, so echoing it back conveys no integrity guarantee. Consumers that need the full body for verification MUST retrieve it via `GET /contexts/{ctx_id}` (RFC-ACDP-0004 §2) — the body returned there is byte-identical to what the producer signed. The publish response is intentionally minimal: it conveys only the registry-assigned identifiers needed for subsequent retrieval and the initial derived `status`. The response schema is `additionalProperties: false`; consumer deserializers MUST NOT rely on additional fields appearing.
 
 ---
 

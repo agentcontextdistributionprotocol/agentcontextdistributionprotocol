@@ -1,0 +1,50 @@
+{
+  "id": "pub-007",
+  "description": "Successful publish response MUST contain exactly the five registry-assigned fields (ctx_id, lineage_id, version, created_at, status) and MUST NOT echo content_hash, signature, or any body field. status MUST be 'active' on a fresh publication. The response schema is additionalProperties: false; consumer deserializers MUST NOT rely on additional fields appearing.",
+  "tags": ["happy-path", "publish", "response-shape"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "body_summary": "A schema-valid first-version publish request with a verifiable signature. Concrete payload omitted; any pub-001-style well-formed body whose signature verifies is acceptable as input to this fixture."
+  },
+  "expected": {
+    "outcome": "success",
+    "http_status": 201,
+    "headers": {
+      "Content-Type": "application/acdp+json",
+      "Location": "MUST be the percent-encoded canonical retrieval URL for the assigned ctx_id (e.g. /contexts/acdp%3A%2F%2F<authority>%2F<uuid>)"
+    },
+    "response_body_shape": {
+      "required_fields": ["ctx_id", "lineage_id", "version", "created_at", "status"],
+      "forbidden_fields": [
+        "content_hash",
+        "signature",
+        "agent_id",
+        "title",
+        "description",
+        "type",
+        "tags",
+        "summary",
+        "metadata",
+        "data_refs",
+        "schema_uri",
+        "derived_from",
+        "supersedes",
+        "visibility",
+        "audience",
+        "data_period",
+        "expires_at",
+        "contributors",
+        "origin_registry",
+        "acdp_version"
+      ],
+      "field_constraints": {
+        "ctx_id": "Form: acdp://<authority>/<uuid>; <authority> equals the registry's declared authority.",
+        "lineage_id": "Form: lin:sha256:<64-lowercase-hex>; deterministically derived per RFC-ACDP-0001 §5.6.",
+        "version": "Integer == 1 for first-version publication; previous.version + 1 otherwise.",
+        "created_at": "RFC 3339 UTC, canonical millisecond form (RFC-ACDP-0001 §5.3).",
+        "status": "MUST be the literal string 'active' on a successful publish response."
+      }
+    }
+  },
+  "rationale": "Echoing content_hash from a publish response confers no integrity guarantee — the producer already submitted it and signed it. Reference implementations have included content_hash in publish-response structs, masking shape divergences via test mocks that mirror the same wrong shape. This fixture pins the exact response surface."
+}

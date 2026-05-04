@@ -1,0 +1,23 @@
+{
+  "id": "data-ref-004",
+  "description": "DataRef.location is a structured object missing the required `scheme` field (or with a `scheme` that does not match the dotted-namespace pattern). Registry MUST reject with schema_violation.",
+  "tags": ["failure", "publish", "data-refs"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "data_ref_under_test": {
+      "type": "supporting_info",
+      "location": {
+        "broker": "kafka.example.com:9092",
+        "topic": "events",
+        "partition": 3,
+        "offset": 1024
+      }
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 400,
+    "error_code": "schema_violation",
+    "checklist_step": 5
+  }
+}

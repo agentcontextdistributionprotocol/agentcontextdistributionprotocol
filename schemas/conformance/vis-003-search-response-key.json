@@ -1,0 +1,47 @@
+{
+  "id": "vis-003",
+  "description": "Search response field-name conformance. The wrapping array MUST be named `matches`. Registries MUST NOT emit `results` (or any other alternative spelling). Conformant consumers MUST reject responses that lack `matches`. The schema is additionalProperties: false; a response containing `results` is non-conformant by schema even before the prose check.",
+  "tags": ["security", "discovery", "field-naming", "schema"],
+  "scenarios": [
+    {
+      "name": "registry-side: registry MUST emit matches",
+      "input": {
+        "endpoint": "GET /contexts/search?q=test"
+      },
+      "expected": {
+        "outcome": "success",
+        "http_status": 200,
+        "response_body_constraints": {
+          "MUST_have_key": "matches",
+          "MUST_NOT_have_key": "results",
+          "MUST_NOT_have_key_alternates": ["records", "items", "data", "hits", "rows"],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "name": "consumer-side: consumer MUST treat `results` as non-conformant",
+      "input": {
+        "received_response": {
+          "results": [
+            {
+              "ctx_id": "acdp://registry.example.com/550e8400-e29b-41d4-a716-446655440000",
+              "lineage_id": "lin:sha256:b14ccd2a8b34530309255db68c151a10689b6a82feb30aff9222d54fdd871720",
+              "agent_id": "did:web:agents.example.com:test",
+              "title": "Sample",
+              "type": "data_snapshot",
+              "created_at": "2026-04-16T10:15:00.000Z",
+              "status": "active"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "outcome": "failure",
+        "consumer_behavior": "Conformant consumer MUST treat the response as non-conformant. Acceptable handling: surface a parse/schema error to the caller, OR return zero matches. Consumer MUST NOT silently coerce `results` to `matches`.",
+        "rationale": "Silent coercion would mask registry bugs and erode the schema contract."
+      }
+    }
+  ],
+  "background": "A reference implementation accidentally serialized the array under `results`. Because no behavioral fixture pinned the field name, the bug went unnoticed until a cross-impl interop test failed."
+}

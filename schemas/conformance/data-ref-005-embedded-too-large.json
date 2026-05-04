@@ -1,0 +1,27 @@
+{
+  "id": "data-ref-005",
+  "description": "DataRef.embedded.content decodes to more than 65536 bytes. Registry MUST reject with embedded_too_large (HTTP 413). The cap is on the DECODED size, not the on-the-wire string length.",
+  "tags": ["failure", "publish", "data-refs", "limits"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "data_ref_under_test": {
+      "type": "raw_data",
+      "embedded": {
+        "encoding": "base64",
+        "content": "<a base64 string whose decoded byte length is 65537>",
+        "_note": "Concrete payload omitted; any base64 string decoding to ≥65537 bytes triggers this fixture."
+      }
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 413,
+    "error_code": "embedded_too_large",
+    "checklist_step": 6,
+    "decoding_rules_under_test": {
+      "base64": "decoded byte count after RFC 4648 decoding",
+      "utf8": "byte count after UTF-8 encoding the JSON string",
+      "json": "byte count of JCS canonical form"
+    }
+  }
+}
