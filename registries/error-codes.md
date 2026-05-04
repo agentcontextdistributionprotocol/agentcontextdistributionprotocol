@@ -16,7 +16,6 @@ ACDP error codes returned in error envelopes (`error.code`). The envelope shape 
 | `rate_limited` | Stable | 429 | Per-agent rate limit exceeded. | [RFC-ACDP-0008 §4.3](../rfcs/RFC-ACDP-0008-security.md#43-rate-limiting) |
 | `payload_too_large` | Stable | 413 | Request body exceeds `limits.max_payload_bytes`. | [RFC-ACDP-0007 §3.1](../rfcs/RFC-ACDP-0007-capabilities.md#31-required-fields) |
 | `embedded_too_large` | Stable | 413 | An embedded data reference exceeds 64 KB. | [RFC-ACDP-0002 §6.3](../rfcs/RFC-ACDP-0002-context-body.md#63-embedded-form) |
-| `immutable_field` | Reserved | 400 | Reserved for future endpoints. ACDP v0.0.1 defines no endpoint that mutates a body field; this code is reserved for v0.1+ retraction/attestation extensions. | [RFC-ACDP-0009 §2.1](../rfcs/RFC-ACDP-0009-extensions.md#21-retraction--lifecycle-events-likely-v01) |
 | `key_resolution_failed` | Stable | 400 | Permanent DID resolution failure: DID document parsed successfully but does not contain the requested key fragment, or fragment is missing. Producer error. | [RFC-ACDP-0003 §2.1 step 6](../rfcs/RFC-ACDP-0003-publish.md#21-registry-processing) |
 | `key_resolution_unreachable` | Stable | 502 | Transient DID resolution failure: DNS, TLS, HTTP non-2xx, or timeout while fetching the DID document. Retryable with backoff. | [RFC-ACDP-0001 §5.11](../rfcs/RFC-ACDP-0001-core.md#511-key-resolution) |
 | `key_not_authorized` | Stable | 403 | The DID portion of `signature.key_id` (everything before `#`) does not equal `body.agent_id`, or the resolved verification method is not in the DID document's `assertionMethod`. | [RFC-ACDP-0003 §2.1 step 6](../rfcs/RFC-ACDP-0003-publish.md#21-registry-processing) |
@@ -28,6 +27,15 @@ ACDP error codes returned in error envelopes (`error.code`). The envelope shape 
 | `internal_error` | Stable | 500 | Unexpected registry error. The standard envelope MUST be used; `error.message` MUST NOT leak stack traces or sensitive context. Retryable. | [RFC-ACDP-0007 §4](../rfcs/RFC-ACDP-0007-capabilities.md#4-error-envelope) |
 
 > Note: `visibility_denied` is an internal-only signal (logging/metrics). Visibility denial is always reported externally as `not_found` per RFC-ACDP-0008 §4.5. The wire-visible enum in `acdp-error.schema.json` does NOT include `visibility_denied`.
+
+## Reserved future codes
+
+These codes are NOT in the v0.0.1 wire schema enum. They are reserved for future ACDP versions and MUST NOT appear in v0.0.1 wire responses.
+
+| Code | Reserved for | Reference |
+|---|---|---|
+| `immutable_field` | v0.1+ mutation endpoints (retraction, attestation updates). No v0.0.1 endpoint mutates a body field. | [RFC-ACDP-0009 §2.1](../rfcs/RFC-ACDP-0009-extensions.md#21-retraction--lifecycle-events-likely-v01) |
+| `unsupported_embedding_model` | v0.1+ similarity endpoints. ACDP v0.0.1 has no similarity surface. | [RFC-ACDP-0009 §2.9](../rfcs/RFC-ACDP-0009-extensions.md#29-semantic-similarity-and-embeddings-likely-v01) |
 
 ## `superseded_target` reason codes
 
