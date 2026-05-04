@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json",
+  "title": "ACDP Common Types",
+  "description": "Shared type definitions referenced by other ACDP schemas. Defined as of ACDP v0.0.1.",
+
+  "$defs": {
+    "did": {
+      "title": "Decentralized Identifier (plain DID)",
+      "description": "A plain DID per W3C DID Core specification, without fragment, query, or path. Used for principal identifiers (agent_id, contributors[], audience[], registry_did). The pattern is intentionally loose — full method-specific validation (e.g. did:web hostname syntax, did:key multibase decoding) is delegated to the resolver per RFC-ACDP-0001 §5.11. Per RFC-ACDP-0001 §5.4, v0.0.1 producers MUST use did:web; this is enforced normatively in the RFC, not in the schema, so registries can accept other methods if they choose to.",
+      "type": "string",
+      "pattern": "^did:[a-z0-9]+:[A-Za-z0-9._:%-]+$",
+      "minLength": 7,
+      "maxLength": 2048
+    },
+
+    "did_url": {
+      "title": "Decentralized Identifier URL",
+      "description": "A DID URL per W3C DID Core, optionally including path, query, and/or fragment. Used for signature.key_id (typically with a #key-N fragment).",
+      "type": "string",
+      "pattern": "^did:[a-z0-9]+:[A-Za-z0-9._:#/?=&%-]+$",
+      "minLength": 7,
+      "maxLength": 2048
+    },
+
+    "ctx_id": {
+      "title": "Context Identifier",
+      "description": "A globally unique URI of the form acdp://<authority>/<uuid>. Authority is a lowercase DNS hostname; UUID is a lowercase RFC 9562 v4 (random) UUID. Version digit (13th hex char) MUST be 4; variant digit (17th hex char) MUST be 8, 9, a, or b.",
+      "type": "string",
+      "pattern": "^acdp://[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "examples": [
+        "acdp://registry.example.com/12345678-1234-4321-8123-123456781234"
+      ]
+    },
+
+    "lineage_id": {
+      "title": "Lineage Identifier",
+      "description": "Deterministically derived from the first version's ctx_id. Form: lin:<algorithm>:<digest>. v0.0.1 emits 'lin:sha256:<64-lowercase-hex>'. The algorithm is namespaced so future ACDP versions can adopt different hashes (e.g. SHA-3, post-quantum) without colliding with v0.0.1 lineage_ids. Consumers MUST treat lin: values with unknown algorithms as opaque and MUST NOT compare across algorithms.",
+      "type": "string",
+      "pattern": "^lin:sha256:[0-9a-f]{64}$",
+      "examples": [
+        "lin:sha256:b14ccd2a8b34530309255db68c151a10689b6a82feb30aff9222d54fdd871720"
+      ]
+    },
+
+    "content_hash": {
+      "title": "Content Hash",
+      "description": "SHA-256 digest with explicit algorithm prefix. Form: 'sha256:' followed by 64 lowercase hexadecimal characters. Future ACDP versions may add other algorithms via different prefixes.",
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+
+    "rfc3339_timestamp": {
+      "title": "RFC 3339 Timestamp",
+      "description": "An RFC 3339 date-time in UTC with the Z suffix. Canonical emission form uses millisecond precision (e.g. '2026-04-16T10:30:15.123Z'). Implementations MUST emit canonical form when generating new timestamps and MUST accept any valid RFC 3339 form (including no/microsecond/nanosecond precision) on input. The schema regex below permits any precision, supporting both emit and accept profiles. Producers note: timestamps in the publish request body (not the registry-assigned created_at) are part of ProducerContent; producers MUST use canonical millisecond form to ensure interoperable content_hash values.",
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$",
+      "examples": [
+        "2026-04-16T10:30:15.123Z"
+      ]
+    },
+
+    "signature": {
+      "title": "Detached Signature",
+      "description": "A cryptographic signature over a content_hash. Signs the bytes of the full content_hash string ('sha256:<hex>'), not raw hash bytes.",
+      "type": "object",
+      "required": ["algorithm", "key_id", "value"],
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "description": "Signature algorithm. Lowercase identifier; current registered values are 'ed25519' and 'ecdsa-p256' (see registries/signature-algorithms.md). 'ed25519' is mandatory to support per RFC-ACDP-0001 §5.10. Pattern is intentionally open so future algorithms (ed448, post-quantum) can be added without a schema bump; runtime gating is via the registry's supported_signature_algorithms.",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "minLength": 2,
+          "maxLength": 64
+        },
+        "key_id": {
+          "$ref": "#/$defs/did_url",
+          "description": "DID URL identifying the signing key (e.g., did:web:agent.example#key-1)."
+        },
+        "value": {
+          "type": "string",
+          "description": "Base64-encoded signature bytes. Length is algorithm-dependent (88 chars for ed25519 / ecdsa-p256: 64 raw bytes → 88 base64 chars with padding). Registries MUST validate length against the algorithm and reject mismatches with invalid_signature.",
+          "pattern": "^[A-Za-z0-9+/]+=*$",
+          "minLength": 8,
+          "maxLength": 8192
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "algorithm": { "enum": ["ed25519", "ecdsa-p256"] } } },
+          "then": { "properties": { "value": { "minLength": 88, "maxLength": 88 } } }
+        }
+      ],
+      "additionalProperties": false,
+      "$comment": "additionalProperties is false in v0.0.1: the entire signature object is excluded from ProducerContent (the hash preimage) per RFC-ACDP-0001 §5.7. However, since signature is part of the stored Body, unknown signature fields would still change the JCS canonical form of the Body and could affect future Body-level processing. Keeping the signature schema closed avoids that complexity. Future signature variants (proof chains, threshold attestations per RFC-ACDP-0009) require an explicit schema bump."
+    },
+
+    "tag": {
+      "title": "Tag",
+      "description": "A free-form keyword tag. Must start with an alphanumeric and contain only alphanumerics, hyphens, underscores, and dots.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+      "minLength": 1,
+      "maxLength": 100
+    },
+
+    "data_period": {
+      "title": "Data Period",
+      "description": "The time window the underlying data covers. Distinct from publication time and expiration time. Schema does not compare timestamps; registries SHOULD reject `start > end` as `schema_violation` at runtime.",
+      "type": "object",
+      "required": ["start", "end"],
+      "properties": {
+        "start": { "$ref": "#/$defs/rfc3339_timestamp" },
+        "end": { "$ref": "#/$defs/rfc3339_timestamp" }
+      },
+      "additionalProperties": false
+    },
+
+    "visibility": {
+      "title": "Visibility",
+      "type": "string",
+      "enum": ["public", "restricted", "private"]
+    },
+
+    "context_type": {
+      "title": "Context Type",
+      "description": "Standard ACDP context types. Custom types use namespaced format like 'science:experiment-replication'.",
+      "type": "string",
+      "anyOf": [
+        { "enum": ["data_snapshot", "analysis", "prediction", "alert"] },
+        { "pattern": "^[a-z][a-z0-9_]*:[a-z][a-z0-9_-]*$" }
+      ]
+    },
+
+    "status": {
+      "title": "Context Status",
+      "description": "Derived by the registry from supersession queries and the clock. v0.0.1 emits one of 'active', 'superseded', 'expired'; future versions will add 'retracted' (RFC-ACDP-0009 §2.1) and possibly others. The pattern is open so that future status values do not break existing v0.0.1 consumers; v0.0.1 consumers MUST tolerate unknown status values and SHOULD treat them as 'active' (with logging) until they upgrade. See RFC-ACDP-0004 §4.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "minLength": 1,
+      "maxLength": 64,
+      "examples": ["active", "superseded", "expired"]
+    },
+
+    "match_summary": {
+      "title": "Context Summary in Search Response",
+      "description": "A lightweight projection of a context, used in search responses. lineage_id is required so consumers can deduplicate and group results by lineage without an extra retrieval round-trip.",
+      "type": "object",
+      "required": ["ctx_id", "lineage_id", "type", "agent_id", "title", "created_at", "status"],
+      "properties": {
+        "ctx_id": { "$ref": "#/$defs/ctx_id" },
+        "lineage_id": { "$ref": "#/$defs/lineage_id" },
+        "agent_id": { "$ref": "#/$defs/did" },
+        "title": { "type": "string" },
+        "summary": { "type": "string" },
+        "type": { "$ref": "#/$defs/context_type" },
+        "domain": { "type": "string" },
+        "created_at": { "$ref": "#/$defs/rfc3339_timestamp" },
+        "status": { "$ref": "#/$defs/status" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

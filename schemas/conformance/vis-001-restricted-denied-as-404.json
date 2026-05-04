@@ -1,0 +1,80 @@
+{
+  "id": "vis-001",
+  "description": "Restricted contexts MUST be returned as not_found (HTTP 404) to non-audience requesters, indistinguishable from genuinely missing contexts. visibility_denied is internal-only (RFC-ACDP-0008 §4.5); it is NOT in the wire-visible error enum.",
+  "tags": ["retrieval", "visibility", "leak-prevention"],
+  "setup": {
+    "context_published": {
+      "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-000000000001",
+      "agent_id": "did:agent:owner",
+      "visibility": "restricted",
+      "audience": ["did:agent:authorized_consumer"]
+    }
+  },
+  "scenarios": [
+    {
+      "name": "Producer (agent_id) requests own restricted context",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/acdp%3A%2F%2Fregistry.example.com%2F00000000-0000-4000-8000-000000000001",
+        "effective_requester_did": "did:agent:owner"
+      },
+      "expected": {
+        "status": 200
+      },
+      "notes": "Producer is always in the effective audience for their own contexts."
+    },
+    {
+      "name": "Authorized consumer (in audience) sees the context",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/acdp%3A%2F%2Fregistry.example.com%2F00000000-0000-4000-8000-000000000001",
+        "effective_requester_did": "did:agent:authorized_consumer"
+      },
+      "expected": {
+        "status": 200
+      }
+    },
+    {
+      "name": "Unauthorized consumer sees not_found (existence-leak prevention)",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/acdp%3A%2F%2Fregistry.example.com%2F00000000-0000-4000-8000-000000000001",
+        "effective_requester_did": "did:agent:other_consumer"
+      },
+      "expected": {
+        "status": 404,
+        "error_code": "not_found"
+      },
+      "notes": "MUST be 'not_found', not 'visibility_denied'. The latter is internal-only per RFC-ACDP-0008 §4.5 and is NOT in the wire enum (acdp-error.schema.json). Returning anything that distinguishes 'restricted but you cannot see it' from 'genuinely missing' would leak existence."
+    },
+    {
+      "name": "Unauthorized consumer requests genuinely non-existent ctx_id",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/acdp%3A%2F%2Fregistry.example.com%2F00000000-0000-4000-8000-000000000000",
+        "effective_requester_did": "did:agent:other_consumer"
+      },
+      "expected": {
+        "status": 404,
+        "error_code": "not_found"
+      },
+      "notes": "This response MUST be byte-indistinguishable from the previous scenario (timing differences, response-size differences, error-code differences all leak existence)."
+    },
+    {
+      "name": "Contributor (NOT in audience) requests restricted context",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/acdp%3A%2F%2Fregistry.example.com%2F00000000-0000-4000-8000-000000000001",
+        "effective_requester_did": "did:agent:listed_contributor",
+        "context_subset_for_test": {
+          "contributors": ["did:agent:listed_contributor"]
+        }
+      },
+      "expected": {
+        "status": 404,
+        "error_code": "not_found"
+      },
+      "notes": "Contributors are NOT auto-authorized (RFC-ACDP-0002 §7, RFC-ACDP-0008 §4.5). To grant a contributor read access, the producer MUST list the DID in audience explicitly. Listing in contributors alone does NOT grant read access."
+    }
+  ]
+}

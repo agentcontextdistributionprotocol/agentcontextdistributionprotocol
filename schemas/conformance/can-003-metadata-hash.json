@@ -1,0 +1,33 @@
+{
+  "id": "can-003",
+  "description": "Metadata field canonicalization. Demonstrates that nested object keys are also sorted by JCS, and that producer-defined metadata is part of the signed body.",
+  "tags": ["happy-path", "canonicalization", "hashing", "metadata"],
+  "vectors": [
+    {
+      "name": "Body with metadata canonicalization and SHA-256",
+      "description": "Producer-supplied body with a metadata object. Inside metadata, keys 'sample_size' and 'score' are sorted lexicographically.",
+      "input": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:agent:test",
+        "contributors": [],
+        "title": "Analysis with metadata",
+        "type": "analysis",
+        "data_refs": [],
+        "metadata": {
+          "sample_size": 100,
+          "score": 0.85
+        }
+      },
+      "expected": {
+        "canonical_form": "{\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_refs\":[],\"metadata\":{\"sample_size\":100,\"score\":0.85},\"supersedes\":null,\"title\":\"Analysis with metadata\",\"type\":\"analysis\",\"version\":1}",
+        "sha256_hex": "bb06c215d1cb8b7e70b190530e1f6e1297668e8405f5a4f5166304c7f08db689",
+        "content_hash_field_value": "sha256:bb06c215d1cb8b7e70b190530e1f6e1297668e8405f5a4f5166304c7f08db689"
+      },
+      "implementer_notes": [
+        "JCS sorts object keys at every nesting level. Implementations that only sort top-level keys will produce the wrong hash for any body with nested objects.",
+        "0.85 in the canonical form is exact and within IEEE-754 double precision. Producers using arbitrary-precision decimals MUST coerce to double before signing."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "body": {
+    "ctx_id": "acdp://registry.example.com/cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    "lineage_id": "lin:sha256:b6f2a4ad04dee8f93c4ad58ed26f24ed6f6321ec128d28dd55906c6a1d1efe21",
+    "version": 1,
+    "supersedes": null,
+    "agent_id": "did:web:agents.example.com:research-lab",
+    "contributors": [
+      "did:web:agents.example.com:peer-reviewer"
+    ],
+    "origin_registry": "registry.example.com",
+    "created_at": "2026-04-16T11:00:00.000Z",
+    "content_hash": "sha256:e3c7f0a4f1c2d8a7e9f6b3c0d1e2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0",
+    "signature": {
+      "algorithm": "ed25519",
+      "key_id": "did:web:agents.example.com:research-lab#key-1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    "title": "Q1 Drug Trial Interim Analysis (Confidential)",
+    "type": "analysis",
+    "domain": "clinical_research",
+    "data_refs": [
+      {
+        "type": "primary_result",
+        "location": "s3://clinical-trials-restricted/q1-2026/interim.parquet",
+        "description": "Patient-level interim outcomes (HIPAA-protected).",
+        "size_bytes": 2400000,
+        "format": "parquet"
+      }
+    ],
+    "derived_from": [],
+    "tags": ["clinical", "interim", "phase-2"],
+    "visibility": "restricted",
+    "audience": [
+      "did:web:agents.example.com:trial-sponsor",
+      "did:web:agents.example.com:regulatory-affairs",
+      "did:web:agents.example.com:safety-board"
+    ],
+    "summary": "Interim analysis for Trial XYZ-2026; restricted to sponsor, regulatory, and safety reviewers.",
+    "data_period": {
+      "start": "2026-01-01T00:00:00.000Z",
+      "end": "2026-03-31T23:59:59.999Z"
+    },
+    "expires_at": "2026-10-16T00:00:00.000Z"
+  },
+  "registry_state": {
+    "status": "active"
+  }
+}

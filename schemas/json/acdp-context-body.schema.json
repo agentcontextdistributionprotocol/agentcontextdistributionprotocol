@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.0.1/acdp-context-body.schema.json",
+  "title": "ACDP Context Body",
+  "description": "The immutable Body of an ACDP context. Contains producer-controlled fields (covered by the producer signature) plus registry-assigned identity fields (ctx_id, lineage_id, origin_registry, created_at — not covered by the producer signature). All fields are set at publish time and never change. The hash/signature preimage is ProducerContent: the Body with content_hash, signature, and registry-assigned identity fields removed. See RFC-ACDP-0001 §2 and §5.7. additionalProperties is true (open) because this schema is used for retrieval validation, and consumers MUST tolerate unknown fields for forward compatibility (RFC-ACDP-0001 §9, RFC-ACDP-0002 §9.3). Publish requests use a separate closed schema (acdp-publish-request.schema.json).",
+
+  "type": "object",
+  "required": [
+    "ctx_id",
+    "lineage_id",
+    "version",
+    "supersedes",
+    "agent_id",
+    "contributors",
+    "origin_registry",
+    "created_at",
+    "content_hash",
+    "signature",
+    "title",
+    "type",
+    "data_refs",
+    "derived_from",
+    "visibility"
+  ],
+  "properties": {
+    "ctx_id": {
+      "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/ctx_id",
+      "description": "Globally unique URI assigned by the registry at publish time. Producers MUST NOT supply this in publish requests."
+    },
+    "lineage_id": {
+      "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/lineage_id",
+      "description": "Deterministically derived from the first version's ctx_id."
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Monotonic version within the lineage. 1 for first version."
+    },
+    "supersedes": {
+      "description": "ctx_id of the previous version, or null for first version.",
+      "oneOf": [
+        { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/ctx_id" },
+        { "type": "null" }
+      ]
+    },
+    "agent_id": {
+      "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/did",
+      "description": "DID of the single signing identity. The agent responsible for the content."
+    },
+    "contributors": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/did" },
+      "uniqueItems": true,
+      "maxItems": 100,
+      "description": "DIDs of agents that contributed but did not sign. May be empty."
+    },
+    "origin_registry": {
+      "type": "string",
+      "format": "hostname",
+      "description": "DNS hostname of the registry that originally accepted this context."
+    },
+    "created_at": {
+      "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/rfc3339_timestamp",
+      "description": "Timestamp of registry acceptance."
+    },
+    "content_hash": {
+      "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/content_hash",
+      "description": "SHA-256 of the JCS-canonicalized body, with signature and registry-assigned fields excluded."
+    },
+    "signature": {
+      "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/signature",
+      "description": "Producer's detached signature over content_hash."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "description": "Short human-readable title."
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 5000,
+      "description": "Longer human-readable description."
+    },
+    "type": {
+      "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/context_type"
+    },
+    "domain": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Subject domain identifier. Free-form."
+    },
+    "schema_uri": {
+      "type": "string",
+      "format": "uri",
+      "description": "URI of a JSON Schema describing the shape of metadata."
+    },
+    "data_refs": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-data-ref.schema.json" },
+      "description": "References to the data this context describes."
+    },
+    "derived_from": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/ctx_id" },
+      "uniqueItems": true,
+      "maxItems": 1000,
+      "description": "ctx_ids of contexts whose content directly informed this one. Set at publish time, signed, immutable."
+    },
+    "tags": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/tag" },
+      "uniqueItems": true,
+      "maxItems": 200,
+      "description": "Free-form tags for keyword discovery."
+    },
+    "data_period": {
+      "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/data_period",
+      "description": "Time window the data covers. Distinct from created_at and expires_at."
+    },
+    "expires_at": {
+      "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/rfc3339_timestamp",
+      "description": "When the context's conclusions should no longer be relied upon."
+    },
+    "visibility": {
+      "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/visibility"
+    },
+    "audience": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/did" },
+      "uniqueItems": true,
+      "maxItems": 1000,
+      "description": "Required if visibility is 'restricted'. Array of DIDs that can discover this context."
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Short producer-supplied summary for search results."
+    },
+    "metadata": {
+      "type": "object",
+      "maxProperties": 100,
+      "description": "Producer-specific structured payload. Shape SHOULD be bound by schema_uri. Capped at 100 top-level properties, max 8 levels of nesting, max 64 KB serialized size (the latter two are runtime checks; see RFC-ACDP-0002 §3.3).",
+      "additionalProperties": true
+    },
+    "acdp_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Optional. ACDP protocol version this body was authored under. Absent value MUST be treated as '0.0.1'. Producer-signed (part of the content_hash). See RFC-ACDP-0001 §6."
+    }
+  },
+  "additionalProperties": true,
+  "allOf": [
+    {
+      "if": { "properties": { "visibility": { "const": "restricted" } } },
+      "then": {
+        "required": ["audience"],
+        "properties": {
+          "audience": { "minItems": 1 }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "version": { "const": 1 } } },
+      "then": { "properties": { "supersedes": { "type": "null" } } }
+    },
+    {
+      "if": { "properties": { "version": { "type": "integer", "minimum": 2 } } },
+      "then": {
+        "properties": {
+          "supersedes": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/ctx_id" }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "visibility": { "const": "public" } } },
+      "then": {
+        "anyOf": [
+          { "not": { "required": ["audience"] } },
+          { "properties": { "audience": { "maxItems": 0 } } }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "id": "pub-001",
+  "description": "Producer signature does not verify against the resolved key. Registry MUST reject with invalid_signature (HTTP 400). The body content is otherwise well-formed and the content_hash recomputes correctly; only the signature.value is wrong.",
+  "tags": ["failure", "security", "publish"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "body": {
+      "version": 1,
+      "supersedes": null,
+      "agent_id": "did:web:agents.example.com:test-producer",
+      "contributors": [],
+      "content_hash": "sha256:793df0a80cb9f8a053d338fa615c24944b6015430d764b7c2584c0185f9bbf42",
+      "signature": {
+        "algorithm": "ed25519",
+        "key_id": "did:web:agents.example.com:test-producer#key-1",
+        "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+      },
+      "title": "Minimal",
+      "type": "data_snapshot",
+      "data_refs": [],
+      "derived_from": [],
+      "visibility": "public"
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 400,
+    "error_code": "invalid_signature"
+  }
+}

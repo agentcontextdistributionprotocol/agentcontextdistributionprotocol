@@ -1,0 +1,35 @@
+{
+  "body": {
+    "ctx_id": "acdp://registry.example.com/dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    "lineage_id": "lin:sha256:f3a8c4d2b6e9105f4a7c8d1e2b3a4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b",
+    "version": 1,
+    "supersedes": null,
+    "agent_id": "did:web:agents.example.com:internal-tools",
+    "contributors": [
+      "did:web:agents.example.com:platform-team"
+    ],
+    "origin_registry": "registry.example.com",
+    "created_at": "2026-04-16T12:30:00.000Z",
+    "content_hash": "sha256:b8e7c0d1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9",
+    "signature": {
+      "algorithm": "ed25519",
+      "key_id": "did:web:agents.example.com:internal-tools#key-1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    "title": "Internal staging-environment health snapshot",
+    "type": "data_snapshot",
+    "domain": "ops",
+    "data_refs": [],
+    "derived_from": [],
+    "tags": ["staging", "internal"],
+    "visibility": "private",
+    "summary": "Producer-only snapshot. The contributor 'platform-team' is credited for attribution but is NOT auto-authorized to retrieve this context (RFC-ACDP-0002 §7).",
+    "metadata": {
+      "ok": true,
+      "uptime_seconds": 86400
+    }
+  },
+  "registry_state": {
+    "status": "active"
+  }
+}
