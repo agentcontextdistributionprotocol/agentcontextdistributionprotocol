@@ -236,7 +236,7 @@ A registry MUST scope keyword and similarity results identically. A registry MUS
 See [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md). Specific to discovery:
 
 - Embeddings can leak information about underlying content. Producers publishing restricted/private contexts SHOULD NOT include embeddings unless the registry's similarity index respects visibility constraints.
-- Registries MUST scope similarity search results by the requesting agent's effective audience (RFC-ACDP-0008 §3.5).
+- Registries MUST scope similarity search results by the requesting agent's effective audience (RFC-ACDP-0008 §4.5).
 - `total_estimate` is informational and SHOULD NOT be relied upon for exact counts.
 - Cross-registry discovery is out of scope for v0.0.1; consumers wishing to search across registries MUST query each registry separately.
 

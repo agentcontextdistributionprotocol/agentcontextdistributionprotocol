@@ -19,7 +19,7 @@ Run once to install dev dependencies:
 make bootstrap
 ```
 
-This installs `ajv-cli` (Node.js, for JSON Schema validation) and Python packages (`jcs`, `cryptography`, `jsonschema`, `referencing`) for the conformance runner.
+This installs `ajv-cli` (Node.js, for JSON Schema validation) and Python packages (`jcs`, `cryptography`) for the conformance runner.
 
 Once bootstrapped:
 
@@ -56,7 +56,7 @@ Breaking changes require:
 
 ## Registry additions
 
-To add an entry to a registry (`registries/context-types.md`, `registries/error-codes.md`, `registries/media-types.md`, `registries/locator-schemes.md`), submit a PR adding a row to the relevant table. Each entry MUST include a `Status` (`Proposed`, `Provisional`, `Stable`, `Deprecated`). New identifiers MUST NOT conflict with existing entries.
+To add an entry to a registry under `registries/` (`auth-methods.md`, `context-types.md`, `error-codes.md`, `locator-schemes.md`, `media-types.md`, `profiles.md`, `signature-algorithms.md`), submit a PR adding a row to the relevant table. Each entry MUST include a `Status` (`Proposed`, `Provisional`, `Stable`, `Deprecated`). New identifiers MUST NOT conflict with existing entries.
 
 ## Technical requirements
 

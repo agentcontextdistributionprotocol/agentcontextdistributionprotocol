@@ -7,8 +7,10 @@ ACDP evolves through RFCs (Request for Comments). This document describes the pr
 ## RFC Lifecycle
 
 ```
-Idea → Draft → Review → Final Comment Period → Accepted | Rejected
+Idea → Draft → Review → Final Comment Period → Release Candidate N → Final | Rejected
 ```
+
+`Reserved` is a sidebar state for RFCs whose number is pinned with no normative text yet (e.g. RFC-ACDP-0009). The status names below MUST match the ladder in [VERSIONING.md](../VERSIONING.md).
 
 ### Stages
 
@@ -27,9 +29,21 @@ Idea → Draft → Review → Final Comment Period → Accepted | Rejected
 - No new substantive changes during FCP.
 - Core team votes.
 
-**Accepted**
-- RFC is merged.
-- Corresponding spec changes (schemas, protos, registries, examples) are tracked in the RFC and shipped together.
+**Release Candidate N**
+- A specific candidate (`rc1`, `rc2`, …) intended for implementation testing.
+- The RFC `Version:` header carries the `-rcN` suffix (e.g. `0.0.1-rc1`).
+- Backward-incompatible changes remain possible until `Final`; editorial fixes are expected.
+- Implementations MAY ship against an RC, but MUST be prepared for breaking changes before `Final`.
+
+**Final**
+- RFC is merged at its bare semver version (no `-rcN` suffix).
+- Corresponding spec changes (schemas, registries, examples) are shipped together.
+- Subsequent breaking changes require a new RFC and a version bump.
+
+**Reserved** *(sidebar state)*
+- RFC number is pinned but contains no normative text.
+- `Version:` header carries the `-reserved` suffix (e.g. `0.0.1-reserved`).
+- Implementations MUST NOT depend on identifiers reserved here until promoted out of `Reserved`.
 
 **Rejected**
 - PR is closed with explanation.
@@ -91,7 +105,7 @@ What does NOT require an RFC:
 - Adding conformance fixtures.
 - Adding examples.
 - Updating `docs/`.
-- Adding entries to `registries/locator-schemes.md` (registry-additive change with maintainer approval).
+- Adding entries to any open-vocabulary registry under `registries/` (registry-additive change with maintainer approval).
 
 ---
 

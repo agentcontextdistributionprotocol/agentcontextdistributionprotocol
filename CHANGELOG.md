@@ -4,6 +4,28 @@
 
 ACDP v0.0.1, final. Builds on rc1 with a closing pass on real bugs, citation accuracy, and terminology precision.
 
+### Post-ship audit pass (Taudit-1..7)
+
+A full re-audit of the v0.0.1 repository against the published RFCs found seven real inconsistencies that survived the earlier cleanup rounds. All checks remain green: `make validate` 30/30, conformance runner 14/14. No schema, no wire-shape, and no example/fixture changes — purely citation, governance, and tooling alignment.
+
+- **Taudit-1:** RFC-0003 §2.1 step 12 — fixed dangling `RFC-ACDP-0008 §6.4` reference (§6 only has 6.1–6.3); the contributors-not-auto-authorized text lives in `§4.5`.
+- **Taudit-2:** RFC-0005 §6 — `RFC-ACDP-0008 §3.5` pointed at a table row, not a normative subsection. Repointed to `§4.5` (the visibility-enforcement MUST that the citation is actually invoking).
+- **Taudit-3:** RFC-0009 §2.7 — fixed dangling `RFC-ACDP-0008 §10.1` reference (§10 is References); the producer-signature-binding-gap discussion lives in `§9.1`.
+- **Taudit-4:** governance/GOVERNANCE.md — RFC lifecycle now includes `Release Candidate N` between FCP and Final; Registry Authority section now lists all seven registries (was four; missing `auth-methods`, `profiles`, `signature-algorithms` added in earlier iterations).
+- **Taudit-5:** governance/RFC-PROCESS.md — added `Release Candidate N` stage and `Reserved` sidebar state; renamed terminal stage `Accepted` → `Final` to match VERSIONING.md and GOVERNANCE.md; broadened "What does NOT require an RFC" registry-additive bullet from `locator-schemes.md` only to any `registries/` open-vocabulary registry.
+- **Taudit-6:** CONTRIBUTING.md — Registry additions section now lists all seven registries (was four).
+- **Taudit-7:** CI tooling alignment — `requirements-dev.txt` trimmed from `{jcs, cryptography, jsonschema, referencing}` to `{jcs, cryptography}` (the conformance runner only imports the latter two; `jsonschema`/`referencing` were never used). CI workflow now installs from `requirements-dev.txt` (was hardcoded `pip install jcs cryptography`) so CI and `make bootstrap` cannot drift apart. CONTRIBUTING.md `make bootstrap` description updated to match.
+- **Taudit-8:** RFC-0002 §6 numbering — closed the gap between `### 6.3 Embedded Form` and `### 6.5 Visibility scope` by renumbering §6.5 → §6.4 and §6.6 → §6.5. Section §6 is now contiguous (6.1–6.5). Updated the one in-RFC backreference (`see §6.5` → `see §6.4`). No external references existed (the cross-RFC audit pass confirmed); CHANGELOG entries TB6 and Tfinal-B3 still cite the historical `§6.5`/`§6.6` numbers, but CHANGELOG is intentionally a frozen historical record.
+- **Taudit-9:** registries/error-codes.md — fixed broken anchor in the `immutable_field` row link to RFC-0009. The actual heading is `### 2.1 Retraction & lifecycle events *(likely v0.1)*`; the GitHub-flavored anchor is `#21-retraction--lifecycle-events-likely-v01` (the `(likely v0.1)` suffix is part of the heading and so part of the anchor).
+- **Taudit-10:** rfcs/README.md — RFC lifecycle prose said `Draft → Review → Final Comment Period → Accepted`, contradicting the ladder this audit pass aligned in governance/RFC-PROCESS.md (Taudit-5). Updated to `Draft → Review → Final Comment Period → Release Candidate N → Final` with `Reserved` mentioned as a sidebar state, matching VERSIONING.md and RFC-PROCESS.md.
+
+**Deeper passes that came back clean:** internal §X.Y references within each RFC (38 references across 9 RFCs); JSON Schema $id/$ref integrity (13 schemas, 15 $defs in `acdp-common`, all $refs resolve, no orphan $defs, `acdp-index.schema.json` is an active schema-discovery document); numeric-constant agreement across RFC text + schemas + capabilities example + registries (15 constants — embedded data 64 KB, metadata maxProperties 100, depth 8, serialized 64 KB, max_top_k 100, max_embedding_dimensions 4096, idempotency TTL [86400, 604800], signature value length 88, clock skew ±60s, cursor ≥1h, content_hash/lineage_id/ctx_id formats — all match); manifesto matches v0.0.1 shipped scope (deferred features correctly attributed to RFC-0009).
+
+False positives that did NOT need fixing (verified directly):
+
+- The `acdp-publish-request.schema.json` rule `{"if": {version: 1}, "then": {"not": {"required": ["lineage_id"]}}}` was claimed to be too permissive. ajv confirms it correctly rejects `pub-004-first-version-with-lineage.json` at `#/allOf/4/then/not` — the `not required` pattern does forbid the field.
+- `registries/locator-schemes.md` was flagged for missing `acdp://` and `lin:sha256:`. That registry is scoped to `data_refs[].location` schemes only (RFC-0002 §6.2); `acdp://` ctx_ids and `lin:sha256:` lineage_ids are identifiers, not data references.
+
 ### v0.0.1-rc1 → v0.0.1 (final pre-ship pass)
 
 - **Tv1-1:** Fixed RFC-0001 §4 registry role summary — hash recomputation now shown before signature verification.

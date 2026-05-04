@@ -63,7 +63,7 @@ A future ACDP version will introduce **registry receipts**: registry-signed atte
 
 #### Motivation
 
-ACDP v0.0.1 producer signatures bind producer-controlled content but do not bind `ctx_id`, `lineage_id`, `origin_registry`, or `created_at`. See RFC-ACDP-0008 §10.1 for the full discussion.
+ACDP v0.0.1 producer signatures bind producer-controlled content but do not bind `ctx_id`, `lineage_id`, `origin_registry`, or `created_at`. See RFC-ACDP-0008 §9.1 for the full discussion.
 
 #### Reserved structure
 

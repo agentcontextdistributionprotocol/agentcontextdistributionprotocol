@@ -22,18 +22,21 @@ Maintainers are responsible for:
 
 ## RFC Lifecycle
 
-`Draft → Review → Final Comment Period → Final` (or `Rejected`).
+`Draft → Review → Final Comment Period → Release Candidate N → Final` (or `Rejected`). `Reserved` is a sidebar state for placeholder RFCs (e.g. RFC-ACDP-0009).
 
-Status MUST be reflected in the RFC document header. See [RFC-PROCESS.md](RFC-PROCESS.md).
+Status MUST be reflected in the RFC document header and SHOULD match the ladder in [VERSIONING.md](../VERSIONING.md). See [RFC-PROCESS.md](RFC-PROCESS.md).
 
 ## Registry Authority
 
-The project maintains four registries under [`registries/`](../registries/):
+The project maintains the following registries under [`registries/`](../registries/):
 
+- Auth methods (`registries/auth-methods.md`)
 - Context types (`registries/context-types.md`)
 - Error codes (`registries/error-codes.md`)
-- Media types (`registries/media-types.md`)
 - Locator schemes (`registries/locator-schemes.md`)
+- Media types (`registries/media-types.md`)
+- Profiles (`registries/profiles.md`)
+- Signature algorithms (`registries/signature-algorithms.md`)
 
 Experimental identifiers SHOULD use reverse-domain notation (e.g. `com.example.feature`).
 

@@ -47,7 +47,7 @@ The registry MUST execute the following steps in order:
     - For subsequent versions, walk back through `supersedes` to find the version-1 `ctx_id` and apply the same formula.
     - If the producer supplied `lineage_id`, verify it matches the computed value; on mismatch, return `superseded_target` (HTTP 400).
 11. **Supersession validation.** If `supersedes` is non-null, validate per §3 below.
-12. **Visibility validation.** If `visibility = "restricted"`, verify `audience` is a non-empty array of DIDs. If `visibility = "private"`, the registry MUST treat **only `agent_id`** plus any DIDs explicitly listed in `audience` (if present) as authorized; **`contributors` are NOT auto-authorized** — `contributors` is for attribution, not authorization (see RFC-ACDP-0008 §6.4).
+12. **Visibility validation.** If `visibility = "restricted"`, verify `audience` is a non-empty array of DIDs. If `visibility = "private"`, the registry MUST treat **only `agent_id`** plus any DIDs explicitly listed in `audience` (if present) as authorized; **`contributors` are NOT auto-authorized** — `contributors` is for attribution, not authorization (see RFC-ACDP-0008 §4.5).
 13. **Persistence.** Persist the body. Initialize the derived `status` per RFC-ACDP-0004 §4.
 14. **Response.** Return a publish response (§4).
 

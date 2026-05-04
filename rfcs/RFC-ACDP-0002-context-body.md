@@ -207,7 +207,7 @@ When `content_hash` is present on an embedded data reference, it is computed ove
 - For `encoding: "utf8"`: over the bytes of the UTF-8 encoding.
 - For `encoding: "json"`: over the bytes of the JCS-canonicalized form.
 
-### 6.5 Visibility scope
+### 6.4 Visibility scope
 
 ACDP `visibility` (§7) protects access to the **registry record**: the body and any indexes the registry maintains. It does **NOT** control access to external data referenced by `data_refs[].location`.
 
@@ -217,7 +217,7 @@ Producers requiring true end-to-end visibility on data MUST ensure the reference
 
 For embedded `data_refs` (where `content` is in the body itself), visibility applies fully because the content is part of the registry record.
 
-### 6.6 Transport security for data_refs
+### 6.5 Transport security for data_refs
 
 For `data_refs[].location` values that are URIs (URL form per §6.2):
 
@@ -245,7 +245,7 @@ Retrieval by a requester who is not in the effective audience for a `restricted`
 
 ACDP does not enforce access control on data referenced by `data_refs`. The visibility field affects metadata discoverability through the registry; the underlying data store enforces its own access control.
 
-> **Visibility scope reminder.** Visibility protects the registry record (body and indexes). External data targets in `data_refs` are governed by their own ACLs (see §6.5).
+> **Visibility scope reminder.** Visibility protects the registry record (body and indexes). External data targets in `data_refs` are governed by their own ACLs (see §6.4).
 
 ### 7.1 Visibility is permanent for a given body
 

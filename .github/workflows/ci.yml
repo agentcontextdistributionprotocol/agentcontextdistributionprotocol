@@ -38,7 +38,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install conformance runner dependencies
-        run: pip install jcs cryptography
+        run: pip install -r requirements-dev.txt
 
       - name: Run executable conformance vectors
         run: python3 scripts/conformance-runner.py

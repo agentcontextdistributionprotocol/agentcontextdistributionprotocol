@@ -33,4 +33,4 @@ Reserved (no normative text, numbering pinned for future work):
 
 ## RFC lifecycle
 
-`Draft → Review → Final Comment Period → Accepted` (or `Rejected`). See [governance/RFC-PROCESS.md](../governance/RFC-PROCESS.md).
+`Draft → Review → Final Comment Period → Release Candidate N → Final` (or `Rejected`). `Reserved` is a sidebar state for placeholder RFCs (e.g. RFC-ACDP-0009). See [governance/RFC-PROCESS.md](../governance/RFC-PROCESS.md) and [VERSIONING.md](../VERSIONING.md).
