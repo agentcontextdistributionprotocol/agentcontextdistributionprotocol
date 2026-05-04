@@ -93,11 +93,11 @@ See [docs/non-goals.md](../docs/non-goals.md) for the full non-goals list and ra
 └──────────────┬─────────────┘                └──────────────┬─────────────┘
                │ POST /contexts (signed body)                │
                ▼                                             │
-       ┌──────────────────────┐                              │
-       │  ACDP Registry       │                              │
-       │  did:web:reg.example │  ◀──── GET /contexts/{ctx_id}┘
-       │  /.well-known/acdp   │  (body + registry_state)
-       └──────────────────────┘
+       ┌──────────────────────────┐                          │
+       │  ACDP Registry           │                          │
+       │  did:web:reg.example     │  ◀──── GET /contexts/{ctx_id}┘
+       │  /.well-known/acdp.json  │  (body + registry_state)
+       └──────────────────────────┘
                  │
                  │ verify producer signature locally,
                  │ walk derived_from → cross-registry resolves
@@ -174,7 +174,11 @@ lineage_id = "lin:sha256:" + lowercase_hex(SHA-256(first_version_ctx_id))
 
 The hash input is the UTF-8 encoding of the `ctx_id` string. The `sha256` algorithm prefix is fixed in v0.0.1; future ACDP versions MAY introduce additional algorithms (`lin:sha3-256:...`, `lin:blake3:...`) for new lineages without invalidating existing v0.0.1 `lin:sha256:` identifiers. Consumers MUST NOT compare lineage_ids across different algorithm prefixes.
 
-For first versions, the registry computes `lineage_id` from the `ctx_id` it just assigned. For subsequent versions, the registry MUST walk back through `supersedes` references to find the version 1 context and apply the same formula. If a producer supplied a `lineage_id` in the publish request, the registry MUST verify it matches this computed value, and MUST reject the publication on mismatch with `superseded_target` (see RFC-ACDP-0007 error registry).
+For first versions, the registry computes `lineage_id` from the `ctx_id` it just assigned. For subsequent versions, the registry MUST walk back through `supersedes` references to find the version 1 context and apply the same formula.
+
+A producer publishing a first version (`supersedes: null`) MUST NOT include `lineage_id` in the publish request — the producer cannot know the registry-assigned `ctx_id` at signing time, so any supplied value would be a guess. Registries MUST reject first-version requests containing `lineage_id` with `schema_violation` (RFC-ACDP-0003 §2.2).
+
+A producer publishing a subsequent version (`supersedes != null`) MAY include `lineage_id` for self-verification. If supplied, the registry MUST verify it matches the deterministically-derived value and MUST reject mismatches with `superseded_target` (`details.reason = "lineage_mismatch"`, RFC-ACDP-0003 §3.1 step 4).
 
 ### 5.7 Content Hash
 
@@ -249,7 +253,9 @@ The resolution algorithm:
    - Construct the URL: `https://<authority>/.well-known/did.json` for a bare `did:web:<authority>`, or `https://<authority>/<path-with-colons-replaced-by-slashes>/did.json` for a path-bearing form.
    - HTTPS is REQUIRED; HTTP requests MUST NOT be made. The certificate MUST be valid.
    - The response MUST be a JSON object with `Content-Type: application/did+json` (or `application/json`).
-   - Failure to fetch (DNS, TLS, HTTP non-2xx, parse error) MUST be reported as `key_resolution_failed`.
+   - Failures are classified as transient or permanent and reported with distinct error codes:
+     - **Transient** (network or upstream-availability): DNS resolution failure, TLS handshake failure, HTTP non-2xx response, or timeout fetching the DID document. MUST be reported as `key_resolution_unreachable` (HTTP 502). These are typically retryable.
+     - **Permanent** (the upstream document is malformed or does not authorize the requested key): JSON parse error of the fetched document, missing fragment in `signature.key_id`, or no `verificationMethod` matches the requested fragment. MUST be reported as `key_resolution_failed` (HTTP 400). These are not retryable without producer-side action (republish with a corrected `key_id`, fix the DID document, etc.).
 
 4. **Locate the verification method.** The DID document's `verificationMethod` array contains key entries. Find the entry whose `id` ends with `#<fragment>` (matching the parsed fragment from step 1). If no entry matches, return `key_resolution_failed`.
 
@@ -362,8 +368,8 @@ Adds keyword search. Implementations MUST:
 Adds cross-registry resolution. Implementations MUST:
 
 - Be `acdp-registry-core` conformant.
-- Resolve `acdp://` references in `derived_from` chains per RFC-ACDP-0006 §4.
-- Verify the upstream registry's DID at resolution time: fetch `https://<authority>/.well-known/acdp.json`, extract `registry_did`, resolve the DID document, and confirm the DID's web binding matches `<authority>`. On mismatch, treat the cross-registry resolution as failed and return `cross_registry_resolution_failed` (RFC-ACDP-0007).
+- Resolve `acdp://` references in `derived_from` chains per RFC-ACDP-0006 §4.1 (and apply the trust model in §4.2 and caching guidance in §4.3).
+- Verify the upstream registry's DID at resolution time per RFC-ACDP-0006 §4.1 step 3: fetch `https://<authority>/.well-known/acdp.json`, extract `registry_did`, resolve the DID document, and confirm the DID's web binding matches `<authority>`. On mismatch, treat the cross-registry resolution as failed and return `cross_registry_resolution_failed` (defined in RFC-ACDP-0007 §5; emitted per RFC-ACDP-0006 §7).
 - Implement SSRF protections per RFC-ACDP-0006 §7 (IP-range filtering, HTTPS-only, response/timeout caps, redirect cap, DNS-rebinding pin).
 
 #### `acdp-consumer`

@@ -107,6 +107,12 @@ Future versions of ACDP will add post-publication relationships (third-party `bu
 | `visibility` | string | Yes | One of `public`, `restricted`, `private`. |
 | `audience` | array of string | Conditional | REQUIRED if `visibility` is `restricted`. Array of DIDs. |
 
+### 3.8 Compatibility Fields
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `acdp_version` | string | No | The ACDP body protocol version this body conforms to. Form: `<major>.<minor>.<patch>`. Producer-supplied and producer-signed (part of ProducerContent — RFC-ACDP-0001 §2, §5.7). An absent field MUST be treated as `"0.0.1"`. v0.1+ producers SHOULD set the field explicitly so verifiers can apply the correct exclusion set and algorithm vocabulary. See RFC-ACDP-0001 §6. |
+
 ---
 
 ## 4. Identity, Versioning, and Lineage

@@ -58,7 +58,7 @@
       "minItems": 1,
       "uniqueItems": true,
       "contains": { "const": "did:web" },
-      "description": "DID methods this registry can resolve. MUST contain 'did:web' (RFC-ACDP-0008 §4.7). Examples: 'did:web', 'did:key'."
+      "description": "DID methods this registry can resolve. MUST contain 'did:web' (RFC-ACDP-0001 §5.4, §5.11). Examples: 'did:web', 'did:key'."
     },
     "supports_idempotency_key": {
       "type": "boolean",

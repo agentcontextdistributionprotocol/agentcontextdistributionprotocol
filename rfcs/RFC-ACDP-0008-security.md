@@ -105,6 +105,7 @@ The threat surface is therefore: **the entire path from producer's signing key, 
 
 - Consumers resolving `acdp://` references MUST verify the producing agent's signature on every retrieved context. They MUST NOT trust the serving registry to vouch for context authenticity. Registry trust extends only to availability.
 - DNS spoofing or registry compromise MUST NOT be sufficient to forge a context — the producer's signature is the trust anchor.
+- When `acdp://` resolution is performed server-side (e.g., on a registry advertising the `acdp-registry-federated` profile), the resolving party MUST verify the upstream registry's DID per RFC-ACDP-0006 §4.1 step 3 (fetch `https://<authority>/.well-known/acdp.json`, extract `registry_did`, resolve the DID document, and confirm the DID's web binding matches `<authority>`). Mismatch MUST result in `cross_registry_resolution_failed`. Server-side resolution MUST also apply the SSRF protections of RFC-ACDP-0006 §7. Consumers performing client-side resolution SHOULD apply the same checks.
 
 ---
 
