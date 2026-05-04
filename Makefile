@@ -84,7 +84,7 @@ install-tools:
 install-python-deps:
 	@echo "Installing Python conformance-runner dependencies..."
 	@if command -v pip3 >/dev/null 2>&1; then \
-		pip3 install --user --quiet -r requirements-dev.txt; \
+		pip3 install --quiet -r requirements-dev.txt; \
 	else \
 		echo "ERROR: pip3 required"; exit 1; \
 	fi
