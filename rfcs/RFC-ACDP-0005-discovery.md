@@ -21,6 +21,8 @@ This document is a Draft. Backward-incompatible changes remain possible until Fi
 GET /contexts/search
 ```
 
+This endpoint is part of the `acdp-registry-discovery` profile (RFC-ACDP-0001 §9.1). A registry that does not declare `acdp-registry-discovery` in its `profiles` capability MUST return `not_implemented` (HTTP 501) with the standard error envelope when this endpoint is requested.
+
 ### 2.1 Query parameters
 
 | Parameter | Type | Description |

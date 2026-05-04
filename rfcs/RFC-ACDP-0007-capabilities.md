@@ -41,7 +41,7 @@ Returns the registry's capability declaration. Conforms to [`schemas/json/acdp-c
 | `acdp_version` | string | The ACDP specification version this registry implements. Form: `<major>.<minor>.<patch>`. |
 | `registry_did` | string | The registry's own DID, typically `did:web:<hostname>`. |
 | `supported_signature_algorithms` | array of string | Signature algorithms accepted on publish. MUST contain at least `"ed25519"`. |
-| `supported_did_methods` | array of string | DID methods this registry can resolve. MUST be non-empty and MUST include `"did:web"`. See RFC-ACDP-0008 §4.7. |
+| `supported_did_methods` | array of string | DID methods this registry can resolve. MUST be non-empty and MUST include `"did:web"` (RFC-ACDP-0001 §5.4 mandates `did:web` for v0.0.1 producers; RFC-ACDP-0001 §5.11 specifies the resolution algorithm). |
 | `profiles` | array of string | Profile(s) this implementation claims conformance to. Any registry MUST declare at least `"acdp-registry-core"`. See RFC-ACDP-0001 §9. |
 | `limits.max_payload_bytes` | integer | Maximum size of a publish request body in bytes. |
 | `limits.max_embedded_bytes` | integer | Maximum decoded size of any embedded data reference. **Fixed at 65536 by the spec.** |
@@ -124,17 +124,17 @@ The full registry is maintained in [`registries/error-codes.md`](../registries/e
 | `invalid_signature` | 400 | Signature verification failed. | RFC-ACDP-0001 §5.8, RFC-ACDP-0003 §2.1 |
 | `hash_mismatch` | 400 | `content_hash` does not match the canonicalized body. | RFC-ACDP-0001 §5.7, RFC-ACDP-0003 §2.1 |
 | `schema_violation` | 400 | Request body or query failed structural validation. | RFC-ACDP-0003 §2.1 |
-| `not_authorized` | 403 | Agent lacks permission for the operation. | RFC-ACDP-0003 §3.1 |
+| `not_authorized` | 403 | Agent lacks permission for the operation. Returned for supersession by a different `agent_id`, and for unauthenticated reads on a registry that does not advertise `anonymous_public_reads`. | RFC-ACDP-0003 §3.1, RFC-ACDP-0008 §6.3 |
 | `not_found` | 404 | Resource not found. (Also returned for visibility-restricted contexts to non-audience requesters; see RFC-ACDP-0008 §4.5.) | RFC-ACDP-0004 §7 |
-| `superseded_target` | 400 / 409 | The `supersedes` target is invalid. `details.reason` provides specifics. HTTP 400 for static violations (`not_found`, `lineage_mismatch`, `cross_registry_supersession_unsupported`); HTTP 409 Conflict for race conditions (`already_superseded`, `version_mismatch`). | RFC-ACDP-0003 §3.1 |
-| `unsupported_algorithm` | 400 | Signature algorithm not in the registry's `supported_signature_algorithms`. | RFC-ACDP-0007 §3 |
+| `superseded_target` | 400 / 409 | The `supersedes` target is invalid. `details.reason` provides specifics. HTTP 400 for static violations (`not_found`, `lineage_mismatch`, `cross_registry_supersession_unsupported`); HTTP 409 Conflict for race conditions (`already_superseded`, `version_mismatch`). | RFC-ACDP-0003 §2.1 step 9, §3.1 |
+| `unsupported_algorithm` | 400 | Signature algorithm not in the registry's `supported_signature_algorithms`. | RFC-ACDP-0001 §5.10, RFC-ACDP-0003 §2.1 step 5 |
 | `rate_limited` | 429 | Per-agent rate limit exceeded. | RFC-ACDP-0008 §4.3 |
-| `payload_too_large` | 413 | Request body exceeds `limits.max_payload_bytes`. | RFC-ACDP-0007 §3.1 |
-| `embedded_too_large` | 413 | An embedded data reference exceeds 64 KB. | RFC-ACDP-0002 §6.3 |
+| `payload_too_large` | 413 | Request body exceeds `limits.max_payload_bytes`. | RFC-ACDP-0003 §2.1 step 2 |
+| `embedded_too_large` | 413 | An embedded data reference exceeds 64 KB. | RFC-ACDP-0002 §6.3, RFC-ACDP-0003 §2.1 step 3 |
 | `key_resolution_failed` | 400 | The signing key referenced by `signature.key_id` could not be resolved due to a permanent condition (DID document parsed successfully but does not contain the requested key fragment, or fragment is missing from `key_id`). Producer error; not retryable. | RFC-ACDP-0003 §2.1 step 6 |
 | `key_resolution_unreachable` | 502 | The signing key could not be resolved due to a transient condition (DNS failure, TLS error, HTTP non-2xx, network timeout fetching the DID document). Retryable with backoff. | RFC-ACDP-0003 §2.1 step 6 |
 | `key_not_authorized` | 403 | The DID portion of `signature.key_id` does not equal `body.agent_id`, or the resolved verification method is not in the DID document's `assertionMethod` array. | RFC-ACDP-0003 §2.1 step 6 |
-| `not_implemented` | 501 | Endpoint or capability not implemented by this registry. Returned with the standard error envelope. | RFC-ACDP-0007 §4 |
+| `not_implemented` | 501 | Endpoint or capability not implemented by this registry. Returned with the standard error envelope. Emitted when the requested endpoint requires a profile this registry does not advertise (e.g., `GET /contexts/search` on a registry that does not declare `acdp-registry-discovery` in `profiles`). All `acdp-registry-core` endpoints are mandatory and MUST NOT return `not_implemented`. | RFC-ACDP-0001 §9.1, RFC-ACDP-0007 §4 |
 | `cursor_expired` | 400 | A previously-issued pagination cursor is no longer valid. Client SHOULD restart pagination. | RFC-ACDP-0005 §2.5.4 |
 | `invalid_cursor` | 400 | A pagination cursor is malformed or unrecognized. | RFC-ACDP-0005 §2.5.4 |
 | `duplicate_publish` | 409 | An idempotent publish was retried with conflicting content (same `Idempotency-Key`, different `content_hash`). | RFC-ACDP-0003 §6.2 |
