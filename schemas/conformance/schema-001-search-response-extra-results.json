@@ -1,0 +1,20 @@
+{
+  "id": "schema-001",
+  "description": "GET /contexts/search response containing both 'matches' (the v0.0.1 wire field) AND 'results' (a forbidden synonym some implementations have shipped). The search-response schema is CLOSED (additionalProperties: false; see acdp-search-response.schema.json line 24 and the openness map in RFC-ACDP-0007 §3.3.1). Consumers MUST reject this response as schema_violation. Pairs with vis-003 which addresses the registry-side rule (only emit 'matches', never 'results').",
+  "tags": ["schema-openness", "negative", "search-response", "vis-003-companion"],
+  "input": {
+    "endpoint": "GET /contexts/search?q=test",
+    "response_status": 200,
+    "response_body": {
+      "matches": [],
+      "total_estimate": 0,
+      "results": []
+    }
+  },
+  "expected": {
+    "consumer_outcome": "reject",
+    "consumer_error": "schema_violation",
+    "rationale": "The closed search-response schema does not permit 'results'. Even though the field looks innocuous, accepting it would let two parallel response shapes coexist in deployed code and silently mask the field-name bug vis-003 catches.",
+    "registry_outcome": "registry MUST NOT emit this shape; doing so is a registry conformance failure"
+  }
+}

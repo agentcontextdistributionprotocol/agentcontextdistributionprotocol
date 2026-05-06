@@ -1,0 +1,34 @@
+{
+  "id": "pub-009",
+  "description": "Publish request whose signature.key_id DID portion is not did:web (even though agent_id is did:web). RFC-ACDP-0001 §5.4 (DID method scope table) and §5.11 require the DID portion of key_id to be did:web in v0.0.1. The DID portion MUST also equal agent_id (RFC-ACDP-0001 §5.11 step 2; see also pub-006 for the equality check). When agent_id and key_id DIDs differ in method, the registry MUST reject — typically with key_not_authorized after the equality check fires (because did:web:agent.example != did:key:z6Mk...).",
+  "tags": ["publish", "negative", "did-method", "did-web-scope", "auth"],
+  "request": {
+    "method": "POST",
+    "path": "/contexts",
+    "content_type": "application/acdp+json",
+    "body": {
+      "version": 1,
+      "supersedes": null,
+      "agent_id": "did:web:agents.example.com:alice",
+      "contributors": [],
+      "content_hash": "sha256:5f8d88d6758cfd43be875d49edc9eaa494de8ec645bf7de6c592b15bbb1e2e3c",
+      "signature": {
+        "algorithm": "ed25519",
+        "key_id": "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH#key-1",
+        "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+      },
+      "title": "did:key key_id with did:web agent_id — non-conformant",
+      "type": "data_snapshot",
+      "data_refs": [],
+      "derived_from": [],
+      "visibility": "public"
+    }
+  },
+  "expected": {
+    "status": 403,
+    "error_code": "key_not_authorized",
+    "rationale": "RFC-ACDP-0001 §5.11 step 2 requires the DID portion of key_id to equal agent_id. The two DIDs here differ in both the method (web vs key) and the identifier, so the equality check fails and the registry returns key_not_authorized before any DID resolution is attempted."
+  },
+  "related": "pub-006 (same registry behavior for same-method mismatched DIDs); pub-008 (non-did:web agent_id with matching key_id).",
+  "notes": "This fixture targets the scope-table row for signature.key_id. A registry that strips the equality check and relies only on key resolution would still reject (because did:key resolution is out of v0.0.1 scope and the §5.11 step 3 fetch would fail), but the spec-preferred response is the equality-check rejection at step 2."
+}

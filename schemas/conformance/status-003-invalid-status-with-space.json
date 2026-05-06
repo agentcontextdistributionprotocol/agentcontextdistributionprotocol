@@ -1,0 +1,19 @@
+{
+  "id": "status-003",
+  "description": "Registry state with status 'in progress' (contains a space). The pattern `^[a-z][a-z0-9_]*$` permits only lowercase ASCII letters, digits, and underscore. RFC-ACDP-0004 §4.1 mandates rejection.",
+  "tags": ["status", "negative", "pattern-validation"],
+  "input": {
+    "endpoint": "GET /contexts/{ctx_id}",
+    "response_status": 200,
+    "response_body_excerpt": {
+      "registry_state": {
+        "status": "in progress"
+      }
+    }
+  },
+  "expected": {
+    "consumer_outcome": "reject",
+    "consumer_error": "schema_violation",
+    "rationale": "Whitespace is not in the status alphabet. Future spec values use snake_case (e.g. 'in_progress' would be valid; 'in progress' is not). Rejection forces registries to use the wire-canonical underscore form."
+  }
+}

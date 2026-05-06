@@ -26,7 +26,12 @@ except ImportError:
 
 try:
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.hazmat.primitives.asymmetric.utils import (
+        decode_dss_signature,
+        encode_dss_signature,
+    )
+    from cryptography.hazmat.primitives import hashes, serialization
 except ImportError:
     print("ERROR: pip install cryptography", file=sys.stderr)
     sys.exit(2)
@@ -46,6 +51,13 @@ def check_canonicalization_and_hash(fixture, vector):
     name = vector.get("name", "?")
     inp = vector.get("input", {})
     exp = vector.get("expected", {})
+
+    # Descriptive vectors (no canonical_form/sha256_hex/lineage_id claim and no `input`)
+    # are skipped — they document a normative requirement that has no arithmetic
+    # round-trip to verify (e.g. can-007's registry-side timestamp rule).
+    has_arithmetic_claim = any(k in exp for k in ("canonical_form", "sha256_hex", "lineage_id"))
+    if not has_arithmetic_claim and "input" not in vector:
+        return None
 
     try:
         canonical_bytes = jcs.canonicalize(inp)
@@ -80,7 +92,37 @@ def check_canonicalization_and_hash(fixture, vector):
     return True
 
 
-def check_signature_vector(fixture, fixture_data, vector):
+def _check_lineage(fixture, name, vector):
+    reg = vector.get("registry_assigned", {})
+    if "ctx_id" in reg and "lineage_id" in reg:
+        derived = "lin:sha256:" + hashlib.sha256(reg["ctx_id"].encode("utf-8")).hexdigest()
+        if derived != reg["lineage_id"]:
+            fail(fixture, name, f"lineage_id mismatch. expected={reg['lineage_id']} actual={derived}")
+            return False
+    return True
+
+
+def _canonicalize_and_hash(fixture, name, vector):
+    """Return (canonical_bytes, content_hash, ok). ok is False if a pinned expectation diverged."""
+    producer_content = vector.get("producer_content", {})
+    exp = vector.get("expected", {})
+
+    canonical_bytes = jcs.canonicalize(producer_content)
+    canonical = canonical_bytes.decode("utf-8")
+    if "canonical_form" in exp and canonical != exp["canonical_form"]:
+        fail(fixture, name, f"canonical_form mismatch.\n    expected: {exp['canonical_form']}\n    actual:   {canonical}")
+        return canonical_bytes, None, False
+
+    hash_hex = hashlib.sha256(canonical_bytes).hexdigest()
+    content_hash = f"sha256:{hash_hex}"
+    if "content_hash" in exp and content_hash != exp["content_hash"]:
+        fail(fixture, name, f"content_hash mismatch. expected={exp['content_hash']} actual={content_hash}")
+        return canonical_bytes, content_hash, False
+
+    return canonical_bytes, content_hash, True
+
+
+def check_ed25519_vector(fixture, fixture_data, vector):
     name = vector.get("name", "?")
     keypair = fixture_data.get("test_keypair", {})
     seed_hex = keypair.get("private_seed_hex", "")
@@ -105,21 +147,11 @@ def check_signature_vector(fixture, fixture_data, vector):
         fail(fixture, name, f"public_key_hex mismatch. declared={declared_pub_hex} derived={pub_raw.hex()}")
         return False
 
-    producer_content = vector.get("producer_content", {})
+    _, content_hash, ok = _canonicalize_and_hash(fixture, name, vector)
+    if not ok:
+        return False
+
     exp = vector.get("expected", {})
-
-    canonical_bytes = jcs.canonicalize(producer_content)
-    canonical = canonical_bytes.decode("utf-8")
-    if "canonical_form" in exp and canonical != exp["canonical_form"]:
-        fail(fixture, name, f"canonical_form mismatch.\n    expected: {exp['canonical_form']}\n    actual:   {canonical}")
-        return False
-
-    hash_hex = hashlib.sha256(canonical_bytes).hexdigest()
-    content_hash = f"sha256:{hash_hex}"
-    if "content_hash" in exp and content_hash != exp["content_hash"]:
-        fail(fixture, name, f"content_hash mismatch. expected={exp['content_hash']} actual={content_hash}")
-        return False
-
     sig_bytes = priv.sign(content_hash.encode("ascii"))
     sig_hex = sig_bytes.hex()
     sig_b64 = base64.b64encode(sig_bytes).decode("ascii")
@@ -136,14 +168,89 @@ def check_signature_vector(fixture, fixture_data, vector):
         fail(fixture, name, f"signature verification failed: {e}")
         return False
 
-    reg = vector.get("registry_assigned", {})
-    if "ctx_id" in reg and "lineage_id" in reg:
-        derived = "lin:sha256:" + hashlib.sha256(reg["ctx_id"].encode("utf-8")).hexdigest()
-        if derived != reg["lineage_id"]:
-            fail(fixture, name, f"lineage_id mismatch. expected={reg['lineage_id']} actual={derived}")
-            return False
+    return _check_lineage(fixture, name, vector)
 
-    return True
+
+def _ieee1363_to_der(rs_bytes):
+    """Convert a 64-byte IEEE 1363 (r‖s) signature to DER for cryptography.verify()."""
+    if len(rs_bytes) != 64:
+        raise ValueError(f"expected 64 bytes for P-256 r||s, got {len(rs_bytes)}")
+    r = int.from_bytes(rs_bytes[:32], "big")
+    s = int.from_bytes(rs_bytes[32:], "big")
+    return encode_dss_signature(r, s)
+
+
+def _der_to_ieee1363(der_bytes):
+    """Convert a DER-encoded ECDSA signature to 64-byte IEEE 1363 r||s."""
+    r, s = decode_dss_signature(der_bytes)
+    return r.to_bytes(32, "big") + s.to_bytes(32, "big")
+
+
+def check_ecdsa_p256_vector(fixture, fixture_data, vector):
+    """Verify an ecdsa-p256 fixture: load the public key, verify the pinned signature.
+
+    Signing is non-deterministic in cryptography.io's API (no RFC 6979 helper),
+    so we DO NOT re-sign and byte-compare. We instead verify that the pinned
+    signature_value_base64 verifies under the declared public key.
+    """
+    name = vector.get("name", "?")
+    keypair = fixture_data.get("test_keypair", {})
+    x_hex = keypair.get("public_key_hex_x", "")
+    y_hex = keypair.get("public_key_hex_y", "")
+    if not (x_hex and y_hex):
+        fail(fixture, name, "missing test_keypair.public_key_hex_x or .public_key_hex_y")
+        return False
+
+    try:
+        x_int = int(x_hex, 16)
+        y_int = int(y_hex, 16)
+        pub_numbers = ec.EllipticCurvePublicNumbers(x_int, y_int, ec.SECP256R1())
+        pub = pub_numbers.public_key()
+    except Exception as e:
+        fail(fixture, name, f"public key load failed: {e}")
+        return False
+
+    _, content_hash, ok = _canonicalize_and_hash(fixture, name, vector)
+    if not ok:
+        return False
+
+    exp = vector.get("expected", {})
+    sig_b64 = exp.get("signature_value_base64")
+    if not sig_b64:
+        fail(fixture, name, "missing expected.signature_value_base64")
+        return False
+
+    try:
+        rs_bytes = base64.b64decode(sig_b64)
+    except Exception as e:
+        fail(fixture, name, f"signature base64 decode failed: {e}")
+        return False
+
+    if len(rs_bytes) != 64:
+        fail(fixture, name, f"signature wire length is {len(rs_bytes)} bytes; ecdsa-p256 IEEE 1363 r||s MUST be 64")
+        return False
+
+    if "signature_value_hex" in exp and rs_bytes.hex() != exp["signature_value_hex"]:
+        fail(fixture, name, f"signature_value_hex mismatch. expected={exp['signature_value_hex']} actual={rs_bytes.hex()}")
+        return False
+
+    try:
+        der = _ieee1363_to_der(rs_bytes)
+        pub.verify(der, content_hash.encode("ascii"), ec.ECDSA(hashes.SHA256()))
+    except Exception as e:
+        fail(fixture, name, f"signature verification failed: {e}")
+        return False
+
+    return _check_lineage(fixture, name, vector)
+
+
+def check_signature_vector(fixture, fixture_data, vector):
+    keypair = fixture_data.get("test_keypair", {})
+    algorithm = keypair.get("algorithm")
+    if algorithm == "ecdsa-p256":
+        return check_ecdsa_p256_vector(fixture, fixture_data, vector)
+    # Default: ed25519. sig-001 predates the per-fixture algorithm field.
+    return check_ed25519_vector(fixture, fixture_data, vector)
 
 
 for path in sorted(CONFORMANCE.glob("*.json")):
@@ -153,8 +260,10 @@ for path in sorted(CONFORMANCE.glob("*.json")):
 
     if fixture_id.startswith("can-"):
         for v in data.get("vectors", []):
-            if check_canonicalization_and_hash(fixture_id, v):
+            result = check_canonicalization_and_hash(fixture_id, v)
+            if result is True:
                 passes += 1
+            # result is None → descriptive vector, skipped silently
     elif fixture_id.startswith("sig-"):
         for v in data.get("vectors", []):
             if check_signature_vector(fixture_id, data, v):

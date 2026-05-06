@@ -1,0 +1,25 @@
+{
+  "id": "schema-004",
+  "description": "Capabilities document with an unknown top-level field — duplicate of caps-006 from a different angle. The CapabilitiesDocument top level is OPEN (additionalProperties: true; see acdp-capabilities.schema.json line 105 and the openness map in RFC-ACDP-0007 §3.3.1). Consumers MUST tolerate. This fixture is the explicit positive companion to schema-001/002/003 in the schema-openness series.",
+  "tags": ["schema-openness", "happy-path", "capabilities", "forward-compatibility"],
+  "input": {
+    "endpoint": "GET /.well-known/acdp.json",
+    "response_body": {
+      "acdp_version": "0.0.1",
+      "registry_did": "did:web:registry.example.com",
+      "supported_signature_algorithms": ["ed25519"],
+      "supported_did_methods": ["did:web"],
+      "profiles": ["acdp-registry-core"],
+      "limits": {
+        "max_payload_bytes": 1048576,
+        "max_embedded_bytes": 65536
+      },
+      "supports_receipts": true
+    }
+  },
+  "expected": {
+    "consumer_outcome": "accept",
+    "rationale": "Capabilities is forward-compat-open at the top level. A v0.0.1 consumer must continue to read the document, route 'supports_receipts' into a catch-all extension map, and proceed. Cross-reference: the `limits` SUB-OBJECT is closed (additionalProperties: false at line 102) — caps-005 covers that case via the value constraint on max_embedded_bytes."
+  },
+  "see_also": ["caps-006", "RFC-ACDP-0007 §3.3 implementer note", "RFC-ACDP-0007 §3.3.1 schema openness map"]
+}

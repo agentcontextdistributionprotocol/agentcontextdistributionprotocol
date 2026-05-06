@@ -157,7 +157,11 @@
         "type": { "$ref": "#/$defs/context_type" },
         "domain": { "type": "string" },
         "created_at": { "$ref": "#/$defs/rfc3339_timestamp" },
-        "status": { "$ref": "#/$defs/status" }
+        "status": { "$ref": "#/$defs/status" },
+        "visibility": {
+          "$ref": "#/$defs/visibility",
+          "description": "OPTIONAL. Disclosure rules per RFC-ACDP-0005 §2.2: registries SHOULD include `visibility: public` for public matches so consumers can cache-classify results without a retrieval round-trip. For `restricted` and `private` matches, registries MUST only include `visibility` when the requester is already authorized to retrieve the context (i.e., is in `audience` or is `agent_id`); including the field for an unauthorized requester would leak the existence of restricted/private contexts. When this field is absent, consumers MUST NOT infer anything about the context's visibility — absence is the registry's choice and is also the legal v0.0.1-pre-fix default for older deployments."
+        }
       },
       "additionalProperties": false
     }

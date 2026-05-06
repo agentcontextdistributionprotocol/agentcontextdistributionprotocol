@@ -1,0 +1,33 @@
+{
+  "id": "fed-006",
+  "description": "Cross-registry resolution MUST verify that the upstream registry's `registry_did` (declared in /.well-known/acdp.json) is consistent with the authority used to reach it. Per RFC-ACDP-0006 §3 and §4.1 step 3, the v0.0.1 binding is `did:web:<authority>`. If the capabilities document declares a `registry_did` whose method-specific identifier does NOT equal the authority component of the well-known URL, the resolver MUST treat the resolution as failed.",
+  "tags": ["security", "federated", "registry-identity", "did-binding"],
+  "ssrf_rule": "RFC-ACDP-0006 §3 + §4.1 step 3 (registry-DID verification)",
+  "applies_to_profiles": ["acdp-registry-federated", "acdp-consumer"],
+  "input": {
+    "scenario": "Resolver fetches https://registry.example.com/.well-known/acdp.json; the document declares a registry_did that does not match the authority",
+    "fetched_well_known_url": "https://registry.example.com/.well-known/acdp.json",
+    "capabilities_document_excerpt": {
+      "acdp_version": "0.0.1",
+      "registry_did": "did:web:other-registry.example.org",
+      "supported_signature_algorithms": ["ed25519"]
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "error_code": "cross_registry_resolution_failed",
+    "http_status": 502,
+    "behavior": "Resolver MUST verify that the `registry_did` published in the fetched capabilities document binds back to the authority used in the well-known URL. For `did:web`, the method-specific identifier (everything after `did:web:`) MUST equal the authority component, after applying the standard `did:web` rules (colons in the DID-method id correspond to slashes in the path; default port is implied). On mismatch, the resolver MUST NOT trust any subsequent retrieval from this authority and MUST surface `cross_registry_resolution_failed` (RFC-ACDP-0006 §7.1 / §4.1).",
+    "rationale": "The registry DID is the trust anchor for 'this is the registry I think I'm talking to' (RFC-ACDP-0006 §3.1). Allowing an authority to declare a DID belonging to a different host would let a hijacked DNS record claim the identity of an unrelated registry; consumers pinning `registry_did` would be silently downgraded to talking to the impostor.",
+    "additional_failure_cases": [
+      {
+        "case": "registry_did is well-formed but uses a method other than did:web",
+        "expected_outcome": "Resolver MAY accept if it has out-of-band trust for that DID method; otherwise treat as failed. v0.0.1 producers and registries are required to use did:web (RFC-ACDP-0001 §5.4)."
+      },
+      {
+        "case": "registry_did is missing entirely from the capabilities document",
+        "expected_outcome": "The capabilities schema requires registry_did (RFC-ACDP-0007 §3); a missing field is a schema violation and MUST be treated as resolution failed."
+      }
+    ]
+  }
+}

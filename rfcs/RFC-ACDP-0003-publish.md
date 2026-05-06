@@ -213,3 +213,58 @@ See [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md). Specific to publishing:
 - [RFC-ACDP-0006 Cross-Registry References](RFC-ACDP-0006-cross-registry.md)
 - [RFC-ACDP-0007 Capabilities & Errors](RFC-ACDP-0007-capabilities.md)
 - [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md)
+
+---
+
+## Appendix A. Role implementation checklists (NON-NORMATIVE)
+
+The §2.1 registry pipeline is normative; the producer-side flow in §2.2 is normative; the consumer-side checks are spread across RFC-ACDP-0001 §5.7 and §5.11 and RFC-ACDP-0004. This appendix collects the three role-specific checklists in one place to make implementation drift visible. The ordering is the recommended ordering — it matches the normative steps where they exist and groups validation that can be done before paying cryptographic cost. Implementations are free to reorder for performance as long as the observable result is identical to running these steps in the listed order.
+
+### A.1 Producer — building a publish request
+
+Before submitting `POST /contexts`:
+
+1. **Build ProducerContent** with all required fields (`version`, `supersedes`, `agent_id`, `contributors`, `title`, `type`, `data_refs`, `derived_from`, `visibility`) and any optional fields the producer intends to include. **Do NOT** include any of the §5.7 exclusion-set fields (`content_hash`, `signature`, `ctx_id`, `lineage_id`, `origin_registry`, `created_at`).
+2. **Validate field constraints locally** (so the registry's `schema_violation` is rare): title length ≤ 500; metadata depth ≤ 8 and JCS-canonicalized size ≤ 65536; each `data_refs[]` has exactly one of `location` or `embedded`; tags match `^[A-Za-z0-9][A-Za-z0-9_.-]*$`; `audience` is non-empty when `visibility = "restricted"`; `lineage_id` is absent when `supersedes = null`.
+3. **Truncate every timestamp** in the request to canonical millisecond form (RFC-ACDP-0001 §5.3). This applies to `expires_at`, `data_period.{start,end}`, and any timestamps inside `data_refs`.
+4. **Validate `agent_id` is `did:web:<…>`** (v0.0.1 mandate, RFC-ACDP-0001 §5.4 DID method scope table).
+5. **JCS-canonicalize** ProducerContent.
+6. **SHA-256** the canonical bytes; concatenate with the literal prefix `sha256:` to form the `content_hash` string.
+7. **Sign** the ASCII bytes of the full `content_hash` string (including the `sha256:` prefix) with the producer's signing key, per RFC-ACDP-0001 §5.8.
+8. **Set** `content_hash` and `signature` on the request body.
+9. For supersession publishes (`version > 1`): set `version = previous.version + 1` and `supersedes = previous.ctx_id`. MAY set `lineage_id` for self-verification (registries MUST verify match if supplied).
+10. **Submit** as `application/acdp+json` to `POST /contexts`.
+
+### A.2 Registry — full §2.1 pipeline
+
+Reproduced here in step-only form for cross-checking (full normative text in §2.1):
+
+1. Schema validation (`schema_violation`).
+2. Payload size (`payload_too_large`).
+3. Embedded validation: decoded size ≤ 65536 (`embedded_too_large`); recompute optional `embedded.content_hash` (`hash_mismatch`).
+4. ProducerContent hash recomputation against `content_hash` (`hash_mismatch`).
+5. Algorithm check against `supported_signature_algorithms` (`unsupported_algorithm`).
+6. Key-id ↔ agent_id binding (`key_not_authorized`); DID document resolution (`key_resolution_failed` permanent / `key_resolution_unreachable` transient); `assertionMethod` authorization (`key_not_authorized`).
+7. Signature verification (`invalid_signature`).
+8. Identifier assignment (`ctx_id`, `origin_registry`, `created_at` — millisecond canonical).
+9. Lineage derivation and walk (`superseded_target` with reasons `lineage_mismatch` or `lineage_walk_failed`).
+10. Supersession constraints (§3.1: not_found, cross_registry_supersession_unsupported, lineage_mismatch, version_mismatch, already_superseded, plus `not_authorized` for cross-agent supersession).
+11. Visibility validation (`schema_violation` for restricted-without-audience; private semantics — RFC-ACDP-0008 §4.5).
+12. Persistence + `status` initialization (RFC-ACDP-0004 §4).
+13. Response (§4 — exactly five fields, see fixture pub-007).
+
+Steps 1–7 MUST complete before any persistence. Steps 8–12 are atomic with respect to concurrent publications targeting the same `supersedes` value.
+
+### A.3 Consumer — verifying a retrieved body
+
+Before trusting a body retrieved from any endpoint:
+
+1. **Parse the wire bytes** into a structure that preserves all keys (e.g. `serde_json::Value`, `dict[str, Any]`, `JSON.parse`). Do NOT deserialize into a typed model whose decoder strips unknown fields — that breaks forward compatibility (RFC-ACDP-0001 §5.7 hash verification over raw JSON, fixture `can-008`).
+2. **Validate the body's schema structure** against `acdp-context-body.schema.json` (open: tolerate unknown fields per §3.3.1 schema openness map).
+3. **Recompute `content_hash`** by removing the §5.7 exclusion set BY NAME (`ctx_id`, `lineage_id`, `origin_registry`, `created_at`, `content_hash`, `signature`), JCS-canonicalizing the remainder, SHA-256ing, and comparing to `body.content_hash`. On mismatch, treat the body as untrusted. (Fixture `can-009`.)
+4. **Resolve the producer's DID document** per RFC-ACDP-0001 §5.11 (v0.0.1: did:web only). Cache per the §5.11 caching guidance.
+5. **Verify the signature** over the ASCII bytes of `body.content_hash` (with the `sha256:` prefix) using the resolved key.
+6. **Validate body fields** against ACDP-0002 invariants (DataRef oneOf, metadata depth/size, tag patterns, `data_period.start ≤ data_period.end`, etc.).
+7. **Tolerate unknown fields** in both the body and `registry_state`; treat unknown `status` values as `active` (RFC-ACDP-0004 §4.1, fixture `status-001`); treat unknown top-level capabilities fields as opaque (RFC-ACDP-0007 §3.3, fixture `caps-006`).
+
+Consumers crossing registries (following `derived_from`) additionally apply RFC-ACDP-0006 §4.1 (resolution) and §7 (SSRF protections) before fetching the upstream body.

@@ -150,6 +150,8 @@ Implementations:
 
 **Producer note.** Because timestamps are part of the JCS-canonicalized body, two contexts with timestamps differing only in fractional precision will produce different `content_hash` values. The canonical millisecond form is mandatory for the producer path; the conformance fixture `can-006-timestamp-precision.json` pins a nanosecond-precision input and locks in the hash that the *exact serialized string* produces, making the "hash binds the bytes, not the logical instant" rule explicit.
 
+**Registry timestamp emission (MUST).** Registries MUST assign `created_at` using canonical millisecond precision (e.g. `2026-04-16T10:30:15.123Z`). Implementations using OS clock APIs that return higher-precision timestamps — `time.Now()` in Go (nanoseconds), `Instant::now()` / `chrono::Utc::now()` in Rust, `datetime.datetime.now(tz=UTC)` in Python (microseconds), `Date.now()` returning a millisecond `Number` but `Temporal.Now.instant()` returning nanoseconds in JS, `Instant.now()` in Java (nanoseconds) — MUST truncate to millisecond precision before serializing `created_at` into both the publish response and the stored body. Truncation MUST round toward the past (floor); rounding to nearest can produce a `created_at` greater than the registry's wall-clock instant of acceptance, which violates the Time Format invariant. The registry-side requirement is identical to the producer-side rule above; `can-007-registry-created-at.json` pins it as a separate fixture so registry implementers can verify their emission path independently of any producer payload.
+
 **Clock and skew.** Registries SHOULD use NTP-synchronized UTC clocks. The registry's clock is authoritative for `created_at` (registry-assigned) and for the `status: expired` derivation (RFC-ACDP-0004 §4). Consumers computing `expired` locally MAY apply a skew tolerance of up to ±60 seconds against `expires_at`; consumers comparing a registry's `created_at` against their own local clock SHOULD allow the same tolerance. Producers MUST set `expires_at` and `data_period.{start,end}` based on their own UTC clock; small skew between producer and registry is expected and harmless because these fields are signed (not derived).
 
 ### 5.4 Identifier Formats
@@ -161,6 +163,20 @@ Implementations:
 | **`agent_id`** | A Decentralized Identifier [DID-CORE]. v0.0.1 producers MUST use `did:web` so that any conformant registry can resolve their keys via §5.11. | RFC-ACDP-0002 |
 
 The `ctx_id` is assigned by the registry at publish time; producers MUST NOT supply a `ctx_id` in publish requests. The corresponding URI scheme `acdp` is registered in §11.
+
+#### DID method scope by field (NORMATIVE)
+
+The `did:web` requirement of v0.0.1 applies to fields the registry must resolve to a key, not to every DID-typed field on a body. The following table is normative for v0.0.1; the schema's `did` definition (`schemas/json/acdp-common.schema.json#/$defs/did`) is intentionally loose so that `contributors[]` and `audience[]` can carry other methods today, even while `agent_id` and `signature.key_id` are constrained to `did:web` by this section.
+
+| Field | v0.0.1 requirement | Rationale |
+|---|---|---|
+| `agent_id` | MUST be `did:web`. | The signing agent must be resolvable by every conformant registry via the §5.11 algorithm. Schema-loose is by design; the registry enforces the method. |
+| `signature.key_id` (DID portion, before `#`) | MUST be `did:web`, and MUST equal `agent_id`. | The §5.11 resolver fetches the DID document for this DID. Mismatch with `agent_id` is rejected as `key_not_authorized` (RFC-ACDP-0003 §2.1 step 6). |
+| `contributors[]` | SHOULD be `did:web`; other DID methods are permitted. | Attribution only — v0.0.1 does not resolve contributor keys. A producer crediting a `did:key`-only collaborator MUST NOT have its publish rejected for that reason. |
+| `audience[]` | MAY be any DID method. | Authorization list — registries match the requester's authenticated DID against `audience[]` as opaque strings (RFC-ACDP-0008 §4.5). No key resolution is performed. |
+| `body.agent_id` of an ancestor in `derived_from` | Same rule as the ancestor's own `agent_id` (i.e. for v0.0.1 ancestors, `did:web`). | A consumer following the ancestor link verifies the ancestor's signature, which requires resolving its key via §5.11. |
+
+Registries MUST reject a publish whose `agent_id` is not `did:web` with `schema_violation` (preferred — caught at request validation) or with `key_not_authorized` if discovered later in the §5.11 pipeline. Registries MUST NOT reject a publish solely because `contributors[]` includes a non-`did:web` entry. Conformance fixtures `pub-008`, `pub-009`, and `pub-010` pin these behaviors.
 
 ### 5.5 Context-ID assignment
 
@@ -214,6 +230,29 @@ All other fields present in the publish request are included in the hash input. 
 The exclusion list permits the producer to compute `content_hash` and sign before the registry assigns identifiers. The producer commits to the content; the registry separately binds the identifiers.
 
 Implementations MUST produce identical `content_hash` values for the same body content across all conforming implementations. Test vectors are provided in the conformance fixtures.
+
+#### Hash verification over raw JSON (REQUIRED for forward compatibility)
+
+Consumers and registries MUST recompute `content_hash` from the raw received JSON object — not from a lossy typed deserialization of it — unless the typed deserialization provably preserves every unknown field byte-for-byte.
+
+The hazard. ACDP body extensibility is forward-compatible via additive producer-controlled fields (§6). A v0.1 producer adding a new optional field (e.g. `priority`) signs the JCS canonicalization of an object that includes it. A v0.0.1 consumer that deserializes the body into a typed `Body` struct without an unknown-field catch-all will silently drop `priority`; recomputing `content_hash` from the typed struct then yields a different hash than the producer signed, and the body fails verification with a false `hash_mismatch`. The error appears at exactly the moment minor-version evolution should be invisible to existing consumers.
+
+Required implementation pattern. To verify a received body:
+
+1. Parse the wire bytes into a structure that preserves all keys and their original ordering only if needed by your canonicalizer (most JCS libraries re-sort, so order at parse time does not matter — but field presence does). Examples: `serde_json::Value` in Rust, `json.loads` into `dict[str, Any]` in Python, `JSON.parse` in TypeScript, `interface{}` / `map[string]json.RawMessage` in Go.
+2. Remove the four registry-assigned identity fields and the two integrity fields (the §5.7 exclusion set: `ctx_id`, `lineage_id`, `origin_registry`, `created_at`, `content_hash`, `signature`).
+3. JCS-canonicalize the resulting object and SHA-256 the canonical bytes; compare against `body.content_hash`.
+4. Only after the hash matches, verify the signature over the ASCII bytes of `body.content_hash` (per §5.8).
+5. Only after both checks pass, deserialize into a typed model for application use.
+
+Implementations that prefer to deserialize into a typed model first (for ergonomics) MUST guarantee that the typed model preserves unknown producer-controlled fields. Concrete patterns:
+
+- **Rust (serde):** add `#[serde(flatten)] pub extensions: serde_json::Map<String, serde_json::Value>` to capture unknown keys; do NOT use `#[serde(deny_unknown_fields)]` on `Body`. The flattened map MUST be re-emitted in canonicalization.
+- **Python (pydantic v2):** set `model_config = ConfigDict(extra="allow")` on the `Body` model, OR keep `dict[str, Any]` for unknown keys.
+- **TypeScript:** define `Body` as `{ … known fields …, [key: string]: unknown }` or use a passthrough decoder (zod's `.passthrough()`).
+- **Go:** unmarshal into `map[string]json.RawMessage` for the verification path; the typed `Body` struct (used by application code) is built from the verified map.
+
+Discarding unknown fields before hash recomputation is a CONFORMANCE FAILURE. The fixtures `can-008-body-with-unknown-producer-field.json` (positive: a producer-added unknown field is part of the hash and MUST be retained) and `can-009-body-with-unknown-excluded-field.json` (negative: a field whose name is in the exclusion set is excluded by name regardless of whether the v0.0.1 consumer recognizes it) pin the rule.
 
 ### 5.8 Signature
 

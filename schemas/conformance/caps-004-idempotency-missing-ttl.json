@@ -1,0 +1,26 @@
+{
+  "id": "caps-004",
+  "description": "Capabilities document advertises supports_idempotency_key=true but omits limits.idempotency_key_ttl_seconds. RFC-ACDP-0007 §3.2 and the schema's allOf/if-then clause (acdp-capabilities.schema.json lines 107–121) require the TTL to be present whenever idempotency support is advertised. Without a declared TTL, consumers cannot compute when a previous Idempotency-Key→response mapping has expired (RFC-ACDP-0003 §6.2).",
+  "tags": ["capabilities", "negative", "validation", "idempotency"],
+  "input": {
+    "endpoint": "GET /.well-known/acdp.json",
+    "response_body": {
+      "acdp_version": "0.0.1",
+      "registry_did": "did:web:registry.example.com",
+      "supported_signature_algorithms": ["ed25519"],
+      "supported_did_methods": ["did:web"],
+      "profiles": ["acdp-registry-core"],
+      "supports_idempotency_key": true,
+      "limits": {
+        "max_payload_bytes": 1048576,
+        "max_embedded_bytes": 65536
+      }
+    }
+  },
+  "expected": {
+    "outcome": "reject",
+    "error_code": "schema_violation",
+    "consumer_action": "MUST NOT use Idempotency-Key against this registry (treat the registry as if supports_idempotency_key were false), AND MUST log/surface the inconsistency so operators can correct the capabilities document.",
+    "rationale": "A registry that advertises idempotency support without a TTL is sending contradictory information. The schema-level enforcement catches the most common misconfiguration (toggling the boolean without populating the TTL field below it)."
+  }
+}

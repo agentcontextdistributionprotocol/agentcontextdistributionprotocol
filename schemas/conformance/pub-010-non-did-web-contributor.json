@@ -1,0 +1,33 @@
+{
+  "id": "pub-010",
+  "description": "Publish request with a non-did:web entry in contributors[]. RFC-ACDP-0001 §5.4 (DID method scope table) permits other DID methods in contributors[] — the registry does NOT resolve contributor keys in v0.0.1 (attribution only). Registries MUST NOT reject this publish on the contributor's DID method alone. This fixture exists to prevent over-strict implementations from rejecting valid publications from producers who credit collaborators using did:key, did:jwk, or other methods.",
+  "tags": ["publish", "happy-path", "did-method", "did-web-scope", "contributors"],
+  "request": {
+    "method": "POST",
+    "path": "/contexts",
+    "content_type": "application/acdp+json",
+    "body_summary": "A schema-valid first-version publish whose agent_id and signature.key_id are did:web (per the §5.4 mandate), but contributors[] contains a did:key entry. Concrete payload — a real signature would need to verify against the agent_id's actual DID document; for fixture purposes any pub-007-style well-formed body whose signature verifies and whose contributors[] field contains the test entry below is acceptable as input.",
+    "body_excerpt": {
+      "agent_id": "did:web:agents.example.com:alice",
+      "contributors": [
+        "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH",
+        "did:web:agents.example.com:bob"
+      ],
+      "signature": {
+        "algorithm": "ed25519",
+        "key_id": "did:web:agents.example.com:alice#key-1",
+        "value": "<base64 signature that verifies under alice's did:web key>"
+      }
+    }
+  },
+  "expected": {
+    "status": 201,
+    "outcome": "success",
+    "rationale": "contributors[] is for attribution. The registry treats the entries as opaque DID strings, validates their schema-level shape (the loose `did` regex from acdp-common.schema.json#/$defs/did, which permits any registered DID method), and persists them on the body. No key resolution is performed against contributor DIDs in v0.0.1."
+  },
+  "negative_examples": {
+    "registry_rejects_did_key_contributor": "A registry that returns schema_violation here is non-conformant. It is over-applying the §5.4 did:web rule beyond its scope.",
+    "registry_attempts_key_resolution": "A registry that fetches /.well-known/did.json for a contributor's did:web entry, or that fails the publish because a contributor's did:key cannot be resolved, is non-conformant. v0.0.1 does not resolve contributor keys."
+  },
+  "notes": "Future ACDP versions may add a contributor-co-signature mechanism (RFC-ACDP-0009 §2.2 reserved). When that ships, the scope of the did:web requirement may expand to contributors who participate in signing. Until then, contributors[] is attribution-only and the field is open to any DID method."
+}

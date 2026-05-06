@@ -1,0 +1,19 @@
+{
+  "id": "fed-001",
+  "description": "Cross-registry resolution MUST refuse non-HTTPS schemes without attempting connection. The well-known URL is constructed as https://<authority>/.well-known/acdp.json (RFC-ACDP-0006 §4.1 step 2); a referenced authority that, by configuration override or DNS record, would force a downgrade to plain http:// MUST be rejected at the URL-construction stage.",
+  "tags": ["security", "ssrf", "federated", "https-only"],
+  "ssrf_rule": "RFC-ACDP-0006 §7.2 (HTTPS-only)",
+  "applies_to_profiles": ["acdp-registry-federated", "acdp-consumer"],
+  "input": {
+    "scenario": "Resolver is asked to dereference an acdp:// reference whose authority would resolve over plain HTTP",
+    "acdp_reference": "acdp://insecure.example.com/550e8400-e29b-41d4-a716-446655440000",
+    "configured_protocol_for_authority": "http"
+  },
+  "expected": {
+    "outcome": "failure",
+    "error_code": "cross_registry_resolution_failed",
+    "http_status": 502,
+    "behavior": "Resolver MUST NOT open a TCP connection. Refusal happens before any DNS or socket activity directed at the upstream. plain HTTP, file://, ftp://, ws:// and any other non-https:// scheme MUST be refused identically.",
+    "rationale": "Plain-HTTP transport allows on-path attackers to substitute the capabilities document or DID document and defeats the registry-DID verification of §4.1 step 3."
+  }
+}

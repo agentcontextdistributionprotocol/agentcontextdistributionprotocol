@@ -1,0 +1,24 @@
+{
+  "id": "fed-003",
+  "description": "Cross-registry resolution MUST reject hostnames that resolve to the loopback range. Both IPv4 (127.0.0.0/8) and IPv6 (::1) loopback MUST be rejected — an attacker can publish a hostname pointing to 127.0.0.1 OR ::1 and an implementation that filters only one family is still exploitable.",
+  "tags": ["security", "ssrf", "federated", "loopback"],
+  "ssrf_rule": "RFC-ACDP-0006 §7.1 (IP-range filtering — loopback)",
+  "applies_to_profiles": ["acdp-registry-federated", "acdp-consumer"],
+  "input": {
+    "scenario": "Resolver dereferences an acdp:// reference whose authority resolves to a loopback address",
+    "acdp_reference": "acdp://localhost-shadow.example.com/550e8400-e29b-41d4-a716-446655440000",
+    "dns_resolution_results": ["127.0.0.1"],
+    "additional_test_cases": [
+      "127.0.0.5",
+      "::1",
+      "0.0.0.0"
+    ]
+  },
+  "expected": {
+    "outcome": "failure",
+    "error_code": "cross_registry_resolution_failed",
+    "http_status": 502,
+    "behavior": "Resolver MUST refuse before connecting. Both IPv4 (127.0.0.0/8) and IPv6 (::1) MUST be filtered. The unspecified address 0.0.0.0 MUST also be rejected — many OSes route it to localhost.",
+    "rationale": "Loopback resolution targets the registry's own host, exposing process-internal HTTP listeners (admin APIs, metrics, debug endpoints) that are normally bound only to 127.0.0.1."
+  }
+}

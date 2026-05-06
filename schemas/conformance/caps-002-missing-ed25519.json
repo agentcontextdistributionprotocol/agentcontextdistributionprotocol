@@ -1,0 +1,25 @@
+{
+  "id": "caps-002",
+  "description": "Capabilities document whose supported_signature_algorithms does not contain 'ed25519'. RFC-ACDP-0001 §5.10 mandates ed25519 support for every conformant registry; the schema enforces this via `contains: { const: \"ed25519\" }` (acdp-capabilities.schema.json line 36). A consumer fetching a capabilities document missing 'ed25519' MUST reject it as schema_violation and MUST NOT proceed with operations against this registry (RFC-ACDP-0007 §3 normative validation checklist).",
+  "tags": ["capabilities", "negative", "validation", "signature-algorithms"],
+  "input": {
+    "endpoint": "GET /.well-known/acdp.json",
+    "response_body": {
+      "acdp_version": "0.0.1",
+      "registry_did": "did:web:registry.example.com",
+      "supported_signature_algorithms": ["ecdsa-p256"],
+      "supported_did_methods": ["did:web"],
+      "profiles": ["acdp-registry-core"],
+      "limits": {
+        "max_payload_bytes": 1048576,
+        "max_embedded_bytes": 65536
+      }
+    }
+  },
+  "expected": {
+    "outcome": "reject",
+    "error_code": "schema_violation",
+    "consumer_action": "MUST NOT proceed with the operation that required fetching capabilities (e.g. publish, retrieval against this registry); SHOULD log the missing mandatory algorithm for operator review.",
+    "rationale": "ed25519 is the only mandatory-to-support algorithm in v0.0.1. A registry that does not advertise it cannot interoperate with v0.0.1 producers; treating its capabilities as valid silently masks the problem until the first publish fails."
+  }
+}
