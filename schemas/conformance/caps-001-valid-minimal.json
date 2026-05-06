@@ -1,0 +1,33 @@
+{
+  "id": "caps-001",
+  "description": "Minimal valid capabilities document. Pins the smallest schema-conformant payload a v0.0.1 registry MUST accept and serve at /.well-known/acdp.json (RFC-ACDP-0007 §3). Implementations MUST accept this document without rejecting unknown-field tolerance settings, closed-enum decoders, or strict additionalProperties handling.",
+  "tags": ["capabilities", "happy-path", "validation"],
+  "input": {
+    "endpoint": "GET /.well-known/acdp.json",
+    "response_body": {
+      "acdp_version": "0.0.1",
+      "registry_did": "did:web:registry.example.com",
+      "supported_signature_algorithms": ["ed25519"],
+      "supported_did_methods": ["did:web"],
+      "profiles": ["acdp-registry-core"],
+      "limits": {
+        "max_payload_bytes": 1048576,
+        "max_embedded_bytes": 65536
+      }
+    }
+  },
+  "expected": {
+    "outcome": "accept",
+    "checks": [
+      "acdp_version matches semver pattern ^\\d+\\.\\d+\\.\\d+$",
+      "registry_did is a valid DID and (for v0.0.1) is did:web:<authority>",
+      "supported_signature_algorithms contains 'ed25519'",
+      "supported_did_methods contains 'did:web'",
+      "profiles contains 'acdp-registry-core'",
+      "limits.max_embedded_bytes equals 65536",
+      "limits.max_payload_bytes >= 1024",
+      "supports_idempotency_key absent → idempotency_key_ttl_seconds need not be present"
+    ]
+  },
+  "rationale": "This is the floor. Any registry that fails to accept this exact payload is non-conformant. Used as the baseline for caps-002..006 negative cases."
+}

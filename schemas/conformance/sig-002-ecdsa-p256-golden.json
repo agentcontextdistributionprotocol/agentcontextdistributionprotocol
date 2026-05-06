@@ -1,0 +1,76 @@
+{
+  "id": "sig-002",
+  "description": "ECDSA-P256 golden test vector. Wire form is IEEE 1363 (r‖s) — 64 raw bytes, 88 base64 chars — NOT DER. Signature is deterministic per RFC 6979 with SHA-256 so the value is reproducible. Producer content is byte-identical to sig-001 vector 1, so implementations can compare across algorithms. Test keypair MUST NOT be used in production: the private scalar is 1 (the smallest valid P-256 scalar) and the resulting public key is the curve's generator point G. The keypair exists only to make the test vector reproducible.",
+  "tags": ["signature", "happy-path", "golden", "ecdsa-p256"],
+  "test_keypair": {
+    "warning": "TEST ONLY. The private scalar is publicly known (= 1). The public key is the P-256 generator G. Never use this keypair for real publications.",
+    "algorithm": "ecdsa-p256",
+    "private_scalar_hex": "0000000000000000000000000000000000000000000000000000000000000001",
+    "public_key_hex_x": "6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296",
+    "public_key_hex_y": "4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5",
+    "public_key_uncompressed_sec1_hex": "046b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c2964fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5",
+    "public_key_jwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "axfR8uEsQkf4vOblY6RA8ncDfYEt6zOg9KE5RdiYwpY",
+      "y": "T-NC4v4af5uO5-tKfA-eFivOM1drMV7Oy7ZAaDe_UfU"
+    }
+  },
+  "vectors": [
+    {
+      "name": "Minimal first-version publish request, signed (ecdsa-p256, RFC 6979 deterministic)",
+      "producer_content": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:web:agents.example.com:test-producer",
+        "contributors": [],
+        "title": "Golden test vector — minimal first version",
+        "type": "data_snapshot",
+        "data_refs": [],
+        "derived_from": [],
+        "visibility": "public"
+      },
+      "expected": {
+        "canonical_form": "{\"agent_id\":\"did:web:agents.example.com:test-producer\",\"contributors\":[],\"data_refs\":[],\"derived_from\":[],\"supersedes\":null,\"title\":\"Golden test vector — minimal first version\",\"type\":\"data_snapshot\",\"version\":1,\"visibility\":\"public\"}",
+        "content_hash": "sha256:f170150ddbf59d99794e7797824591b374d459782084597b644ecc57a41031b5",
+        "signature_input": "sha256:f170150ddbf59d99794e7797824591b374d459782084597b644ecc57a41031b5",
+        "signature_algorithm": "ecdsa-p256",
+        "signature_wire_form": "IEEE 1363 (r‖s) — 32 bytes r concatenated with 32 bytes s = 64 raw bytes; base64 encoded with padding = 88 chars",
+        "signature_value_hex": "3be6fe13938879c8300a78c3c93aac8b0c32dd54dd0476d5862451f64dc500f647bcb27977261854f3d459b97474a0dd80a330d9d5ab9ca59100d255a12f6f37",
+        "signature_value_base64": "O+b+E5OIecgwCnjDyTqsiwwy3VTdBHbVhiRR9k3FAPZHvLJ5dyYYVPPUWbl0dKDdgKMw2dWrnKWRANJVoS9vNw==",
+        "publish_request_body": {
+          "version": 1,
+          "supersedes": null,
+          "agent_id": "did:web:agents.example.com:test-producer",
+          "contributors": [],
+          "title": "Golden test vector — minimal first version",
+          "type": "data_snapshot",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public",
+          "content_hash": "sha256:f170150ddbf59d99794e7797824591b374d459782084597b644ecc57a41031b5",
+          "signature": {
+            "algorithm": "ecdsa-p256",
+            "key_id": "did:web:agents.example.com:test-producer#key-1",
+            "value": "O+b+E5OIecgwCnjDyTqsiwwy3VTdBHbVhiRR9k3FAPZHvLJ5dyYYVPPUWbl0dKDdgKMw2dWrnKWRANJVoS9vNw=="
+          }
+        }
+      },
+      "registry_assigned": {
+        "ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234",
+        "lineage_id": "lin:sha256:c7fef01c000f8edaa9cb46122ceb5d7bca38328f002fb0f40e362e3b289bbb2a",
+        "origin_registry": "registry.example.com",
+        "created_at": "2026-04-16T10:30:15.123Z"
+      },
+      "verification_steps": [
+        "1. Strip exclusion set from publish_request_body to produce producer_content.",
+        "2. JCS-canonicalize producer_content; result MUST equal expected.canonical_form.",
+        "3. SHA-256 of canonical_form (UTF-8 bytes); hex of digest with 'sha256:' prefix MUST equal expected.content_hash.",
+        "4. Sign ASCII bytes of expected.content_hash with the test private key, using RFC 6979 deterministic ECDSA over P-256 with SHA-256 as the hash. Encode the signature as IEEE 1363 r‖s (32+32 = 64 raw bytes), base64 with padding. Result MUST equal expected.signature_value_base64. Implementations using non-deterministic ECDSA MUST still produce a 64-byte r‖s output, but their value will differ; they verify via step 5 instead of byte-comparing.",
+        "5. Reconstruct the public key: build the SEC1 uncompressed point 0x04 || x || y (65 bytes) from public_key_jwk.x and public_key_jwk.y (base64url-decoded, 32 bytes each), or use public_key_uncompressed_sec1_hex directly. Verify the signature with this public key over the ASCII bytes of body.content_hash (with the 'sha256:' prefix included). Verification MUST succeed for both the deterministic value above AND any conformant implementation's own r‖s output.",
+        "6. Compute lin: + lowercase_hex(SHA-256(registry_assigned.ctx_id)); result MUST equal registry_assigned.lineage_id."
+      ]
+    }
+  ],
+  "notes": "ECDSA-P256 is non-deterministic by default. Implementations following this fixture's signature_value_base64 byte-for-byte MUST use RFC 6979 deterministic ECDSA (SHA-256 hash). Implementations using random-k ECDSA cannot reproduce the value but MUST still verify it (step 5) and MUST produce a 64-byte IEEE 1363 r‖s output for their own signing path. DER-encoded signatures are NON-CONFORMANT regardless of length."
+}

@@ -1,0 +1,19 @@
+{
+  "id": "status-004",
+  "description": "Registry state with status ''. The pattern requires minLength 1 (acdp-common.schema.json#/$defs/status). The empty string is non-conformant under both the pattern and the minLength constraint. RFC-ACDP-0004 §4.1 mandates rejection.",
+  "tags": ["status", "negative", "pattern-validation"],
+  "input": {
+    "endpoint": "GET /contexts/{ctx_id}",
+    "response_status": 200,
+    "response_body_excerpt": {
+      "registry_state": {
+        "status": ""
+      }
+    }
+  },
+  "expected": {
+    "consumer_outcome": "reject",
+    "consumer_error": "schema_violation",
+    "rationale": "The empty string is the most likely accident: a serializer omitted the field's value, or a registry stored NULL and it round-tripped as empty. Either way, the response is non-conformant. Consumers MUST NOT default the field to 'active' — that would mask real registry bugs."
+  }
+}

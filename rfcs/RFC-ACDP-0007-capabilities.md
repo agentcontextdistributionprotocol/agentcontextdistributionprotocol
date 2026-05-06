@@ -69,6 +69,30 @@ The capabilities document is `additionalProperties: true` to support forward com
 
 Libraries that throw, panic, or strip unknown fields will break silently the next time ACDP adds a capability flag — for example, when push subscriptions ship in v0.1, registries will start advertising `supports_push_subscriptions: true`, and a strict-decoder consumer will fail to read the document at all. The same forward-compat policy applies to the `status` field on registry state (RFC-ACDP-0004 §4.1).
 
+#### 3.3.1 Schema openness map (NORMATIVE)
+
+ACDP uses a mix of CLOSED schemas (`additionalProperties: false`, used for tightly defined wire shapes where unknown fields signal a bug) and OPEN schemas (`additionalProperties: true`, used where forward compatibility matters). Consumers and registries MUST honor each schema's openness exactly as documented; treating a closed schema as open masks bugs, and treating an open schema as closed breaks forward compatibility.
+
+| Schema | Openness | `additionalProperties` |
+|---|---|---|
+| `acdp-publish-request.schema.json` | **Closed** | `false` |
+| `acdp-publish-response.schema.json` | **Closed** | `false` |
+| `acdp-search-response.schema.json` | **Closed** | `false` |
+| `acdp-error.schema.json` | **Closed** | `false` |
+| `acdp-error.schema.json` (`error.details`) | **Open** | `true` |
+| `acdp-data-ref.schema.json` (`embedded` sub-object) | **Closed** | `false` |
+| `acdp-data-ref.schema.json` (structured `location` object) | **Open** | `true` |
+| `acdp-context-body.schema.json` (`Body` for retrieval) | **Open** | `true` |
+| `acdp-capabilities.schema.json` (top level) | **Open** | `true` |
+| `acdp-capabilities.schema.json` (`limits` sub-object) | **Closed** | `false` |
+| `acdp-context.schema.json` (full retrieval envelope) | **Open** | `true` |
+| `acdp-registry-state.schema.json` | **Open** | `true` |
+| `match_summary` (in `acdp-common.schema.json`) | **Closed** | `false` |
+| `signature` (in `acdp-common.schema.json`) | **Closed** | `false` |
+| `data_period` (in `acdp-common.schema.json`) | **Closed** | `false` |
+
+Conformant consumers MUST reject deserializing a closed-schema object that contains fields not defined in the schema (`schema_violation`). Conformant consumers MUST NOT reject deserializing an open-schema object that contains unknown fields. The fixtures `caps-006-extra-top-level-field` (open: tolerate), `pub-007` (closed publish response: forbid extras like `content_hash`), and the search/embedded extra-field fixtures pin specific instances; the table above governs every shape across the schema set.
+
 ### 3.4 Example
 
 ```json
@@ -89,7 +113,23 @@ Libraries that throw, panic, or strip unknown fields will break silently the nex
 }
 ```
 
-### 3.5 Caching
+### 3.5 Consumer validation checklist (NORMATIVE)
+
+After fetching `/.well-known/acdp.json`, consumers and cross-registry resolvers MUST validate the following before relying on the document. Schema validation alone is necessary but not sufficient — the items marked **(value)** below are not enforceable by the JSON Schema in all toolchains, so implementations MUST verify them in code.
+
+1. `acdp_version` matches the semver pattern `^\d+\.\d+\.\d+$`.
+2. `registry_did` is a valid DID. For v0.0.1 registries, `registry_did` MUST be `did:web:<authority>`, and `<authority>` MUST equal the hostname the capabilities document was fetched from. **(value, cross-field)**
+3. `supported_signature_algorithms` MUST contain `"ed25519"`.
+4. `supported_did_methods` MUST contain `"did:web"`.
+5. `profiles` MUST contain `"acdp-registry-core"`.
+6. `limits.max_embedded_bytes` MUST equal `65536`.
+7. `limits.max_payload_bytes` MUST be `>= 1024`.
+8. If `supports_idempotency_key` is `true`, `limits.idempotency_key_ttl_seconds` MUST be present and in the inclusive range `86400..604800` (24h to 7d).
+9. If the registry serves any non-public contexts, `read_authentication_methods` MUST be non-empty (RFC-ACDP-0008 §6.2). **(value, cross-field)**
+
+A consumer encountering a capabilities document that fails any of the checks above MUST NOT proceed with the operation that required fetching capabilities (publish, retrieval, cross-registry resolution). Implementations SHOULD surface the failing check to operators so the registry can be corrected. The conformance fixtures `caps-001..006` (`schemas/conformance/caps-001-valid-minimal.json` through `caps-006-extra-top-level-field.json`) pin representative positive and negative payloads for the checklist.
+
+### 3.6 Caching
 
 The capabilities document is moderately stable. Registries SHOULD set:
 

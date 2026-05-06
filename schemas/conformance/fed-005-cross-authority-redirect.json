@@ -1,0 +1,22 @@
+{
+  "id": "fed-005",
+  "description": "Cross-registry resolution MUST reject HTTP redirects whose target authority differs from the original request's authority. A cooperating attacker server can pass the IP-range filter on its own public IP and then issue a 30x redirect to 127.0.0.1 or 169.254.169.254 (or any cross-org authority); the cross-authority redirect rule blocks this without re-running the full filter chain on the redirect target.",
+  "tags": ["security", "ssrf", "federated", "redirects"],
+  "ssrf_rule": "RFC-ACDP-0006 §7.5 (Redirect handling — same-authority requirement)",
+  "applies_to_profiles": ["acdp-registry-federated", "acdp-consumer"],
+  "input": {
+    "scenario": "Resolver fetches https://attacker.example.com/.well-known/acdp.json; server returns a 30x with Location header pointing to a different authority",
+    "initial_request_authority": "attacker.example.com",
+    "redirect_response": {
+      "status": 302,
+      "Location": "https://internal.private.example.com/secrets"
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "error_code": "cross_registry_resolution_failed",
+    "http_status": 502,
+    "behavior": "Resolver MUST refuse to follow the redirect. The check MUST be a string comparison on the authority (host + port) component of the URL — same-host AND same-port. Path/query/scheme changes within the same authority MAY be followed up to the §7.5 cap of 3 follows. A second concern: even if the redirect chain stays on the same authority, the IP MUST remain pinned (the §7.6 DNS-rebinding protection); a same-authority redirect MUST NOT trigger a fresh DNS lookup.",
+    "rationale": "Without same-authority enforcement, an attacker who controls a public-facing host they registered with the resolver can use it as a bounce point to any internal address — bypassing the IP-range filter that runs only on the *initial* DNS resolution."
+  }
+}

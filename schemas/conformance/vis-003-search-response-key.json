@@ -41,6 +41,34 @@
         "consumer_behavior": "Conformant consumer MUST treat the response as non-conformant. Acceptable handling: surface a parse/schema error to the caller, OR return zero matches. Consumer MUST NOT silently coerce `results` to `matches`.",
         "rationale": "Silent coercion would mask registry bugs and erode the schema contract."
       }
+    },
+    {
+      "name": "consumer-side: RECOMMENDED diagnostic when `results` is detected (RFC-ACDP-0005 §2.2)",
+      "input": {
+        "received_response": {
+          "results": [
+            {
+              "ctx_id": "acdp://registry.example.com/550e8400-e29b-41d4-a716-446655440000",
+              "lineage_id": "lin:sha256:b14ccd2a8b34530309255db68c151a10689b6a82feb30aff9222d54fdd871720",
+              "agent_id": "did:web:agents.example.com:test",
+              "title": "Sample",
+              "type": "data_snapshot",
+              "created_at": "2026-04-16T10:15:00.000Z",
+              "status": "active"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "outcome": "failure",
+        "consumer_behavior": "Consumer SHOULD surface an observable diagnostic — log warning, structured event, OpenTelemetry span attribute, or equivalent — explicitly stating that the response contained a `results` key instead of `matches`. The diagnostic MUST be observable to integration testers WITHOUT enabling debug-level logging across the stack. The functional outcome remains the same as the previous scenario (parse/schema error or zero matches); the diagnostic is added to disambiguate 'registry returned zero matches' from 'registry used the wrong field name'.",
+        "rationale": "Without an explicit diagnostic, a consumer that silently degrades to zero-match handling makes registry field-name bugs indistinguishable from genuine empty result sets. Operators chasing 'why is search returning nothing' would have to packet-capture or attach a debugger; the SHOULD-level diagnostic is the cheapest way to surface the bug at the right layer.",
+        "minimum_diagnostic_content": [
+          "The HTTP path that produced the response (e.g. `GET /contexts/search?q=...`).",
+          "The actual top-level keys observed (so operators can also detect other misnamings like `records`/`items`).",
+          "A reference to RFC-ACDP-0005 §2.2 / fixture vis-003."
+        ]
+      }
     }
   ],
   "background": "A reference implementation accidentally serialized the array under `results`. Because no behavioral fixture pinned the field name, the bug went unnoticed until a cross-impl interop test failed."

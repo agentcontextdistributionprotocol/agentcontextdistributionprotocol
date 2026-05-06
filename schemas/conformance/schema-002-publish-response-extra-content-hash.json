@@ -1,0 +1,22 @@
+{
+  "id": "schema-002",
+  "description": "POST /contexts response containing 'content_hash' echoed back from the request. The publish-response schema is CLOSED (additionalProperties: false; see acdp-publish-response.schema.json line 19 and the openness map in RFC-ACDP-0007 §3.3.1). Consumers MUST reject as schema_violation. Pairs with pub-007 which pins the exact five-field response shape.",
+  "tags": ["schema-openness", "negative", "publish-response", "pub-007-companion"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "response_status": 201,
+    "response_body": {
+      "ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234",
+      "lineage_id": "lin:sha256:c7fef01c000f8edaa9cb46122ceb5d7bca38328f002fb0f40e362e3b289bbb2a",
+      "version": 1,
+      "created_at": "2026-04-16T10:30:15.123Z",
+      "status": "active",
+      "content_hash": "sha256:f170150ddbf59d99794e7797824591b374d459782084597b644ecc57a41031b5"
+    }
+  },
+  "expected": {
+    "consumer_outcome": "reject",
+    "consumer_error": "schema_violation",
+    "rationale": "The publish response is exactly five fields. Echoing content_hash adds nothing — the producer already submitted and signed it — and accepting the echo would make consumers tolerant of registries that drift away from the spec shape. pub-007 lists every forbidden field; this fixture pins the most common drift in particular."
+  }
+}

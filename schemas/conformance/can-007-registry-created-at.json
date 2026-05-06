@@ -1,0 +1,51 @@
+{
+  "id": "can-007",
+  "description": "Registry-assigned `created_at` MUST use canonical millisecond precision (RFC-ACDP-0001 §5.3). Registries using OS clock APIs that return higher-precision timestamps MUST truncate to milliseconds before emitting `created_at` in both the publish response (RFC-ACDP-0003 §2.2) and the stored body (RFC-ACDP-0004 §3.1). Truncation MUST round toward the past — emitting a `created_at` greater than the registry's actual clock instant of acceptance is not conformant. This fixture is the registry-side counterpart to `can-006-timestamp-precision.json`, which covers the producer-side rule for fields inside ProducerContent.",
+  "tags": ["canonicalization", "timestamps", "registry-side", "precision"],
+  "vectors": [
+    {
+      "name": "Canonical millisecond form (CONFORMANT)",
+      "example_created_at": "2026-04-16T10:30:15.123Z",
+      "registry_clock_at_acceptance": "2026-04-16T10:30:15.123456Z",
+      "expected": {
+        "registry_compliance": "conformant",
+        "rationale": "The registry's clock returned 10:30:15.123456 UTC. Truncating toward the past to millisecond precision yields 10:30:15.123, which is what is emitted in `created_at`. This is the form a conformant registry MUST produce."
+      }
+    },
+    {
+      "name": "Microsecond precision (NON-CONFORMANT)",
+      "example_created_at": "2026-04-16T10:30:15.123456Z",
+      "expected": {
+        "registry_compliance": "non-conformant",
+        "rationale": "Six fractional-second digits is microsecond precision. Per RFC-ACDP-0001 §5.3, registries MUST truncate to millisecond precision (three fractional-second digits) before serializing. Common cause: passing `datetime.datetime.now(tz=UTC).isoformat()` straight through; Python's stdlib emits microseconds by default. Fix: truncate the `microsecond` field to a 1000-multiple before calling `.isoformat()`."
+      }
+    },
+    {
+      "name": "Nanosecond precision (NON-CONFORMANT)",
+      "example_created_at": "2026-04-16T10:30:15.123456789Z",
+      "expected": {
+        "registry_compliance": "non-conformant",
+        "rationale": "Nine fractional-second digits is nanosecond precision. Common cause: Go's `time.Now().UTC().Format(time.RFC3339Nano)`, Java's `Instant.now().toString()`, or Rust's `chrono::Utc::now().to_rfc3339()` (the trailing-zeros-trimmed default still emits up to nanoseconds when the underlying clock has them). Fix: truncate to milliseconds explicitly before formatting (e.g. Go: `t.Truncate(time.Millisecond).UTC().Format(\"2006-01-02T15:04:05.000Z\")`)."
+      }
+    },
+    {
+      "name": "No fractional seconds (CONFORMANT but discouraged)",
+      "example_created_at": "2026-04-16T10:30:15Z",
+      "expected": {
+        "registry_compliance": "conformant",
+        "rationale": "Producers and registries MAY emit timestamps with no fractional seconds (the schema's regex allows it). However the canonical EMISSION form per §5.3 is millisecond precision; registries SHOULD pad to `.000` for visual consistency in API responses. A registry that emits `Z` for some `created_at` values and `.123Z` for others is conformant but UX-hostile to consumers diffing audit logs."
+      }
+    },
+    {
+      "name": "Rounded toward the future (NON-CONFORMANT)",
+      "example_created_at": "2026-04-16T10:30:15.124Z",
+      "registry_clock_at_acceptance": "2026-04-16T10:30:15.123500Z",
+      "expected": {
+        "registry_compliance": "non-conformant",
+        "rationale": "Some standard libraries default to round-half-to-even or round-half-up when converting to coarser units. Either rounds the example clock instant 10:30:15.123500 to 10:30:15.124, which is in the future relative to the actual acceptance instant. Registries MUST round toward the past (floor) so `created_at` never claims a moment later than the wall-clock instant of acceptance."
+      }
+    }
+  ],
+  "applies_to_profiles": ["acdp-registry-core", "acdp-registry-discovery", "acdp-registry-federated"],
+  "notes": "This fixture is descriptive: it pins the requirement and rationale rather than supplying a JCS canonical-form/SHA-256 round-trip vector (the registry-assigned created_at is in the Body but not in ProducerContent — it's not part of the content_hash preimage). Conformance verification is by code review of the registry's timestamp-emission path and by integration tests asserting the response field's regex matches `^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$` (millisecond form, three fractional digits, padded)."
+}

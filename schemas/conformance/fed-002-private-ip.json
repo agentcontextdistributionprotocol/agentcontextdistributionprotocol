@@ -1,0 +1,24 @@
+{
+  "id": "fed-002",
+  "description": "Cross-registry resolution MUST reject hostnames that resolve to RFC 1918 private IP ranges. The check is performed AFTER DNS resolution and BEFORE the TCP connect, on every resolved address (an attacker cannot bypass the filter by mixing one public and one private answer in a single DNS response).",
+  "tags": ["security", "ssrf", "federated", "ip-range-filter"],
+  "ssrf_rule": "RFC-ACDP-0006 §7.1 (IP-range filtering — RFC 1918)",
+  "applies_to_profiles": ["acdp-registry-federated", "acdp-consumer"],
+  "input": {
+    "scenario": "Resolver dereferences an acdp:// reference whose authority resolves to a private RFC 1918 address",
+    "acdp_reference": "acdp://attacker-controlled.example.com/550e8400-e29b-41d4-a716-446655440000",
+    "dns_resolution_results": ["10.0.0.1"],
+    "additional_test_cases": [
+      "172.16.0.5",
+      "172.31.255.254",
+      "192.168.1.1"
+    ]
+  },
+  "expected": {
+    "outcome": "failure",
+    "error_code": "cross_registry_resolution_failed",
+    "http_status": 502,
+    "behavior": "Resolver MUST refuse the resolution after DNS lookup completes and BEFORE any TCP connect. Implementations MUST check every IP returned by DNS, not just the first; if any answer is in 10.0.0.0/8, 172.16.0.0/12, or 192.168.0.0/16, the resolution MUST fail.",
+    "rationale": "Private-network addresses reachable from the registry are typically internal services (databases, admin endpoints, container metadata); SSRF into them constitutes a critical compromise."
+  }
+}

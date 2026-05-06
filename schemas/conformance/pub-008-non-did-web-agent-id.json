@@ -1,0 +1,35 @@
+{
+  "id": "pub-008",
+  "description": "Publish request whose body.agent_id is not did:web. RFC-ACDP-0001 §5.4 mandates did:web for v0.0.1 agent_ids; the schema's `did` definition is intentionally loose to permit non-did:web values in contributors/audience, so registries MUST enforce the method on agent_id at the validation layer (RFC-ACDP-0003 §2.1 step 1 schema validation, or step 6 key resolution). The preferred error is schema_violation; key_not_authorized is also conformant if the registry discovers the mismatch later in the pipeline.",
+  "tags": ["publish", "negative", "did-method", "did-web-scope"],
+  "request": {
+    "method": "POST",
+    "path": "/contexts",
+    "content_type": "application/acdp+json",
+    "body": {
+      "version": 1,
+      "supersedes": null,
+      "agent_id": "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH",
+      "contributors": [],
+      "content_hash": "sha256:5f8d88d6758cfd43be875d49edc9eaa494de8ec645bf7de6c592b15bbb1e2e3c",
+      "signature": {
+        "algorithm": "ed25519",
+        "key_id": "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH#key-1",
+        "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+      },
+      "title": "did:key agent_id — non-conformant in v0.0.1",
+      "type": "data_snapshot",
+      "data_refs": [],
+      "derived_from": [],
+      "visibility": "public"
+    }
+  },
+  "expected": {
+    "status": 400,
+    "error_code": "schema_violation",
+    "alternative_error_code": "key_not_authorized",
+    "alternative_status": 403,
+    "rationale": "schema_violation is the preferred response — registries should reject before attempting DID resolution. key_not_authorized is acceptable for registries that discover the mismatch in step 6 (DID resolution). Either response code is conformant; no other code is."
+  },
+  "notes": "v0.0.1 producers MUST use did:web (RFC-ACDP-0001 §5.4 DID method scope table). Registries advertising additional DID methods in supported_did_methods MAY accept those methods on agent_id only after a future protocol version explicitly extends the scope."
+}

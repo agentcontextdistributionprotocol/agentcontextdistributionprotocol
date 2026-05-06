@@ -1,0 +1,33 @@
+{
+  "id": "caps-006",
+  "description": "Capabilities document contains an unknown top-level field. The CapabilitiesDocument schema is OPEN (additionalProperties: true at top level — see acdp-capabilities.schema.json line 105 and RFC-ACDP-0007 §3.3) so future versions can advertise new capability flags without a schema bump. Consumers MUST tolerate unknown top-level fields. The `limits` sub-object remains CLOSED (additionalProperties: false at line 102); this fixture exercises top-level openness specifically.",
+  "tags": ["capabilities", "happy-path", "forward-compatibility", "schema-openness"],
+  "input": {
+    "endpoint": "GET /.well-known/acdp.json",
+    "response_body": {
+      "acdp_version": "0.0.1",
+      "registry_did": "did:web:registry.example.com",
+      "supported_signature_algorithms": ["ed25519"],
+      "supported_did_methods": ["did:web"],
+      "profiles": ["acdp-registry-core"],
+      "limits": {
+        "max_payload_bytes": 1048576,
+        "max_embedded_bytes": 65536
+      },
+      "supports_push_subscriptions": true,
+      "future_capability_x": {
+        "enabled": true,
+        "max_concurrent": 16
+      }
+    }
+  },
+  "expected": {
+    "outcome": "accept",
+    "consumer_action": "Pass the schema check, route the unknown fields into a catch-all extension map per the implementer-note recipes in RFC-ACDP-0007 §3.3 (Rust serde flatten, Python pydantic extra=allow, Go map[string]any, etc.), and continue with the operation that required fetching capabilities.",
+    "negative_examples": {
+      "closed_decoder_failure": "An implementation using #[serde(deny_unknown_fields)] (Rust), pydantic with extra='forbid' (Python), or zod's .strict() (TypeScript) will fail this fixture. That is a conformance failure: forward-compat tolerance for unknown top-level fields is normative.",
+      "limits_extra_field": "If the unknown field were placed inside `limits` instead of at the top level, the document MUST be rejected — `limits` is closed (additionalProperties: false). See caps-005 for the fixed-value case and the implementer note in RFC-ACDP-0007 §3.3."
+    },
+    "rationale": "The whole point of the open top-level schema is to make it possible to ship new capability flags (push subscriptions, receipts, walks, etc.) without breaking every deployed v0.0.1 consumer the moment the first registry advertises them. A consumer that treats unknown top-level fields as errors will silently fail the next time ACDP grows."
+  }
+}

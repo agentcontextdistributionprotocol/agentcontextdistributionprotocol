@@ -1,0 +1,27 @@
+{
+  "id": "schema-003",
+  "description": "DataRef whose `embedded` sub-object contains an unknown field. The `embedded` sub-schema is CLOSED (additionalProperties: false; see acdp-data-ref.schema.json line 85 and the openness map in RFC-ACDP-0007 §3.3.1). Registries MUST reject the publish at schema validation (RFC-ACDP-0003 §2.1 step 1).",
+  "tags": ["schema-openness", "negative", "data-ref", "embedded"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "request_body_excerpt": {
+      "data_refs": [
+        {
+          "type": "primary_result",
+          "format": "json",
+          "embedded": {
+            "encoding": "json",
+            "content": {"hello": "world"},
+            "checksum": "abc123"
+          }
+        }
+      ]
+    }
+  },
+  "expected": {
+    "registry_outcome": "reject",
+    "status": 400,
+    "error_code": "schema_violation",
+    "rationale": "The embedded object is a tightly-scoped wire shape: encoding and content. New embedding semantics (different encodings, attached metadata) require an explicit schema bump, not field-level extensibility. Note: the SURROUNDING DataRef object is open by default (no additionalProperties on the data-ref top level); this fixture targets the embedded sub-object specifically."
+  }
+}

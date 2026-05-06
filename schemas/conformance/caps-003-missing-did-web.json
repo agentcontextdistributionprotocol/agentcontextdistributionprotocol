@@ -1,0 +1,25 @@
+{
+  "id": "caps-003",
+  "description": "Capabilities document whose supported_did_methods does not contain 'did:web'. RFC-ACDP-0001 §5.4 mandates that v0.0.1 producers use did:web and §5.11 mandates that registries resolve did:web; the schema enforces this via `contains: { const: \"did:web\" }` (acdp-capabilities.schema.json line 60). A consumer MUST reject a capabilities document missing 'did:web' as schema_violation.",
+  "tags": ["capabilities", "negative", "validation", "did-methods"],
+  "input": {
+    "endpoint": "GET /.well-known/acdp.json",
+    "response_body": {
+      "acdp_version": "0.0.1",
+      "registry_did": "did:web:registry.example.com",
+      "supported_signature_algorithms": ["ed25519"],
+      "supported_did_methods": ["did:key"],
+      "profiles": ["acdp-registry-core"],
+      "limits": {
+        "max_payload_bytes": 1048576,
+        "max_embedded_bytes": 65536
+      }
+    }
+  },
+  "expected": {
+    "outcome": "reject",
+    "error_code": "schema_violation",
+    "consumer_action": "MUST NOT proceed with operations against this registry. A registry that cannot resolve did:web cannot validate any v0.0.1 publish request (every conformant producer signs with a did:web key per RFC-ACDP-0001 §5.4).",
+    "rationale": "did:web is the only DID method mandatory in v0.0.1. Future versions will widen the set; a registry advertising only did:key today is conformant for some hypothetical v0.1+ producer flow but not for v0.0.1 interop."
+  }
+}

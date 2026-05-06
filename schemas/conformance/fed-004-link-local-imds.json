@@ -1,0 +1,25 @@
+{
+  "id": "fed-004",
+  "description": "Cross-registry resolution MUST reject hostnames that resolve to the link-local range (169.254.0.0/16, fe80::/10), with explicit emphasis on the cloud instance metadata service (IMDS) endpoint 169.254.169.254 used by AWS, Google Cloud, and Azure. SSRF to IMDS yields short-lived cloud credentials and is the canonical SSRF-to-credential-theft pivot.",
+  "tags": ["security", "ssrf", "federated", "link-local", "imds"],
+  "ssrf_rule": "RFC-ACDP-0006 §7.1 (IP-range filtering — link-local + IMDS)",
+  "applies_to_profiles": ["acdp-registry-federated", "acdp-consumer"],
+  "input": {
+    "scenario": "Resolver dereferences an acdp:// reference whose authority resolves to the cloud metadata endpoint",
+    "acdp_reference": "acdp://imds-shadow.example.com/550e8400-e29b-41d4-a716-446655440000",
+    "dns_resolution_results": ["169.254.169.254"],
+    "additional_test_cases": [
+      "169.254.0.1",
+      "169.254.255.254",
+      "fe80::1",
+      "fe80::dead:beef"
+    ]
+  },
+  "expected": {
+    "outcome": "failure",
+    "error_code": "cross_registry_resolution_failed",
+    "http_status": 502,
+    "behavior": "Resolver MUST refuse before connecting. The filter MUST cover the entire 169.254.0.0/16 range and the IPv6 link-local prefix fe80::/10 — not just the well-known IMDS address 169.254.169.254. Some clouds (e.g. GCP `metadata.google.internal`) also expose IMDS via DNS names that resolve into the link-local range; the IP filter catches those without requiring a name-based blocklist.",
+    "rationale": "AWS IMDSv1 returns IAM credentials over an unauthenticated HTTP request; SSRF to 169.254.169.254 is the historical root of dozens of cloud breaches. IMDSv2's session token defense does not protect a server-side resolver that follows arbitrary HTTP semantics."
+  }
+}

@@ -40,7 +40,25 @@ Open a PR adding a row to the table above. Schemes MUST:
 - Document optional fields and their semantics.
 - Not collide with an existing scheme.
 
+New schemes are added at status `Provisional`.
+
 Producers using non-registered schemes SHOULD use a reverse-domain prefix (`com.example.feature`) to avoid collisions.
+
+## Promotion from Provisional to Stable
+
+A `Provisional` scheme MAY be promoted to `Stable` via PR when **all** of the following are true:
+
+- The scheme has at least two independent producer implementations — different codebases AND different operating organizations. A fork of an existing implementation does not count as a second implementation; a vendor-internal reuse of the same codebase across teams does not count as a second organization.
+- The required-fields list and required-field semantics have not changed in the preceding 90 days. Adding optional fields during the 90-day window does NOT reset the clock; changing or renaming a required field DOES reset the clock.
+- At least one ACDP context using the scheme has been published to a public, live registry that conforms to `acdp-registry-core` (the published context proves the scheme works end-to-end through the publish + retrieval path, not just on a producer's local schema).
+
+To request promotion, open a PR that:
+
+1. Cites the two implementations (links to their public source or their `agent_id` DID document).
+2. Links to the published context (`ctx_id` URL).
+3. Updates the row's status from `Provisional` to `Stable`.
+
+Promotion is a registry-policy change only; it does NOT alter the on-wire schema. Renaming or removing a `Stable` scheme is forbidden — `Stable` MUST mean "consumers can rely on this scheme indefinitely".
 
 ## Examples
 

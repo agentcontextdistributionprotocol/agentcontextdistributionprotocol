@@ -11,7 +11,15 @@
     "http_status": 201,
     "headers": {
       "Content-Type": "application/acdp+json",
-      "Location": "MUST be the percent-encoded canonical retrieval URL for the assigned ctx_id (e.g. /contexts/acdp%3A%2F%2F<authority>%2F<uuid>)"
+      "Location": "MUST be the percent-encoded canonical retrieval URL for the assigned ctx_id (e.g. /contexts/acdp%3A%2F%2F<authority>%2F<uuid>)",
+      "Location_example": "/contexts/acdp%3A%2F%2Fregistry.example.com%2F550e8400-e29b-41d4-a716-446655440000",
+      "Location_encoding_rules": [
+        "The colon (`:`) in the `acdp` scheme delimiter MUST be percent-encoded as `%3A`.",
+        "Each forward slash (`/`) inside the `acdp://` URL MUST be percent-encoded as `%2F`. This includes the two slashes immediately following `acdp:` (the `//` authority separator) AND the slash separating authority from UUID.",
+        "Hex digits in the percent-encoding MUST be uppercase (`%3A`, `%2F`) per RFC 3986 §2.1's recommendation; lowercase is accepted by RFC 3986 but registries SHOULD emit uppercase for consistency.",
+        "The leading `/contexts/` portion of the Location path is NOT itself percent-encoded — only the `ctx_id` payload is.",
+        "Result form: `/contexts/acdp%3A%2F%2F<authority>%2F<uuid>` where `<authority>` and `<uuid>` are themselves NOT further encoded (they contain only characters legal in a URI path)."
+      ]
     },
     "response_body_shape": {
       "required_fields": ["ctx_id", "lineage_id", "version", "created_at", "status"],
@@ -46,5 +54,41 @@
       }
     }
   },
-  "rationale": "Echoing content_hash from a publish response confers no integrity guarantee — the producer already submitted it and signed it. Reference implementations have included content_hash in publish-response structs, masking shape divergences via test mocks that mirror the same wrong shape. This fixture pins the exact response surface."
+  "rationale": "Echoing content_hash from a publish response confers no integrity guarantee — the producer already submitted it and signed it. Reference implementations have included content_hash in publish-response structs, masking shape divergences via test mocks that mirror the same wrong shape. This fixture pins the exact response surface.",
+  "scenarios": [
+    {
+      "name": "Location header round-trip — consumer reconstructs ctx_id from Location",
+      "description": "After a successful publish, a consumer reads the `Location` response header, percent-decodes the path component after `/contexts/`, and asserts the result equals `body.ctx_id` byte-for-byte. This catches registries that emit a partially-encoded Location (e.g. only the colon encoded but not the slashes), and registries that emit a path-relative URL inconsistent with the body field.",
+      "input": {
+        "publish_response": {
+          "headers": {
+            "Location": "/contexts/acdp%3A%2F%2Fregistry.example.com%2F550e8400-e29b-41d4-a716-446655440000"
+          },
+          "body": {
+            "ctx_id": "acdp://registry.example.com/550e8400-e29b-41d4-a716-446655440000",
+            "lineage_id": "lin:sha256:b14ccd2a8b34530309255db68c151a10689b6a82feb30aff9222d54fdd871720",
+            "version": 1,
+            "created_at": "2026-04-16T10:30:15.123Z",
+            "status": "active"
+          }
+        }
+      },
+      "expected": {
+        "outcome": "success",
+        "consumer_steps": [
+          "1. Read `Location` header value: `/contexts/acdp%3A%2F%2Fregistry.example.com%2F550e8400-e29b-41d4-a716-446655440000`.",
+          "2. Strip the `/contexts/` prefix.",
+          "3. Percent-decode the remaining path segment using RFC 3986 §2.1 rules.",
+          "4. Result MUST equal `body.ctx_id` exactly: `acdp://registry.example.com/550e8400-e29b-41d4-a716-446655440000`."
+        ],
+        "consumer_behavior": "Consumer MUST treat any divergence between (Location-decoded) and `body.ctx_id` as a registry bug and surface it. Acceptable handling: refuse to use the response, raise a schema/integrity error. Consumer MUST NOT silently prefer one over the other."
+      },
+      "negative_examples": {
+        "underencoded_location_partial_colon_only": "/contexts/acdp%3A//registry.example.com/550e8400-e29b-41d4-a716-446655440000",
+        "underencoded_location_no_encoding": "/contexts/acdp://registry.example.com/550e8400-e29b-41d4-a716-446655440000",
+        "wrong_ctx_id_in_location": "/contexts/acdp%3A%2F%2Fregistry.example.com%2F00000000-0000-4000-8000-000000000000",
+        "note": "All three of these forms MUST cause the consumer to flag the response as non-conformant. The first two are RFC 3986 violations (slashes in a path segment that already contains the `acdp:` scheme delimiter would re-anchor the path); the third is a server-side identity divergence."
+      }
+    }
+  ]
 }

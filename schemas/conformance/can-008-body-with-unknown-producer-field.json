@@ -1,0 +1,31 @@
+{
+  "id": "can-008",
+  "description": "Forward-compatibility hash verification. A v0.1 producer adds a new optional producer-controlled field ('priority' here, illustrative). A v0.0.1 consumer that recomputes content_hash from the raw received JSON — preserving all unknown producer-controlled fields — produces the same hash the producer signed. This fixture pins the canonical form and SHA-256 so v0.0.1 consumers can verify their verification path is forward-compatible. A consumer that drops 'priority' before hashing (typical typed-struct deserialization without a catch-all) would compute a different hash and falsely raise hash_mismatch — see RFC-ACDP-0001 §5.7 'Hash verification over raw JSON'.",
+  "tags": ["canonicalization", "hashing", "forward-compatibility", "raw-json"],
+  "vectors": [
+    {
+      "name": "Body with unknown producer-controlled field 'priority' — included in hash",
+      "input": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:agent:test",
+        "contributors": [],
+        "title": "Forward-compat unknown producer field",
+        "type": "data_snapshot",
+        "data_refs": [],
+        "derived_from": [],
+        "visibility": "public",
+        "priority": "high"
+      },
+      "expected": {
+        "canonical_form": "{\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_refs\":[],\"derived_from\":[],\"priority\":\"high\",\"supersedes\":null,\"title\":\"Forward-compat unknown producer field\",\"type\":\"data_snapshot\",\"version\":1,\"visibility\":\"public\"}",
+        "sha256_hex": "f5c08fe3fca686455e44cf4e5a9e3765424c3c946341ed024bb3122eb1cb21bb",
+        "content_hash_field_value": "sha256:f5c08fe3fca686455e44cf4e5a9e3765424c3c946341ed024bb3122eb1cb21bb"
+      },
+      "consumer_behavior": "REQUIRED. When a v0.0.1 consumer encounters this body shape, it MUST recompute content_hash over the raw parsed JSON (with the exclusion set fields removed by name). The unknown 'priority' field MUST appear in the canonical input. The recomputed hash MUST equal the value above; only then does the consumer verify the signature.",
+      "non_conformant_behavior": "A consumer that uses a typed deserializer without an unknown-field catch-all will lose 'priority' before hashing, compute sha256 over a 9-key object instead of the 10-key one above, and raise a false hash_mismatch. This is the exact silent-break scenario §5.7 forbids."
+    }
+  ],
+  "applies_to_profiles": ["acdp-registry-core", "acdp-consumer"],
+  "notes": "Pair with can-009 which pins the inverse rule: exclusion-set membership is by name, not by typed knowledge."
+}

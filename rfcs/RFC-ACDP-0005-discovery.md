@@ -52,6 +52,8 @@ The response conforms to [`schemas/json/acdp-search-response.schema.json`](../sc
 
 The response object MUST use the key `matches` for the result array. The field name `results` is **not conformant**. Registries MUST emit `matches`; consumers MUST NOT accept `results` as a substitute for `matches`. The schema is `additionalProperties: false`, so a registry that emits `results` (or any other alternative spelling) violates the schema and produces a non-conformant response.
 
+**Consumer diagnostic (SHOULD).** When a consumer receives a search response that lacks the `matches` key but contains a `results` key (or any other recognized misspelling such as `records`, `items`, `data`, `hits`, `rows`), the consumer SHOULD surface an observable diagnostic — a logged warning, a structured event, or an OpenTelemetry span attribute — naming the offending key and citing this section. The diagnostic MUST be visible without enabling debug-level logging. The functional outcome (parse error or zero matches) is the same with or without the diagnostic; the SHOULD exists so an operator chasing "search returns nothing" can distinguish "registry returned zero matches" from "registry used the wrong field name". `vis-003-search-response-key.json` includes a fixture scenario for this.
+
 ```json
 {
   "matches": [
@@ -72,7 +74,13 @@ The response object MUST use the key `matches` for the result array. The field n
 }
 ```
 
-Each match contains a summary projection (`ctx_id`, `lineage_id`, `agent_id`, `title`, `summary`, `type`, `domain`, `created_at`, `status`). Results are scoped to the requesting agent's effective visibility (RFC-ACDP-0002 §7).
+Each match contains a summary projection (`ctx_id`, `lineage_id`, `agent_id`, `title`, `summary`, `type`, `domain`, `created_at`, `status`, optional `visibility`). Results are scoped to the requesting agent's effective visibility (RFC-ACDP-0002 §7).
+
+**`visibility` in `match_summary` (OPTIONAL).** Registries MAY include `visibility` in each `match_summary` to let consumers cache-classify a result before a retrieval round-trip — useful for clients that distinguish a 404 from a deletion or restriction. The disclosure rules:
+
+- For matches with `visibility: public`, registries SHOULD include `visibility: public`.
+- For matches with `visibility: restricted` or `visibility: private`, registries MUST include `visibility` ONLY when the requester is already authorized to retrieve the context (i.e., the effective requester DID is in `audience` for `restricted`, or is `agent_id` for either `restricted` or `private`). Including the field for any other requester leaks the visibility class to a non-authorized party even when the match itself is correctly scoped.
+- When the field is absent, consumers MUST NOT infer anything about visibility — absence is the registry's choice. v0.0.1 deployments predating this clarification are conformant without the field.
 
 ### 2.3 Pagination
 
@@ -121,6 +129,22 @@ Cursors are opaque strings. They:
 - MUST be re-scoped to the current requester on every page. Registries MUST NOT use cursors as a way to "remember" the original requester's identity. If the effective requester DID changes between pages (different authentication credentials), the registry MUST recompute visibility from scratch using the current requester. Equivalently, a cursor returned to requester A and replayed by requester B MUST produce results visible to B (not A).
 
 Results MAY include or exclude contexts published mid-iteration; cross-page consistency is not guaranteed. A consumer requiring snapshot semantics MUST issue a single request with a large `limit` (subject to registry caps).
+
+#### 2.5.5 Visibility in keyword search
+
+The visibility matrix below is normative and consolidates the rules in §3 (visibility scoping) and RFC-ACDP-0002 §7 (visibility semantics) for the keyword-search path specifically. "Appears in search for" means included in `matches[]`, counted in `total_estimate`, and reachable via cursor pages — these are jointly equivalent on the wire.
+
+| Visibility | Appears in keyword search for... | Retrieval (for comparison) |
+|---|---|---|
+| `public` | Anyone authenticated; anonymous requesters too if the registry advertises `anonymous_public_reads: true` | Same set |
+| `restricted` | `agent_id` and DIDs listed in `audience` only | Same set as search |
+| `private` | `agent_id` only | `agent_id` and DIDs listed in `audience` (search is strictly narrower) |
+
+**Q1 — `private` + `audience`:** Audience members of a `private` context can RETRIEVE the context if they know its `ctx_id` (RFC-ACDP-0002 §7), but MUST NOT discover it via keyword search. This asymmetry is intentional: `audience` on a `private` context expresses "you may read this if I send you the link", not "you may discover this". Producers wanting cohort discoverability MUST use `visibility: restricted`.
+
+**Q2 — `private` in `derived_from` filter and other lineage queries:** A `private` context MUST NOT appear in any keyword-search result for any requester other than its `agent_id`, *including* responses to `derived_from=<ctx_id>` filter queries and any other lineage-discovery filter that may be added in the future. The `derived_from` filter is search (RFC-ACDP-0005 §2.4); search is strictly narrower than retrieval. Concretely: if a `private` context is derived from a `public` context that an audience member can search, querying `derived_from=<public_ctx_id>` MUST NOT surface the `private` derivative for that audience member. Audience members who learn the `ctx_id` out-of-band MAY retrieve it directly (RFC-ACDP-0002 §7).
+
+This rule MUST also be applied to `total_estimate` (RFC-ACDP-0005 §3): private contexts never count toward another DID's `total_estimate`, and registries MUST avoid leaking their existence via per-requester variance in the estimate.
 
 ---
 

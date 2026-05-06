@@ -1,0 +1,19 @@
+{
+  "id": "status-002",
+  "description": "Registry state with status 'ACTIVE' (uppercase). The pattern `^[a-z][a-z0-9_]*$` rejects uppercase letters. RFC-ACDP-0004 §4.1 mandates rejection: a malformed status indicates a buggy registry, not a forward-compat scenario.",
+  "tags": ["status", "negative", "pattern-validation"],
+  "input": {
+    "endpoint": "GET /contexts/{ctx_id}",
+    "response_status": 200,
+    "response_body_excerpt": {
+      "registry_state": {
+        "status": "ACTIVE"
+      }
+    }
+  },
+  "expected": {
+    "consumer_outcome": "reject",
+    "consumer_error": "schema_violation",
+    "rationale": "An uppercase status is not a future ACDP value (the registry pattern explicitly forbids uppercase). The realistic source is a buggy registry that did not normalize input or a typo in a hand-rolled response. Consumers MUST refuse to treat malformed values as 'active' — that hides registry bugs."
+  }
+}
