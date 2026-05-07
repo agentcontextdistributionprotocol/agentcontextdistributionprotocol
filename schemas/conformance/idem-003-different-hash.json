@@ -1,0 +1,35 @@
+{
+  "id": "idem-003",
+  "description": "Reuse of an Idempotency-Key with a different content_hash. Registry MUST return duplicate_publish (HTTP 409). The producer is reusing an idempotency key for new content — a programming error per RFC-ACDP-0003 §6.2.",
+  "tags": ["publish", "idempotency", "failure", "duplicate-publish"],
+  "preconditions": {
+    "registry_capabilities_subset": {
+      "supports_idempotency_key": true,
+      "limits": { "idempotency_key_ttl_seconds": 86400 }
+    },
+    "existing_record": {
+      "agent_id": "did:web:agents.example.com:test-producer",
+      "idempotency_key": "idem-key-AAAA",
+      "content_hash": "sha256:H1"
+    }
+  },
+  "input": {
+    "endpoint": "POST /contexts",
+    "headers": {
+      "Idempotency-Key": "idem-key-AAAA"
+    },
+    "body_content_hash": "sha256:H2",
+    "notes": "Different body content (e.g., a corrected title) re-signed with the same agent's key. The producer mistakenly reused idem-key-AAAA instead of generating a fresh key for the new publish."
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 409,
+    "error_code": "duplicate_publish",
+    "registry_must_not": [
+      "Persist the new body.",
+      "Mint a new ctx_id.",
+      "Overwrite the existing idempotency record with the new content_hash."
+    ],
+    "rationale": "The collision MUST be a hard error, not a silent overwrite. Producers that hit this code are signaling a key-reuse bug; a tolerant registry would mask the bug and create publication-level non-determinism."
+  }
+}

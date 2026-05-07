@@ -1,0 +1,39 @@
+{
+  "id": "pub-011",
+  "description": "A registry MUST NOT persist a publish request whose signature is invalid, even when the content_hash is correct (i.e., even when step 4 of RFC-ACDP-0003 §2.1 passes). This is a negative fixture targeting registry implementations: it pins the normative requirement that the §2.1 pipeline (cryptographic validation steps 1–7) and persistence (steps 8–12) are atomically coupled — a 'verified-except-signature' publish path is non-conformant. See the warning box in RFC-ACDP-0003 §2.1.",
+  "tags": ["failure", "security", "publish", "registry-conformance", "negative"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "scenario": "A PublishRequest where the content_hash recomputes correctly (step 4 would pass) but signature.value does not verify against the resolved key (step 7 fails). The body content is otherwise structurally well-formed.",
+    "body": {
+      "version": 1,
+      "supersedes": null,
+      "agent_id": "did:web:agents.example.com:test-producer",
+      "contributors": [],
+      "content_hash": "sha256:<recomputes-correctly-against-this-body>",
+      "signature": {
+        "algorithm": "ed25519",
+        "key_id": "did:web:agents.example.com:test-producer#key-1",
+        "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+      },
+      "title": "Minimal",
+      "type": "data_snapshot",
+      "data_refs": [],
+      "derived_from": [],
+      "visibility": "public"
+    },
+    "notes": "An implementation that returns invalid_signature but has already written the body to its persistent store fails this fixture. Implementations MUST be tested by inspecting the registry's stored state after the publish attempt — observing the wire response alone is insufficient because both conformant and non-conformant registries return invalid_signature."
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 400,
+    "error_code": "invalid_signature",
+    "registry_must_not_persist": true,
+    "post_failure_invariants": [
+      "Subsequent GET /contexts/{ctx_id} for any ctx_id the registry might have minted from this request MUST return not_found (404).",
+      "The body MUST NOT appear in any subsequent GET /contexts/search response, regardless of requester or visibility scoping.",
+      "Idempotency-Key state (RFC-ACDP-0003 §6) MUST NOT record a successful publish for this (agent_id, key) pair; a retry with the same key and a corrected signature MUST be processed as a fresh publish, not a 200 replay."
+    ],
+    "rationale": "Hash integrity without signature integrity is incomplete verification. A registry that persists before signature verification is exploitable: an attacker who can craft a valid hash for a forged body (the hash is computed by the registry; only signing requires a key the attacker does not have) gets the body stored under the victim's agent_id even though signature verification will later fail."
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "id": "vis-005",
+  "description": "A DID listed in `audience[]` of a `private` context MUST NOT find that context via GET /contexts/search. Search visibility for `private` is strictly agent_id-only, regardless of audience membership — the `audience` field grants retrieval access only (vis-004), not discovery. RFC-ACDP-0008 §4.5 and RFC-ACDP-0005 §2.5.5 (Q1) define the asymmetry.",
+  "tags": ["discovery", "visibility", "private", "audience", "asymmetry", "leak-prevention"],
+  "setup": {
+    "contexts_published": [
+      {
+        "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-00000000000B",
+        "agent_id": "did:agent:owner",
+        "title": "Beta secret",
+        "visibility": "private",
+        "audience": ["did:agent:audience_member"]
+      },
+      {
+        "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-00000000000C",
+        "agent_id": "did:agent:owner",
+        "title": "Beta public",
+        "visibility": "public"
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "name": "Producer (agent_id) searches and sees both contexts",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/search?q=beta",
+        "effective_requester_did": "did:agent:owner"
+      },
+      "expected": {
+        "status": 200,
+        "matches_count": 2,
+        "total_estimate": 2,
+        "matches_ctx_ids": [
+          "acdp://registry.example.com/00000000-0000-4000-8000-00000000000B",
+          "acdp://registry.example.com/00000000-0000-4000-8000-00000000000C"
+        ]
+      }
+    },
+    {
+      "name": "Audience member searches: sees ONLY the public context",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/search?q=beta",
+        "effective_requester_did": "did:agent:audience_member"
+      },
+      "expected": {
+        "status": 200,
+        "matches_count": 1,
+        "total_estimate": 1,
+        "matches_ctx_ids": [
+          "acdp://registry.example.com/00000000-0000-4000-8000-00000000000C"
+        ],
+        "search_excludes_private_with_audience_member_listed": true
+      },
+      "notes": "Audience members CAN retrieve the private context if they know the ctx_id (vis-004) but MUST NOT find it via search. total_estimate MUST also be 1 — including the private context in the count for an audience member leaks its existence to a requester who can guess at activity by watching the count."
+    },
+    {
+      "name": "Audience member searches with derived_from filter pointing at the private context",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/search?derived_from=acdp%3A%2F%2Fregistry.example.com%2F00000000-0000-4000-8000-00000000000B",
+        "effective_requester_did": "did:agent:audience_member"
+      },
+      "expected": {
+        "status": 200,
+        "matches_count": 0,
+        "total_estimate": 0
+      },
+      "notes": "The `derived_from` filter is search (RFC-ACDP-0005 §2.4), not retrieval. Even an audience member of a private context cannot use it to enumerate descendants. Note: in this scenario the search target is the private context's ctx_id, exposed via the URL parameter; the response MUST behave identically to any other search filter that would otherwise surface a private context to a non-agent_id requester."
+    },
+    {
+      "name": "Outsider searches: sees ONLY the public context",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/search?q=beta",
+        "effective_requester_did": "did:agent:outsider"
+      },
+      "expected": {
+        "status": 200,
+        "matches_count": 1,
+        "total_estimate": 1,
+        "matches_ctx_ids": [
+          "acdp://registry.example.com/00000000-0000-4000-8000-00000000000C"
+        ]
+      },
+      "notes": "Outsider sees the same scoped result as the audience member, because the search visibility for private is strictly agent_id-only. This is the joint-equivalence (RFC-ACDP-0005 §2.5.5) — search results, total_estimate, and cursor pages all converge to the same scoping."
+    }
+  ]
+}

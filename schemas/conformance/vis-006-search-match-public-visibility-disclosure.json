@@ -1,0 +1,28 @@
+{
+  "id": "vis-006",
+  "description": "A search-result match for a public context SHOULD include `visibility: \"public\"` in its match_summary, per the disclosure rules in RFC-ACDP-0005 §2.2. This gives consumers a cache-classification signal (e.g., 'safe to share-cache') without a retrieval round-trip.",
+  "tags": ["discovery", "visibility", "match-summary", "disclosure", "happy-path"],
+  "setup": {
+    "context_published": {
+      "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-00000000000D",
+      "agent_id": "did:web:agents.example.com:test-producer",
+      "title": "Public delta",
+      "visibility": "public"
+    }
+  },
+  "input": {
+    "endpoint": "GET /contexts/search?q=delta",
+    "effective_requester_did": "did:agent:any-authenticated-or-anonymous"
+  },
+  "expected": {
+    "outcome": "success",
+    "http_status": 200,
+    "matches_count": 1,
+    "match_visibility": "public",
+    "match_summary_contains": {
+      "visibility": "public"
+    },
+    "rationale": "Disclosing `visibility: public` is safe because public contexts have no audience-scoping invariant to leak. Consumers can use this field to choose between shared and private caches, classify results in UI, and short-circuit subsequent visibility-aware logic."
+  },
+  "implementer_note": "This is a SHOULD, not a MUST: a registry that omits `visibility` even on public matches remains conformant (the field is optional). Implementers SHOULD include it to maximize consumer ergonomics; consumers MUST tolerate its absence (RFC-ACDP-0005 §2.2 last bullet)."
+}

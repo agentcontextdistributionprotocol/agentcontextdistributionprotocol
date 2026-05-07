@@ -58,7 +58,20 @@ When a consumer encounters an `acdp://other-registry.example/uuid` reference and
 4. **Issue retrieval.** `GET https://<authority>/contexts/{encoded_ctx_id}` per RFC-ACDP-0004 §2.
 5. **Verify the body's signature.** Resolve the producing agent's signing key per RFC-ACDP-0001 §5.11, then verify `body.signature.value` against `body.content_hash`. v0.0.1 producers MUST use `did:web` (RFC-ACDP-0001 §5.4); consumers encountering other DID methods MAY surface this to higher layers as `key_resolution_failed`-equivalent if they cannot resolve them.
 6. **Verify the content hash.** Recompute `content_hash` over the JCS-canonicalized body (with the exclusion set from RFC-ACDP-0001 §5.7) and confirm it matches.
-7. **Walk further references.** For each entry in `body.derived_from`, repeat from step 1 if the consumer needs the predecessor. Consumers MUST cap traversal depth (RECOMMENDED: 10) to bound work on hostile or accidentally-deep chains. ACDP's content-addressing forbids cycles in honest data (a body cannot reference its own future `ctx_id`), but consumers SHOULD detect cycles defensively (track visited `ctx_id`s within a single walk) and abort with a logged error if one is observed — its presence indicates a tampered body or a registry serving forged data.
+7. **Walk further references.** For each entry in `body.derived_from`, repeat from step 1 if the consumer needs the predecessor. ACDP's content-addressing forbids cycles in honest data (a body cannot reference its own future `ctx_id`), but consumers SHOULD detect cycles defensively (track visited `ctx_id`s within a single walk) and abort with a logged error if one is observed — its presence indicates a tampered body or a registry serving forged data.
+
+   Implementations MUST apply the following traversal controls to bound work on hostile or accidentally-deep DAGs. The schema permits `derived_from.maxItems = 1000`, so a naïve walk that follows only depth limits can still traverse millions of nodes in a wide graph; the per-axis controls below are NORMATIVE:
+
+   | Control | Default (RECOMMENDED) | Behavior on overrun |
+   |---|---|---|
+   | **Max depth** | 10 | Stop traversal at the depth limit; surface partial results to higher layers along with a `cross_registry_resolution_failed` indication for the unwalked subtree. |
+   | **Max total nodes** | 500 | Abort the entire walk with `cross_registry_resolution_failed` (HTTP 502 if surfaced via a registry endpoint; consumer-side: surface an equivalent typed error). |
+   | **Max fanout per context** | 100 | Skip or refuse the offending context's `derived_from` array; prefer aborting (`cross_registry_resolution_failed`) over silently truncating, because partial fanout produces non-deterministic walk outputs that mislead downstream evidence assembly. |
+   | **Total walk timeout** | 30 seconds | Abort with `cross_registry_resolution_failed`. The timeout is end-to-end across the walk (not per-fetch); per-fetch timeouts are governed separately by §7.4. |
+
+   All four controls MUST be configurable. Operators in trusted environments MAY raise the defaults (e.g., for a knowledge-graph indexer with internal-only inputs); operators handling untrusted inputs SHOULD lower them. Implementations SHOULD cache resolved capabilities documents and DID documents per-authority within a single walk to avoid redundant network calls; this caching is intra-walk only and MUST NOT extend across walks unless governed by the §4.3 caching rules.
+
+   Consumers MUST cap traversal depth at the configured limit even when the depth limit alone is sufficient to keep node count bounded; the per-axis controls are joined by AND, not OR. A walk MUST stop at the first limit it hits.
 
 ### 4.2 Trust model
 

@@ -1,0 +1,48 @@
+{
+  "id": "idem-006",
+  "description": "Two concurrent POST /contexts requests with the same (agent_id, Idempotency-Key) and the same content_hash. The registry's atomic-record requirement (RFC-ACDP-0003 §6.2.1 step 4) bounds the set of acceptable observable outcomes. This fixture documents the tolerated race outcomes — implementations MUST exhibit one of them; any other outcome is a conformance failure.",
+  "tags": ["publish", "idempotency", "concurrency", "race"],
+  "preconditions": {
+    "registry_capabilities_subset": {
+      "supports_idempotency_key": true,
+      "limits": { "idempotency_key_ttl_seconds": 86400 }
+    },
+    "no_existing_record_for": "(did:web:agents.example.com:test-producer, idem-key-RACE)"
+  },
+  "input": {
+    "endpoint": "POST /contexts",
+    "concurrency": "Two requests submitted at the same time, both carrying Idempotency-Key: idem-key-RACE and the same body (content_hash sha256:H1)."
+  },
+  "expected": {
+    "outcome": "success",
+    "tolerated_outcomes": [
+      {
+        "name": "serialized: one wins, the other replays",
+        "request_a": { "http_status": 201, "ctx_id_marker": "C1" },
+        "request_b": { "http_status": 200, "ctx_id_marker": "C1" },
+        "notes": "The losing request observed the durable record written by the winner and short-circuited per §6.2.1 step 2 (same content_hash → 200)."
+      },
+      {
+        "name": "both committed: identical ctx_id (only safe if registry uses content-derived idempotency-record primary key)",
+        "request_a": { "http_status": 201, "ctx_id_marker": "C1" },
+        "request_b": { "http_status": 201, "ctx_id_marker": "C1" },
+        "notes": "Both requests fully validated and one of them deduplicated to a single stored body via primary-key constraint on (agent_id, Idempotency-Key, content_hash). Acceptable only if the resulting ctx_id is identical across both responses."
+      }
+    ],
+    "non_conformant_outcomes": [
+      {
+        "name": "two distinct ctx_ids minted",
+        "request_a": { "http_status": 201, "ctx_id_marker": "C1" },
+        "request_b": { "http_status": 201, "ctx_id_marker": "C2" },
+        "reason": "Two ctx_ids for the same (agent_id, Idempotency-Key) violates the contract idempotency exists to enforce. This is the failure mode the atomicity requirement in §6.2.1 step 4 prevents."
+      },
+      {
+        "name": "duplicate_publish on identical content",
+        "request_a": { "http_status": 201, "ctx_id_marker": "C1" },
+        "request_b": { "http_status": 409, "error_code": "duplicate_publish" },
+        "reason": "duplicate_publish is reserved for same-key-different-hash collisions (idem-003). Returning it for same-key-same-hash leaks the race condition to the producer as a programming error when the producer did nothing wrong."
+      }
+    ]
+  },
+  "implementation_note": "Black-box testing of concurrent races is non-deterministic; implementers SHOULD exercise this path with a stress harness that submits N≥100 paired publishes and asserts that the (agent_id, Idempotency-Key) → ctx_id mapping has cardinality 1 across the entire run. The fixture pins the wire-observable contract; the harness pins the storage-level invariant."
+}

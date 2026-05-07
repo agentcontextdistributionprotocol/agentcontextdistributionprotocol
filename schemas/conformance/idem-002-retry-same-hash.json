@@ -1,0 +1,36 @@
+{
+  "id": "idem-002",
+  "description": "Retry of an Idempotency-Key publish with the same (agent_id, key) AND the same content_hash as the original successful publish. Registry MUST return the stored response with HTTP 200 OK (NOT 201) and the original assigned identifiers (ctx_id, lineage_id, version, created_at, status). Registry MUST NOT re-execute the full §2.1 pipeline — the lookup short-circuits per RFC-ACDP-0003 §6.2.1 step 2.",
+  "tags": ["publish", "idempotency", "happy-path", "retry"],
+  "preconditions": {
+    "registry_capabilities_subset": {
+      "supports_idempotency_key": true,
+      "limits": { "idempotency_key_ttl_seconds": 86400 }
+    },
+    "existing_record": {
+      "agent_id": "did:web:agents.example.com:test-producer",
+      "idempotency_key": "idem-key-AAAA",
+      "content_hash": "sha256:H1",
+      "stored_response_summary": "The 201 Created response body returned for idem-001, including the registry-assigned ctx_id."
+    }
+  },
+  "input": {
+    "endpoint": "POST /contexts",
+    "headers": {
+      "Idempotency-Key": "idem-key-AAAA"
+    },
+    "body_content_hash": "sha256:H1",
+    "notes": "Body bytes MAY differ in non-canonical whitespace from the original submission, so long as the recomputed content_hash equals sha256:H1. The registry's lookup is keyed on the producer-supplied content_hash header field, which is identity-of-content for the canonicalized body."
+  },
+  "expected": {
+    "outcome": "success",
+    "http_status": 200,
+    "response_body": "Byte-identical to the response stored for idem-001 (same ctx_id, same lineage_id, same created_at, same status, same version).",
+    "registry_must_not": [
+      "Re-execute DID resolution (step 6).",
+      "Re-execute signature verification (step 7).",
+      "Mint a new ctx_id."
+    ],
+    "rationale": "The whole point of Idempotency-Key is to make safe retries cheap. A registry that re-runs the full pipeline on every retry is conformant only if it returns the same identifiers — and the simplest way to guarantee that is to short-circuit on lookup."
+  }
+}

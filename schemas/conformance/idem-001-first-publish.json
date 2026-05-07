@@ -1,0 +1,33 @@
+{
+  "id": "idem-001",
+  "description": "First publish with an Idempotency-Key on a registry that advertises supports_idempotency_key=true. Registry MUST execute the full §2.1 pipeline and return HTTP 201 Created with the standard publish response and Location header. The (agent_id, Idempotency-Key, content_hash, response) record MUST be durably recorded atomically with the body (RFC-ACDP-0003 §6.2.1).",
+  "tags": ["publish", "idempotency", "happy-path"],
+  "preconditions": {
+    "registry_capabilities_subset": {
+      "supports_idempotency_key": true,
+      "limits": { "idempotency_key_ttl_seconds": 86400 }
+    },
+    "no_existing_record_for": "(did:web:agents.example.com:test-producer, idem-key-AAAA)"
+  },
+  "input": {
+    "endpoint": "POST /contexts",
+    "headers": {
+      "Idempotency-Key": "idem-key-AAAA",
+      "Content-Type": "application/acdp+json"
+    },
+    "body_summary": "Valid first-version PublishRequest signed by did:web:agents.example.com:test-producer with content_hash sha256:H1.",
+    "body_content_hash": "sha256:H1"
+  },
+  "expected": {
+    "outcome": "success",
+    "http_status": 201,
+    "headers": {
+      "Location": "/contexts/{percent-encoded-ctx_id}"
+    },
+    "response_shape": "Standard publish response (RFC-ACDP-0003 §4): exactly the five fields ctx_id, lineage_id, version, created_at, status.",
+    "post_publish_invariants": [
+      "GET /contexts/{ctx_id} returns the body byte-identically to what was signed.",
+      "An idempotency record exists for (agent_id, idem-key-AAAA, sha256:H1, <stored_response>) and survives a registry restart."
+    ]
+  }
+}

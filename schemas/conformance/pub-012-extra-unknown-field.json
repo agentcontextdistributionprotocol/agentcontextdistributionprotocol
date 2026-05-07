@@ -1,0 +1,33 @@
+{
+  "id": "pub-012",
+  "description": "PublishRequest containing an extra producer-invented top-level field MUST be rejected with schema_violation (HTTP 400). The acdp-publish-request.schema.json is CLOSED (additionalProperties: false at top level); silently dropping unknown fields is a conformance failure because a future ACDP version may define semantics for the field name and a tolerant decoder would silently misinterpret it.",
+  "tags": ["failure", "publish", "schema", "closed-schema"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "body": {
+      "version": 1,
+      "supersedes": null,
+      "agent_id": "did:web:agents.example.com:test-producer",
+      "contributors": [],
+      "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "signature": {
+        "algorithm": "ed25519",
+        "key_id": "did:web:agents.example.com:test-producer#key-1",
+        "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+      },
+      "title": "Minimal",
+      "type": "data_snapshot",
+      "data_refs": [],
+      "derived_from": [],
+      "visibility": "public",
+      "extra_field": "an unknown producer-invented field"
+    },
+    "notes": "The request is otherwise structurally valid (it would pass step 1 if the extra field were absent). The rejection MUST be at step 1 (schema validation), before any of the cryptographic steps run — implementations that proceed to hash recomputation or signature verification before catching the unknown field are still non-conformant if they ultimately accept the body."
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 400,
+    "error_code": "schema_violation",
+    "rationale": "Closed-schema rejection is the mechanism by which ACDP keeps the producer surface forward-compatible: known fields evolve through versioned schema updates, and unknown fields are reserved for future use. A registry that silently drops `extra_field` will misinterpret a producer that started using a field defined in a later spec version."
+  }
+}

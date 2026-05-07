@@ -1,0 +1,34 @@
+{
+  "id": "idem-004",
+  "description": "Same content (same content_hash) submitted with a NEW Idempotency-Key. Registry MUST treat this as a fresh publish: HTTP 201 Created with a NEW ctx_id, even though the body bytes are byte-identical to a prior publish. RFC-ACDP-0003 §6.2 makes content-deterministic deduplication a producer-side optimization (§6.3); the registry only deduplicates on (agent_id, Idempotency-Key).",
+  "tags": ["publish", "idempotency", "happy-path", "content-deterministic"],
+  "preconditions": {
+    "registry_capabilities_subset": {
+      "supports_idempotency_key": true,
+      "limits": { "idempotency_key_ttl_seconds": 86400 }
+    },
+    "existing_record": {
+      "agent_id": "did:web:agents.example.com:test-producer",
+      "idempotency_key": "idem-key-AAAA",
+      "content_hash": "sha256:H1"
+    }
+  },
+  "input": {
+    "endpoint": "POST /contexts",
+    "headers": {
+      "Idempotency-Key": "idem-key-BBBB"
+    },
+    "body_content_hash": "sha256:H1"
+  },
+  "expected": {
+    "outcome": "success",
+    "http_status": 201,
+    "response_constraints": {
+      "ctx_id": "MUST be different from the ctx_id stored for (idem-key-AAAA, sha256:H1).",
+      "lineage_id": "MUST be different — a new ctx_id deterministically produces a new lineage_id (RFC-ACDP-0001 §5.6).",
+      "version": 1,
+      "status": "active"
+    },
+    "rationale": "Idempotency is a per-(agent_id, key) deduplication mechanism. A producer that wants content-deterministic deduplication MUST track content_hash locally per RFC-ACDP-0003 §6.3 (the body's content_hash is the natural deduplication key); the registry does not do this on behalf of the producer because it cannot distinguish 'replay with new key' from 'intentional re-publish of the same content under a new context identity' (e.g., for testing, audit, or rotation)."
+  }
+}

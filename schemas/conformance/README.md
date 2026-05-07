@@ -10,6 +10,8 @@ ACDP conformance fixtures are JSON files that describe a scenario, the input, an
 conformance/
 ├── README.md
 ├── pub-*.json     Publish-flow scenarios (RFC-ACDP-0003)
+├── idem-*.json    Idempotency-Key scenarios (RFC-ACDP-0003 §6)
+├── rate-*.json    Rate-limiting wire-shape scenarios (RFC-ACDP-0008 §4.3)
 ├── ret-*.json     Retrieval scenarios (RFC-ACDP-0004)
 ├── vis-*.json     Visibility-leak prevention scenarios (RFC-ACDP-0002, RFC-ACDP-0008)
 ├── can-*.json     Canonicalization / hashing test vectors (RFC-ACDP-0001)
@@ -86,6 +88,31 @@ The runner interface is implementation-defined.
 | `pub-008` | `body.agent_id` is not `did:web` (v0.0.1 §5.4 mandate) | failure: `schema_violation` (preferred) or `key_not_authorized` |
 | `pub-009` | `signature.key_id` DID is not `did:web` while `agent_id` is `did:web` | failure: `key_not_authorized` |
 | `pub-010` | Non-`did:web` entry in `contributors[]` (attribution-only — registry MUST accept) | success |
+| `pub-011` | Persist-only-after-signature-verify atomicity — body MUST NOT be persisted if signature verification fails, even when `content_hash` is correct | failure: `invalid_signature` + post-failure invariants |
+| `pub-012` | PublishRequest with extra unknown top-level field — closed-schema rejection | failure: `schema_violation` |
+| `pub-013` | PublishRequest containing producer-supplied registry-assigned `ctx_id` | failure: `schema_violation` |
+| `pub-014` | PublishRequest containing producer-supplied registry-assigned `created_at` | failure: `schema_violation` |
+
+### Idempotency (RFC-ACDP-0003 §6)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `idem-001` | First publish with `Idempotency-Key` on a registry that advertises `supports_idempotency_key: true` | success: HTTP 201, durable record |
+| `idem-002` | Retry with same `(agent_id, key)` and same `content_hash` | success: HTTP 200 with original response (NOT 201, NOT re-validated) |
+| `idem-003` | Reuse of `(agent_id, key)` with different `content_hash` | failure: `duplicate_publish` (HTTP 409) |
+| `idem-004` | Same content under a NEW idempotency key — fresh publish, NEW `ctx_id` | success: HTTP 201 |
+| `idem-005` | Registry not advertising `supports_idempotency_key` MUST ignore the header (treat as absent) | success: each request mints fresh `ctx_id` |
+| `idem-006` | Concurrent publish with same `(agent_id, key)` and same hash — pinned tolerated/non-conformant outcomes | success: cardinality-1 mapping is normative, two outcomes tolerated |
+
+These fixtures exercise the §6.2 contract and the §6.2.1 ordering/atomicity guidance. `idem-001..005` are REQUIRED for `acdp-registry-core` when the registry advertises `supports_idempotency_key: true`. `idem-006` is informative — the wire contract is "exactly one stored `ctx_id` per `(agent_id, key)` pair regardless of concurrency"; integration tests SHOULD verify with stress harnesses.
+
+### Rate limiting (RFC-ACDP-0008 §4.3)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `rate-001` | Wire shape of `rate_limited` response: HTTP 429, standard error envelope, `Retry-After` SHOULD be present when retry window is bounded | failure: `rate_limited` |
+
+Rate-limit triggering depends on registry policy (window, bucket, threshold), so this fixture pins only the wire shape. Implementers MUST self-test the trigger by configuring a known per-agent rate per the recipe in `rate-001-rate-limited-response-shape.json`.
 
 ### Metadata limits (RFC-ACDP-0002 §3.3)
 
@@ -120,6 +147,10 @@ The runner interface is implementation-defined.
 | `vis-001` | Restricted retrieval — authorized=200, unauthorized=404 indistinguishably from genuinely-missing; contributors NOT auto-authorized | mixed (per-scenario; unauthorized cases use `not_found`) |
 | `vis-002` | Search excludes restricted contexts from BOTH `matches` AND `total_estimate`; anonymous requests handled per `anonymous_public_reads` capability | mixed (per-scenario) |
 | `vis-003` | Search response wrapping key MUST be `matches` (not `results`); registry MUST emit, consumer MUST reject substitutes | mixed (per-scenario; both sides exercised) |
+| `vis-004` | Private + audience: audience member CAN retrieve by known `ctx_id`; outsider/contributor cannot (RFC-ACDP-0008 §4.5) | mixed (per-scenario) |
+| `vis-005` | Private + audience: audience member MUST NOT find context via search/`derived_from` filter; search visibility for `private` is strictly `agent_id`-only | mixed (per-scenario; counts AND `total_estimate` scoped) |
+| `vis-006` | Public match SHOULD include `visibility: "public"` in `match_summary` (cache-classification signal) | success: optional disclosure permitted |
+| `vis-007` | Restricted/private match served to unauthorized requester MUST omit the match entirely AND MUST NOT carry `visibility` metadata anywhere | mixed (per-scenario; existence-leak prevention) |
 
 ### Canonicalization & hashing (RFC-ACDP-0001)
 

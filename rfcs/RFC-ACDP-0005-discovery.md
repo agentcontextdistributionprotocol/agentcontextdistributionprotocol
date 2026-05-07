@@ -32,7 +32,7 @@ This endpoint is part of the `acdp-registry-discovery` profile (RFC-ACDP-0001 §
 | `domain` | string | Filter by domain. |
 | `tags` | string | Comma-separated tags. Results match if **all** listed tags are present (AND semantics). |
 | `agent_id` | string | Filter by producing agent (DID). |
-| `schema_uri` | string | Filter by schema URI. |
+| `schema_uri` | string | Exact string match against `body.schema_uri`. Case-sensitive; no normalization (no trailing-slash, query-string, or fragment folding). Registries MUST treat the value as opaque and return only contexts whose body field is byte-identical to the supplied value. |
 | `derived_from` | string | Filter for contexts whose `derived_from` includes this `ctx_id`. |
 | `created_after` | string | RFC 3339 timestamp. |
 | `created_before` | string | RFC 3339 timestamp. |
@@ -76,11 +76,11 @@ The response object MUST use the key `matches` for the result array. The field n
 
 Each match contains a summary projection (`ctx_id`, `lineage_id`, `agent_id`, `title`, `summary`, `type`, `domain`, `created_at`, `status`, optional `visibility`). Results are scoped to the requesting agent's effective visibility (RFC-ACDP-0002 §7).
 
-**`visibility` in `match_summary` (OPTIONAL).** Registries MAY include `visibility` in each `match_summary` to let consumers cache-classify a result before a retrieval round-trip — useful for clients that distinguish a 404 from a deletion or restriction. The disclosure rules:
+**`visibility` in `match_summary` (OPTIONAL).** Registries MAY include `visibility` in each `match_summary` to let consumers cache-classify a result before a retrieval round-trip — useful for clients that distinguish a 404 from a deletion or restriction. The disclosure rules below are NORMATIVE and exercised by fixtures `vis-006` (positive: public match SHOULD carry `visibility: public`) and `vis-007` (negative: restricted match served to an unauthorized requester MUST omit `visibility`):
 
-- For matches with `visibility: public`, registries SHOULD include `visibility: public`.
-- For matches with `visibility: restricted` or `visibility: private`, registries MUST include `visibility` ONLY when the requester is already authorized to retrieve the context (i.e., the effective requester DID is in `audience` for `restricted`, or is `agent_id` for either `restricted` or `private`). Including the field for any other requester leaks the visibility class to a non-authorized party even when the match itself is correctly scoped.
-- When the field is absent, consumers MUST NOT infer anything about visibility — absence is the registry's choice. v0.0.1 deployments predating this clarification are conformant without the field.
+- For matches with `visibility: public`, registries SHOULD include `visibility: public` in the `match_summary`. Including this field gives consumers a cache-classification signal without an additional retrieval round-trip.
+- For matches with `visibility: restricted` or `visibility: private`, registries MUST include `visibility` ONLY when the requester is already authorized to retrieve the context (i.e., the effective requester DID is in `audience` for `restricted`, or is `agent_id` for either `restricted` or `private`). Including the field for any other requester leaks the visibility class to a non-authorized party even when the match itself is correctly scoped — a violation of the existence-leak prevention rule in RFC-ACDP-0008 §3.5.
+- When the field is absent, consumers MUST NOT infer anything about visibility — absence is the registry's choice. v0.0.1 deployments predating this clarification are conformant without the field. Consumers MUST NOT treat `visibility`-absent as a signal of any specific visibility class.
 
 ### 2.3 Pagination
 

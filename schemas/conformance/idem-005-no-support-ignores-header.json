@@ -1,0 +1,39 @@
+{
+  "id": "idem-005",
+  "description": "Registry that does NOT advertise supports_idempotency_key (or advertises supports_idempotency_key=false) MUST ignore the Idempotency-Key header on POST /contexts (treat as absent) per RFC-ACDP-0003 §6.2 last paragraph. Each request — including retries with the same header value — produces a fresh publication with a new ctx_id.",
+  "tags": ["publish", "idempotency", "capability-gating"],
+  "preconditions": {
+    "registry_capabilities_subset": {
+      "supports_idempotency_key": false
+    },
+    "alternate_form_accepted": "Capabilities document MAY omit supports_idempotency_key entirely; the default is false (RFC-ACDP-0007 §3.2)."
+  },
+  "input": [
+    {
+      "name": "first publish with idempotency key on non-supporting registry",
+      "endpoint": "POST /contexts",
+      "headers": { "Idempotency-Key": "idem-key-AAAA" },
+      "body_content_hash": "sha256:H1"
+    },
+    {
+      "name": "second publish with same idempotency key on non-supporting registry",
+      "endpoint": "POST /contexts",
+      "headers": { "Idempotency-Key": "idem-key-AAAA" },
+      "body_content_hash": "sha256:H1"
+    }
+  ],
+  "expected": {
+    "outcome": "success",
+    "first_publish": { "http_status": 201, "ctx_id_marker": "C1" },
+    "second_publish": {
+      "http_status": 201,
+      "ctx_id_marker": "C2",
+      "constraint": "C2 MUST NOT equal C1. The second publish is a fresh publication despite the same Idempotency-Key header value."
+    },
+    "registry_must_not": [
+      "Return 200 OK on the second publish (that would imply idempotency was honored).",
+      "Return duplicate_publish (the registry hasn't opted in, so the header has no semantics)."
+    ],
+    "rationale": "Capability-gated features are opt-in: a registry that quietly honors Idempotency-Key without advertising it lies to clients about its observable behavior, which produces silent interoperability bugs. The header value is opaque to the registry and MUST NOT influence routing, deduplication, or response shape when the capability is not advertised."
+  }
+}
