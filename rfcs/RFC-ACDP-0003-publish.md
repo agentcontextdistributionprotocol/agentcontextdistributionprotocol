@@ -30,7 +30,7 @@ The request body conforms to [`schemas/json/acdp-publish-request.schema.json`](.
 
 The registry MUST execute the following steps in order:
 
-1. **Schema validation.** Validate the request body against `acdp-publish-request.schema.json`. On failure, return `schema_violation` (HTTP 400).
+1. **Schema validation.** Validate the request body against `acdp-publish-request.schema.json`. On failure, return `schema_violation` (HTTP 400). The publish-request schema is closed (`additionalProperties: false`); registries MUST reject requests containing fields not defined in `acdp-publish-request.schema.json`. In particular, registries MUST reject requests that include any registry-assigned field — `ctx_id`, `lineage_id` (when `version = 1`), `origin_registry`, or `created_at` — because these are minted by the registry and cannot be producer-supplied. Libraries using typed deserialization SHOULD enable a `deny_unknown_fields` equivalent at the parse layer (Rust `#[serde(deny_unknown_fields)]`, Python pydantic `extra="forbid"`, zod `.strict()`, Go json with `DisallowUnknownFields`) so that schema violations surface before any of the cryptographic steps below. Conformance fixtures `pub-012`, `pub-013`, and `pub-014` exercise this requirement.
 2. **Payload-size validation.** Verify total request size ≤ `limits.max_payload_bytes` (RFC-ACDP-0007). On overflow, return `payload_too_large` (HTTP 413).
 3. **Embedded validation.** For each `data_refs[].embedded`:
     - Verify decoded size ≤ 65536 bytes (per RFC-ACDP-0002 §6.3 decoding rules: `base64` → RFC 4648 decoded byte count; `utf8` → UTF-8 byte count; `json` → JCS-canonicalized byte count). On overflow, return `embedded_too_large` (HTTP 413).
@@ -53,6 +53,15 @@ The registry MUST execute the following steps in order:
 13. **Response.** Return a publish response (§4).
 
 The registry MUST execute steps 1–7 before any persistence. Steps 8–12 are atomic with respect to other concurrent publications: when two publications target the same `supersedes` value, the registry MUST accept exactly one (the first to fully validate and reach step 12 (persistence)), and MUST reject every subsequent attempt with `superseded_target` (`details.reason = "already_superseded"`, HTTP 409 Conflict).
+
+> **⚠️ Non-conformant: persisting before signature verification.**
+> A registry that validates the `content_hash` (step 4) but skips DID resolution and signature verification (steps 6–7) is **NOT conformant**, even if it never serves content that fails consumer verification. Persisting unverified content:
+>
+> - Consumes registry resources for potentially malicious inputs.
+> - Creates stored bodies that carry invalid signatures, visible to any consumer who verifies.
+> - Allows impersonation: an attacker crafts a correct `content_hash` for a fabricated body, bypasses the registry's verification, and the registry stores the body under the victim's `agent_id` despite the signature being unverifiable.
+>
+> Libraries and registry frameworks MUST NOT expose a "verified-except-signature" publish path as their default or primary API. The full §2.1 pipeline (steps 1–7 cryptographic validation, then 8–12 persistence) MUST be atomically coupled. A debug-only path that skips signature verification MAY exist for local development, but it MUST be (a) clearly named (e.g. `unsafe_publish_without_signature_verification`), (b) gated by a non-default configuration flag, and (c) refused by default at server construction time when the server is configured for any non-test environment. Conformance fixture `pub-011` exercises this requirement.
 
 ### 2.2 Producer-side flow
 
@@ -186,6 +195,23 @@ Registries supporting idempotency:
 - On a repeated request with the same `(agent_id, idempotency_key)` BUT a different `content_hash`: return `duplicate_publish` (HTTP 409). The producer is reusing an idempotency key for new content, which is a programming error.
 
 Registries supporting idempotency MUST declare `"supports_idempotency_key": true` in capabilities (RFC-ACDP-0007 §3.2). Registries not supporting it MUST ignore the `Idempotency-Key` header (treat as absent).
+
+#### 6.2.1 Recommended ordering: idempotency lookup before signature verification
+
+Registries SHOULD process idempotency-key lookup **before** signature verification (steps 6–7 of §2.1) to avoid paying DID resolution and signature-verification cost on benign retries. The recommended ordering is:
+
+1. Parse `agent_id` and `Idempotency-Key` from the request. Validate the header value is 1–256 ASCII printable characters (otherwise treat as absent).
+2. If a record exists for `(agent_id, Idempotency-Key)`:
+   - Same `content_hash` as the stored record: return the stored response with **HTTP 200** (no re-validation needed; the original publish already passed the full §2.1 pipeline).
+   - Different `content_hash`: return `duplicate_publish` (**HTTP 409**) without further validation.
+3. Otherwise: run the full §2.1 validation pipeline (steps 1–7).
+4. After successful persistence (step 12): atomically record `(agent_id, Idempotency-Key, content_hash, response)` in the same transaction as the body. A registry that records the body but crashes before the idempotency record is durable will, on retry, mint a fresh `ctx_id` for content the producer believes was already published — causing exactly the duplicate publication idempotency exists to prevent.
+
+The atomicity requirement in step 4 is normative: it is the difference between idempotency that survives crashes and idempotency that exists only on the happy path. Implementations using a separate idempotency table SHOULD use a single transaction that writes both rows, or a write-once primary-key constraint that fails the second attempt (see fixture `idem-006` for the concurrent-publish race).
+
+The ordering choice in steps 1–2 is a SHOULD, not a MUST: a registry MAY perform schema validation, payload-size validation, or any other cheap check before idempotency lookup. It MUST NOT perform DID resolution or signature verification before idempotency lookup, because doing so defeats the cost-amortization purpose of the header. Registries that treat the `Idempotency-Key` header as a post-hoc dedup mechanism (after signature verification has already run) are conformant only if their measured cost on retries matches an implementation that performed the lookup first — i.e., the test is observable behavior, not internal sequencing.
+
+The conformance fixtures `idem-001` through `idem-006` exercise this surface.
 
 ### 6.3 Content-deterministic deduplication
 

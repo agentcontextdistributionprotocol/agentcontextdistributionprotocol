@@ -129,6 +129,34 @@ After fetching `/.well-known/acdp.json`, consumers and cross-registry resolvers 
 
 A consumer encountering a capabilities document that fails any of the checks above MUST NOT proceed with the operation that required fetching capabilities (publish, retrieval, cross-registry resolution). Implementations SHOULD surface the failing check to operators so the registry can be corrected. The conformance fixtures `caps-001..006` (`schemas/conformance/caps-001-valid-minimal.json` through `caps-006-extra-top-level-field.json`) pin representative positive and negative payloads for the checklist.
 
+#### 3.5.1 Implementer note: validate capabilities at server construction time
+
+The conditional and cross-field constraints above (`registry_did` must bind to the serving authority; `limits.max_embedded_bytes` is fixed at 65536; `limits.idempotency_key_ttl_seconds` is REQUIRED when `supports_idempotency_key = true` and is bounded to [86400, 604800]) are enforceable in code but not by JSON Schema in all toolchains. Registry implementers SHOULD validate the capabilities document they intend to serve **at server construction time, not at runtime per request**. A server that runs the §3.5 checklist once at startup cannot silently start serving with misconfigured limits, a mismatched `registry_did`, or a missing idempotency TTL. Recommended pattern (pseudocode, illustrative):
+
+```
+server = RegistryServer.try_new(store, caps, authority)
+  # raises a typed configuration error at startup if any of the following hold:
+  # - caps.registry_did != "did:web:" + authority
+  # - "ed25519" not in caps.supported_signature_algorithms
+  # - "did:web" not in caps.supported_did_methods
+  # - "acdp-registry-core" not in caps.profiles
+  # - caps.limits.max_embedded_bytes != 65536
+  # - caps.limits.max_payload_bytes < 1024
+  # - caps.supports_idempotency_key == true AND
+  #     (caps.limits.idempotency_key_ttl_seconds is None
+  #      or not 86400 <= caps.limits.idempotency_key_ttl_seconds <= 604800)
+  # - caps serves any non-public visibility AND caps.read_authentication_methods is empty
+```
+
+Concrete idioms:
+
+- **Rust:** a `RegistryServer::try_new(store, caps, authority) -> Result<Self, ConfigError>` constructor that enumerates the checks above and returns a typed error per failure. Library APIs SHOULD prefer this over an infallible `RegistryServer::new` followed by per-request validation.
+- **Python:** raise `ValueError` (or a typed `RegistryConfigError`) from the registry application factory before binding the listening socket.
+- **Go:** return a non-nil error from the `NewRegistryServer` constructor; callers `log.Fatal` rather than starting `http.ListenAndServe`.
+- **TypeScript:** throw from the constructor or factory function before the framework starts listening.
+
+The principle is uniform across languages: a misconfigured registry MUST refuse to start. Per-request validation is a defense-in-depth fallback for configuration that mutates at runtime (rare) and for capabilities documents fetched from external sources (consumer-side §3.5).
+
 ### 3.6 Caching
 
 The capabilities document is moderately stable. Registries SHOULD set:

@@ -1,0 +1,32 @@
+{
+  "id": "pub-014",
+  "description": "PublishRequest containing a producer-supplied `created_at` MUST be rejected with schema_violation (HTTP 400). `created_at` is registry-assigned (RFC-ACDP-0003 §2.1 step 8) at canonical millisecond precision (RFC-ACDP-0001 §5.3) and is in the §5.7 exclusion set. The publish-request schema is closed; a registry MUST NOT silently strip or echo a producer-supplied timestamp, because doing so creates ambiguity about which clock authored the recorded value.",
+  "tags": ["failure", "publish", "schema", "closed-schema", "registry-assigned-field"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "body": {
+      "version": 1,
+      "supersedes": null,
+      "agent_id": "did:web:agents.example.com:test-producer",
+      "contributors": [],
+      "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "signature": {
+        "algorithm": "ed25519",
+        "key_id": "did:web:agents.example.com:test-producer#key-1",
+        "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+      },
+      "title": "Minimal",
+      "type": "data_snapshot",
+      "data_refs": [],
+      "derived_from": [],
+      "visibility": "public",
+      "created_at": "2026-04-16T10:30:15.123Z"
+    },
+    "notes": "Same closed-schema rejection applies to producer-supplied `origin_registry`. This fixture covers `created_at` specifically because incorrect timestamp handling has the highest auditability impact: a body recorded at the producer's clock value rather than the registry's would silently break ordering invariants. `pub-013` covers `ctx_id`; consumers MAY synthesize a sister fixture for `origin_registry` and `lineage_id` (when `version = 1`) — the schema enforces all of them by virtue of `additionalProperties: false`."
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 400,
+    "error_code": "schema_violation"
+  }
+}

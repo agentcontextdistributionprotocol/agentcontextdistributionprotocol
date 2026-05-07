@@ -98,6 +98,17 @@ Receipts add a second signing identity (the registry's), require key management 
 
 `registry_receipt` (top-level in retrieval response) and `key_fingerprint` (within signature objects) are RESERVED in v0.0.1 and MUST NOT be used by extensions.
 
+#### Minimum structural guidance for v0.0.1 libraries
+
+The field `registry_receipt` (top-level in `FullContext`, OUTSIDE `body` and `registry_state`) is reserved. v0.0.1 libraries MUST NOT use it themselves but SHOULD handle its presence safely on the wire when forward-compatible registries begin emitting it:
+
+- **Preserve verbatim.** If `registry_receipt` is present in a retrieval response (`FullContext`), v0.0.1 libraries MUST preserve the field verbatim as an opaque JSON value (object, but no schema enforcement) when forwarding the response, persisting it, or re-serializing for any reason. Libraries MUST NOT silently drop the field or strip its inner properties.
+- **Do not parse, validate, or verify.** v0.0.1 libraries MUST NOT attempt to parse the receipt's substructure, MUST NOT validate its `signature`, and MUST NOT use it as evidence of authenticity. The receipt's signing model (registry-signed binding of registry-assigned identifiers to the producer-signed body) is specified in v0.1+; verifying it under v0.0.1 produces no meaningful trust signal.
+- **Detect upgrade signal.** A receipt present on a body served by a registry advertising `acdp_version: 0.0.1` is malformed (the registry is emitting a v0.1+ field while declaring v0.0.1 conformance). v0.0.1 libraries SHOULD log a warning naming the registry and the receipt's `registry_did`. A receipt present on a body served by a registry advertising `acdp_version: 0.1.0` or higher indicates the consumer is talking to a v0.1+ registry; consumers SHOULD log an informational signal and MAY upgrade to a v0.1-aware library to take advantage of the receipt.
+- **Hash exclusion.** The `registry_receipt` is OUTSIDE the body and is therefore not part of the producer's `content_hash` calculation under any version. v0.0.1 libraries MUST NOT include `registry_receipt` in their `content_hash` recomputation pipeline (which already operates on `body` alone, with the §5.7 exclusion set applied within `body`).
+
+This guidance is the minimum required to keep v0.0.1 libraries forward-compatible with v0.1 registry-receipt deployments. The full receipt format (signing algorithm, canonicalization rules, verification procedure) is out of scope for v0.0.1 and will be specified in the v0.1 RFC.
+
 ### 2.8 Cross-registry supersession *(likely v0.1)*
 
 ACDP v0.0.1 forbids supersession across registries (RFC-ACDP-0003 §3.1 step 2): if a producer attempts to publish a v2 on registry B with `supersedes` pointing at v1 on registry A, registry B MUST reject with `superseded_target` (`details.reason = "cross_registry_supersession_unsupported"`).

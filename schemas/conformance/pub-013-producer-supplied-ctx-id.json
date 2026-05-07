@@ -1,0 +1,32 @@
+{
+  "id": "pub-013",
+  "description": "PublishRequest containing a producer-supplied `ctx_id` MUST be rejected with schema_violation (HTTP 400). `ctx_id` is registry-assigned (RFC-ACDP-0003 §2.1 step 8) and is in the §5.7 exclusion set; the publish-request schema does not define it, and the schema is closed. A registry that silently accepts and ignores a producer-supplied `ctx_id` is non-conformant because the producer may believe they have reserved an identifier when they have not.",
+  "tags": ["failure", "publish", "schema", "closed-schema", "registry-assigned-field"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "body": {
+      "version": 1,
+      "supersedes": null,
+      "agent_id": "did:web:agents.example.com:test-producer",
+      "contributors": [],
+      "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "signature": {
+        "algorithm": "ed25519",
+        "key_id": "did:web:agents.example.com:test-producer#key-1",
+        "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+      },
+      "title": "Minimal",
+      "type": "data_snapshot",
+      "data_refs": [],
+      "derived_from": [],
+      "visibility": "public",
+      "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-000000000099"
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 400,
+    "error_code": "schema_violation",
+    "rationale": "Producer-supplied registry-assigned fields are a category of structural error: the producer cannot meaningfully sign a body that contains a field they do not control. Closed-schema rejection MUST be the consistent outcome regardless of whether the supplied value would have collided with an existing identifier."
+  }
+}

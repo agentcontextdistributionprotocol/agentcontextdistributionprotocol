@@ -1,0 +1,71 @@
+{
+  "id": "vis-007",
+  "description": "Negative companion to vis-006. A search match for a restricted (or private) context, when served to a requester WHO IS authorized to retrieve it but the registry's design choice is to omit visibility, OR when the match is served to a requester via an authorized path, MUST NOT carry visibility metadata that would leak the visibility class. The strict rule per RFC-ACDP-0005 §2.2 / RFC-ACDP-0008 §3.5: registries MUST omit `visibility` in match_summary when the requester is not authorized to retrieve the context. Restricted contexts that are correctly scoped out of an unauthorized requester's results never appear in matches at all (covered by vis-002); this fixture covers the marginal case where the same restricted context IS visible to its audience and pins that, even for the audience, the disclosure rule forbids leaking restricted-class metadata via match_summary if the registry chose not to disclose it for that requester.",
+  "tags": ["discovery", "visibility", "match-summary", "disclosure", "leak-prevention"],
+  "setup": {
+    "context_published": {
+      "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-00000000000E",
+      "agent_id": "did:web:agents.example.com:test-producer",
+      "title": "Restricted epsilon",
+      "visibility": "restricted",
+      "audience": ["did:agent:authorized"]
+    }
+  },
+  "scenarios": [
+    {
+      "name": "Audience member searches: registry MAY include visibility=restricted",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/search?q=epsilon",
+        "effective_requester_did": "did:agent:authorized"
+      },
+      "expected": {
+        "status": 200,
+        "matches_count": 1,
+        "match_visibility_field_disposition": "OPTIONAL: registries MAY include `visibility: \"restricted\"` because the requester is authorized to retrieve. Registries MAY also omit the field (the absence is silent — consumers MUST NOT infer anything from it).",
+        "consumer_invariant": "Consumer MUST NOT treat absence of `visibility` as signalling public-vs-non-public; absence is registry-choice."
+      }
+    },
+    {
+      "name": "Outsider searches: restricted context MUST NOT appear in matches at all",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/search?q=epsilon",
+        "effective_requester_did": "did:agent:outsider"
+      },
+      "expected": {
+        "status": 200,
+        "matches_count": 0,
+        "total_estimate": 0,
+        "match_visibility_field_disposition": "n/a — the match itself is not in the response. The visibility field cannot be served because there is no match_summary to put it in. This is the existence-leak invariant of RFC-ACDP-0008 §3.5: the registry MUST NOT include the restricted context in matches OR include any field that would reveal its presence to the outsider."
+      }
+    },
+    {
+      "name": "Hypothetical non-conformant registry leaks visibility metadata",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/search?q=epsilon",
+        "effective_requester_did": "did:agent:outsider"
+      },
+      "non_conformant_response_example": {
+        "matches": [
+          {
+            "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-00000000000E",
+            "title": "[redacted]",
+            "visibility": "restricted",
+            "agent_id": "did:web:agents.example.com:test-producer",
+            "type": "data_snapshot",
+            "created_at": "2026-04-16T10:15:00.000Z",
+            "status": "active",
+            "lineage_id": "lin:sha256:..."
+          }
+        ],
+        "total_estimate": 1
+      },
+      "expected": {
+        "outcome": "registry_must_not_emit_this_response",
+        "rationale": "Even with the title redacted, including the entry leaks the existence and visibility class of the restricted context to a non-authorized requester. The match_summary closure (acdp-search-response.schema.json + RFC-ACDP-0005 §2.2 disclosure rules) forbids both: (a) the match's presence in `matches`, and (b) the `visibility: \"restricted\"` field appearing in any match_summary served to a non-authorized requester."
+      }
+    }
+  ]
+}

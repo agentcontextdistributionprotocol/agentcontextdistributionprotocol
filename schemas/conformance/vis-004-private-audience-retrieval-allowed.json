@@ -1,0 +1,57 @@
+{
+  "id": "vis-004",
+  "description": "A DID listed in `audience[]` of a `private` context CAN retrieve the context by known ctx_id (HTTP 200), per RFC-ACDP-0008 §4.5 and RFC-ACDP-0002 §7. This is the retrieval half of the private/audience asymmetry; vis-005 covers the search half. The asymmetry is intentional: `audience` on a private context expresses 'you may read this if I send you the link', not 'you may discover this'.",
+  "tags": ["retrieval", "visibility", "private", "audience", "asymmetry"],
+  "setup": {
+    "context_published": {
+      "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-00000000000A",
+      "agent_id": "did:agent:owner",
+      "visibility": "private",
+      "audience": ["did:agent:audience_member"]
+    }
+  },
+  "scenarios": [
+    {
+      "name": "Producer (agent_id) retrieves own private context",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/acdp%3A%2F%2Fregistry.example.com%2F00000000-0000-4000-8000-00000000000A",
+        "effective_requester_did": "did:agent:owner"
+      },
+      "expected": { "status": 200 }
+    },
+    {
+      "name": "Audience member (in audience[]) retrieves private context by known ctx_id",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/acdp%3A%2F%2Fregistry.example.com%2F00000000-0000-4000-8000-00000000000A",
+        "effective_requester_did": "did:agent:audience_member"
+      },
+      "expected": { "status": 200 },
+      "notes": "`audience` grants retrieval access on private contexts — the audience member knows the ctx_id (out-of-band) and may fetch the body. This is the explicit RFC-ACDP-0002 §7 / RFC-ACDP-0008 §4.5 behavior. Contrast with vis-005, which forbids search visibility for the same requester."
+    },
+    {
+      "name": "Outsider (NOT producer, NOT in audience) retrieves private context",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/acdp%3A%2F%2Fregistry.example.com%2F00000000-0000-4000-8000-00000000000A",
+        "effective_requester_did": "did:agent:outsider"
+      },
+      "expected": { "status": 404, "error_code": "not_found" },
+      "notes": "Existence-leak prevention (RFC-ACDP-0008 §3.5): the response MUST be byte-indistinguishable from a request for a genuinely missing ctx_id. This scenario is included for completeness; vis-001 covers the existence-leak invariant in depth for restricted visibility, and the same invariant holds for private."
+    },
+    {
+      "name": "Contributor (NOT in audience) retrieves private context",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/acdp%3A%2F%2Fregistry.example.com%2F00000000-0000-4000-8000-00000000000A",
+        "effective_requester_did": "did:agent:listed_contributor",
+        "context_subset_for_test": {
+          "contributors": ["did:agent:listed_contributor"]
+        }
+      },
+      "expected": { "status": 404, "error_code": "not_found" },
+      "notes": "`contributors` is for attribution, not authorization (RFC-ACDP-0002 §7, RFC-ACDP-0008 §4.5). To grant a contributor read access on a private context, the producer MUST list the DID in `audience` explicitly — and even then, only retrieval is granted; search remains agent_id-only."
+    }
+  ]
+}
