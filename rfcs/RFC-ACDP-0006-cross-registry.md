@@ -82,6 +82,20 @@ The trust split is critical:
 
 A consumer that finds a `derived_from` reference to a context on a registry it does not recognize SHOULD nonetheless attempt resolution; the producing agent's signature is the deciding factor.
 
+### 4.2.1 Capabilities caching
+
+Consumers resolving cross-registry references SHOULD cache the fetched `/.well-known/acdp.json` capabilities document per authority. Caching reduces redundant network traffic, latency, and dependency on the upstream registry's availability. The cache TTL is governed by the following rules:
+
+1. **Honor `Cache-Control: max-age=N` from the capabilities response.** If the HTTP response carries a `Cache-Control` header with a `max-age` directive, consumers SHOULD cache for `min(N, 3600)` seconds. The 3600-second upper bound is the absolute ceiling regardless of the value the registry signals — capabilities can change (e.g. when a registry adds or removes profiles, rotates `registry_did`, or updates `supported_signature_algorithms`) and a stale value beyond an hour creates a meaningful divergence window.
+2. **Default TTL when no header is present.** If no `Cache-Control: max-age` directive is present (or the response does not carry a `Cache-Control` header at all), consumers SHOULD apply a default TTL of 300 seconds.
+3. **Absolute ceiling.** Consumers MUST NOT apply a TTL longer than 3600 seconds without a fresh fetch, even if the response signals a longer max-age. Registries advertising `Cache-Control: max-age=86400` will be honored at most for one hour by conformant consumers.
+4. **Re-fetch on validation failure.** Consumers that observe a `validate_capabilities` failure on a cached document (per RFC-ACDP-0007 §3.5 — schema violation, missing `registry_did`, etc.) SHOULD immediately bypass the cache and re-fetch before surfacing the error to higher layers. The most common cause of an in-cache `validate_capabilities` failure is a registry that updated its capabilities document mid-window.
+5. **Stale-while-revalidate is OPTIONAL.** Consumers MAY serve a stale cached entry to the application path while asynchronously re-fetching, provided the staleness window does not exceed the ceiling in rule 3. This is a consumer-side optimization; registries cannot rely on it.
+
+Registries SHOULD emit `Cache-Control: max-age=300` or higher on `/.well-known/acdp.json` responses. Registries with rapidly-changing capabilities (e.g. during a feature rollout) MAY emit shorter values; registries operating with a stable capability surface MAY emit values up to the consumer ceiling.
+
+This caching guidance applies to the capabilities document only. DID document caching is governed separately by RFC-ACDP-0001 §5.11 ("Caching" paragraph). Body caching is governed by §4.3 below.
+
 ### 4.3 Caching
 
 Bodies are immutable. Consumers MAY cache fetched bodies indefinitely, keyed by `ctx_id` and validated by `content_hash`. Registry state (status) is mutable; consumers MUST NOT cache `registry_state.status` beyond the freshness window appropriate to their use case.
