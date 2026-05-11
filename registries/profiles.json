@@ -1,0 +1,194 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "_note": "Machine-readable form of the conformance manifest in registries/profiles.md. This file is normative: when it conflicts with profiles.md the table in profiles.md wins; conformance runners SHOULD treat any divergence as a documentation bug and report it. Generated/edited by hand alongside profiles.md.",
+  "spec_version": "0.0.1",
+  "profiles": [
+    {
+      "id": "acdp-registry-core",
+      "inherits": null,
+      "required_endpoints": [
+        "POST /contexts",
+        "GET /contexts/{ctx_id}",
+        "GET /contexts/{ctx_id}/body",
+        "GET /lineages/{lineage_id}",
+        "GET /lineages/{lineage_id}/current",
+        "GET /.well-known/acdp.json"
+      ],
+      "required_fixtures": [
+        "can-001-jcs-vector",
+        "can-002-unicode-hash",
+        "can-003-metadata-hash",
+        "can-004-embedded-hash",
+        "can-005-empty-vs-absent",
+        "can-006-timestamp-precision",
+        "can-007-registry-created-at",
+        "can-008-body-with-unknown-producer-field",
+        "can-009-body-with-unknown-excluded-field",
+        "sig-001-ed25519-golden",
+        "pub-001-invalid-signature",
+        "pub-002-hash-mismatch",
+        "pub-003-superseded-target-mismatch",
+        "pub-004-first-version-with-lineage",
+        "pub-005-restricted-without-audience",
+        "pub-006-key-not-authorized",
+        "pub-007-publish-response-shape",
+        "pub-008-non-did-web-agent-id",
+        "pub-009-non-did-web-key-id",
+        "pub-010-non-did-web-contributor",
+        "pub-011-persist-only-after-signature-verify",
+        "pub-012-extra-unknown-field",
+        "pub-013-producer-supplied-ctx-id",
+        "pub-014-producer-supplied-created-at",
+        "data-ref-001-neither-location-nor-embedded",
+        "data-ref-002-both-location-and-embedded",
+        "data-ref-003-uri-with-credentials",
+        "data-ref-004-structured-missing-scheme",
+        "data-ref-005-embedded-too-large",
+        "data-ref-006-embedded-utf8-not-string",
+        "data-ref-007-embedded-hash-mismatch",
+        "meta-001-too-deep",
+        "meta-002-too-large",
+        "meta-003-valid-edge-depth",
+        "ret-001-not-found",
+        "vis-001-restricted-denied-as-404",
+        "vis-004-private-audience-retrieval-allowed",
+        "vis-005-private-audience-search-excluded",
+        "err-001-internal-error",
+        "caps-001-valid-minimal",
+        "caps-002-missing-ed25519",
+        "caps-003-missing-did-web",
+        "caps-004-idempotency-missing-ttl",
+        "caps-005-invalid-embedded-limit",
+        "caps-006-extra-top-level-field",
+        "status-001-unknown-valid-status",
+        "status-002-invalid-status-uppercase",
+        "status-003-invalid-status-with-space",
+        "status-004-empty-status",
+        "schema-002-publish-response-extra-content-hash",
+        "schema-003-embedded-extra-field",
+        "rate-001-rate-limited-response-shape"
+      ],
+      "conditional_fixtures": [
+        {
+          "fixtures": ["sig-002-ecdsa-p256-golden"],
+          "required_when": "supported_signature_algorithms includes \"ecdsa-p256\"",
+          "capability_key": "supported_signature_algorithms",
+          "capability_match": "ecdsa-p256"
+        },
+        {
+          "fixtures": [
+            "idem-001-first-publish",
+            "idem-002-retry-same-hash",
+            "idem-003-different-hash",
+            "idem-004-new-key-same-content",
+            "idem-005-no-support-ignores-header"
+          ],
+          "required_when": "supports_idempotency_key is true",
+          "capability_key": "supports_idempotency_key",
+          "capability_match": true
+        }
+      ],
+      "tolerated_outcomes": ["idem-006-race-concurrent"],
+      "not_implemented_permitted_on": [
+        "GET /contexts/search (registry MAY return 501 if acdp-registry-discovery is not advertised)"
+      ],
+      "self_test_only": [
+        "rate-001-rate-limited-response-shape (per profiles.md note — black-box conformance cannot deterministically trigger per-agent rate limit)"
+      ],
+      "notes": "All pub-001..014 fixtures are required. sig-002 is conditionally required only when the registry advertises ecdsa-p256 in supported_signature_algorithms. idem-001..005 are conditionally required when supports_idempotency_key is true; idem-006 documents a tolerated race outcome and is not a strict requirement."
+    },
+    {
+      "id": "acdp-registry-discovery",
+      "inherits": "acdp-registry-core",
+      "required_endpoints_added": [
+        "GET /contexts/search"
+      ],
+      "required_fixtures_added": [
+        "vis-002-search-excludes-restricted",
+        "vis-003-search-response-key",
+        "vis-005-private-audience-search-excluded",
+        "vis-006-search-match-public-visibility-disclosure",
+        "vis-007-search-match-restricted-visibility-absent-for-unauthorized",
+        "schema-001-search-response-extra-results"
+      ],
+      "not_implemented_permitted_on": [],
+      "notes": "vis-005 also appears in acdp-registry-core but is re-stated here because the search-side enforcement is what this profile adds."
+    },
+    {
+      "id": "acdp-registry-federated",
+      "inherits": "acdp-registry-core",
+      "required_endpoints_added": [],
+      "required_fixtures_added": [
+        "fed-001-https-only",
+        "fed-002-private-ip",
+        "fed-003-loopback",
+        "fed-004-link-local-imds",
+        "fed-005-cross-authority-redirect",
+        "fed-006-registry-did-mismatch"
+      ],
+      "self_test_only_added": [
+        "Response-size caps (RFC-ACDP-0006 §7.3)",
+        "Timeouts (RFC-ACDP-0006 §7.4)",
+        "DNS-rebinding pinning (RFC-ACDP-0006 §7.6)"
+      ],
+      "not_implemented_permitted_on": [],
+      "notes": "Response-size caps, timeouts, and DNS-rebinding pinning are operational requirements that registry implementers MUST self-test; they are not exposed as standalone fixtures because the protocol surface alone does not allow a black-box assertion."
+    },
+    {
+      "id": "acdp-consumer",
+      "inherits": null,
+      "behavioral_requirements": [
+        "End-to-end signature verification (RFC-ACDP-0001 §5.11) on every retrieved context",
+        "acdp:// cross-registry resolution per RFC-ACDP-0006 if followed (with SSRF protections of §7 if performed server-side)",
+        "Local visibility re-verification per RFC-ACDP-0008 §4.5",
+        "Tolerance of unknown body / registry-state fields (RFC-ACDP-0001 §6, RFC-ACDP-0004 §4.1, RFC-ACDP-0007 §3.3)"
+      ],
+      "required_fixtures": [
+        "can-001-jcs-vector",
+        "can-002-unicode-hash",
+        "can-003-metadata-hash",
+        "can-004-embedded-hash",
+        "can-005-empty-vs-absent",
+        "can-006-timestamp-precision",
+        "can-007-registry-created-at",
+        "can-008-body-with-unknown-producer-field",
+        "can-009-body-with-unknown-excluded-field",
+        "sig-001-ed25519-golden",
+        "caps-001-valid-minimal",
+        "caps-002-missing-ed25519",
+        "caps-003-missing-did-web",
+        "caps-004-idempotency-missing-ttl",
+        "caps-005-invalid-embedded-limit",
+        "caps-006-extra-top-level-field",
+        "status-001-unknown-valid-status",
+        "status-002-invalid-status-uppercase",
+        "status-003-invalid-status-with-space",
+        "status-004-empty-status",
+        "schema-001-search-response-extra-results",
+        "schema-002-publish-response-extra-content-hash",
+        "schema-003-embedded-extra-field",
+        "schema-004-capabilities-extra-top-level-allowed",
+        "vis-003-search-response-key",
+        "pub-007-publish-response-shape",
+        "pub-010-non-did-web-contributor"
+      ],
+      "notes": "can-008 and can-009 are especially important: they exercise forward-compatible hash verification (RFC-ACDP-0001 §5.7) — a consumer that deserializes into a typed model that drops unknown fields will fail these and produce false hash_mismatch under v0.1+ producers. A consumer that follows derived_from across registries additionally MUST pass the fed-* fixtures if it performs server-side resolution."
+    }
+  ],
+  "fixture_families": {
+    "can": "Canonicalization and hash recomputation (RFC-ACDP-0001 §5.2, §5.7)",
+    "sig": "Signature golden vectors (RFC-ACDP-0001 §5.8, §5.10)",
+    "pub": "Publish flow (RFC-ACDP-0003 §2.1)",
+    "data-ref": "DataRef invariants (RFC-ACDP-0002 §6)",
+    "meta": "Metadata depth/size limits (RFC-ACDP-0002 §5.2)",
+    "ret": "Retrieval flow (RFC-ACDP-0004 §2)",
+    "vis": "Visibility scoping (RFC-ACDP-0008 §4.5, RFC-ACDP-0005 §2.5.5)",
+    "err": "Error-envelope shape (RFC-ACDP-0007 §4)",
+    "caps": "Capabilities document validation (RFC-ACDP-0007 §3.5)",
+    "status": "Registry-state status pattern (RFC-ACDP-0004 §4.1)",
+    "schema": "Closed-schema rejection / openness map (RFC-ACDP-0001 §3.3.1)",
+    "rate": "Rate-limit response shape (RFC-ACDP-0007 §5)",
+    "fed": "Federation / SSRF protections (RFC-ACDP-0006 §7)",
+    "idem": "Idempotency-key behavior (RFC-ACDP-0003 §6)"
+  }
+}

@@ -231,6 +231,27 @@ The exclusion list permits the producer to compute `content_hash` and sign befor
 
 Implementations MUST produce identical `content_hash` values for the same body content across all conforming implementations. Test vectors are provided in the conformance fixtures.
 
+#### Exclusion-set registry (NORMATIVE)
+
+The table below is the authoritative, versioned list of fields excluded from ProducerContent. It is the single source of truth for the §5.7 exclusion set; the prose above and the conformance fixtures (`can-008`, `can-009`) are derived from it.
+
+| Field | Location | Included in ProducerContent? | Introduced in | Rationale |
+|---|---|---|---|---|
+| `content_hash` | body | No | 0.0.1 | Self-referential — a field cannot contain its own hash. |
+| `signature` | body | No | 0.0.1 | The signature covers (and therefore cannot be covered by) the hash. |
+| `ctx_id` | body | No | 0.0.1 | Registry-assigned at publish time (§5.5). Not known to the producer at signing time. |
+| `lineage_id` | body | No | 0.0.1 | Registry-assigned at publish time (§5.6). |
+| `origin_registry` | body | No | 0.0.1 | Registry-assigned at publish time. |
+| `created_at` | body | No | 0.0.1 | Registry-assigned at publish time (§5.3). |
+| `registry_state` | top-level, outside body | N/A — outside body | 0.0.1 | Mutable, registry-derived state (RFC-ACDP-0004 §4). Never part of the body and therefore never an input to `content_hash`. |
+| `registry_receipt` | top-level, outside body | N/A — outside body | reserved | Reserved by RFC-ACDP-0009 §2.7 for future registry-binding receipts. v0.0.1 consumers MUST ignore this field if present. |
+
+**Unknown body fields (NORMATIVE).** Body fields not listed in this table AND not in the published body schema (`schemas/json/acdp-context-body.schema.json`) are **included** in ProducerContent by default. This is the forward-compatibility guarantee from §6 made concrete: future producer-controlled fields added in minor versions are automatically covered by the producer signature without an exclusion-set update. The fixture `can-008-body-with-unknown-producer-field.json` is the positive case (an unknown producer field MUST be retained for hashing).
+
+**Closed-by-name exclusion (NORMATIVE).** Conversely, a field whose name appears in the table above is excluded by name even when its value is unexpected or its presence is irregular. The fixture `can-009-body-with-unknown-excluded-field.json` is the negative case: a body that carries a non-standard value in `origin_registry` (for example, set by a malicious or misbehaving producer to spoof another registry) MUST still be excluded by name from ProducerContent at the consumer's hash-recomputation step — the producer signature never bound `origin_registry`, so its value is registry-honesty territory regardless (§5.9, RFC-ACDP-0008 §9.1).
+
+**Exclusion-set evolution (NORMATIVE).** Implementations MUST NOT expand the exclusion set without a spec version change. Adding a row to the table above — or treating a field as excluded in any implementation when this table does not list it — is a non-conformant deviation: it would silently break signature verification across the ecosystem because consumers and registries would disagree on what bytes the producer signed. Future versions of ACDP that add a registry-assigned field MUST advertise the new exclusion via the `acdp_version` mechanism (§6, `body.acdp_version`) so that downstream verifiers can apply the correct exclusion set for the body's declared version.
+
 #### Hash verification over raw JSON (REQUIRED for forward compatibility)
 
 Consumers and registries MUST recompute `content_hash` from the raw received JSON object — not from a lossy typed deserialization of it — unless the typed deserialization provably preserves every unknown field byte-for-byte.
@@ -267,6 +288,20 @@ The `signature` field of a body is a JSON object:
 The signature value is computed over the bytes of the full `content_hash` string — that is, the ASCII bytes of `sha256:` followed by the 64 lowercase hex characters. Implementations MUST NOT sign the raw hash bytes alone.
 
 Registries MUST verify the signature at publish time. A context whose signature does not verify MUST be rejected with the `invalid_signature` error code (RFC-ACDP-0007).
+
+**Key generation (NORMATIVE).** Producers MUST generate Ed25519 and ECDSA-P256 key pairs using a cryptographically secure random number generator drawing from the OS entropy pool. On Unix-like systems this is `getrandom(2)` (Linux ≥ 3.17, macOS ≥ 10.12) or a fresh read from `/dev/urandom`; on Windows this is `BCryptGenRandom` (or the legacy `CryptGenRandom`); managed runtimes MUST use the platform's secure-random API (`crypto.getRandomValues` / `crypto.randomBytes` in JS, `secrets.token_bytes` / `os.urandom` in Python, `crypto/rand.Read` in Go, `ring::rand::SystemRandom` or `OsRng` in Rust). Implementations MUST NOT use:
+
+- all-zero seeds (every keypair would be the same and publicly known);
+- timestamp-based seeds, PID-based seeds, or any seed derived from low-entropy inputs;
+- the seed `0x00..01` (the sig-002 test scalar) or any other test-vector seed published in this specification — these are TEST-ONLY and publicly known;
+- the language's default non-cryptographic PRNG (`rand` package in Rust, `random` in Python, `math/rand` in Go) — these are deterministic from a low-entropy seed and signatures generated under them are forgeable;
+- a single global seed re-derived per process without re-seeding from the OS — long-running processes that don't re-seed are vulnerable after sufficient state observation.
+
+Recommended pattern: a library-provided `SigningKey::generate()` (or language equivalent) that invokes the OS RNG directly and returns a fresh keypair. `SigningKey::from_bytes` (or equivalent) SHOULD be reserved for loading key material already stored securely; it MUST NOT be the path users reach for when they want a "new" key. Library authors SHOULD make this distinction visible in the API — e.g., `generate()` returns `(SigningKey, VerifyingKey)`, `from_bytes(&[u8])` is named and documented as "load existing key".
+
+**Key storage (NORMATIVE).** Private key bytes MUST NOT be persisted in cleartext on disk, in a config file, in a `.env` file committed to source control, in a container image, in process environment variables that other processes can read (`/proc/<pid>/environ`), in container metadata services, or in cloud-function environment-variable pages. Acceptable storage: an OS keychain (macOS Keychain, Windows DPAPI, Linux Secret Service / libsecret), a hardware security module (HSM), a cloud KMS (AWS KMS, GCP KMS, Azure Key Vault, HashiCorp Vault) with the private key never leaving the boundary, or a trusted execution environment (TPM, SGX, Apple Secure Enclave). The signing operation SHOULD happen inside the boundary — the producer process holds a handle, not the bytes.
+
+For development and CI, the same secure-storage requirement applies; ephemeral test keys generated per-CI-run and discarded at job end are acceptable, but committed test keys MUST be flagged as TEST-ONLY (as `sig-002`'s keypair is) and MUST NOT be used to sign anything that reaches a production registry. A production publish signed by a leaked, committed, or test-only key is a security incident regardless of whether the content is correct.
 
 ### 5.9 Replay, Tamper, and Impersonation Protection
 
@@ -330,6 +365,19 @@ The resolution algorithm:
 7. **Verify the signature.** Use the extracted public key to verify `signature.value` (base64-decoded bytes) against the ASCII bytes of `body.content_hash` (per §5.8).
 
 **Caching.** Implementations SHOULD cache resolved DID documents for at least 5 minutes and at most 24 hours. The cache key is the DID (not the full DID URL). Implementations MUST refresh on any verification failure that could plausibly be due to key rotation.
+
+**Testability of key resolution (NON-NORMATIVE).** Fixture-bound conformance tests for signature verification (`pub-001`, `pub-006`, the sig-* goldens) require outbound HTTPS to a DID-document host. Library users in CI environments without outbound network access — or with self-signed test infrastructure — cannot run these fixtures unless the resolver is testable offline, which in practice means many implementations silently skip them. Library authors implementing the §5.11 resolver SHOULD therefore provide one or both of:
+
+1. **A custom-root-of-trust constructor** that accepts an additional root CA certificate (or a custom TLS verifier callback) so the resolver can be pointed at a local HTTPS server with a self-signed cert. Concrete shapes by language: `WebResolver::with_root_cert(cert_der: &[u8])` in Rust, `WebResolver(root_ca=cert_bytes)` in Python, `new WebResolver({ rootCAs: [cert] })` in TypeScript, `WebResolver{RootCAs: pool}` in Go.
+2. **A pluggable DID-document store** that bypasses network I/O entirely — the application supplies `DidDocument`s by DID, and the resolver consults the store before any HTTP fetch. This is the strict-offline pattern and is the only option that survives a fully air-gapped CI.
+
+These testing surfaces MUST be guarded so they do not weaken production:
+
+- They SHOULD be behind a test-only build flag (Rust feature `test-resolver`, Python `extras_require={"testing": [...]}`, etc.) OR be available only via a separate `testing` module that is not re-exported from the package root.
+- The default production constructor MUST validate certificates against the operating system's trust store; injecting an additional root MUST be an explicit, named operation at construction time (no implicit fallback, no env var).
+- Constructors that disable certificate validation entirely MUST NOT exist — a self-signed cert can be added to the trust list, but `verify=False`-equivalents have no place in the public API.
+
+Without these surfaces, conformance testing for `pub-001` and `pub-006` requires a live network and a public DID-document host, which discourages running the fixtures at all and silently lowers ecosystem-wide assurance.
 
 **Future DID methods.** v0.1+ may add `did:key`, `did:jwk`, and other methods. The resolution algorithm above is `did:web`-specific; other methods will be specified separately.
 

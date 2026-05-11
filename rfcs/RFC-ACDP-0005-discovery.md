@@ -118,6 +118,15 @@ Registries MUST NOT interpret special characters in `q` as boolean operators in 
 
 Result ordering is registry-defined and not guaranteed across implementations. Registries SHOULD order by relevance descending, with ties broken by `created_at` descending. Registries MAY change ranking algorithms between deployments without protocol-version impact; consumers MUST NOT rely on specific ranking properties.
 
+**Sort stability within a paginated sequence (MUST).** The sort order MUST be stable within a single paginated sequence. A registry issuing `next_cursor` MUST guarantee that subsequent pages continue from the same logical position in the same sort order that produced the prior page — i.e., the cursor binds not only the position but the comparator. Switching ranking algorithms, secondary sort keys, or relevance scoring mid-sequence is FORBIDDEN; consumers paginating with the returned cursor MUST NOT observe duplicate or skipped results caused by an order change.
+
+Two additional rules govern what the cursor binds:
+
+1. **Primary sort key.** Registries SHOULD use `created_at` descending as the primary sort key for paginated search results. Relevance ranking is permitted (per §2.5.3 above) but registries using relevance MUST snapshot the relevance score per `(query, requester)` at the time the first page's cursor is minted and reuse the snapshotted score for every subsequent page in the sequence; a "live" relevance recomputation across pages violates stability.
+2. **Deterministic tiebreaker.** Ties on the primary sort key MUST be broken by a deterministic secondary key. The RECOMMENDED secondary key is `ctx_id` lexicographic ascending. The secondary key MUST be total (no two distinct contexts compare equal), so every context in the result set is reachable via pagination and no context is returned twice.
+
+**Cursor freshness across publishes.** New contexts published between pages MAY or MAY NOT appear in subsequent pages; registries SHOULD document their cursor freshness guarantee (snapshot at first-page mint vs. live-with-stable-order). Snapshot semantics are RECOMMENDED for evidence-assembly and audit-driven consumers; live-with-stable-order is RECOMMENDED for indexing crawlers. Either choice is conformant as long as the in-sequence order is stable per the rule above.
+
 #### 2.5.4 Cursor stability
 
 Cursors are opaque strings. They:

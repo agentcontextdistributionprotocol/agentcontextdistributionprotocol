@@ -128,8 +128,9 @@ syntax_check_dir() {
 # document illustrating a derived_from chain walk. It is NOT a wire-shape
 # and does not validate against acdp-context.schema.json. See the file's
 # top-level "_note", "description" and "chain" fields.
-syntax_check_dir "${EXAMPLES_DIR}/lineage"     "lineage"
-syntax_check_dir "${EXAMPLES_DIR}/idempotency" "idempotency"
+syntax_check_dir "${EXAMPLES_DIR}/lineage"        "lineage"
+syntax_check_dir "${EXAMPLES_DIR}/idempotency"    "idempotency"
+syntax_check_dir "${EXAMPLES_DIR}/key-resolution" "key-resolution (DID documents)"
 
 validate_dir_against "${EXAMPLES_DIR}/search"           "${SEARCH_RESPONSE_SCHEMA}"      "search-response"
 

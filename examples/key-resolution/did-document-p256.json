@@ -1,0 +1,22 @@
+{
+  "_note": "DID document corresponding to the ecdsa-p256 publish request in examples/publish/data-snapshot-publish-request-p256.json and the sig-002 golden conformance fixture. The keypair is TEST-ONLY: private_scalar = 1 (so the public key is the P-256 generator G). Never use this keypair in production. Hosted at https://agents.example.com/.well-known/did.json (the DID 'did:web:agents.example.com:test-producer' resolves to https://agents.example.com/test-producer/did.json per the did:web spec — adjust hosting per your DID configuration).",
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://w3id.org/security/suites/jws-2020/v1"
+  ],
+  "id": "did:web:agents.example.com:test-producer",
+  "verificationMethod": [
+    {
+      "id": "did:web:agents.example.com:test-producer#key-1",
+      "type": "JsonWebKey2020",
+      "controller": "did:web:agents.example.com:test-producer",
+      "publicKeyJwk": {
+        "kty": "EC",
+        "crv": "P-256",
+        "x": "axfR8uEsQkf4vOblY6RA8ncDfYEt6zOg9KE5RdiYwpY",
+        "y": "T-NC4v4af5uO5-tKfA-eFivOM1drMV7Oy7ZAaDe_UfU"
+      }
+    }
+  ],
+  "assertionMethod": ["did:web:agents.example.com:test-producer#key-1"]
+}

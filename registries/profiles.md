@@ -17,6 +17,8 @@ The schema vocabulary is open. Profiles are normatively defined in [RFC-ACDP-000
 
 Each profile pins a concrete set of HTTP endpoints and conformance fixtures. The columns below are normative for v0.0.1 implementers — passing the listed fixtures is necessary (but not sufficient) for claiming conformance with the corresponding profile.
 
+A machine-readable form of the same manifest is published as [`profiles.json`](profiles.json). Conformance runners and language implementations SHOULD prefer the JSON form for fixture selection; the table here is the human-readable index. When the two diverge, the table here is authoritative — implementers SHOULD open an issue against the JSON document.
+
 ### `acdp-registry-core`
 
 | | Required |

@@ -54,6 +54,22 @@ The registry MUST execute the following steps in order:
 
 The registry MUST execute steps 1–7 before any persistence. Steps 8–12 are atomic with respect to other concurrent publications: when two publications target the same `supersedes` value, the registry MUST accept exactly one (the first to fully validate and reach step 12 (persistence)), and MUST reject every subsequent attempt with `superseded_target` (`details.reason = "already_superseded"`, HTTP 409 Conflict).
 
+> **Implementation guidance: avoid partial validators (NON-NORMATIVE).**
+>
+> The §2.1 pipeline is normative as an atomic flow: steps 1–7 MUST all complete before any persistence (steps 8–12). Libraries that expose intermediate validation steps as named public APIs invite misuse — once an API like `validate_schema_only` or `verify_hash_only` exists at the surface, a registry author under deadline can wire it into the publish path "for now" and ship a non-conformant build.
+>
+> Recommendations for library authors:
+>
+> - Treat the §2.1 pipeline as the only **public** publish entrypoint. Steps 1–7 SHOULD execute as one transaction inside the library, with no externally callable hooks between them.
+> - Specifically, `validate_schema_only` (steps 1–3), `validate_hash_only` (step 4), `validate_structure` (steps 1–6 without signature verification), and similar surfaces are NOT conformant for registry persistence. Libraries MAY offer them as **internal** utilities for debugging or test-suite construction, but MUST NOT name them suggestively or mark them `pub`/exported.
+> - Any debug-only API that intentionally bypasses signature verification (`publish_unverified`, `publish_unchecked`, `publish_without_signature_verification`, etc.) MUST be:
+>   1. Named to make the safety property obvious at the call site (e.g. `unsafe_publish_without_signature_verification`, not `publish_fast`).
+>   2. Gated behind a **non-default** configuration flag (a feature flag, a build feature like Cargo `unsafe-test-paths`, or a runtime config rejected when `ACDP_PROD=true`).
+>   3. Hidden from the default API surface (`#[doc(hidden)]` in Rust, `_`-prefix in Python, `@deprecated` + omit from `index.ts` exports in TypeScript, lowercase identifier in Go).
+>   4. Refused at server construction time when the server is configured for any non-test environment (the library SHOULD panic / return an error from the constructor, not just log a warning).
+>
+> The conformant path always includes all steps 1–8 atomically before any mutation. `pub-011-persist-only-after-signature-verify.json` is the fixture that exercises the persist-before-verify failure mode and complements this guidance.
+
 > **⚠️ Non-conformant: persisting before signature verification.**
 > A registry that validates the `content_hash` (step 4) but skips DID resolution and signature verification (steps 6–7) is **NOT conformant**, even if it never serves content that fails consumer verification. Persisting unverified content:
 >
@@ -212,6 +228,27 @@ The atomicity requirement in step 4 is normative: it is the difference between i
 The ordering choice in steps 1–2 is a SHOULD, not a MUST: a registry MAY perform schema validation, payload-size validation, or any other cheap check before idempotency lookup. It MUST NOT perform DID resolution or signature verification before idempotency lookup, because doing so defeats the cost-amortization purpose of the header. Registries that treat the `Idempotency-Key` header as a post-hoc dedup mechanism (after signature verification has already run) are conformant only if their measured cost on retries matches an implementation that performed the lookup first — i.e., the test is observable behavior, not internal sequencing.
 
 The conformance fixtures `idem-001` through `idem-006` exercise this surface.
+
+#### 6.2.2 Distributed idempotency (NORMATIVE)
+
+`idem-006` describes the single-server happy outcome for two concurrent same-key same-hash publishes: one 201 and one 200, or both 201 with the same `ctx_id`. This outcome is straightforward when both requests are handled by a single process with a serializable view of the idempotency table. In a multi-node deployment with eventual-consistency storage, two front-end nodes processing the same idempotency key concurrently MAY both complete §2.1 validation and reach step 12 (persistence) before either has stored the idempotency record — minting two distinct `ctx_id`s for what the producer believes is one logical publication, defeating the safe-retry guarantee.
+
+Registries operating across multiple nodes MUST implement idempotency using an atomic store. "Atomic" here means: the `(agent_id, idempotency_key, content_hash, response)` record and the body persistence MUST commit together (or, equivalently, the idempotency record MUST be written with a unique constraint such that a second concurrent attempt fails before persisting the body). Acceptable mechanisms include:
+
+- a single serializable-isolation transaction covering both writes;
+- a compare-and-swap on a unique `(agent_id, idempotency_key)` index that pre-reserves the slot before §2.1 step 12 runs;
+- a single-master shard that serializes idempotency-keyed publishes per `(agent_id, idempotency_key)`;
+- an external lock service (Redis Redlock, etcd lease, Postgres advisory lock) held for the lifetime of the publish.
+
+A registry that cannot guarantee atomic idempotency storage MUST either:
+
+(a) **Shard idempotency-keyed requests** by `(agent_id, idempotency_key)` to a single node so that the in-node lookup is authoritative, OR
+
+(b) **Not advertise `supports_idempotency_key: true`** in capabilities (RFC-ACDP-0007 §3.2). Producers will treat the header as absent and rely on their own content-deterministic deduplication (§6.3).
+
+A registry advertising `supports_idempotency_key: true` while processing idempotency checks non-atomically is **OUT OF CONFORMANCE**. The advertised capability is a contract: producers depend on it for retry safety, and a registry that silently issues duplicate `ctx_id`s under concurrent retry undermines every higher-layer invariant that producers build on idempotency (deduplication by content_hash, lineage continuity, evidence-chain stability).
+
+Producers relying on idempotency for retry safety SHOULD verify the advertised capability before depending on it AND SHOULD also retain a local content-hash deduplication index (§6.3) as a defense in depth — `Idempotency-Key` is necessary for retry safety but not sufficient if the producer cannot verify the registry's atomicity claim. Conformance fixture `idem-006` covers the race scenario; black-box conformance testing of distributed-store atomicity is implementation-specific (see the rate-limit note pattern in `registries/profiles.md`).
 
 ### 6.3 Content-deterministic deduplication
 

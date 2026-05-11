@@ -69,8 +69,59 @@
         "4. Sign ASCII bytes of expected.content_hash with the test private key, using RFC 6979 deterministic ECDSA over P-256 with SHA-256 as the hash. Encode the signature as IEEE 1363 r‖s (32+32 = 64 raw bytes), base64 with padding. Result MUST equal expected.signature_value_base64. Implementations using non-deterministic ECDSA MUST still produce a 64-byte r‖s output, but their value will differ; they verify via step 5 instead of byte-comparing.",
         "5. Reconstruct the public key: build the SEC1 uncompressed point 0x04 || x || y (65 bytes) from public_key_jwk.x and public_key_jwk.y (base64url-decoded, 32 bytes each), or use public_key_uncompressed_sec1_hex directly. Verify the signature with this public key over the ASCII bytes of body.content_hash (with the 'sha256:' prefix included). Verification MUST succeed for both the deterministic value above AND any conformant implementation's own r‖s output.",
         "6. Compute lin: + lowercase_hex(SHA-256(registry_assigned.ctx_id)); result MUST equal registry_assigned.lineage_id."
+      ],
+      "expected_outcome": "success"
+    },
+    {
+      "name": "DER-encoded signature MUST be rejected as invalid_signature",
+      "description": "Same r and s values as the success vector above, encoded as ASN.1 DER (SEQUENCE { INTEGER r, INTEGER s }) instead of IEEE 1363 r‖s. The DER blob is 70 bytes — the same mathematical signature but in the wrong wire form. Registries MUST reject this as `invalid_signature` per registries/signature-algorithms.md (NORMATIVE: 'DER-encoded signatures (the default output of many libraries, including OpenSSL i2d_ECDSA_SIG and Go ecdsa.SignASN1) are NON-CONFORMANT and registries MUST reject them as invalid_signature.'). Implementations that accidentally accept DER pass the success vector above but fail this one.",
+      "producer_content": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:web:agents.example.com:test-producer",
+        "contributors": [],
+        "title": "Golden test vector — minimal first version",
+        "type": "data_snapshot",
+        "data_refs": [],
+        "derived_from": [],
+        "visibility": "public"
+      },
+      "expected": {
+        "canonical_form": "{\"agent_id\":\"did:web:agents.example.com:test-producer\",\"contributors\":[],\"data_refs\":[],\"derived_from\":[],\"supersedes\":null,\"title\":\"Golden test vector — minimal first version\",\"type\":\"data_snapshot\",\"version\":1,\"visibility\":\"public\"}",
+        "content_hash": "sha256:f170150ddbf59d99794e7797824591b374d459782084597b644ecc57a41031b5",
+        "signature_input": "sha256:f170150ddbf59d99794e7797824591b374d459782084597b644ecc57a41031b5",
+        "signature_algorithm": "ecdsa-p256",
+        "signature_wire_form": "DER-encoded ASN.1 SEQUENCE { INTEGER r, INTEGER s } — NON-CONFORMANT for ACDP. Length is 70 bytes (not 64).",
+        "der_encoded_signature_hex": "304402203be6fe13938879c8300a78c3c93aac8b0c32dd54dd0476d5862451f64dc500f6022047bcb27977261854f3d459b97474a0dd80a330d9d5ab9ca59100d255a12f6f37",
+        "der_encoded_signature_base64": "MEQCIDvm/hOTiHnIMAp4w8k6rIsMMt1U3QR21YYkUfZNxQD2AiBHvLJ5dyYYVPPUWbl0dKDdgKMw2dWrnKWRANJVoS9vNw==",
+        "expected_outcome": "failure",
+        "error_code": "invalid_signature",
+        "rejection_reason": "DER encoding is non-conformant; IEEE 1363 r||s required (registries/signature-algorithms.md 'ecdsa-p256 wire form' section).",
+        "publish_request_body": {
+          "version": 1,
+          "supersedes": null,
+          "agent_id": "did:web:agents.example.com:test-producer",
+          "contributors": [],
+          "title": "Golden test vector — minimal first version",
+          "type": "data_snapshot",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public",
+          "content_hash": "sha256:f170150ddbf59d99794e7797824591b374d459782084597b644ecc57a41031b5",
+          "signature": {
+            "algorithm": "ecdsa-p256",
+            "key_id": "did:web:agents.example.com:test-producer#key-1",
+            "value": "MEQCIDvm/hOTiHnIMAp4w8k6rIsMMt1U3QR21YYkUfZNxQD2AiBHvLJ5dyYYVPPUWbl0dKDdgKMw2dWrnKWRANJVoS9vNw=="
+          }
+        }
+      },
+      "verification_steps": [
+        "1. Decode signature.value from base64; result MUST be 70 bytes (matching expected.der_encoded_signature_hex).",
+        "2. Length check: 70 ≠ 64. Per registries/signature-algorithms.md 'ecdsa-p256 wire form' (NORMATIVE), the IEEE 1363 r‖s form is exactly 64 bytes. A 70-byte blob is detectable as non-conformant before any cryptographic operation.",
+        "3. Registry MUST reject with error.code = 'invalid_signature' (RFC-ACDP-0007 §5).",
+        "4. An implementation that converts DER to r‖s internally before length-checking is also passing if it returns invalid_signature; the prohibition is on accepting DER as a valid wire form, not on the specific detection mechanism."
       ]
     }
   ],
-  "notes": "ECDSA-P256 is non-deterministic by default. Implementations following this fixture's signature_value_base64 byte-for-byte MUST use RFC 6979 deterministic ECDSA (SHA-256 hash). Implementations using random-k ECDSA cannot reproduce the value but MUST still verify it (step 5) and MUST produce a 64-byte IEEE 1363 r‖s output for their own signing path. DER-encoded signatures are NON-CONFORMANT regardless of length."
+  "notes": "ECDSA-P256 is non-deterministic by default. Implementations following this fixture's signature_value_base64 byte-for-byte MUST use RFC 6979 deterministic ECDSA (SHA-256 hash). Implementations using random-k ECDSA cannot reproduce the value but MUST still verify it (step 5) and MUST produce a 64-byte IEEE 1363 r‖s output for their own signing path. DER-encoded signatures are NON-CONFORMANT regardless of length; the second vector pins this rule with a registry-rejection test."
 }

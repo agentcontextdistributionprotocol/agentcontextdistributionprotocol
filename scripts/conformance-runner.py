@@ -192,6 +192,11 @@ def check_ecdsa_p256_vector(fixture, fixture_data, vector):
     Signing is non-deterministic in cryptography.io's API (no RFC 6979 helper),
     so we DO NOT re-sign and byte-compare. We instead verify that the pinned
     signature_value_base64 verifies under the declared public key.
+
+    Vectors with expected.expected_outcome == "failure" exercise the
+    DER-rejection rule from registries/signature-algorithms.md: the wire blob
+    is intentionally not 64 bytes (e.g. 70-byte DER), and a conformant
+    implementation MUST detect and reject it.
     """
     name = vector.get("name", "?")
     keypair = fixture_data.get("test_keypair", {})
@@ -215,6 +220,45 @@ def check_ecdsa_p256_vector(fixture, fixture_data, vector):
         return False
 
     exp = vector.get("expected", {})
+    expected_outcome = exp.get("expected_outcome", "success")
+
+    if expected_outcome == "failure":
+        # DER-rejection (and similar negative) vectors. The fixture pins a wire
+        # blob that is NOT 64 bytes; this runner verifies that the rejection
+        # path is observable by the wire form alone (length != 64), without
+        # any cryptographic operation. A conformant registry MUST reject with
+        # `invalid_signature`; this static check confirms the test data is
+        # consistent with that requirement.
+        der_b64 = exp.get("der_encoded_signature_base64")
+        if not der_b64:
+            fail(fixture, name, "failure vector missing expected.der_encoded_signature_base64")
+            return False
+        try:
+            der_bytes = base64.b64decode(der_b64)
+        except Exception as e:
+            fail(fixture, name, f"DER base64 decode failed: {e}")
+            return False
+        # Sanity-check the DER does at least parse and hold the same (r, s) as
+        # the success vector for this fixture — i.e. the negative vector is
+        # the same mathematical signature, just wrong wire form.
+        try:
+            rs_recovered = _der_to_ieee1363(der_bytes)
+        except Exception as e:
+            fail(fixture, name, f"DER parse failed: {e}")
+            return False
+        if len(der_bytes) == 64:
+            fail(fixture, name, "negative vector wire length is 64 — indistinguishable from r||s, won't exercise rejection")
+            return False
+        # The negative vector's blob must mathematically verify when re-parsed
+        # as DER, otherwise it doesn't isolate "DER wire form" from "broken
+        # signature". This is a fixture-quality check.
+        try:
+            pub.verify(der_bytes, content_hash.encode("ascii"), ec.ECDSA(hashes.SHA256()))
+        except Exception as e:
+            fail(fixture, name, f"DER blob does not verify against the public key — fixture is testing the wrong thing: {e}")
+            return False
+        return _check_lineage(fixture, name, vector)
+
     sig_b64 = exp.get("signature_value_base64")
     if not sig_b64:
         fail(fixture, name, "missing expected.signature_value_base64")
