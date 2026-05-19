@@ -17,7 +17,7 @@ Two distinct questions are often conflated:
 
 ---
 
-## Pattern 1: Out-of-band configuration (RECOMMENDED for v0.0.1)
+## Pattern 1: Out-of-band configuration (RECOMMENDED for v0.1.0)
 
 The simplest, most secure pattern for closed deployments.
 

@@ -2,8 +2,8 @@
 # Agent Context Description Protocol (ACDP) — Publish & Supersession
 
 **Document:** RFC-ACDP-0003
-**Version:** 0.0.1
-**Status:** Community Standards Track (Draft)
+**Version:** 0.1.0-rc1
+**Status:** Community Standards Track (Release Candidate 1)
 
 This RFC specifies how producers publish contexts to ACDP registries and how registries handle supersession. It depends on RFC-ACDP-0001 (Core) and RFC-ACDP-0002 (Context Body).
 
@@ -11,7 +11,7 @@ This RFC specifies how producers publish contexts to ACDP registries and how reg
 
 ## 1. Status of This Memo
 
-This document is a Draft. Backward-incompatible changes remain possible until Final.
+This document is a Release Candidate (acdp/0.1.0-rc1). Backward-incompatible changes remain possible until Final; only editorial fixes are expected during the RC window.
 
 ---
 
@@ -34,7 +34,7 @@ The registry MUST execute the following steps in order:
 2. **Payload-size validation.** Verify total request size ≤ `limits.max_payload_bytes` (RFC-ACDP-0007). On overflow, return `payload_too_large` (HTTP 413).
 3. **Embedded validation.** For each `data_refs[].embedded`:
     - Verify decoded size ≤ 65536 bytes (per RFC-ACDP-0002 §6.3 decoding rules: `base64` → RFC 4648 decoded byte count; `utf8` → UTF-8 byte count; `json` → JCS-canonicalized byte count). On overflow, return `embedded_too_large` (HTTP 413).
-    - If `embedded.content_hash` is present, recompute the SHA-256 of the decoded bytes (same encoding-aware decoding) and verify it matches. On mismatch, return `hash_mismatch` (HTTP 400). This is distinct from the body-level `content_hash` check in step 4: step 3's hash-check binds an individual embedded payload to its declared digest; step 4 binds the whole producer-controlled body. Per-embedded `content_hash` is OPTIONAL on publish (the producer commits to whatever `embedded.content` they sign in step 4 either way), but present-and-mismatching is a hard error per RFC-ACDP-0002 §6.6 Check 8.
+    - If `embedded.content_hash` is present, recompute the SHA-256 of the decoded bytes (same encoding-aware decoding) and verify it matches. On mismatch, return `data_ref_hash_mismatch` (HTTP 400) — NOT `hash_mismatch`. This is distinct from the body-level `content_hash` check in step 4: step 3's hash-check binds an individual embedded payload to its declared digest (a DataRef-level integrity failure), while step 4 binds the whole producer-controlled body (a body-level failure). The two carry separate error codes precisely so a consumer can tell them apart — see RFC-ACDP-0007 §5 ("Distinguishing hash failures"). Per-embedded `content_hash` is OPTIONAL on publish (the producer commits to whatever `embedded.content` they sign in step 4 either way), but present-and-mismatching is a hard error per RFC-ACDP-0002 §6.6 Check 8.
 4. **Hash recomputation.** Compute SHA-256 over the JCS-canonicalized request body, with the exclusion set from RFC-ACDP-0001 §5.7. If the computed hash does not equal `content_hash`, return `hash_mismatch` (HTTP 400). **This step happens before signature verification:** verifying a signature against an untrusted submitted hash proves nothing — the registry must independently recompute the hash before treating it as the signing input.
 5. **Algorithm check.** If `signature.algorithm` is not in the registry's `supported_signature_algorithms` (RFC-ACDP-0007), return `unsupported_algorithm` (HTTP 400).
 6. **Key-id binding and key resolution.** First, verify that the DID portion of `signature.key_id` (everything before `#`) equals `body.agent_id`; on mismatch, return `key_not_authorized` (HTTP 403). This sub-check is a string comparison and registries MAY perform it earlier (before step 4) as an optimization to reject obvious mismatches without paying the SHA-256 cost. Then resolve the signing key per RFC-ACDP-0001 §5.11. On a permanent resolution failure (DID document fetched but JSON parse error, missing the requested key fragment in `verificationMethod`, or `key_id` lacks a fragment), return `key_resolution_failed` (HTTP 400). On a transient failure (DNS, TLS, HTTP non-2xx, timeout fetching the DID document), return `key_resolution_unreachable` (HTTP 502). On successful resolution, verify the resolved verification method is in the DID document's `assertionMethod` array; if not, return `key_not_authorized` (HTTP 403).
@@ -92,7 +92,7 @@ Producers publishing a first version (`supersedes = null`) **MUST NOT** include 
 
 Producers publishing a subsequent version (`supersedes != null`) MAY include `lineage_id` for self-verification. If supplied, the registry MUST verify it matches the deterministically-derived value and reject with `superseded_target` (`details.reason = "lineage_mismatch"`) on mismatch.
 
-> **Note on the optional `lineage_id` in supersession publish requests.** The optional `lineage_id` here is a **producer assertion for self-verification**, NOT a registry assignment. Its purpose is to let the producer catch lineage-continuity errors at publish time: if the producer's understanding of the lineage does not match the value the registry computes from walking the `supersedes` chain, the registry returns `superseded_target` (`details.reason = "lineage_mismatch"`) and the producer can investigate before retrying. Producers that omit `lineage_id` on supersession are **not** in error — the registry derives and verifies `lineage_id` unconditionally from the `supersedes` chain regardless. This is a defensive correctness check, not a required part of the publish surface. (A future ACDP version may rename this field to `expected_lineage_id` to make the producer-assertion semantics unmissable; v0.0.1 keeps the original name to remain compatible with existing producer libraries.)
+> **Note on the optional `lineage_id` in supersession publish requests.** The optional `lineage_id` here is a **producer assertion for self-verification**, NOT a registry assignment. Its purpose is to let the producer catch lineage-continuity errors at publish time: if the producer's understanding of the lineage does not match the value the registry computes from walking the `supersedes` chain, the registry returns `superseded_target` (`details.reason = "lineage_mismatch"`) and the producer can investigate before retrying. Producers that omit `lineage_id` on supersession are **not** in error — the registry derives and verifies `lineage_id` unconditionally from the `supersedes` chain regardless. This is a defensive correctness check, not a required part of the publish surface. (A future ACDP version may rename this field to `expected_lineage_id` to make the producer-assertion semantics unmissable; v0.1.0 keeps the original name to remain compatible with existing producer libraries.)
 
 ---
 
@@ -105,8 +105,8 @@ To publish a corrected or updated version of a context, the producer publishes a
 For a publish request with `supersedes = <prev_ctx_id>`, the registry MUST:
 
 1. Resolve `<prev_ctx_id>` and verify the context exists and is retrievable. If not, return `superseded_target` with `details.reason = "not_found"` (HTTP 400).
-2. If `<prev_ctx_id>` lives in a different origin registry, the registry MUST reject the publish request with `superseded_target` (`details.reason = "cross_registry_supersession_unsupported"`, HTTP 400). **Cross-registry supersession is out of scope for v0.0.1**: the verification semantics (remote identity authentication, lineage continuity over the network, race protection across registries, recovery on partial failure) require additional protocol machinery not yet specified. A producer migrating a logical lineage between registries MUST start a new lineage on the target registry (with `supersedes: null`) and reference the prior lineage via `derived_from`. The reservation for a future cross-registry supersession protocol is in [RFC-ACDP-0009 §2.8](RFC-ACDP-0009-extensions.md).
-3. Verify `agent_id` of the new context matches `agent_id` of the superseded context. If not, return `not_authorized` (HTTP 403). (Delegation is out of scope for v0.0.1.)
+2. If `<prev_ctx_id>` lives in a different origin registry, the registry MUST reject the publish request with `superseded_target` (`details.reason = "cross_registry_supersession_unsupported"`, HTTP 400). **Cross-registry supersession is out of scope for v0.1.0**: the verification semantics (remote identity authentication, lineage continuity over the network, race protection across registries, recovery on partial failure) require additional protocol machinery not yet specified. A producer migrating a logical lineage between registries MUST start a new lineage on the target registry (with `supersedes: null`) and reference the prior lineage via `derived_from`. The reservation for a future cross-registry supersession protocol is in [RFC-ACDP-0009 §2.8](RFC-ACDP-0009-extensions.md).
+3. Verify `agent_id` of the new context matches `agent_id` of the superseded context. If not, return `not_authorized` (HTTP 403). (Delegation is out of scope for v0.1.0.)
 4. Verify the computed `lineage_id` of the new context matches the superseded context's `lineage_id`. If not, return `superseded_target` with `details.reason = "lineage_mismatch"` (HTTP 400).
 5. Verify `version = previous.version + 1`. If not, return `superseded_target` with `details.reason = "version_mismatch"` (HTTP 409 Conflict — race condition between two producers attempting to supersede the same version).
 6. Verify the new context is the first to supersede `<prev_ctx_id>`. If another context already supersedes it, return `superseded_target` with `details.reason = "already_superseded"` (HTTP 409 Conflict — race condition). This makes lineages strictly linear.
@@ -172,7 +172,8 @@ All errors use the envelope defined in RFC-ACDP-0007 §4 with codes from the reg
 |---|---|---|
 | Body fails schema validation | `schema_violation` | 400 |
 | Signature failed verification | `invalid_signature` | 400 |
-| Recomputed hash ≠ `content_hash` | `hash_mismatch` | 400 |
+| Recomputed body hash ≠ `content_hash` | `hash_mismatch` | 400 |
+| Embedded `data_ref.content_hash` ≠ decoded bytes | `data_ref_hash_mismatch` | 400 |
 | Algorithm not supported | `unsupported_algorithm` | 400 |
 | Key resolution failed (permanent) | `key_resolution_failed` | 400 |
 | Key resolution unreachable (transient) | `key_resolution_unreachable` | 502 |
@@ -264,7 +265,7 @@ See [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md). Specific to publishing:
 - Registries MUST verify all signatures at publish time. Verification failures MUST result in rejection.
 - When a producer rotates keys, prior signatures remain mathematically valid (same content + same key still verifies). Verifying that the *signing key was authorized at the time of publication* requires historical key authorization data, which most DID methods do not natively provide. Verifiers SHOULD verify against the producer's current DID document; verifiers requiring stronger historical guarantees MUST consult external mechanisms — see RFC-ACDP-0008 §9.3.
 - Per-agent rate-limiting is REQUIRED (RFC-ACDP-0008 §4).
-- Producers SHOULD treat every publish as a public commitment; v0.0.1 has no retraction.
+- Producers SHOULD treat every publish as a public commitment; v0.1.0 has no retraction.
 
 ---
 
@@ -290,7 +291,7 @@ Before submitting `POST /contexts`:
 1. **Build ProducerContent** with all required fields (`version`, `supersedes`, `agent_id`, `contributors`, `title`, `type`, `data_refs`, `derived_from`, `visibility`) and any optional fields the producer intends to include. **Do NOT** include any of the §5.7 exclusion-set fields (`content_hash`, `signature`, `ctx_id`, `lineage_id`, `origin_registry`, `created_at`).
 2. **Validate field constraints locally** (so the registry's `schema_violation` is rare): title length ≤ 500; metadata depth ≤ 8 and JCS-canonicalized size ≤ 65536; each `data_refs[]` has exactly one of `location` or `embedded`; tags match `^[A-Za-z0-9][A-Za-z0-9_.-]*$`; `audience` is non-empty when `visibility = "restricted"`; `lineage_id` is absent when `supersedes = null`.
 3. **Truncate every timestamp** in the request to canonical millisecond form (RFC-ACDP-0001 §5.3). This applies to `expires_at`, `data_period.{start,end}`, and any timestamps inside `data_refs`.
-4. **Validate `agent_id` is `did:web:<…>`** (v0.0.1 mandate, RFC-ACDP-0001 §5.4 DID method scope table).
+4. **Validate `agent_id` is `did:web:<…>`** (v0.1.0 mandate, RFC-ACDP-0001 §5.4 DID method scope table).
 5. **JCS-canonicalize** ProducerContent.
 6. **SHA-256** the canonical bytes; concatenate with the literal prefix `sha256:` to form the `content_hash` string.
 7. **Sign** the ASCII bytes of the full `content_hash` string (including the `sha256:` prefix) with the producer's signing key, per RFC-ACDP-0001 §5.8.
@@ -304,7 +305,7 @@ Reproduced here in step-only form for cross-checking (full normative text in §2
 
 1. Schema validation (`schema_violation`).
 2. Payload size (`payload_too_large`).
-3. Embedded validation: decoded size ≤ 65536 (`embedded_too_large`); recompute optional `embedded.content_hash` (`hash_mismatch`).
+3. Embedded validation: decoded size ≤ 65536 (`embedded_too_large`); recompute optional `embedded.content_hash` (`data_ref_hash_mismatch`).
 4. ProducerContent hash recomputation against `content_hash` (`hash_mismatch`).
 5. Algorithm check against `supported_signature_algorithms` (`unsupported_algorithm`).
 6. Key-id ↔ agent_id binding (`key_not_authorized`); DID document resolution (`key_resolution_failed` permanent / `key_resolution_unreachable` transient); `assertionMethod` authorization (`key_not_authorized`).
@@ -325,7 +326,7 @@ Before trusting a body retrieved from any endpoint:
 1. **Parse the wire bytes** into a structure that preserves all keys (e.g. `serde_json::Value`, `dict[str, Any]`, `JSON.parse`). Do NOT deserialize into a typed model whose decoder strips unknown fields — that breaks forward compatibility (RFC-ACDP-0001 §5.7 hash verification over raw JSON, fixture `can-008`).
 2. **Validate the body's schema structure** against `acdp-context-body.schema.json` (open: tolerate unknown fields per §3.3.1 schema openness map).
 3. **Recompute `content_hash`** by removing the §5.7 exclusion set BY NAME (`ctx_id`, `lineage_id`, `origin_registry`, `created_at`, `content_hash`, `signature`), JCS-canonicalizing the remainder, SHA-256ing, and comparing to `body.content_hash`. On mismatch, treat the body as untrusted. (Fixture `can-009`.)
-4. **Resolve the producer's DID document** per RFC-ACDP-0001 §5.11 (v0.0.1: did:web only). Cache per the §5.11 caching guidance.
+4. **Resolve the producer's DID document** per RFC-ACDP-0001 §5.11 (v0.1.0: did:web only). Cache per the §5.11 caching guidance.
 5. **Verify the signature** over the ASCII bytes of `body.content_hash` (with the `sha256:` prefix) using the resolved key.
 6. **Validate body fields** against ACDP-0002 invariants (DataRef oneOf, metadata depth/size, tag patterns, `data_period.start ≤ data_period.end`, etc.).
 7. **Tolerate unknown fields** in both the body and `registry_state`; treat unknown `status` values as `active` (RFC-ACDP-0004 §4.1, fixture `status-001`); treat unknown top-level capabilities fields as opaque (RFC-ACDP-0007 §3.3, fixture `caps-006`).

@@ -2,12 +2,13 @@
 
 ACDP error codes returned in error envelopes (`error.code`). The envelope shape and HTTP status mapping are defined in [RFC-ACDP-0007 §4–5](../rfcs/RFC-ACDP-0007-capabilities.md).
 
-## v0.0.1 codes
+## v0.1.0 codes
 
 | Code | Status | HTTP | Meaning | Source |
 |---|---|---|---|---|
 | `invalid_signature` | Stable | 400 | Signature verification failed. | [RFC-ACDP-0001 §5.8](../rfcs/RFC-ACDP-0001-core.md#58-signature), [RFC-ACDP-0003 §2.1](../rfcs/RFC-ACDP-0003-publish.md#21-registry-processing) |
-| `hash_mismatch` | Stable | 400 | `content_hash` does not match the canonicalized body. | [RFC-ACDP-0001 §5.7](../rfcs/RFC-ACDP-0001-core.md#57-content-hash) |
+| `hash_mismatch` | Stable | 400 | The body's `content_hash` (over ProducerContent) does not match the canonicalized body. | [RFC-ACDP-0001 §5.7](../rfcs/RFC-ACDP-0001-core.md#57-content-hash) |
+| `data_ref_hash_mismatch` | Stable | 400 | A DataRef's bytes do not match the producer-declared `data_ref.content_hash`. Emitted by a registry at publish time for an embedded `content_hash` mismatch (RFC-ACDP-0002 §6.6 Check 8); also the semantic a consumer surfaces for an external-DataRef fetch mismatch (RFC-ACDP-0002 §6.5). Distinct from `hash_mismatch` (body-level) and `invalid_signature` — the body stays cryptographically valid; only the referenced data diverged. | [RFC-ACDP-0002 §6.5–§6.6](../rfcs/RFC-ACDP-0002-context-body.md#6-data-references), [RFC-ACDP-0007 §5](../rfcs/RFC-ACDP-0007-capabilities.md#5-error-code-registry) |
 | `schema_violation` | Stable | 400 | Request body or query failed structural validation. | [RFC-ACDP-0003 §2.1](../rfcs/RFC-ACDP-0003-publish.md#21-registry-processing) |
 | `not_authorized` | Stable | 403 | Agent lacks permission for the operation. Call sites: supersession by a different `agent_id` (RFC-ACDP-0003 §3.1 step 3); unauthenticated read on a registry that does not advertise `anonymous_public_reads` (RFC-ACDP-0008 §6.3). | [RFC-ACDP-0003 §3.1](../rfcs/RFC-ACDP-0003-publish.md#31-supersession-constraints), [RFC-ACDP-0008 §6.3](../rfcs/RFC-ACDP-0008-security.md#63-anonymous-reads) |
 | `not_found` | Stable | 404 | Resource not found. | [RFC-ACDP-0004 §7](../rfcs/RFC-ACDP-0004-retrieval.md#7-errors) |
@@ -30,12 +31,12 @@ ACDP error codes returned in error envelopes (`error.code`). The envelope shape 
 
 ## Reserved future codes
 
-These codes are NOT in the v0.0.1 wire schema enum. They are reserved for future ACDP versions and MUST NOT appear in v0.0.1 wire responses.
+These codes are NOT in the v0.1.0 wire schema enum. They are reserved for future ACDP versions and MUST NOT appear in v0.1.0 wire responses.
 
 | Code | Reserved for | Reference |
 |---|---|---|
-| `immutable_field` | v0.1+ mutation endpoints (retraction, attestation updates). No v0.0.1 endpoint mutates a body field. | [RFC-ACDP-0009 §2.1](../rfcs/RFC-ACDP-0009-extensions.md#21-retraction--lifecycle-events-likely-v01) |
-| `unsupported_embedding_model` | v0.1+ similarity endpoints. ACDP v0.0.1 has no similarity surface. | [RFC-ACDP-0009 §2.9](../rfcs/RFC-ACDP-0009-extensions.md#29-semantic-similarity-and-embeddings-likely-v01) |
+| `immutable_field` | A future version's mutation endpoints (retraction, attestation updates). No v0.1.0 endpoint mutates a body field. | [RFC-ACDP-0009 §2.1](../rfcs/RFC-ACDP-0009-extensions.md#21-retraction--lifecycle-events) |
+| `unsupported_embedding_model` | A future version's similarity endpoints. ACDP v0.1.0 has no similarity surface. | [RFC-ACDP-0009 §2.9](../rfcs/RFC-ACDP-0009-extensions.md#29-semantic-similarity-and-embeddings) |
 
 ## `superseded_target` reason codes
 

@@ -1,0 +1,22 @@
+{
+  "id": "body-002",
+  "description": "body.origin_registry MUST NOT be a DID URI, even though did:web:registry.example.com denotes the same registry. The field's schema type is a DNS hostname (acdp-common.schema.json#/$defs/hostname) — the colon characters make a DID value fail the pattern. The DID form belongs only in capabilities.registry_did (RFC-ACDP-0007 §3.1). Storing it in origin_registry is the implementation error called out in RFC-ACDP-0002 §3.1.",
+  "tags": ["body", "identity", "failure", "validation"],
+  "input": {
+    "endpoint": "GET /contexts/{ctx_id}",
+    "body_fields_under_test": {
+      "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-000000000001",
+      "origin_registry": "did:web:registry.example.com"
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "error_code": "schema_violation",
+    "checks": [
+      "origin_registry 'did:web:registry.example.com' fails acdp-common.schema.json#/$defs/hostname (contains ':')",
+      "a registry MUST NOT assign this value to origin_registry",
+      "a consumer validating a retrieved body MUST reject it as schema_violation"
+    ]
+  },
+  "rationale": "Pins the conformance violation: a DID URI in origin_registry. A registry that stores the did:web form here (instead of the bare hostname) is non-conformant, and a consumer validating the retrieved body against acdp-context-body.schema.json MUST reject it. Companion positive case: body-001."
+}

@@ -2,8 +2,8 @@
 # Agent Context Description Protocol (ACDP) — Core
 
 **Document:** RFC-ACDP-0001
-**Version:** 0.0.1
-**Status:** Community Standards Track (Draft)
+**Version:** 0.1.0-rc1
+**Status:** Community Standards Track (Release Candidate 1)
 **Canonical wire format:** JSON over HTTP
 **Required JSON canonicalization:** [RFC 8785 — JSON Canonicalization Scheme (JCS)](https://datatracker.ietf.org/doc/html/rfc8785)
 **Intended status:** Stable Core
@@ -28,9 +28,9 @@ ACDP Core does not define discovery semantics, registry policy, retraction rules
 
 ## 1. Status of This Memo
 
-This document is a Draft. Backward-incompatible changes remain possible until Final.
+This document is a Release Candidate (acdp/0.1.0-rc1). Backward-incompatible changes remain possible until Final; only editorial fixes are expected during the RC window.
 
-This is the **first published version** of ACDP. The numbering scheme treats `acdp/0.0.1` as the inaugural release.
+This is the **first published version** of ACDP. The numbering scheme treats `acdp/0.1.0` as the inaugural release.
 
 ---
 
@@ -44,7 +44,7 @@ The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **
 | **Context** | A unit of agent-produced content described by an ACDP body and tracked by an ACDP registry. |
 | **Body** | The immutable stored object representing a context. Contains producer-controlled fields plus the registry-assigned identity fields (`ctx_id`, `lineage_id`, `origin_registry`, `created_at`) and the integrity fields (`content_hash`, `signature`). All body fields are set at publish time and immutable thereafter. |
 | **ProducerContent** | The signature/hash preimage. The Body with `content_hash`, `signature`, and the four registry-assigned identity fields removed (the §5.7 exclusion set). The producer signs ProducerContent; the Body wraps ProducerContent plus the registry-assigned identifiers and the signature. |
-| **RegistryState** | The mutable, registry-derived state returned alongside the Body on retrieval. In v0.0.1 contains only the derived `status` field. Future ACDP versions add lifecycle events, relationships, and attestations to RegistryState without changing the Body. |
+| **RegistryState** | The mutable, registry-derived state returned alongside the Body on retrieval. In v0.1.0 contains only the derived `status` field. Future ACDP versions add lifecycle events, relationships, and attestations to RegistryState without changing the Body. |
 | **Registry** | A service that accepts, stores, and serves contexts according to this specification. |
 | **Lineage** | A chain of contexts representing successive versions of the same logical work, identified by a stable `lineage_id`. |
 | **Producer** | An agent that publishes contexts. |
@@ -159,22 +159,22 @@ Implementations:
 | Identifier | Form | Spec |
 |---|---|---|
 | **`ctx_id`** (context identifier) | `acdp://<authority>/<uuid>` where `<authority>` is a DNS hostname identifying the origin registry and `<uuid>` is a UUID v4 [RFC 9562]. | §5.5 |
-| **`lineage_id`** | `lin:<algorithm>:<digest>`. v0.0.1 form: `lin:sha256:<64-lowercase-hex>`. | §5.6 |
-| **`agent_id`** | A Decentralized Identifier [DID-CORE]. v0.0.1 producers MUST use `did:web` so that any conformant registry can resolve their keys via §5.11. | RFC-ACDP-0002 |
+| **`lineage_id`** | `lin:<algorithm>:<digest>`. v0.1.0 form: `lin:sha256:<64-lowercase-hex>`. | §5.6 |
+| **`agent_id`** | A Decentralized Identifier [DID-CORE]. v0.1.0 producers MUST use `did:web` so that any conformant registry can resolve their keys via §5.11. | RFC-ACDP-0002 |
 
 The `ctx_id` is assigned by the registry at publish time; producers MUST NOT supply a `ctx_id` in publish requests. The corresponding URI scheme `acdp` is registered in §11.
 
 #### DID method scope by field (NORMATIVE)
 
-The `did:web` requirement of v0.0.1 applies to fields the registry must resolve to a key, not to every DID-typed field on a body. The following table is normative for v0.0.1; the schema's `did` definition (`schemas/json/acdp-common.schema.json#/$defs/did`) is intentionally loose so that `contributors[]` and `audience[]` can carry other methods today, even while `agent_id` and `signature.key_id` are constrained to `did:web` by this section.
+The `did:web` requirement of v0.1.0 applies to fields the registry must resolve to a key, not to every DID-typed field on a body. The following table is normative for v0.1.0; the schema's `did` definition (`schemas/json/acdp-common.schema.json#/$defs/did`) is intentionally loose so that `contributors[]` and `audience[]` can carry other methods today, even while `agent_id` and `signature.key_id` are constrained to `did:web` by this section.
 
-| Field | v0.0.1 requirement | Rationale |
+| Field | v0.1.0 requirement | Rationale |
 |---|---|---|
 | `agent_id` | MUST be `did:web`. | The signing agent must be resolvable by every conformant registry via the §5.11 algorithm. Schema-loose is by design; the registry enforces the method. |
 | `signature.key_id` (DID portion, before `#`) | MUST be `did:web`, and MUST equal `agent_id`. | The §5.11 resolver fetches the DID document for this DID. Mismatch with `agent_id` is rejected as `key_not_authorized` (RFC-ACDP-0003 §2.1 step 6). |
-| `contributors[]` | SHOULD be `did:web`; other DID methods are permitted. | Attribution only — v0.0.1 does not resolve contributor keys. A producer crediting a `did:key`-only collaborator MUST NOT have its publish rejected for that reason. |
+| `contributors[]` | SHOULD be `did:web`; other DID methods are permitted. | Attribution only — v0.1.0 does not resolve contributor keys. A producer crediting a `did:key`-only collaborator MUST NOT have its publish rejected for that reason. |
 | `audience[]` | MAY be any DID method. | Authorization list — registries match the requester's authenticated DID against `audience[]` as opaque strings (RFC-ACDP-0008 §4.5). No key resolution is performed. |
-| `body.agent_id` of an ancestor in `derived_from` | Same rule as the ancestor's own `agent_id` (i.e. for v0.0.1 ancestors, `did:web`). | A consumer following the ancestor link verifies the ancestor's signature, which requires resolving its key via §5.11. |
+| `body.agent_id` of an ancestor in `derived_from` | Same rule as the ancestor's own `agent_id` (i.e. for v0.1.0 ancestors, `did:web`). | A consumer following the ancestor link verifies the ancestor's signature, which requires resolving its key via §5.11. |
 
 Registries MUST reject a publish whose `agent_id` is not `did:web` with `schema_violation` (preferred — caught at request validation) or with `key_not_authorized` if discovered later in the §5.11 pipeline. Registries MUST NOT reject a publish solely because `contributors[]` includes a non-`did:web` entry. Conformance fixtures `pub-008`, `pub-009`, and `pub-010` pin these behaviors.
 
@@ -190,7 +190,7 @@ A context's `lineage_id` MUST be derived deterministically from the `ctx_id` of 
 lineage_id = "lin:sha256:" + lowercase_hex(SHA-256(first_version_ctx_id))
 ```
 
-The hash input is the UTF-8 encoding of the `ctx_id` string. The `sha256` algorithm prefix is fixed in v0.0.1; future ACDP versions MAY introduce additional algorithms (`lin:sha3-256:...`, `lin:blake3:...`) for new lineages without invalidating existing v0.0.1 `lin:sha256:` identifiers. Consumers MUST NOT compare lineage_ids across different algorithm prefixes.
+The hash input is the UTF-8 encoding of the `ctx_id` string. The `sha256` algorithm prefix is fixed in v0.1.0; future ACDP versions MAY introduce additional algorithms (`lin:sha3-256:...`, `lin:blake3:...`) for new lineages without invalidating existing v0.1.0 `lin:sha256:` identifiers. Consumers MUST NOT compare lineage_ids across different algorithm prefixes.
 
 For first versions, the registry computes `lineage_id` from the `ctx_id` it just assigned. For subsequent versions, the registry MUST walk back through `supersedes` references to find the version 1 context and apply the same formula.
 
@@ -200,7 +200,7 @@ A producer publishing a subsequent version (`supersedes != null`) MAY include `l
 
 #### 5.6.1 Lineage walk failure
 
-If, while walking back through `supersedes` references to compute `lineage_id` for a subsequent-version publish, the registry cannot retrieve an intermediate context, the registry MUST reject the publish request with `superseded_target` (`details.reason = "lineage_walk_failed"`, HTTP 400). In v0.0.1 this most commonly means the immediate-predecessor chain is intact (RFC-ACDP-0003 §3.1 step 1 already gates the head with `details.reason = "not_found"` if absent) but a deeper intermediate is missing — for example because of out-of-band administrative deletion (which ACDP itself forbids). Cross-registry intermediate cases cannot arise in v0.0.1 because cross-registry supersession is rejected at §3.1 step 2 with `cross_registry_supersession_unsupported` before any walk runs; the trigger is reserved here for forward compatibility with v0.1+ cross-registry supersession (RFC-ACDP-0009 §2.8). The error envelope SHOULD include the failing intermediate `ctx_id` in `details` for debuggability:
+If, while walking back through `supersedes` references to compute `lineage_id` for a subsequent-version publish, the registry cannot retrieve an intermediate context, the registry MUST reject the publish request with `superseded_target` (`details.reason = "lineage_walk_failed"`, HTTP 400). In v0.1.0 this most commonly means the immediate-predecessor chain is intact (RFC-ACDP-0003 §3.1 step 1 already gates the head with `details.reason = "not_found"` if absent) but a deeper intermediate is missing — for example because of out-of-band administrative deletion (which ACDP itself forbids). Cross-registry intermediate cases cannot arise in v0.1.0 because cross-registry supersession is rejected at §3.1 step 2 with `cross_registry_supersession_unsupported` before any walk runs; the trigger is reserved here for forward compatibility with a future version's cross-registry supersession (RFC-ACDP-0009 §2.8). The error envelope SHOULD include the failing intermediate `ctx_id` in `details` for debuggability:
 
 ```json
 {
@@ -237,14 +237,14 @@ The table below is the authoritative, versioned list of fields excluded from Pro
 
 | Field | Location | Included in ProducerContent? | Introduced in | Rationale |
 |---|---|---|---|---|
-| `content_hash` | body | No | 0.0.1 | Self-referential — a field cannot contain its own hash. |
-| `signature` | body | No | 0.0.1 | The signature covers (and therefore cannot be covered by) the hash. |
-| `ctx_id` | body | No | 0.0.1 | Registry-assigned at publish time (§5.5). Not known to the producer at signing time. |
-| `lineage_id` | body | No | 0.0.1 | Registry-assigned at publish time (§5.6). |
-| `origin_registry` | body | No | 0.0.1 | Registry-assigned at publish time. |
-| `created_at` | body | No | 0.0.1 | Registry-assigned at publish time (§5.3). |
-| `registry_state` | top-level, outside body | N/A — outside body | 0.0.1 | Mutable, registry-derived state (RFC-ACDP-0004 §4). Never part of the body and therefore never an input to `content_hash`. |
-| `registry_receipt` | top-level, outside body | N/A — outside body | reserved | Reserved by RFC-ACDP-0009 §2.7 for future registry-binding receipts. v0.0.1 consumers MUST ignore this field if present. |
+| `content_hash` | body | No | 0.1.0 | Self-referential — a field cannot contain its own hash. |
+| `signature` | body | No | 0.1.0 | The signature covers (and therefore cannot be covered by) the hash. |
+| `ctx_id` | body | No | 0.1.0 | Registry-assigned at publish time (§5.5). Not known to the producer at signing time. |
+| `lineage_id` | body | No | 0.1.0 | Registry-assigned at publish time (§5.6). |
+| `origin_registry` | body | No | 0.1.0 | Registry-assigned at publish time. |
+| `created_at` | body | No | 0.1.0 | Registry-assigned at publish time (§5.3). |
+| `registry_state` | top-level, outside body | N/A — outside body | 0.1.0 | Mutable, registry-derived state (RFC-ACDP-0004 §4). Never part of the body and therefore never an input to `content_hash`. |
+| `registry_receipt` | top-level, outside body | N/A — outside body | reserved | Reserved by RFC-ACDP-0009 §2.7 for future registry-binding receipts. v0.1.0 consumers MUST ignore this field if present. |
 
 **Unknown body fields (NORMATIVE).** Body fields not listed in this table AND not in the published body schema (`schemas/json/acdp-context-body.schema.json`) are **included** in ProducerContent by default. This is the forward-compatibility guarantee from §6 made concrete: future producer-controlled fields added in minor versions are automatically covered by the producer signature without an exclusion-set update. The fixture `can-008-body-with-unknown-producer-field.json` is the positive case (an unknown producer field MUST be retained for hashing).
 
@@ -256,7 +256,7 @@ The table below is the authoritative, versioned list of fields excluded from Pro
 
 Consumers and registries MUST recompute `content_hash` from the raw received JSON object — not from a lossy typed deserialization of it — unless the typed deserialization provably preserves every unknown field byte-for-byte.
 
-The hazard. ACDP body extensibility is forward-compatible via additive producer-controlled fields (§6). A v0.1 producer adding a new optional field (e.g. `priority`) signs the JCS canonicalization of an object that includes it. A v0.0.1 consumer that deserializes the body into a typed `Body` struct without an unknown-field catch-all will silently drop `priority`; recomputing `content_hash` from the typed struct then yields a different hash than the producer signed, and the body fails verification with a false `hash_mismatch`. The error appears at exactly the moment minor-version evolution should be invisible to existing consumers.
+The hazard. ACDP body extensibility is forward-compatible via additive producer-controlled fields (§6). A v0.1 producer adding a new optional field (e.g. `priority`) signs the JCS canonicalization of an object that includes it. A v0.1.0 consumer that deserializes the body into a typed `Body` struct without an unknown-field catch-all will silently drop `priority`; recomputing `content_hash` from the typed struct then yields a different hash than the producer signed, and the body fails verification with a false `hash_mismatch`. The error appears at exactly the moment minor-version evolution should be invisible to existing consumers.
 
 Required implementation pattern. To verify a received body:
 
@@ -273,7 +273,7 @@ Implementations that prefer to deserialize into a typed model first (for ergonom
 - **TypeScript:** define `Body` as `{ … known fields …, [key: string]: unknown }` or use a passthrough decoder (zod's `.passthrough()`).
 - **Go:** unmarshal into `map[string]json.RawMessage` for the verification path; the typed `Body` struct (used by application code) is built from the verified map.
 
-Discarding unknown fields before hash recomputation is a CONFORMANCE FAILURE. The fixtures `can-008-body-with-unknown-producer-field.json` (positive: a producer-added unknown field is part of the hash and MUST be retained) and `can-009-body-with-unknown-excluded-field.json` (negative: a field whose name is in the exclusion set is excluded by name regardless of whether the v0.0.1 consumer recognizes it) pin the rule.
+Discarding unknown fields before hash recomputation is a CONFORMANCE FAILURE. The fixtures `can-008-body-with-unknown-producer-field.json` (positive: a producer-added unknown field is part of the hash and MUST be retained) and `can-009-body-with-unknown-excluded-field.json` (negative: a field whose name is in the exclusion set is excluded by name regardless of whether the v0.1.0 consumer recognizes it) pin the rule.
 
 ### 5.8 Signature
 
@@ -315,7 +315,7 @@ ACDP's protections decompose by what the producer signature does and does not bi
 
 **What the producer signature does NOT bind (registry-honesty protection):**
 
-- `ctx_id`, `lineage_id`, `origin_registry`, and `created_at` are registry-assigned. The producer signature does not cover them. A consumer cannot cryptographically verify which registry first accepted the content, what `ctx_id` it was assigned, what lineage it belongs to, or when publication occurred. These facts rely on **registry honesty** in v0.0.1.
+- `ctx_id`, `lineage_id`, `origin_registry`, and `created_at` are registry-assigned. The producer signature does not cover them. A consumer cannot cryptographically verify which registry first accepted the content, what `ctx_id` it was assigned, what lineage it belongs to, or when publication occurred. These facts rely on **registry honesty** in v0.1.0.
 
 A malicious or compromised registry could republish a producer's signed content under a different `ctx_id` or `origin_registry` (the signature would still verify), or backdate `created_at`. See RFC-ACDP-0008 §9.1 for the full discussion and §9.2 for mitigations.
 
@@ -336,7 +336,7 @@ Implementations MUST support `ed25519` [RFC 8032]. Implementations MAY support a
 
 ### 5.11 Key Resolution
 
-To verify a producer signature, an implementation MUST resolve `signature.key_id` (a DID URL) to a public key. v0.0.1 mandates support for `did:web` only; producers MUST use `did:web` keys, and registries MUST resolve `did:web` keys.
+To verify a producer signature, an implementation MUST resolve `signature.key_id` (a DID URL) to a public key. v0.1.0 mandates support for `did:web` only; producers MUST use `did:web` keys, and registries MUST resolve `did:web` keys.
 
 The resolution algorithm:
 
@@ -379,7 +379,33 @@ These testing surfaces MUST be guarded so they do not weaken production:
 
 Without these surfaces, conformance testing for `pub-001` and `pub-006` requires a live network and a public DID-document host, which discourages running the fixtures at all and silently lowers ecosystem-wide assurance.
 
-**Future DID methods.** v0.1+ may add `did:key`, `did:jwk`, and other methods. The resolution algorithm above is `did:web`-specific; other methods will be specified separately.
+**Future DID methods.** A future ACDP version may add `did:key`, `did:jwk`, and other methods. The resolution algorithm above is `did:web`-specific; other methods will be specified separately.
+
+**v0.1.0 strict verification profile (NORMATIVE).** A verification implementation conformant with the `acdp-consumer` profile (§9.1) MUST, when verifying a v0.1.0 context (`body.acdp_version` absent or `"0.1.0"`):
+
+1. Require `body.agent_id` and the DID portion of `signature.key_id` to be `did:web` DIDs (RFC-ACDP-0001 §5.4); reject other DID methods.
+2. Run full body schema validation (`acdp-context-body.schema.json`) **before** any cryptographic step — a structurally invalid body MUST NOT reach hash recomputation or signature verification.
+3. Recompute `content_hash` over ProducerContent and verify it before checking the signature (§5.7, §5.8).
+4. Verify the producer signature per the resolution algorithm above.
+5. Verify every embedded `data_ref.content_hash` against its decoded `embedded.content` (RFC-ACDP-0002 §6.3); on mismatch, report `data_ref_hash_mismatch` (RFC-ACDP-0007 §5).
+
+Library authors MAY expose configuration to relax these requirements (e.g. for test environments, compatibility bridges, or future protocol versions), but any relaxed mode MUST be explicitly labeled as **non-conformant with v0.1.0** and MUST NOT be the default. The RECOMMENDED API shape is a strict default that cannot be loosened without an explicit, named opt-in — e.g. a `VerificationPolicy::strict_v0_0_1()` (Rust) / `VerificationPolicy.strict_v0_0_1()` (Python/TypeScript) constructor as the default, with any other mode reachable only through a separately-named constructor. Implementations MUST document that only the strict mode is covered by the `acdp-consumer` conformance profile.
+
+**Recommended verification report stage names (NON-NORMATIVE).** SDKs that expose a diagnostic verification report (a per-stage pass/fail breakdown) SHOULD use the following stage identifiers, so logs and telemetry are comparable across language implementations. The identifier is the snake_case form for code and config; the display name is for human-facing output.
+
+| Stage identifier | What it covers |
+|---|---|
+| `schema` | Structural body validation (field presence, types, patterns). |
+| `producer_content_hash` | SHA-256 recomputation over ProducerContent matches `body.content_hash`. |
+| `key_binding` | The DID portion of `signature.key_id` equals `body.agent_id`. |
+| `did_resolution` | The DID document was fetched and parsed successfully. |
+| `assertion_method` | The verification method is referenced by the DID document's `assertionMethod`. |
+| `signature` | The Ed25519 or ECDSA-P256 signature verifies against the resolved public key. |
+| `embedded_data_refs` | Per-DataRef embedded-hash verification (an array of per-ref outcomes). |
+| `external_data_refs` | Per-DataRef external fetch + hash verification (an array of per-ref outcomes). |
+| `registry_receipt` | Registry receipt verification — reserved for a future version (RFC-ACDP-0009 §2.7); absent in v0.1.0 reports. |
+
+The stage vocabulary is advisory: it does not change the verification algorithm, only the names implementations SHOULD use when surfacing intermediate results. A v0.1.0 report covers `schema` through `external_data_refs`; `registry_receipt` is listed so the vocabulary is stable when receipts ship.
 
 ---
 
@@ -387,8 +413,8 @@ Without these surfaces, conformance testing for `pub-001` and `pub-006` requires
 
 ACDP uses a layered compatibility model:
 
-- **Registry protocol version** is advertised in the registry capabilities document as `acdp_version` (e.g. `0.0.1`). It tells consumers which protocol surface the registry implements.
-- **Body protocol version** is advertised optionally inside each body as `body.acdp_version`. The body field is producer-signed and bound to the body's `content_hash`. An absent `body.acdp_version` MUST be treated as `0.0.1`. v0.1+ producers SHOULD set the field explicitly so verifiers can apply the correct exclusion set (§5.7) and algorithm vocabulary.
+- **Registry protocol version** is advertised in the registry capabilities document as `acdp_version` (e.g. `0.1.0`). It tells consumers which protocol surface the registry implements.
+- **Body protocol version** is advertised optionally inside each body as `body.acdp_version`. The body field is producer-signed and bound to the body's `content_hash`. An absent `body.acdp_version` MUST be treated as `0.1.0`, the inaugural release. Producers SHOULD set the field explicitly so verifiers can unambiguously apply the correct exclusion set (§5.7) and algorithm vocabulary for the body's declared version, especially as future versions evolve them.
 - **Body extensibility** is forward-compatible only via additive fields. Breaking body changes require a new protocol version, signaled by `body.acdp_version`.
 - **Registry-state extensibility** is open: future versions add fields (lifecycle events, relationships, attestations); consumers MUST tolerate unknown fields in registry state. Schema enums for known fields (e.g. `status`) use open string patterns so unknown values do not fail validation.
 
@@ -405,7 +431,7 @@ ACDP operations are HTTP-based with JSON request and response bodies, content ty
 - RFC-ACDP-0005 — `GET /contexts/search`.
 - RFC-ACDP-0007 — `GET /.well-known/acdp.json`.
 
-ACDP v0.0.1 is JSON-only. Binary transport bindings are out of scope for this version and MAY be specified in a future release.
+ACDP v0.1.0 is JSON-only. Binary transport bindings are out of scope for this version and MAY be specified in a future release.
 
 All ACDP traffic MUST run over TLS in production deployments.
 

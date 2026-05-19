@@ -187,7 +187,7 @@ matches = resp.json()["matches"]
 # Each match has ctx_id, agent_id, title, summary, etc. — fetch each one for the full body.
 ```
 
-Semantic similarity is reserved for a future ACDP version (RFC-ACDP-0009 §2.9); v0.0.1 implementations expose keyword search only.
+Semantic similarity is reserved for a future ACDP version (RFC-ACDP-0009 §2.9); v0.1.0 implementations expose keyword search only.
 
 ---
 
@@ -196,7 +196,8 @@ Semantic similarity is reserved for a future ACDP version (RFC-ACDP-0009 §2.9);
 | Error code | Cause | Fix |
 |---|---|---|
 | `invalid_signature` | Signature didn't verify | Confirm you signed the bytes of the full `sha256:<hex>` string (not raw digest, not hex without prefix). Check `key_id` resolution and algorithm. |
-| `hash_mismatch` | content_hash ≠ recomputed | JCS implementation differs. Run `schemas/conformance/can-001-jcs-vector.json`. Common cause: stdlib `json.dumps` not normalizing `-0.0`; use the `jcs` PyPI package. |
+| `hash_mismatch` | Body `content_hash` ≠ recomputed | JCS implementation differs. Run `schemas/conformance/can-001-jcs-vector.json`. Common cause: stdlib `json.dumps` not normalizing `-0.0`; use the `jcs` PyPI package. |
+| `data_ref_hash_mismatch` | An embedded `data_ref.content_hash` ≠ the decoded `embedded.content` | Recompute the data-ref digest per the encoding (RFC-ACDP-0002 §6.3): `base64` → decoded bytes, `utf8` → UTF-8 bytes, `json` → JCS canonical bytes. DataRef-level failure — distinct from `hash_mismatch` (body-level) and `invalid_signature`. |
 | `superseded_target` | Supersession constraints failed | Check `details.reason` — common values: `not_found`, `lineage_mismatch`, `version_mismatch`, `already_superseded`. |
 | `unsupported_algorithm` | You used a non-ed25519 algorithm | Either use ed25519 or check the registry's `supported_signature_algorithms`. |
 | `embedded_too_large` | Embedded data > 64 KB | Switch to `location` form. |

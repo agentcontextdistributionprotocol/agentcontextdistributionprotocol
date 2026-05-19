@@ -5,7 +5,7 @@
   "input": {
     "endpoint": "GET /.well-known/acdp.json",
     "response_body": {
-      "acdp_version": "0.0.1",
+      "acdp_version": "0.1.0",
       "registry_did": "did:web:registry.example.com",
       "supported_signature_algorithms": ["ed25519"],
       "supported_did_methods": ["did:web"],
@@ -28,6 +28,6 @@
       "closed_decoder_failure": "An implementation using #[serde(deny_unknown_fields)] (Rust), pydantic with extra='forbid' (Python), or zod's .strict() (TypeScript) will fail this fixture. That is a conformance failure: forward-compat tolerance for unknown top-level fields is normative.",
       "limits_extra_field": "If the unknown field were placed inside `limits` instead of at the top level, the document MUST be rejected — `limits` is closed (additionalProperties: false). See caps-005 for the fixed-value case and the implementer note in RFC-ACDP-0007 §3.3."
     },
-    "rationale": "The whole point of the open top-level schema is to make it possible to ship new capability flags (push subscriptions, receipts, walks, etc.) without breaking every deployed v0.0.1 consumer the moment the first registry advertises them. A consumer that treats unknown top-level fields as errors will silently fail the next time ACDP grows."
+    "rationale": "The whole point of the open top-level schema is to make it possible to ship new capability flags (push subscriptions, receipts, walks, etc.) without breaking every deployed v0.1.0 consumer the moment the first registry advertises them. A consumer that treats unknown top-level fields as errors will silently fail the next time ACDP grows."
   }
 }

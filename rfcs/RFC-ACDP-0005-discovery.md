@@ -2,16 +2,16 @@
 # Agent Context Description Protocol (ACDP) — Discovery
 
 **Document:** RFC-ACDP-0005
-**Version:** 0.0.1
-**Status:** Community Standards Track (Draft)
+**Version:** 0.1.0-rc1
+**Status:** Community Standards Track (Release Candidate 1)
 
-This RFC specifies how consumers discover contexts on an ACDP registry. ACDP v0.0.1 defines one discovery modality: keyword search. Semantic similarity and push subscriptions are reserved for a future version (RFC-ACDP-0009 §2.4, §2.9).
+This RFC specifies how consumers discover contexts on an ACDP registry. ACDP v0.1.0 defines one discovery modality: keyword search. Semantic similarity and push subscriptions are reserved for a future version (RFC-ACDP-0009 §2.4, §2.9).
 
 ---
 
 ## 1. Status of This Memo
 
-This document is a Draft. Backward-incompatible changes remain possible until Final.
+This document is a Release Candidate (acdp/0.1.0-rc1). Backward-incompatible changes remain possible until Final; only editorial fixes are expected during the RC window.
 
 ---
 
@@ -80,7 +80,7 @@ Each match contains a summary projection (`ctx_id`, `lineage_id`, `agent_id`, `t
 
 - For matches with `visibility: public`, registries SHOULD include `visibility: public` in the `match_summary`. Including this field gives consumers a cache-classification signal without an additional retrieval round-trip.
 - For matches with `visibility: restricted` or `visibility: private`, registries MUST include `visibility` ONLY when the requester is already authorized to retrieve the context (i.e., the effective requester DID is in `audience` for `restricted`, or is `agent_id` for either `restricted` or `private`). Including the field for any other requester leaks the visibility class to a non-authorized party even when the match itself is correctly scoped — a violation of the existence-leak prevention rule in RFC-ACDP-0008 §3.5.
-- When the field is absent, consumers MUST NOT infer anything about visibility — absence is the registry's choice. v0.0.1 deployments predating this clarification are conformant without the field. Consumers MUST NOT treat `visibility`-absent as a signal of any specific visibility class.
+- When the field is absent, consumers MUST NOT infer anything about visibility — absence is the registry's choice. v0.1.0 deployments predating this clarification are conformant without the field. Consumers MUST NOT treat `visibility`-absent as a signal of any specific visibility class.
 
 ### 2.3 Pagination
 
@@ -90,7 +90,7 @@ The registry MAY return fewer results than `limit` even when more exist — `nex
 
 ### 2.4 Lineage-based discovery
 
-The `derived_from` filter is the foundation for lineage-based discovery. An agent that has published a context can periodically query with `derived_from=<my_ctx_id>` to discover what has been built on it. In v0.0.1 this is a polling pattern; future versions (RFC-ACDP-0009) will support push notification.
+The `derived_from` filter is the foundation for lineage-based discovery. An agent that has published a context can periodically query with `derived_from=<my_ctx_id>` to discover what has been built on it. In v0.1.0 this is a polling pattern; future versions (RFC-ACDP-0009) will support push notification.
 
 ### 2.5 Search semantics
 
@@ -106,13 +106,13 @@ Conformant registries MUST search the following body fields against `q`:
 - `domain`
 - `agent_id`
 
-Registries MAY additionally search `metadata` (when bound by `schema_uri`) or other producer-defined fields. Registries searching additional fields SHOULD declare them in capabilities under a `search_extended_fields` array (reserved namespace; out of scope for v0.0.1).
+Registries MAY additionally search `metadata` (when bound by `schema_uri`) or other producer-defined fields. Registries searching additional fields SHOULD declare them in capabilities under a `search_extended_fields` array (reserved namespace; out of scope for v0.1.0).
 
 #### 2.5.2 Tokenization and matching
 
 `q` is tokenized by whitespace into terms. A context matches if **all** terms are present in **at least one** searched field (AND-of-terms across the union of fields). Matching is case-insensitive. Diacritic normalization is registry-defined.
 
-Registries MUST NOT interpret special characters in `q` as boolean operators in v0.0.1. `AND`, `OR`, parentheses, quoted phrases, and similar are treated as literal terms. (Boolean and phrase semantics are reserved for a future version.)
+Registries MUST NOT interpret special characters in `q` as boolean operators in v0.1.0. `AND`, `OR`, parentheses, quoted phrases, and similar are treated as literal terms. (Boolean and phrase semantics are reserved for a future version.)
 
 #### 2.5.3 Ranking
 
@@ -149,6 +149,14 @@ The visibility matrix below is normative and consolidates the rules in §3 (visi
 | `restricted` | `agent_id` and DIDs listed in `audience` only | Same set as search |
 | `private` | `agent_id` only | `agent_id` and DIDs listed in `audience` (search is strictly narrower) |
 
+**Effect of `anonymous_public_reads` on search (NORMATIVE).** The `anonymous_public_reads` capability flag (RFC-ACDP-0007 §3.2, RFC-ACDP-0008 §6.3) governs keyword search exactly as it governs direct retrieval — it is not a retrieval-only flag:
+
+- When `anonymous_public_reads: false` (the default), a registry MUST reject an anonymous (unauthenticated) search request with `not_authorized` (HTTP 403). An anonymous requester MUST NOT receive `public` contexts in `matches[]` and MUST NOT learn that `public` contexts exist via a non-zero `total_estimate`.
+- When `anonymous_public_reads: true`, an anonymous requester MAY search and receives `public` contexts only (never `restricted` or `private`), scoped identically to an authenticated non-audience requester.
+- An **authenticated** requester MAY always receive `public` contexts in search results regardless of the value of `anonymous_public_reads` — the flag constrains anonymous access only.
+
+A registry MUST apply the `anonymous_public_reads` rule to `total_estimate` with the same scoping it applies to `matches[]`: when an anonymous request is rejected, no count is disclosed; the rule MUST NOT be enforced on `matches[]` while leaving `total_estimate` to leak the existence of public contexts. The `vis-009` conformance fixture pins this behavior.
+
 **Q1 — `private` + `audience`:** Audience members of a `private` context can RETRIEVE the context if they know its `ctx_id` (RFC-ACDP-0002 §7), but MUST NOT discover it via keyword search. This asymmetry is intentional: `audience` on a `private` context expresses "you may read this if I send you the link", not "you may discover this". Producers wanting cohort discoverability MUST use `visibility: restricted`.
 
 **Q2 — `private` in `derived_from` filter and other lineage queries:** A `private` context MUST NOT appear in any keyword-search result for any requester other than its `agent_id`, *including* responses to `derived_from=<ctx_id>` filter queries and any other lineage-discovery filter that may be added in the future. The `derived_from` filter is search (RFC-ACDP-0005 §2.4); search is strictly narrower than retrieval. Concretely: if a `private` context is derived from a `public` context that an audience member can search, querying `derived_from=<public_ctx_id>` MUST NOT surface the `private` derivative for that audience member. Audience members who learn the `ctx_id` out-of-band MAY retrieve it directly (RFC-ACDP-0002 §7).
@@ -167,6 +175,8 @@ All discovery responses MUST be scoped per the visibility matrix in RFC-ACDP-000
 
 A registry MUST NOT include restricted contexts in `total_estimate` for non-audience requesters, and MUST NOT include private contexts in `total_estimate` for any requester other than the producer. Registries SHOULD make `total_estimate` deterministic per `(query, requester)` for a stable result set, OR omit it from responses entirely when visibility scoping is in play, to avoid leaking the existence of restricted contexts via timing or cross-requester variance analysis.
 
+**`total_estimate` is whole-result-set, not per-page (NORMATIVE).** When present, `total_estimate` MUST represent the total number of matching contexts visible to the requester across **all** pages of the paginated sequence — NOT the number of results remaining from the current cursor position. Its value MUST NOT decrease as the consumer advances through pages. (Because the count is an estimate over a possibly-changing index, it MAY drift slightly between pages within a single sequence; what is forbidden is the systematic "remaining count" interpretation, which would make page 1 report a larger number than page 2 by construction.) A registry that cannot produce a stable whole-set estimate SHOULD omit `total_estimate` rather than emit a per-page remaining count.
+
 ---
 
 ## 4. Errors
@@ -184,7 +194,7 @@ See [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md). Specific to discovery:
 
 - Registries MUST scope keyword search results by the requesting agent's effective audience (RFC-ACDP-0008 §4.5).
 - `total_estimate` is informational and SHOULD NOT be relied upon for exact counts.
-- Cross-registry discovery is out of scope for v0.0.1; consumers wishing to search across registries MUST query each registry separately.
+- Cross-registry discovery is out of scope for v0.1.0; consumers wishing to search across registries MUST query each registry separately.
 
 ---
 

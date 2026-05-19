@@ -1,20 +1,20 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.acdp.io/v0.0.1/acdp-publish-response.schema.json",
+  "$id": "https://schemas.acdp.io/v0.1.0/acdp-publish-response.schema.json",
   "title": "ACDP Publish Response",
   "description": "Response returned by the registry on successful publication. Contains the assigned identifiers; full retrieval is via GET /contexts/{ctx_id}.",
 
   "type": "object",
   "required": ["ctx_id", "lineage_id", "version", "created_at", "status"],
   "properties": {
-    "ctx_id": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/ctx_id" },
-    "lineage_id": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/lineage_id" },
+    "ctx_id": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
+    "lineage_id": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/lineage_id" },
     "version": {
       "type": "integer",
       "minimum": 1
     },
-    "created_at": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/rfc3339_timestamp" },
-    "status": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/status" }
+    "created_at": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/rfc3339_timestamp" },
+    "status": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/status" }
   },
   "additionalProperties": false
 }

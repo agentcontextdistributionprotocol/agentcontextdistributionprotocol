@@ -5,7 +5,7 @@
   "input": {
     "endpoint": "GET /.well-known/acdp.json",
     "response_body": {
-      "acdp_version": "0.0.1",
+      "acdp_version": "0.1.0",
       "registry_did": "did:web:registry.example.com",
       "supported_signature_algorithms": ["ecdsa-p256"],
       "supported_did_methods": ["did:web"],
@@ -20,6 +20,6 @@
     "outcome": "reject",
     "error_code": "schema_violation",
     "consumer_action": "MUST NOT proceed with the operation that required fetching capabilities (e.g. publish, retrieval against this registry); SHOULD log the missing mandatory algorithm for operator review.",
-    "rationale": "ed25519 is the only mandatory-to-support algorithm in v0.0.1. A registry that does not advertise it cannot interoperate with v0.0.1 producers; treating its capabilities as valid silently masks the problem until the first publish fails."
+    "rationale": "ed25519 is the only mandatory-to-support algorithm in v0.1.0. A registry that does not advertise it cannot interoperate with v0.1.0 producers; treating its capabilities as valid silently masks the problem until the first publish fails."
   }
 }

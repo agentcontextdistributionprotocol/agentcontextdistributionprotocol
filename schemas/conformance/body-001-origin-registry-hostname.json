@@ -1,0 +1,20 @@
+{
+  "id": "body-001",
+  "description": "body.origin_registry MUST be a bare DNS hostname matching the authority component of ctx_id (RFC-ACDP-0002 §3.1). A registry assigns origin_registry as a plain hostname; a consumer validating a retrieved body against acdp-context-body.schema.json MUST accept this form.",
+  "tags": ["body", "identity", "happy-path", "validation"],
+  "input": {
+    "endpoint": "GET /contexts/{ctx_id}",
+    "body_fields_under_test": {
+      "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-000000000001",
+      "origin_registry": "registry.example.com"
+    }
+  },
+  "expected": {
+    "outcome": "accept",
+    "checks": [
+      "origin_registry matches acdp-common.schema.json#/$defs/hostname (LDH labels, dot-separated, no colons)",
+      "origin_registry equals the authority component of ctx_id ('registry.example.com')"
+    ]
+  },
+  "rationale": "Pins the conformant form. origin_registry is the DNS-hostname encoding of the registry identity; capabilities.registry_did carries the did:web form of the same registry. The two encodings are distinct and MUST NOT be interchanged on the wire. Companion negative case: body-002."
+}

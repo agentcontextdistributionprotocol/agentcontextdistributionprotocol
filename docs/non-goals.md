@@ -36,15 +36,15 @@ This document is non-normative. It explains what ACDP intentionally does not add
 
 ## 5. Retraction and lifecycle events
 
-**Non-goal in v0.0.1.** Once published, a body is permanent.
+**Non-goal in v0.1.0.** Once published, a body is permanent.
 
-**Rationale.** A retraction mechanism added casually creates more problems than it solves: who can retract? With what evidence? Are partial retractions allowed? v0.0.1 chooses absolute permanence so the substrate's invariants are obvious.
+**Rationale.** A retraction mechanism added casually creates more problems than it solves: who can retract? With what evidence? Are partial retractions allowed? v0.1.0 chooses absolute permanence so the substrate's invariants are obvious.
 
 **What ACDP does instead.** Supersession: a producer publishes a corrected v2 with `supersedes: ctx_id_of_v1`. Original v1 stays in the registry but `status: superseded`. RFC-ACDP-0009 reserves a formal lifecycle-events mechanism for a future version.
 
 ## 6. Post-publication relationships from third parties
 
-**Non-goal in v0.0.1.** Only the producer can claim that this context is `derived_from` other contexts.
+**Non-goal in v0.1.0.** Only the producer can claim that this context is `derived_from` other contexts.
 
 **Rationale.** Third-party `builds_on` claims require a separate signing model and a trust evaluation model: do all third-party claims count? Most-trusted? Aggregated by some scheme? These choices belong in higher-order protocols.
 
@@ -52,7 +52,7 @@ This document is non-normative. It explains what ACDP intentionally does not add
 
 ## 7. Attestations (`reproduced` / `disputes`)
 
-**Non-goal in v0.0.1.** No third-party can append a signed claim about another context.
+**Non-goal in v0.1.0.** No third-party can append a signed claim about another context.
 
 **Rationale.** Same as §6 — attestations are post-publication signed claims and benefit from a fully-considered model.
 
@@ -60,7 +60,7 @@ This document is non-normative. It explains what ACDP intentionally does not add
 
 ## 8. Push subscriptions
 
-**Non-goal in v0.0.1.** Discovery is poll-based.
+**Non-goal in v0.1.0.** Discovery is poll-based.
 
 **Rationale.** Push delivery requires operational machinery — webhook signing, retry, backpressure, idempotency tokens. These don't belong in the substrate's first release.
 
@@ -68,7 +68,7 @@ This document is non-normative. It explains what ACDP intentionally does not add
 
 ## 9. Server-side traversal (walks)
 
-**Non-goal in v0.0.1.** Consumers walk `derived_from` chains client-side, one fetch per node.
+**Non-goal in v0.1.0.** Consumers walk `derived_from` chains client-side, one fetch per node.
 
 **Rationale.** A `/walk` endpoint is a real optimization but introduces complexity (depth limits, circular-reference handling, partial-result delivery). Better to ship the substrate first.
 
@@ -102,7 +102,7 @@ This document is non-normative. It explains what ACDP intentionally does not add
 
 **Non-goal.** Bodies are never deleted.
 
-**Rationale.** Permanence is the v0.0.1 invariant. Hard deletion would make `derived_from` chains break unpredictably.
+**Rationale.** Permanence is the v0.1.0 invariant. Hard deletion would make `derived_from` chains break unpredictably.
 
 **What ACDP does instead.** Supersession for corrections; visibility-restriction for access control over time. (Storage-cost concerns for very old bodies are a deployment problem, not a protocol one.)
 

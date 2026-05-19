@@ -90,13 +90,13 @@ v1's body is unchanged.
 
 ## 3. The transport
 
-ACDP v0.0.1 is JSON over HTTP, content type `application/acdp+json`. All endpoints accept and emit this type.
+ACDP v0.1.0 is JSON over HTTP, content type `application/acdp+json`. All endpoints accept and emit this type.
 
 | Transport | Use |
 |---|---|
 | HTTPS / JSON | Normative. All endpoints. |
 
-Binary transport bindings are out of scope for v0.0.1 and may be specified in a future version. Production deployments MUST use TLS (RFC-ACDP-0008 §4.6).
+Binary transport bindings are out of scope for v0.1.0 and may be specified in a future version. Production deployments MUST use TLS (RFC-ACDP-0008 §4.6).
 
 ## 4. Where state lives
 
@@ -106,7 +106,7 @@ Binary transport bindings are out of scope for v0.0.1 and may be specified in a 
 | Producer DID document | Each producer | Public — `did:web` or other. |
 | Registry DID document | Each registry | Public — `did:web` matching the authority. |
 | Bodies | Origin registry | Persistent. Immutable. Indefinite retention. |
-| Registry-state | Origin registry | Persistent. Mutable in v0.0.1 only via supersession-driven status recomputation. |
+| Registry-state | Origin registry | Persistent. Mutable in v0.1.0 only via supersession-driven status recomputation. |
 | Producer DID document cache | Consumers | TTL cache. |
 | Capabilities document cache | Consumers | TTL cache (1 hour suggested). |
 | Body cache | Consumers | Indefinite — bodies are immutable. Key by `ctx_id`, validate by `content_hash`. |

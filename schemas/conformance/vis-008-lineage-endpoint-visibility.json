@@ -1,0 +1,125 @@
+{
+  "id": "vis-008",
+  "description": "Lineage endpoints (GET /lineages/{lineage_id} and GET /lineages/{lineage_id}/current) MUST apply the same per-context visibility rules as GET /contexts/{ctx_id}. Knowing a lineage_id MUST NOT grant access to bodies that ctx_id-level access control would deny. RFC-ACDP-0004 §5.4.",
+  "tags": ["retrieval", "lineage", "visibility", "leak-prevention"],
+  "setup": {
+    "lineages": [
+      {
+        "lineage_id": "lin:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "note": "Two-version restricted lineage. Both versions share the same audience.",
+        "versions": [
+          {
+            "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-0000000000a1",
+            "version": 1,
+            "visibility": "restricted",
+            "audience": ["did:agent:authorized"],
+            "agent_id": "did:agent:owner",
+            "status": "superseded"
+          },
+          {
+            "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-0000000000a2",
+            "version": 2,
+            "visibility": "restricted",
+            "audience": ["did:agent:authorized"],
+            "agent_id": "did:agent:owner",
+            "status": "active"
+          }
+        ]
+      },
+      {
+        "lineage_id": "lin:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "note": "Two-version lineage whose current head is private to the producer.",
+        "versions": [
+          {
+            "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-0000000000b1",
+            "version": 1,
+            "visibility": "public",
+            "agent_id": "did:agent:owner",
+            "status": "superseded"
+          },
+          {
+            "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-0000000000b2",
+            "version": 2,
+            "visibility": "private",
+            "agent_id": "did:agent:owner",
+            "status": "active"
+          }
+        ]
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "name": "Full lineage — stranger sees zero versions of a restricted lineage (empty array, not 404)",
+      "request": {
+        "method": "GET",
+        "path": "/lineages/lin:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "effective_requester_did": "did:agent:stranger"
+      },
+      "expected": {
+        "status": 200,
+        "body": [],
+        "matches_ctx_ids": []
+      },
+      "notes": "Every version is restricted and the requester is in no audience. Each version would return not_found via GET /contexts/{ctx_id}, so each is omitted. The lineage itself exists, so the endpoint returns an empty array (HTTP 200), NOT not_found."
+    },
+    {
+      "name": "Full lineage — audience member sees all restricted versions",
+      "request": {
+        "method": "GET",
+        "path": "/lineages/lin:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "effective_requester_did": "did:agent:authorized"
+      },
+      "expected": {
+        "status": 200,
+        "matches_ctx_ids": [
+          "acdp://registry.example.com/00000000-0000-4000-8000-0000000000a1",
+          "acdp://registry.example.com/00000000-0000-4000-8000-0000000000a2"
+        ]
+      },
+      "notes": "The requester is in the audience of every version, so the full history is returned, ordered by version ascending."
+    },
+    {
+      "name": "Full lineage — partial visibility leaves a version gap (not an error)",
+      "request": {
+        "method": "GET",
+        "path": "/lineages/lin:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "effective_requester_did": "did:agent:stranger"
+      },
+      "expected": {
+        "status": 200,
+        "matches_ctx_ids": [
+          "acdp://registry.example.com/00000000-0000-4000-8000-0000000000b1"
+        ]
+      },
+      "notes": "v1 is public (visible); v2 is private (omitted). The result is the visible subsequence — version 1 only. The gap at version 2 is expected; a consumer MUST NOT treat a missing version number as an error."
+    },
+    {
+      "name": "Current — stranger denied for a private current head (not_found, indistinguishable from missing lineage)",
+      "request": {
+        "method": "GET",
+        "path": "/lineages/lin:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/current",
+        "effective_requester_did": "did:agent:stranger"
+      },
+      "expected": {
+        "status": 404,
+        "error_code": "not_found"
+      },
+      "notes": "The current head (v2) is private. The registry MUST NOT fall back to the superseded public v1 — current is the newest non-superseded version, and v1 is superseded. With no authorized non-superseded version, the endpoint returns not_found, indistinguishable from a lineage that does not exist."
+    },
+    {
+      "name": "Current — producer sees the private current head",
+      "request": {
+        "method": "GET",
+        "path": "/lineages/lin:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/current",
+        "effective_requester_did": "did:agent:owner"
+      },
+      "expected": {
+        "status": 200,
+        "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-0000000000b2",
+        "registry_state": { "status": "active" }
+      },
+      "notes": "The producer is always in the effective audience for their own contexts and retrieves the private current head."
+    }
+  ]
+}

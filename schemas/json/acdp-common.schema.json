@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json",
+  "$id": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json",
   "title": "ACDP Common Types",
-  "description": "Shared type definitions referenced by other ACDP schemas. Defined as of ACDP v0.0.1.",
+  "description": "Shared type definitions referenced by other ACDP schemas. Defined as of ACDP v0.1.0.",
 
   "$defs": {
     "did": {
       "title": "Decentralized Identifier (plain DID)",
-      "description": "A plain DID per W3C DID Core specification, without fragment, query, or path. Used for principal identifiers (agent_id, contributors[], audience[], registry_did). The pattern is intentionally loose — full method-specific validation (e.g. did:web hostname syntax, did:key multibase decoding) is delegated to the resolver per RFC-ACDP-0001 §5.11. Per RFC-ACDP-0001 §5.4, v0.0.1 producers MUST use did:web; this is enforced normatively in the RFC, not in the schema, so registries can accept other methods if they choose to.",
+      "description": "A plain DID per W3C DID Core specification, without fragment, query, or path. Used for principal identifiers (agent_id, contributors[], audience[], registry_did). The pattern is intentionally loose — full method-specific validation (e.g. did:web hostname syntax, did:key multibase decoding) is delegated to the resolver per RFC-ACDP-0001 §5.11. Per RFC-ACDP-0001 §5.4, v0.1.0 producers MUST use did:web; this is enforced normatively in the RFC, not in the schema, so registries can accept other methods if they choose to.",
       "type": "string",
       "pattern": "^did:[a-z0-9]+:[A-Za-z0-9._:%-]+$",
       "minLength": 7,
@@ -23,6 +23,16 @@
       "maxLength": 2048
     },
 
+    "hostname": {
+      "title": "DNS Hostname",
+      "description": "A lowercase DNS hostname: one or more LDH (letter-digit-hyphen) labels joined by dots, each label 1-63 characters, not starting or ending with a hyphen. Used for `origin_registry` (RFC-ACDP-0002 §3.1) and the authority component of `ctx_id`. This is explicitly NOT a DID URI: a value such as `did:web:registry.example.com` is invalid here because the colon characters do not match the pattern. Storing a DID in `origin_registry` is a conformance violation — see RFC-ACDP-0002 §3.1.",
+      "type": "string",
+      "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*$",
+      "minLength": 1,
+      "maxLength": 253,
+      "examples": ["registry.example.com"]
+    },
+
     "ctx_id": {
       "title": "Context Identifier",
       "description": "A globally unique URI of the form acdp://<authority>/<uuid>. Authority is a lowercase DNS hostname; UUID is a lowercase RFC 9562 v4 (random) UUID. Version digit (13th hex char) MUST be 4; variant digit (17th hex char) MUST be 8, 9, a, or b.",
@@ -35,7 +45,7 @@
 
     "lineage_id": {
       "title": "Lineage Identifier",
-      "description": "Deterministically derived from the first version's ctx_id. Form: lin:<algorithm>:<digest>. v0.0.1 emits 'lin:sha256:<64-lowercase-hex>'. The algorithm is namespaced so future ACDP versions can adopt different hashes (e.g. SHA-3, post-quantum) without colliding with v0.0.1 lineage_ids. Consumers MUST treat lin: values with unknown algorithms as opaque and MUST NOT compare across algorithms.",
+      "description": "Deterministically derived from the first version's ctx_id. Form: lin:<algorithm>:<digest>. v0.1.0 emits 'lin:sha256:<64-lowercase-hex>'. The algorithm is namespaced so future ACDP versions can adopt different hashes (e.g. SHA-3, post-quantum) without colliding with v0.1.0 lineage_ids. Consumers MUST treat lin: values with unknown algorithms as opaque and MUST NOT compare across algorithms.",
       "type": "string",
       "pattern": "^lin:sha256:[0-9a-f]{64}$",
       "examples": [
@@ -93,7 +103,7 @@
         }
       ],
       "additionalProperties": false,
-      "$comment": "additionalProperties is false in v0.0.1: the entire signature object is excluded from ProducerContent (the hash preimage) per RFC-ACDP-0001 §5.7. However, since signature is part of the stored Body, unknown signature fields would still change the JCS canonical form of the Body and could affect future Body-level processing. Keeping the signature schema closed avoids that complexity. Future signature variants (proof chains, threshold attestations per RFC-ACDP-0009) require an explicit schema bump."
+      "$comment": "additionalProperties is false in v0.1.0: the entire signature object is excluded from ProducerContent (the hash preimage) per RFC-ACDP-0001 §5.7. However, since signature is part of the stored Body, unknown signature fields would still change the JCS canonical form of the Body and could affect future Body-level processing. Keeping the signature schema closed avoids that complexity. Future signature variants (proof chains, threshold attestations per RFC-ACDP-0009) require an explicit schema bump."
     },
 
     "tag": {
@@ -135,7 +145,7 @@
 
     "status": {
       "title": "Context Status",
-      "description": "Derived by the registry from supersession queries and the clock. v0.0.1 emits one of 'active', 'superseded', 'expired'; future versions will add 'retracted' (RFC-ACDP-0009 §2.1) and possibly others. The pattern is open so that future status values do not break existing v0.0.1 consumers; v0.0.1 consumers MUST tolerate unknown status values and SHOULD treat them as 'active' (with logging) until they upgrade. See RFC-ACDP-0004 §4.",
+      "description": "Derived by the registry from supersession queries and the clock. v0.1.0 emits one of 'active', 'superseded', 'expired'; future versions will add 'retracted' (RFC-ACDP-0009 §2.1) and possibly others. The pattern is open so that future status values do not break existing v0.1.0 consumers; v0.1.0 consumers MUST tolerate unknown status values and SHOULD treat them as 'active' (with logging) until they upgrade. See RFC-ACDP-0004 §4.",
       "type": "string",
       "pattern": "^[a-z][a-z0-9_]*$",
       "minLength": 1,
@@ -160,7 +170,7 @@
         "status": { "$ref": "#/$defs/status" },
         "visibility": {
           "$ref": "#/$defs/visibility",
-          "description": "OPTIONAL. Disclosure rules per RFC-ACDP-0005 §2.2: registries SHOULD include `visibility: public` for public matches so consumers can cache-classify results without a retrieval round-trip. For `restricted` and `private` matches, registries MUST only include `visibility` when the requester is already authorized to retrieve the context (i.e., is in `audience` or is `agent_id`); including the field for an unauthorized requester would leak the existence of restricted/private contexts. When this field is absent, consumers MUST NOT infer anything about the context's visibility — absence is the registry's choice and is also the legal v0.0.1-pre-fix default for older deployments."
+          "description": "OPTIONAL. Disclosure rules per RFC-ACDP-0005 §2.2: registries SHOULD include `visibility: public` for public matches so consumers can cache-classify results without a retrieval round-trip. For `restricted` and `private` matches, registries MUST only include `visibility` when the requester is already authorized to retrieve the context (i.e., is in `audience` or is `agent_id`); including the field for an unauthorized requester would leak the existence of restricted/private contexts. When this field is absent, consumers MUST NOT infer anything about the context's visibility — absence is the registry's choice and is also the legal v0.1.0-pre-fix default for older deployments."
         }
       },
       "additionalProperties": false

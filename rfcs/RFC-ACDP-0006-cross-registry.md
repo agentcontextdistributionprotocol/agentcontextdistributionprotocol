@@ -2,8 +2,8 @@
 # Agent Context Description Protocol (ACDP) — Cross-Registry References
 
 **Document:** RFC-ACDP-0006
-**Version:** 0.0.1
-**Status:** Community Standards Track (Draft)
+**Version:** 0.1.0-rc1
+**Status:** Community Standards Track (Release Candidate 1)
 
 This RFC specifies how consumers resolve `acdp://` references that point to contexts on a different registry. It depends on RFC-ACDP-0001 (Core) and RFC-ACDP-0007 (Capabilities).
 
@@ -11,7 +11,7 @@ This RFC specifies how consumers resolve `acdp://` references that point to cont
 
 ## 1. Status of This Memo
 
-This document is a Draft. Backward-incompatible changes remain possible until Final.
+This document is a Release Candidate (acdp/0.1.0-rc1). Backward-incompatible changes remain possible until Final; only editorial fixes are expected during the RC window.
 
 ---
 
@@ -42,7 +42,7 @@ In short:
 - **Registry DID:** "you are talking to the right server."
 - **Producer signature (RFC-ACDP-0001 §5.8):** "this body is from the right producer."
 
-Both are required to trust an ACDP context end-to-end. RFC-ACDP-0008 §9.1 details what the producer signature does and does not bind, including the v0.0.1 limitation that registry-assigned identifiers (`ctx_id`, `lineage_id`, `origin_registry`, `created_at`) are not cryptographically bound by the producer signature.
+Both are required to trust an ACDP context end-to-end. RFC-ACDP-0008 §9.1 details what the producer signature does and does not bind, including the v0.1.0 limitation that registry-assigned identifiers (`ctx_id`, `lineage_id`, `origin_registry`, `created_at`) are not cryptographically bound by the producer signature.
 
 ---
 
@@ -56,7 +56,7 @@ When a consumer encounters an `acdp://other-registry.example/uuid` reference and
 2. **Resolve the registry.** Construct the registry's well-known URL: `https://<authority>/.well-known/acdp.json`. Fetch and parse. Verify `acdp_version`, `registry_did`, `supported_signature_algorithms`.
 3. **Verify the registry's DID.** Resolve `registry_did` and verify the DID document's web binding matches `<authority>`. This is REQUIRED for `acdp-registry-federated` profile conformance (RFC-ACDP-0001 §9.1) and RECOMMENDED for any consumer doing cross-registry resolution. On mismatch, treat the resolution as failed. Operators of consumer deployments SHOULD additionally pin the `registry_did` they expect for each upstream they rely on (defense against an attacker who controls DNS for the authority but not the original registry's DID document).
 4. **Issue retrieval.** `GET https://<authority>/contexts/{encoded_ctx_id}` per RFC-ACDP-0004 §2.
-5. **Verify the body's signature.** Resolve the producing agent's signing key per RFC-ACDP-0001 §5.11, then verify `body.signature.value` against `body.content_hash`. v0.0.1 producers MUST use `did:web` (RFC-ACDP-0001 §5.4); consumers encountering other DID methods MAY surface this to higher layers as `key_resolution_failed`-equivalent if they cannot resolve them.
+5. **Verify the body's signature.** Resolve the producing agent's signing key per RFC-ACDP-0001 §5.11, then verify `body.signature.value` against `body.content_hash`. v0.1.0 producers MUST use `did:web` (RFC-ACDP-0001 §5.4); consumers encountering other DID methods MAY surface this to higher layers as `key_resolution_failed`-equivalent if they cannot resolve them.
 6. **Verify the content hash.** Recompute `content_hash` over the JCS-canonicalized body (with the exclusion set from RFC-ACDP-0001 §5.7) and confirm it matches.
 7. **Walk further references.** For each entry in `body.derived_from`, repeat from step 1 if the consumer needs the predecessor. ACDP's content-addressing forbids cycles in honest data (a body cannot reference its own future `ctx_id`), but consumers SHOULD detect cycles defensively (track visited `ctx_id`s within a single walk) and abort with a logged error if one is observed — its presence indicates a tampered body or a registry serving forged data.
 
@@ -123,7 +123,7 @@ The following are not specified by ACDP and are intentional non-goals (RFC-ACDP-
 - **Federation peering** between registries.
 - **Cross-registry query forwarding** (search/discovery across registries from a single endpoint).
 - **Cross-registry caching protocols** beyond plain HTTP caching.
-- **Cross-registry supersession** (publishing a v2 on a different registry from v1). **Forbidden** in v0.0.1 — registries MUST reject with `superseded_target` (`details.reason = "cross_registry_supersession_unsupported"`). See RFC-ACDP-0003 §3.1 step 2 and the reservation in RFC-ACDP-0009 §2.8.
+- **Cross-registry supersession** (publishing a v2 on a different registry from v1). **Forbidden** in v0.1.0 — registries MUST reject with `superseded_target` (`details.reason = "cross_registry_supersession_unsupported"`). See RFC-ACDP-0003 §3.1 step 2 and the reservation in RFC-ACDP-0009 §2.8.
 - **Server-side traversal** (`/walk`). Reserved in RFC-ACDP-0009.
 
 Registries MAY implement these as private optimizations — but they are not part of the protocol.

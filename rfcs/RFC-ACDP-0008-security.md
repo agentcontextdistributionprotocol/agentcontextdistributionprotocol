@@ -2,16 +2,16 @@
 # Agent Context Description Protocol (ACDP) — Security & Threat Model
 
 **Document:** RFC-ACDP-0008
-**Version:** 0.0.1
-**Status:** Community Standards Track (Draft)
+**Version:** 0.1.0-rc1
+**Status:** Community Standards Track (Release Candidate 1)
 
-This RFC specifies the threat model for ACDP v0.0.1 and the defenses every implementation MUST provide. It depends on the entire core RFC stack (0001–0007).
+This RFC specifies the threat model for ACDP v0.1.0 and the defenses every implementation MUST provide. It depends on the entire core RFC stack (0001–0007).
 
 ---
 
 ## 1. Status of This Memo
 
-This document is a Draft. Backward-incompatible changes remain possible until Final.
+This document is a Release Candidate (acdp/0.1.0-rc1). Backward-incompatible changes remain possible until Final; only editorial fixes are expected during the RC window.
 
 ---
 
@@ -29,7 +29,7 @@ The threat surface is therefore: **the entire path from producer's signing key, 
 
 ---
 
-## 3. Threats Addressed in v0.0.1
+## 3. Threats Addressed in v0.1.0
 
 | Threat | Mechanism |
 |---|---|
@@ -53,7 +53,7 @@ The threat surface is therefore: **the entire path from producer's signing key, 
 - Implementations MUST support `ed25519` ([RFC 8032]).
 - Implementations MUST use a cryptographically secure RNG for UUIDs (`ctx_id` UUID component).
 - Private keys MUST be stored in secure storage (HSM, key vault, OS keystore).
-- Implementations MUST fail closed on signature verification errors — there is no `soft_fail` mode in v0.0.1.
+- Implementations MUST fail closed on signature verification errors — there is no `soft_fail` mode in v0.1.0.
 
 ### 4.2 Input validation
 
@@ -116,13 +116,13 @@ The full visibility matrix (retrieval × search × visibility level × requester
 
 ## 5. Known Gaps (Acknowledged)
 
-| Gap | Reason | Mitigation in v0.0.1 |
+| Gap | Reason | Mitigation in v0.1.0 |
 |---|---|---|
-| **No retraction** | Permanent publication is the v0.0.1 invariant. | Use supersession to publish corrections. RFC-ACDP-0009 reserves a formal lifecycle-events mechanism. |
+| **No retraction** | Permanent publication is the v0.1.0 invariant. | Use supersession to publish corrections. RFC-ACDP-0009 reserves a formal lifecycle-events mechanism. |
 | **No real-time key revocation push** | Out of scope for the substrate. | Pull-based; consumers consult DID documents. Producers can publish a "this key is compromised" context as a soft signal. |
-| **No third-party attestations** | Out of scope for v0.0.1. | RFC-ACDP-0009 reserves `attestations` in registry state. |
-| **No third-party `builds_on` claims** | Out of scope for v0.0.1. | `derived_from` is producer-only; downstream consumers can publish their own `derived_from` context. |
-| **No push subscriptions** | Polling is the v0.0.1 model. | RFC-ACDP-0009 reserves push semantics. |
+| **No third-party attestations** | Out of scope for v0.1.0. | RFC-ACDP-0009 reserves `attestations` in registry state. |
+| **No third-party `builds_on` claims** | Out of scope for v0.1.0. | `derived_from` is producer-only; downstream consumers can publish their own `derived_from` context. |
+| **No push subscriptions** | Polling is the v0.1.0 model. | RFC-ACDP-0009 reserves push semantics. |
 | **No federation peering** | Out of scope. | Cross-registry resolution via `acdp://` is the federation primitive. |
 | **No multi-party / threshold signatures** | Out of scope. | Use `contributors` for joint authorship; the single signing identity is one of them. |
 | **No quality scoring by registries** | Out of scope. | Consumers compute their own trust models from DID + signature evidence. |
@@ -174,9 +174,9 @@ Registries MAY allow anonymous reads of `visibility: public` contexts. Anonymous
 
 **Setup.** Producer P signed `acdp://reg.example/<uuid>` with key K1 at `created_at=t1`. P later rotates to K2; K1 is removed from P's DID document at `t2`. A consumer at `t3 > t2` retrieves the context and tries to verify it.
 
-**Result (v0.0.1, with the documented limitation in §9.3).** The consumer resolves P's *current* DID document and finds only K2. The K1 signature on the old context does not verify against K2. Without an external mechanism (DID-document snapshotting, transparency log, or registry receipt — none of which v0.0.1 specifies), the consumer **cannot** assert that K1 was authorized at `t1`.
+**Result (v0.1.0, with the documented limitation in §9.3).** The consumer resolves P's *current* DID document and finds only K2. The K1 signature on the old context does not verify against K2. Without an external mechanism (DID-document snapshotting, transparency log, or registry receipt — none of which v0.1.0 specifies), the consumer **cannot** assert that K1 was authorized at `t1`.
 
-Two acceptable v0.0.1 responses for the consumer:
+Two acceptable v0.1.0 responses for the consumer:
 
 - **Strict.** Reject the context. Old contexts whose signing keys have been rotated out are no longer locally verifiable.
 - **Pragmatic.** Trust the producer's current DID document's claim about key rotation timeline (if any), or defer to an out-of-band attestation. The consumer accepts the residual risk that K1 was rotated *because* it was compromised, in which case signatures from K1 should not have been honored after `t2`.
@@ -213,7 +213,7 @@ These three pillars are the minimum. Implementations MUST NOT relax any of them.
 
 ### 9.1 Producer signatures do not bind registry-assigned fields
 
-ACDP v0.0.1 producer signatures cover producer-controlled fields. They do not cover registry-assigned identifiers (`ctx_id`, `lineage_id`, `origin_registry`, `created_at`). A consumer can verify content authorship by `agent_id` but **cannot** cryptographically verify which registry first accepted the content, what `ctx_id` the producer intended, or when publication occurred. These facts rely on registry honesty.
+ACDP v0.1.0 producer signatures cover producer-controlled fields. They do not cover registry-assigned identifiers (`ctx_id`, `lineage_id`, `origin_registry`, `created_at`). A consumer can verify content authorship by `agent_id` but **cannot** cryptographically verify which registry first accepted the content, what `ctx_id` the producer intended, or when publication occurred. These facts rely on registry honesty.
 
 A malicious or compromised registry could republish a producer's signed content under a different `ctx_id` or `origin_registry` (the signature would still verify), or backdate `created_at`. A malicious registry **cannot** forge content from a producer, modify a body after publication, or forge a `derived_from` lineage.
 
@@ -224,11 +224,11 @@ Deployments where this binding gap matters SHOULD use:
 - External transparency logs anchoring `(ctx_id, content_hash, registry_did, timestamp)` tuples.
 - Multi-registry replication with consumer-side comparison.
 
-A future ACDP version will introduce **registry receipts**: registry-signed attestations binding `(ctx_id, lineage_id, origin_registry, created_at, content_hash)` to the registry's DID. The reservation is in [RFC-ACDP-0009 §2.7](RFC-ACDP-0009-extensions.md#27-registry-receipts-likely-v01).
+A future ACDP version will introduce **registry receipts**: registry-signed attestations binding `(ctx_id, lineage_id, origin_registry, created_at, content_hash)` to the registry's DID. The reservation is in [RFC-ACDP-0009 §2.7](RFC-ACDP-0009-extensions.md#27-registry-receipts).
 
 ### 9.3 Historical key validity
 
-Verifying a context whose producer has rotated keys requires knowing which key was valid at `created_at`. Most DID methods do not expose reliable historical key validity. ACDP v0.0.1 SHOULD verify against the producer's current DID document; verifiers requiring historical accuracy MUST employ external mechanisms (DID-document snapshotting at publish time, transparency logs, archival proofs). A future ACDP version will define a normative DID-document snapshot mechanism.
+Verifying a context whose producer has rotated keys requires knowing which key was valid at `created_at`. Most DID methods do not expose reliable historical key validity. ACDP v0.1.0 SHOULD verify against the producer's current DID document; verifiers requiring historical accuracy MUST employ external mechanisms (DID-document snapshotting at publish time, transparency logs, archival proofs). A future ACDP version will define a normative DID-document snapshot mechanism.
 
 ---
 

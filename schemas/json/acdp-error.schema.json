@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.acdp.io/v0.0.1/acdp-error.schema.json",
+  "$id": "https://schemas.acdp.io/v0.1.0/acdp-error.schema.json",
   "title": "ACDP Error Response",
   "description": "Standard error response returned by ACDP endpoints on failure.",
 
@@ -16,6 +16,7 @@
           "enum": [
             "invalid_signature",
             "hash_mismatch",
+            "data_ref_hash_mismatch",
             "schema_violation",
             "not_authorized",
             "not_found",
@@ -34,7 +35,7 @@
             "cross_registry_resolution_failed",
             "internal_error"
           ],
-          "description": "A machine-readable error code from the ACDP standard error vocabulary. Codes reserved for future versions (not in this enum): immutable_field (v0.1+ mutation endpoints), unsupported_embedding_model (v0.1+ similarity endpoints)."
+          "description": "A machine-readable error code from the ACDP standard error vocabulary. Codes reserved for future versions (not in this enum): immutable_field (a future version's mutation endpoints), unsupported_embedding_model (a future version's similarity endpoints)."
         },
         "message": {
           "type": "string",

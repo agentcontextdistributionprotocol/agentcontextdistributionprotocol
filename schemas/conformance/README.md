@@ -22,7 +22,8 @@ conformance/
 ├── status-*.json  Registry-state status pattern validation (RFC-ACDP-0004 §4.1)
 ├── schema-*.json  Schema openness (closed-vs-open) cases (RFC-ACDP-0007 §3.3.1)
 ├── data-ref-*.json DataRef validation (RFC-ACDP-0002 §6.6)
-└── meta-*.json    Metadata limit cases (RFC-ACDP-0002 §3.3)
+├── meta-*.json    Metadata limit cases (RFC-ACDP-0002 §3.3)
+└── body-*.json    Body identity-field validation (RFC-ACDP-0002 §3)
 ```
 
 ---
@@ -85,7 +86,7 @@ The runner interface is implementation-defined.
 | `pub-005` | `visibility: restricted` with no `audience` | failure: `schema_violation` |
 | `pub-006` | `signature.key_id` DID portion ≠ `body.agent_id` | failure: `key_not_authorized` |
 | `pub-007` | Publish response shape — exactly five fields, no `content_hash` or other body fields echoed back | success: HTTP 201; response object pinned to `{ctx_id, lineage_id, version, created_at, status}` |
-| `pub-008` | `body.agent_id` is not `did:web` (v0.0.1 §5.4 mandate) | failure: `schema_violation` (preferred) or `key_not_authorized` |
+| `pub-008` | `body.agent_id` is not `did:web` (v0.1.0 §5.4 mandate) | failure: `schema_violation` (preferred) or `key_not_authorized` |
 | `pub-009` | `signature.key_id` DID is not `did:web` while `agent_id` is `did:web` | failure: `key_not_authorized` |
 | `pub-010` | Non-`did:web` entry in `contributors[]` (attribution-only — registry MUST accept) | success |
 | `pub-011` | Persist-only-after-signature-verify atomicity — body MUST NOT be persisted if signature verification fails, even when `content_hash` is correct | failure: `invalid_signature` + post-failure invariants |
@@ -132,13 +133,21 @@ Rate-limit triggering depends on registry policy (window, bucket, threshold), so
 | `data-ref-004` | Structured location object missing `scheme` field | failure: `schema_violation` |
 | `data-ref-005` | Embedded decoded size > 65536 bytes | failure: `embedded_too_large` |
 | `data-ref-006` | `embedded.encoding` is `utf8` or `base64` but `content` is not a string | failure: `schema_violation` |
-| `data-ref-007` | `embedded.content_hash` present but does not match decoded bytes | failure: `hash_mismatch` |
+| `data-ref-007` | `embedded.content_hash` present but does not match decoded bytes | failure: `data_ref_hash_mismatch` |
+
+### Body identity fields (RFC-ACDP-0002 §3)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `body-001` | `body.origin_registry` is a bare DNS hostname matching the `ctx_id` authority | accept |
+| `body-002` | `body.origin_registry` is a DID URI (`did:web:...`) instead of a hostname | reject: `schema_violation` |
 
 ### Retrieval (RFC-ACDP-0004)
 
 | ID | Description | Outcome |
 |---|---|---|
 | `ret-001` | `ctx_id` does not exist | failure: `not_found` |
+| `ret-002` | `GET /lineages/{id}/current` semantics: all-superseded → `not_found`; expired head → returned with `status: expired`; active head → returned | mixed (per-scenario) |
 
 ### Visibility (RFC-ACDP-0002, RFC-ACDP-0008)
 
@@ -151,6 +160,8 @@ Rate-limit triggering depends on registry policy (window, bucket, threshold), so
 | `vis-005` | Private + audience: audience member MUST NOT find context via search/`derived_from` filter; search visibility for `private` is strictly `agent_id`-only | mixed (per-scenario; counts AND `total_estimate` scoped) |
 | `vis-006` | Public match SHOULD include `visibility: "public"` in `match_summary` (cache-classification signal) | success: optional disclosure permitted |
 | `vis-007` | Restricted/private match served to unauthorized requester MUST omit the match entirely AND MUST NOT carry `visibility` metadata anywhere | mixed (per-scenario; existence-leak prevention) |
+| `vis-008` | Lineage endpoints (`GET /lineages/{id}` and `/current`) apply per-context visibility: strangers see `[]` for a fully-restricted lineage, audience members see all versions, partial visibility leaves version gaps, private current head → `not_found` for non-producers | mixed (per-scenario; RFC-ACDP-0004 §5.4) |
+| `vis-009` | `anonymous_public_reads` governs keyword search: anonymous search blocked (`not_authorized`) when `false`, public-only when `true`; authenticated requesters unaffected by the flag | mixed (per-scenario; RFC-ACDP-0005 §2.5.5) |
 
 ### Canonicalization & hashing (RFC-ACDP-0001)
 
@@ -166,9 +177,9 @@ Rate-limit triggering depends on registry policy (window, bucket, threshold), so
 | `can-008` | Body with unknown producer-controlled field (`priority`) — consumer MUST include in hash recomputation (RFC-ACDP-0001 §5.7 raw-JSON rule) | success: byte-exact reproduction including the unknown field |
 | `can-009` | Stored Body → ProducerContent — exclusion set is stripped BY NAME, regardless of typed-model knowledge | success: byte-exact reproduction matches the stored `content_hash` |
 
-**Test DIDs.** The `can-*` canonicalization fixtures use `did:agent:test` as a deliberately short, fictitious DID method to keep canonical-form expected values readable. The precomputed `canonical_form` and `sha256_hex` values depend on the exact string. v0.0.1 wire deployments MUST use `did:web` (RFC-ACDP-0001 §5.4) — `did:agent:` is a test-only convention and is not a registered DID method.
+**Test DIDs.** The `can-*` canonicalization fixtures use `did:agent:test` as a deliberately short, fictitious DID method to keep canonical-form expected values readable. The precomputed `canonical_form` and `sha256_hex` values depend on the exact string. v0.1.0 wire deployments MUST use `did:web` (RFC-ACDP-0001 §5.4) — `did:agent:` is a test-only convention and is not a registered DID method.
 
-All v0.0.1 fixtures listed above are authored. The `can-005` fixture's "absent tags" vector cross-checks with `can-001` vector 1 — they have bit-identical input and MUST produce the same hash. Additional fixtures (embedded-too-large, payload-too-large, race on supersession, etc.) are welcome via PR.
+All v0.1.0 fixtures listed above are authored. The `can-005` fixture's "absent tags" vector cross-checks with `can-001` vector 1 — they have bit-identical input and MUST produce the same hash. Additional fixtures (embedded-too-large, payload-too-large, race on supersession, etc.) are welcome via PR.
 
 ### Cryptographic golden vectors (RFC-ACDP-0001)
 

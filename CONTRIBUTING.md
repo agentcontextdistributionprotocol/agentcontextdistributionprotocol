@@ -9,7 +9,7 @@ ACDP is a coordination-agnostic context-publication standard. All changes MUST p
 - `lineage_id` is deterministically derived from the first version's `ctx_id` and is end-to-end verifiable.
 - `content_hash` is a SHA-256 over the JCS-canonicalized body, with the registry-assigned exclusion set.
 - Cross-registry references resolve via the `acdp://` URI scheme, and the producing agent's signature — not the serving registry — is the trust anchor.
-- Registries do not retract; supersession is the only correction mechanism in v0.0.1.
+- Registries do not retract; supersession is the only correction mechanism in v0.1.0.
 
 ## Local development
 

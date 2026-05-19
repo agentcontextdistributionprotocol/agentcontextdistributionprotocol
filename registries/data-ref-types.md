@@ -1,10 +1,10 @@
 # DataRef Type Registry
 
-The `type` field on each entry in a context body's `data_refs[]` array describes the role of that data within the context. v0.0.1 defines a closed set of four values; the schema (`acdp-data-ref.schema.json`) enforces this with an `enum`. Custom or namespaced DataRef types are **not supported** in v0.0.1 — extensibility is reserved for a future ACDP version.
+The `type` field on each entry in a context body's `data_refs[]` array describes the role of that data within the context. v0.1.0 defines a closed set of four values; the schema (`acdp-data-ref.schema.json`) enforces this with an `enum`. Custom or namespaced DataRef types are **not supported** in v0.1.0 — extensibility is reserved for a future ACDP version.
 
 The validation rules every registry MUST apply to `data_refs[]` entries — including the `type` check — are in [RFC-ACDP-0002 §6.6 DataRef Validation Checklist](../rfcs/RFC-ACDP-0002-context-body.md#66-dataref-validation-checklist).
 
-## v0.0.1 values
+## v0.1.0 values
 
 | Value | Status | Description | Spec |
 |---|---|---|---|
@@ -24,9 +24,9 @@ A common pattern is to attach one `primary_result` plus zero or more of the othe
 
 When in doubt: if a consumer would naturally fetch this first, it's `primary_result`. If it's the input the producer started from, `raw_data`. If it's secondary supporting material, `supporting_info`. If it was computed from `primary_result` as part of the same workflow, `derived_data`.
 
-## Why no custom types in v0.0.1
+## Why no custom types in v0.1.0
 
-`DataRef.type` is a discoverability primitive — registries index by it and consumers branch on it. Allowing custom values in v0.0.1 would fragment that index without giving registries any handle to compare or rank custom types.
+`DataRef.type` is a discoverability primitive — registries index by it and consumers branch on it. Allowing custom values in v0.1.0 would fragment that index without giving registries any handle to compare or rank custom types.
 
 A future ACDP version may introduce namespaced custom values (`<namespace>:<type>`) once the indexing semantics are specified. The schema's `enum` will be relaxed to a `pattern` at that point, gated on a new `acdp_version` value in the body.
 

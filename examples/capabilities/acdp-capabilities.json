@@ -1,5 +1,5 @@
 {
-  "acdp_version": "0.0.1",
+  "acdp_version": "0.1.0",
   "registry_did": "did:web:registry.example.com",
   "supported_signature_algorithms": ["ed25519"],
   "supported_did_methods": ["did:web"],

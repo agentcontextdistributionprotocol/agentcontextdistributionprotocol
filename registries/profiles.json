@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "_note": "Machine-readable form of the conformance manifest in registries/profiles.md. This file is normative: when it conflicts with profiles.md the table in profiles.md wins; conformance runners SHOULD treat any divergence as a documentation bug and report it. Generated/edited by hand alongside profiles.md.",
-  "spec_version": "0.0.1",
+  "spec_version": "0.1.0",
   "profiles": [
     {
       "id": "acdp-registry-core",
@@ -49,10 +49,14 @@
         "meta-001-too-deep",
         "meta-002-too-large",
         "meta-003-valid-edge-depth",
+        "body-001-origin-registry-hostname",
+        "body-002-origin-registry-did",
         "ret-001-not-found",
+        "ret-002-lineage-current-semantics",
         "vis-001-restricted-denied-as-404",
         "vis-004-private-audience-retrieval-allowed",
         "vis-005-private-audience-search-excluded",
+        "vis-008-lineage-endpoint-visibility",
         "err-001-internal-error",
         "caps-001-valid-minimal",
         "caps-002-missing-ed25519",
@@ -109,6 +113,7 @@
         "vis-005-private-audience-search-excluded",
         "vis-006-search-match-public-visibility-disclosure",
         "vis-007-search-match-restricted-visibility-absent-for-unauthorized",
+        "vis-009-anonymous-public-reads-search",
         "schema-001-search-response-extra-results"
       ],
       "not_implemented_permitted_on": [],
@@ -168,21 +173,24 @@
         "schema-002-publish-response-extra-content-hash",
         "schema-003-embedded-extra-field",
         "schema-004-capabilities-extra-top-level-allowed",
+        "body-001-origin-registry-hostname",
+        "body-002-origin-registry-did",
         "vis-003-search-response-key",
         "pub-007-publish-response-shape",
         "pub-010-non-did-web-contributor"
       ],
-      "notes": "can-008 and can-009 are especially important: they exercise forward-compatible hash verification (RFC-ACDP-0001 §5.7) — a consumer that deserializes into a typed model that drops unknown fields will fail these and produce false hash_mismatch under v0.1+ producers. A consumer that follows derived_from across registries additionally MUST pass the fed-* fixtures if it performs server-side resolution."
+      "notes": "can-008 and can-009 are especially important: they exercise forward-compatible hash verification (RFC-ACDP-0001 §5.7) — a consumer that deserializes into a typed model that drops unknown fields will fail these and produce false hash_mismatch under future-version producers. A consumer that follows derived_from across registries additionally MUST pass the fed-* fixtures if it performs server-side resolution."
     }
   ],
   "fixture_families": {
+    "body": "Body identity-field validation (RFC-ACDP-0002 §3)",
     "can": "Canonicalization and hash recomputation (RFC-ACDP-0001 §5.2, §5.7)",
     "sig": "Signature golden vectors (RFC-ACDP-0001 §5.8, §5.10)",
     "pub": "Publish flow (RFC-ACDP-0003 §2.1)",
     "data-ref": "DataRef invariants (RFC-ACDP-0002 §6)",
     "meta": "Metadata depth/size limits (RFC-ACDP-0002 §5.2)",
-    "ret": "Retrieval flow (RFC-ACDP-0004 §2)",
-    "vis": "Visibility scoping (RFC-ACDP-0008 §4.5, RFC-ACDP-0005 §2.5.5)",
+    "ret": "Retrieval and lineage flow (RFC-ACDP-0004 §2, §5)",
+    "vis": "Visibility scoping (RFC-ACDP-0008 §4.5, RFC-ACDP-0004 §5.4, RFC-ACDP-0005 §2.5.5)",
     "err": "Error-envelope shape (RFC-ACDP-0007 §4)",
     "caps": "Capabilities document validation (RFC-ACDP-0007 §3.5)",
     "status": "Registry-state status pattern (RFC-ACDP-0004 §4.1)",

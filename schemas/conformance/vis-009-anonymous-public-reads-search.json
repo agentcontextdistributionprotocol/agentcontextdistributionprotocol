@@ -1,0 +1,72 @@
+{
+  "id": "vis-009",
+  "description": "The anonymous_public_reads capability flag governs keyword search exactly as it governs retrieval. When anonymous_public_reads is false, anonymous search requests MUST be rejected with not_authorized and MUST NOT leak public-context existence via matches[] or total_estimate. The flag never constrains authenticated requesters. RFC-ACDP-0005 §2.5.5, RFC-ACDP-0008 §6.3.",
+  "tags": ["discovery", "visibility", "anonymous", "leak-prevention"],
+  "setup": {
+    "contexts_published": [
+      {
+        "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-000000000091",
+        "title": "Public beta",
+        "visibility": "public"
+      },
+      {
+        "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-000000000092",
+        "title": "Restricted beta",
+        "visibility": "restricted",
+        "audience": ["did:agent:authorized"]
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "name": "Anonymous search blocked when anonymous_public_reads is false",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/search?q=beta",
+        "effective_requester_did": null,
+        "registry_capabilities_subset": { "anonymous_public_reads": false }
+      },
+      "expected": {
+        "status": 403,
+        "error_code": "not_authorized"
+      },
+      "notes": "A registry that does not advertise anonymous_public_reads MUST reject the anonymous search outright. No matches[] and no total_estimate are disclosed — an anonymous requester MUST NOT learn that the public context exists, neither via the result array nor via a non-zero total_estimate."
+    },
+    {
+      "name": "Anonymous search allowed (public only) when anonymous_public_reads is true",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/search?q=beta",
+        "effective_requester_did": null,
+        "registry_capabilities_subset": { "anonymous_public_reads": true }
+      },
+      "expected": {
+        "status": 200,
+        "matches_count": 1,
+        "total_estimate": 1,
+        "matches_ctx_ids": [
+          "acdp://registry.example.com/00000000-0000-4000-8000-000000000091"
+        ]
+      },
+      "notes": "An anonymous requester receives public contexts only — never restricted or private — scoped identically to an authenticated non-audience requester. total_estimate is scoped the same way as matches[]."
+    },
+    {
+      "name": "Authenticated search returns public results regardless of anonymous_public_reads=false",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/search?q=beta",
+        "effective_requester_did": "did:agent:some_authenticated_agent",
+        "registry_capabilities_subset": { "anonymous_public_reads": false }
+      },
+      "expected": {
+        "status": 200,
+        "matches_count": 1,
+        "total_estimate": 1,
+        "matches_ctx_ids": [
+          "acdp://registry.example.com/00000000-0000-4000-8000-000000000091"
+        ]
+      },
+      "notes": "anonymous_public_reads constrains anonymous access only. An authenticated requester MAY always receive public contexts in search results regardless of the flag's value. The restricted context is excluded because this requester is not in its audience."
+    }
+  ]
+}

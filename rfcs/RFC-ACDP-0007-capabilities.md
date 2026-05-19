@@ -2,8 +2,8 @@
 # Agent Context Description Protocol (ACDP) — Capabilities & Errors
 
 **Document:** RFC-ACDP-0007
-**Version:** 0.0.1
-**Status:** Community Standards Track (Draft)
+**Version:** 0.1.0-rc1
+**Status:** Community Standards Track (Release Candidate 1)
 
 This RFC specifies the registry capability declaration document and the standard error envelope used by all ACDP endpoints.
 
@@ -11,7 +11,7 @@ This RFC specifies the registry capability declaration document and the standard
 
 ## 1. Status of This Memo
 
-This document is a Draft. Backward-incompatible changes remain possible until Final.
+This document is a Release Candidate (acdp/0.1.0-rc1). Backward-incompatible changes remain possible until Final; only editorial fixes are expected during the RC window.
 
 ---
 
@@ -41,7 +41,7 @@ Returns the registry's capability declaration. Conforms to [`schemas/json/acdp-c
 | `acdp_version` | string | The ACDP specification version this registry implements. Form: `<major>.<minor>.<patch>`. |
 | `registry_did` | string | The registry's own DID, typically `did:web:<hostname>`. |
 | `supported_signature_algorithms` | array of string | Signature algorithms accepted on publish. MUST contain at least `"ed25519"`. |
-| `supported_did_methods` | array of string | DID methods this registry can resolve. MUST be non-empty and MUST include `"did:web"` (RFC-ACDP-0001 §5.4 mandates `did:web` for v0.0.1 producers; RFC-ACDP-0001 §5.11 specifies the resolution algorithm). |
+| `supported_did_methods` | array of string | DID methods this registry can resolve. MUST be non-empty and MUST include `"did:web"` (RFC-ACDP-0001 §5.4 mandates `did:web` for v0.1.0 producers; RFC-ACDP-0001 §5.11 specifies the resolution algorithm). |
 | `profiles` | array of string | Profile(s) this implementation claims conformance to. Any registry MUST declare at least `"acdp-registry-core"`. See RFC-ACDP-0001 §9. |
 | `limits.max_payload_bytes` | integer | Maximum size of a publish request body in bytes. |
 | `limits.max_embedded_bytes` | integer | Maximum decoded size of any embedded data reference. **Fixed at 65536 by the spec.** |
@@ -67,7 +67,7 @@ The capabilities document is `additionalProperties: true` to support forward com
 - **TypeScript:** no action needed by default — object types are open. Runtime decoders (zod, valibot) MUST use a passthrough or partial-strict mode (e.g. zod's `.passthrough()`); decoders configured to strip or fail unknown keys MUST NOT be used.
 - **Go:** unmarshalling into `map[string]any` or a struct with an `Extensions json.RawMessage` field both work; do NOT use `json.UnmarshalDisallowUnknownFields`.
 
-Libraries that throw, panic, or strip unknown fields will break silently the next time ACDP adds a capability flag — for example, when push subscriptions ship in v0.1, registries will start advertising `supports_push_subscriptions: true`, and a strict-decoder consumer will fail to read the document at all. The same forward-compat policy applies to the `status` field on registry state (RFC-ACDP-0004 §4.1).
+Libraries that throw, panic, or strip unknown fields will break silently the next time ACDP adds a capability flag — for example, when push subscriptions ship in a future version, registries will start advertising `supports_push_subscriptions: true`, and a strict-decoder consumer will fail to read the document at all. The same forward-compat policy applies to the `status` field on registry state (RFC-ACDP-0004 §4.1).
 
 #### 3.3.1 Schema openness map (NORMATIVE)
 
@@ -97,7 +97,7 @@ Conformant consumers MUST reject deserializing a closed-schema object that conta
 
 ```json
 {
-  "acdp_version": "0.0.1",
+  "acdp_version": "0.1.0",
   "registry_did": "did:web:registry.example.com",
   "supported_signature_algorithms": ["ed25519"],
   "supported_did_methods": ["did:web"],
@@ -118,7 +118,7 @@ Conformant consumers MUST reject deserializing a closed-schema object that conta
 After fetching `/.well-known/acdp.json`, consumers and cross-registry resolvers MUST validate the following before relying on the document. Schema validation alone is necessary but not sufficient — the items marked **(value)** below are not enforceable by the JSON Schema in all toolchains, so implementations MUST verify them in code.
 
 1. `acdp_version` matches the semver pattern `^\d+\.\d+\.\d+$`.
-2. `registry_did` is a valid DID. For v0.0.1 registries, `registry_did` MUST be `did:web:<authority>`, and `<authority>` MUST equal the hostname the capabilities document was fetched from. **(value, cross-field)**
+2. `registry_did` is a valid DID. For v0.1.0 registries, `registry_did` MUST be `did:web:<authority>`, and `<authority>` MUST equal the hostname the capabilities document was fetched from. **(value, cross-field)**
 3. `supported_signature_algorithms` MUST contain `"ed25519"`.
 4. `supported_did_methods` MUST contain `"did:web"`.
 5. `profiles` MUST contain `"acdp-registry-core"`.
@@ -195,12 +195,13 @@ All error responses use the following structure, conforming to [`schemas/json/ac
 
 ## 5. Error Code Registry
 
-The full registry is maintained in [`registries/error-codes.md`](../registries/error-codes.md). The codes defined by v0.0.1:
+The full registry is maintained in [`registries/error-codes.md`](../registries/error-codes.md). The codes defined by v0.1.0:
 
 | Code | HTTP | Meaning | Source |
 |---|---|---|---|
 | `invalid_signature` | 400 | Signature verification failed. | RFC-ACDP-0001 §5.8, RFC-ACDP-0003 §2.1 |
-| `hash_mismatch` | 400 | `content_hash` does not match the canonicalized body. | RFC-ACDP-0001 §5.7, RFC-ACDP-0003 §2.1 |
+| `hash_mismatch` | 400 | The body's `content_hash` (over ProducerContent) does not match the canonicalized body. | RFC-ACDP-0001 §5.7, RFC-ACDP-0003 §2.1 |
+| `data_ref_hash_mismatch` | 400 | A DataRef's bytes do not match the producer-declared `data_ref.content_hash`. Returned by a registry at publish time when an embedded `data_ref.content_hash` does not match the decoded `embedded.content` (RFC-ACDP-0002 §6.6 Check 8). Also the code a consumer SHOULD surface when it fetches an external `data_ref.location` and the retrieved bytes do not match `data_ref.content_hash` (RFC-ACDP-0002 §6.5). The body's own `content_hash` and signature are still valid — the integrity failure is at the data-reference level, not the body level. | RFC-ACDP-0002 §6.5, §6.6 |
 | `schema_violation` | 400 | Request body or query failed structural validation. | RFC-ACDP-0003 §2.1 |
 | `not_authorized` | 403 | Agent lacks permission for the operation. Returned for supersession by a different `agent_id`, and for unauthenticated reads on a registry that does not advertise `anonymous_public_reads`. | RFC-ACDP-0003 §3.1, RFC-ACDP-0008 §6.3 |
 | `not_found` | 404 | Resource not found. (Also returned for visibility-restricted contexts to non-audience requesters; see RFC-ACDP-0008 §4.5.) | RFC-ACDP-0004 §7 |
@@ -219,7 +220,15 @@ The full registry is maintained in [`registries/error-codes.md`](../registries/e
 | `cross_registry_resolution_failed` | 502 | A cross-registry resolution failed (DNS resolution refused, response oversize, timeout, redirect-policy violation, or upstream registry unavailable). | RFC-ACDP-0006 §7 |
 | `internal_error` | 500 | The registry encountered an unexpected internal condition. The standard error envelope MUST be used; `error.message` MUST NOT leak stack traces or sensitive context. Retryable. | RFC-ACDP-0007 §4 |
 
-> **Reserved codes (not in this table or the v0.0.1 wire enum):** `immutable_field` is reserved for v0.1+ mutation endpoints (retraction, attestation updates — see RFC-ACDP-0009 §2.1). `unsupported_embedding_model` is reserved for v0.1+ similarity endpoints (see RFC-ACDP-0009 §2.9). Implementations MUST NOT emit either in v0.0.1 responses.
+> **Reserved codes (not in this table or the v0.1.0 wire enum):** `immutable_field` is reserved for a future version's mutation endpoints (retraction, attestation updates — see RFC-ACDP-0009 §2.1). `unsupported_embedding_model` is reserved for a future version's similarity endpoints (see RFC-ACDP-0009 §2.9). Implementations MUST NOT emit either in v0.1.0 responses.
+
+**Distinguishing hash failures.** Three failure codes can arise from integrity checks; implementations MUST keep them distinct so consumers can react correctly:
+
+- `hash_mismatch` — the body's ProducerContent hash, recomputed by the registry or consumer, does not match `body.content_hash`. The body's signed content cannot be verified; the **body is untrusted**.
+- `data_ref_hash_mismatch` — a DataRef's fetched (external) or decoded (embedded) bytes do not match the producer-declared `data_ref.content_hash`. The **body itself is cryptographically valid**; only the referenced data has diverged from what the producer signed. Returning `hash_mismatch` here would wrongly imply the whole body failed verification; returning `invalid_signature` would wrongly imply a signature-verification failure.
+- `invalid_signature` — `signature.value` does not verify against the resolved public key. The body's authorship cannot be established.
+
+A registry emits `data_ref_hash_mismatch` only at publish time, for embedded data (`embedded.content_hash` mismatch — RFC-ACDP-0002 §6.6 Check 8). For external `data_refs[].location`, hash verification happens consumer-side after fetch (RFC-ACDP-0002 §6.5); a consumer SHOULD surface the mismatch with the same `data_ref_hash_mismatch` semantic in its own diagnostics, logs, or API surface.
 
 ### 5.1 Adding a code
 
