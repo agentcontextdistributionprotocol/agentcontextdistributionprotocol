@@ -381,6 +381,32 @@ Without these surfaces, conformance testing for `pub-001` and `pub-006` requires
 
 **Future DID methods.** v0.1+ may add `did:key`, `did:jwk`, and other methods. The resolution algorithm above is `did:web`-specific; other methods will be specified separately.
 
+**v0.0.1 strict verification profile (NORMATIVE).** A verification implementation conformant with the `acdp-consumer` profile (§9.1) MUST, when verifying a v0.0.1 context (`body.acdp_version` absent or `"0.0.1"`):
+
+1. Require `body.agent_id` and the DID portion of `signature.key_id` to be `did:web` DIDs (RFC-ACDP-0001 §5.4); reject other DID methods.
+2. Run full body schema validation (`acdp-context-body.schema.json`) **before** any cryptographic step — a structurally invalid body MUST NOT reach hash recomputation or signature verification.
+3. Recompute `content_hash` over ProducerContent and verify it before checking the signature (§5.7, §5.8).
+4. Verify the producer signature per the resolution algorithm above.
+5. Verify every embedded `data_ref.content_hash` against its decoded `embedded.content` (RFC-ACDP-0002 §6.3); on mismatch, report `data_ref_hash_mismatch` (RFC-ACDP-0007 §5).
+
+Library authors MAY expose configuration to relax these requirements (e.g. for test environments, compatibility bridges, or future protocol versions), but any relaxed mode MUST be explicitly labeled as **non-conformant with v0.0.1** and MUST NOT be the default. The RECOMMENDED API shape is a strict default that cannot be loosened without an explicit, named opt-in — e.g. a `VerificationPolicy::strict_v0_0_1()` (Rust) / `VerificationPolicy.strict_v0_0_1()` (Python/TypeScript) constructor as the default, with any other mode reachable only through a separately-named constructor. Implementations MUST document that only the strict mode is covered by the `acdp-consumer` conformance profile.
+
+**Recommended verification report stage names (NON-NORMATIVE).** SDKs that expose a diagnostic verification report (a per-stage pass/fail breakdown) SHOULD use the following stage identifiers, so logs and telemetry are comparable across language implementations. The identifier is the snake_case form for code and config; the display name is for human-facing output.
+
+| Stage identifier | What it covers |
+|---|---|
+| `schema` | Structural body validation (field presence, types, patterns). |
+| `producer_content_hash` | SHA-256 recomputation over ProducerContent matches `body.content_hash`. |
+| `key_binding` | The DID portion of `signature.key_id` equals `body.agent_id`. |
+| `did_resolution` | The DID document was fetched and parsed successfully. |
+| `assertion_method` | The verification method is referenced by the DID document's `assertionMethod`. |
+| `signature` | The Ed25519 or ECDSA-P256 signature verifies against the resolved public key. |
+| `embedded_data_refs` | Per-DataRef embedded-hash verification (an array of per-ref outcomes). |
+| `external_data_refs` | Per-DataRef external fetch + hash verification (an array of per-ref outcomes). |
+| `registry_receipt` | Registry receipt verification — reserved for v0.1+ (RFC-ACDP-0009 §2.7); absent in v0.0.1 reports. |
+
+The stage vocabulary is advisory: it does not change the verification algorithm, only the names implementations SHOULD use when surfacing intermediate results. A v0.0.1 report covers `schema` through `external_data_refs`; `registry_receipt` is listed so the vocabulary is stable when receipts ship.
+
 ---
 
 ## 6. Compatibility Model

@@ -1,0 +1,98 @@
+{
+  "id": "ret-002",
+  "description": "GET /lineages/{lineage_id}/current returns the newest NON-SUPERSEDED version. status: expired counts as non-superseded (a valid current head); status: superseded never is. If every version is superseded (an abnormal state), the endpoint MUST return not_found. RFC-ACDP-0004 §5.2.",
+  "tags": ["retrieval", "lineage", "status", "edge-case"],
+  "setup": {
+    "lineages": [
+      {
+        "lineage_id": "lin:sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "note": "Abnormal state: every version is superseded (reachable only via admin correction or data corruption).",
+        "versions": [
+          {
+            "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-000000000c01",
+            "version": 1,
+            "status": "superseded"
+          },
+          {
+            "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-000000000c02",
+            "version": 2,
+            "status": "superseded"
+          }
+        ]
+      },
+      {
+        "lineage_id": "lin:sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "note": "Current head is past its expires_at but has no successor — status expired.",
+        "versions": [
+          {
+            "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-000000000c11",
+            "version": 1,
+            "status": "superseded"
+          },
+          {
+            "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-000000000c12",
+            "version": 2,
+            "expires_at": "2020-01-01T00:00:00.000Z",
+            "status": "expired"
+          }
+        ]
+      },
+      {
+        "lineage_id": "lin:sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "note": "Ordinary state: current head is active.",
+        "versions": [
+          {
+            "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-000000000c21",
+            "version": 1,
+            "status": "superseded"
+          },
+          {
+            "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-000000000c22",
+            "version": 2,
+            "status": "active"
+          }
+        ]
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "name": "All versions superseded — current returns not_found",
+      "request": {
+        "method": "GET",
+        "path": "/lineages/lin:sha256:1111111111111111111111111111111111111111111111111111111111111111/current"
+      },
+      "expected": {
+        "status": 404,
+        "error_code": "not_found"
+      },
+      "notes": "No non-superseded version exists. The registry MUST return not_found (HTTP 404). It MUST NOT fall back to returning a superseded version as the current head. Registries SHOULD prevent this state via the supersession constraints of RFC-ACDP-0003 §3.1."
+    },
+    {
+      "name": "Expired head — current returns the expired context with status: expired",
+      "request": {
+        "method": "GET",
+        "path": "/lineages/lin:sha256:2222222222222222222222222222222222222222222222222222222222222222/current"
+      },
+      "expected": {
+        "status": 200,
+        "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-000000000c12",
+        "registry_state": { "status": "expired" }
+      },
+      "notes": "An expired version is NOT superseded — it is a valid current head. The response MUST carry registry_state.status = expired so the consumer knows the context is past its validity window. 'current' does not imply 'active'."
+    },
+    {
+      "name": "Active head — current returns the active context",
+      "request": {
+        "method": "GET",
+        "path": "/lineages/lin:sha256:3333333333333333333333333333333333333333333333333333333333333333/current"
+      },
+      "expected": {
+        "status": 200,
+        "ctx_id": "acdp://registry.example.com/00000000-0000-4000-8000-000000000c22",
+        "registry_state": { "status": "active" }
+      },
+      "notes": "The ordinary case: the newest non-superseded version is active and is returned as the current head."
+    }
+  ]
+}

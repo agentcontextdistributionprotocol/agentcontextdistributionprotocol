@@ -16,6 +16,7 @@
           "enum": [
             "invalid_signature",
             "hash_mismatch",
+            "data_ref_hash_mismatch",
             "schema_violation",
             "not_authorized",
             "not_found",

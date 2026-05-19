@@ -23,6 +23,16 @@
       "maxLength": 2048
     },
 
+    "hostname": {
+      "title": "DNS Hostname",
+      "description": "A lowercase DNS hostname: one or more LDH (letter-digit-hyphen) labels joined by dots, each label 1-63 characters, not starting or ending with a hyphen. Used for `origin_registry` (RFC-ACDP-0002 §3.1) and the authority component of `ctx_id`. This is explicitly NOT a DID URI: a value such as `did:web:registry.example.com` is invalid here because the colon characters do not match the pattern. Storing a DID in `origin_registry` is a conformance violation — see RFC-ACDP-0002 §3.1.",
+      "type": "string",
+      "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*$",
+      "minLength": 1,
+      "maxLength": 253,
+      "examples": ["registry.example.com"]
+    },
+
     "ctx_id": {
       "title": "Context Identifier",
       "description": "A globally unique URI of the form acdp://<authority>/<uuid>. Authority is a lowercase DNS hostname; UUID is a lowercase RFC 9562 v4 (random) UUID. Version digit (13th hex char) MUST be 4; variant digit (17th hex char) MUST be 8, 9, a, or b.",

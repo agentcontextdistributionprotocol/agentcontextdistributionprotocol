@@ -44,8 +44,18 @@ The canonical schema is [`schemas/json/acdp-context-body.schema.json`](../schema
 | `supersedes` | string \| null | Yes | The `ctx_id` of the immediately previous version, or `null` for version 1. |
 | `agent_id` | string | Yes | The DID of the single signing identity for this context. v0.0.1 producers MUST use `did:web` so that any conformant registry can resolve their keys (RFC-ACDP-0001 §5.4, §5.11). |
 | `contributors` | array of string | Yes | DIDs of agents that contributed to but did not sign this context. MAY be empty. |
-| `origin_registry` | string | Yes | DNS hostname of the registry that originally accepted this context. **Assigned by the registry**. |
+| `origin_registry` | string | Yes | DNS hostname of the registry that originally accepted this context. **Assigned by the registry**. See the clarification below. |
 | `created_at` | string | Yes | RFC 3339 timestamp of registry acceptance. **Assigned by the registry**. |
+
+**`origin_registry` is a DNS hostname, NOT a DID URI (NORMATIVE).** The `origin_registry` field carries the plain DNS hostname of the registry authority (e.g. `registry.example.com`), matching the authority component of `ctx_id` (`acdp://registry.example.com/<uuid>`). The DID form of the registry's identity appears only in `capabilities.registry_did` (`did:web:registry.example.com`, RFC-ACDP-0007 §3.1). The two are distinct encodings of the same registry and MUST NOT be interchanged on the wire. Storing `did:web:registry.example.com` in `origin_registry` is a conformance violation: the field's schema type is a DNS hostname (`acdp-common.schema.json#/$defs/hostname` — LDH labels, no colons), not a DID. A registry MUST assign `origin_registry` as a bare hostname; a consumer validating a retrieved body MUST reject a DID-shaped `origin_registry` as `schema_violation`.
+
+| Field | Location | Format | Example |
+|---|---|---|---|
+| `origin_registry` | `Body` | DNS hostname | `registry.example.com` |
+| `registry_did` | `CapabilitiesDocument` | DID URI | `did:web:registry.example.com` |
+| `ctx_id` authority | `CtxId` | DNS hostname (in `acdp://` URI) | `acdp://registry.example.com/<uuid>` |
+
+The `body-001`/`body-002` conformance fixtures pin the accept/reject behavior.
 
 ### 3.2 Integrity Fields
 
@@ -218,6 +228,8 @@ When `content_hash` is present on an embedded data reference, it is computed ove
 - For `encoding: "utf8"`: over the bytes of the UTF-8 encoding.
 - For `encoding: "json"`: over the bytes of the JCS-canonicalized form.
 
+A registry that finds a mismatch between `embedded.content_hash` and the decoded bytes MUST reject the publish with `data_ref_hash_mismatch` (HTTP 400), NOT `hash_mismatch`. `hash_mismatch` is reserved for a failure of the body-level `content_hash` over ProducerContent; an embedded-data digest mismatch is a DataRef-level integrity failure. See RFC-ACDP-0007 §5 ("Distinguishing hash failures").
+
 ### 6.4 Visibility scope
 
 ACDP `visibility` (§7) protects access to the **registry record**: the body and any indexes the registry maintains. It does **NOT** control access to external data referenced by `data_refs[].location`.
@@ -236,7 +248,7 @@ For `data_refs[].location` values that are URIs (URL form per §6.2):
 - For `http://` locations, producers SHOULD include a `data_refs[].content_hash` (the SHA-256 of the actual referenced data) so consumers can verify integrity even when transport doesn't.
 - Producers in trusted-network deployments MAY use `http://` without `content_hash`; this is a deployment-policy decision but reduces the verifiable-trust budget.
 
-Consumers fetching `data_refs[].location` MUST treat the result as untrusted until verified. If `data_refs[].content_hash` is present, consumers MUST verify the fetched bytes match before treating the data as authentic. If absent and the location is `http://`, consumers SHOULD treat the data as untrusted indefinitely.
+Consumers fetching `data_refs[].location` MUST treat the result as untrusted until verified. If `data_refs[].content_hash` is present, consumers MUST verify the fetched bytes match before treating the data as authentic. A consumer that detects a mismatch SHOULD surface it with the `data_ref_hash_mismatch` semantic (RFC-ACDP-0007 §5) — distinct from `invalid_signature` and `hash_mismatch`, because the body's own signature and `content_hash` may still be valid; only the externally-referenced data has diverged from what the producer signed. If `content_hash` is absent and the location is `http://`, consumers SHOULD treat the data as untrusted indefinitely.
 
 ### 6.6 DataRef Validation Checklist
 
@@ -251,7 +263,7 @@ Several `DataRef` constraints cannot be expressed in JSON Schema 2020-12 and hav
 | 5 | If `location` is a structured object: `scheme` is present and matches the dotted-namespace pattern `^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)+$`. | `schema_violation` |
 | 6 | If `embedded` is present: the decoded byte length of `embedded.content` is ≤ 65536. Decoding rules: `base64` → decode as RFC 4648 base64 then count bytes; `utf8` → encode the string as UTF-8 then count bytes; `json` → emit JCS canonical form then count bytes. | `embedded_too_large` |
 | 7 | If `embedded.encoding` is `utf8` or `base64`: `embedded.content` MUST be a JSON string (not an object, array, number, etc.). For `embedded.encoding: "json"`, `embedded.content` MAY be any JSON value. | `schema_violation` |
-| 8 | If `embedded.content_hash` is present: the registry MUST verify it against the decoded bytes per §6.3 (base64 → decoded bytes; utf8 → UTF-8 bytes; json → JCS-canonicalized bytes). Mismatch is a publish-time failure. | `hash_mismatch` |
+| 8 | If `embedded.content_hash` is present: the registry MUST verify it against the decoded bytes per §6.3 (base64 → decoded bytes; utf8 → UTF-8 bytes; json → JCS-canonicalized bytes). Mismatch is a publish-time failure. | `data_ref_hash_mismatch` |
 
 Checks 1, 3, 5, and 7 are also expressible as JSON Schema constraints in `acdp-data-ref.schema.json` and produce schema-validation failures at step 1 of the publish pipeline (RFC-ACDP-0003 §2.1). Check 2 is expressed via `oneOf` in the schema. Checks 4, 6, and 8 are runtime-only and execute after schema validation; they fail with the codes shown above.
 

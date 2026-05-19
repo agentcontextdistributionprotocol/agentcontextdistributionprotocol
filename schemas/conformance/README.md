@@ -22,7 +22,8 @@ conformance/
 ├── status-*.json  Registry-state status pattern validation (RFC-ACDP-0004 §4.1)
 ├── schema-*.json  Schema openness (closed-vs-open) cases (RFC-ACDP-0007 §3.3.1)
 ├── data-ref-*.json DataRef validation (RFC-ACDP-0002 §6.6)
-└── meta-*.json    Metadata limit cases (RFC-ACDP-0002 §3.3)
+├── meta-*.json    Metadata limit cases (RFC-ACDP-0002 §3.3)
+└── body-*.json    Body identity-field validation (RFC-ACDP-0002 §3)
 ```
 
 ---
@@ -132,13 +133,21 @@ Rate-limit triggering depends on registry policy (window, bucket, threshold), so
 | `data-ref-004` | Structured location object missing `scheme` field | failure: `schema_violation` |
 | `data-ref-005` | Embedded decoded size > 65536 bytes | failure: `embedded_too_large` |
 | `data-ref-006` | `embedded.encoding` is `utf8` or `base64` but `content` is not a string | failure: `schema_violation` |
-| `data-ref-007` | `embedded.content_hash` present but does not match decoded bytes | failure: `hash_mismatch` |
+| `data-ref-007` | `embedded.content_hash` present but does not match decoded bytes | failure: `data_ref_hash_mismatch` |
+
+### Body identity fields (RFC-ACDP-0002 §3)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `body-001` | `body.origin_registry` is a bare DNS hostname matching the `ctx_id` authority | accept |
+| `body-002` | `body.origin_registry` is a DID URI (`did:web:...`) instead of a hostname | reject: `schema_violation` |
 
 ### Retrieval (RFC-ACDP-0004)
 
 | ID | Description | Outcome |
 |---|---|---|
 | `ret-001` | `ctx_id` does not exist | failure: `not_found` |
+| `ret-002` | `GET /lineages/{id}/current` semantics: all-superseded → `not_found`; expired head → returned with `status: expired`; active head → returned | mixed (per-scenario) |
 
 ### Visibility (RFC-ACDP-0002, RFC-ACDP-0008)
 
@@ -151,6 +160,8 @@ Rate-limit triggering depends on registry policy (window, bucket, threshold), so
 | `vis-005` | Private + audience: audience member MUST NOT find context via search/`derived_from` filter; search visibility for `private` is strictly `agent_id`-only | mixed (per-scenario; counts AND `total_estimate` scoped) |
 | `vis-006` | Public match SHOULD include `visibility: "public"` in `match_summary` (cache-classification signal) | success: optional disclosure permitted |
 | `vis-007` | Restricted/private match served to unauthorized requester MUST omit the match entirely AND MUST NOT carry `visibility` metadata anywhere | mixed (per-scenario; existence-leak prevention) |
+| `vis-008` | Lineage endpoints (`GET /lineages/{id}` and `/current`) apply per-context visibility: strangers see `[]` for a fully-restricted lineage, audience members see all versions, partial visibility leaves version gaps, private current head → `not_found` for non-producers | mixed (per-scenario; RFC-ACDP-0004 §5.4) |
+| `vis-009` | `anonymous_public_reads` governs keyword search: anonymous search blocked (`not_authorized`) when `false`, public-only when `true`; authenticated requesters unaffected by the flag | mixed (per-scenario; RFC-ACDP-0005 §2.5.5) |
 
 ### Canonicalization & hashing (RFC-ACDP-0001)
 

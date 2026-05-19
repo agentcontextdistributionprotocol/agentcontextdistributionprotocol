@@ -149,6 +149,14 @@ The visibility matrix below is normative and consolidates the rules in §3 (visi
 | `restricted` | `agent_id` and DIDs listed in `audience` only | Same set as search |
 | `private` | `agent_id` only | `agent_id` and DIDs listed in `audience` (search is strictly narrower) |
 
+**Effect of `anonymous_public_reads` on search (NORMATIVE).** The `anonymous_public_reads` capability flag (RFC-ACDP-0007 §3.2, RFC-ACDP-0008 §6.3) governs keyword search exactly as it governs direct retrieval — it is not a retrieval-only flag:
+
+- When `anonymous_public_reads: false` (the default), a registry MUST reject an anonymous (unauthenticated) search request with `not_authorized` (HTTP 403). An anonymous requester MUST NOT receive `public` contexts in `matches[]` and MUST NOT learn that `public` contexts exist via a non-zero `total_estimate`.
+- When `anonymous_public_reads: true`, an anonymous requester MAY search and receives `public` contexts only (never `restricted` or `private`), scoped identically to an authenticated non-audience requester.
+- An **authenticated** requester MAY always receive `public` contexts in search results regardless of the value of `anonymous_public_reads` — the flag constrains anonymous access only.
+
+A registry MUST apply the `anonymous_public_reads` rule to `total_estimate` with the same scoping it applies to `matches[]`: when an anonymous request is rejected, no count is disclosed; the rule MUST NOT be enforced on `matches[]` while leaving `total_estimate` to leak the existence of public contexts. The `vis-009` conformance fixture pins this behavior.
+
 **Q1 — `private` + `audience`:** Audience members of a `private` context can RETRIEVE the context if they know its `ctx_id` (RFC-ACDP-0002 §7), but MUST NOT discover it via keyword search. This asymmetry is intentional: `audience` on a `private` context expresses "you may read this if I send you the link", not "you may discover this". Producers wanting cohort discoverability MUST use `visibility: restricted`.
 
 **Q2 — `private` in `derived_from` filter and other lineage queries:** A `private` context MUST NOT appear in any keyword-search result for any requester other than its `agent_id`, *including* responses to `derived_from=<ctx_id>` filter queries and any other lineage-discovery filter that may be added in the future. The `derived_from` filter is search (RFC-ACDP-0005 §2.4); search is strictly narrower than retrieval. Concretely: if a `private` context is derived from a `public` context that an audience member can search, querying `derived_from=<public_ctx_id>` MUST NOT surface the `private` derivative for that audience member. Audience members who learn the `ctx_id` out-of-band MAY retrieve it directly (RFC-ACDP-0002 §7).
@@ -166,6 +174,8 @@ All discovery responses MUST be scoped per the visibility matrix in RFC-ACDP-000
 - `visibility: private` — discoverable **only** by `agent_id`. DIDs listed in `audience` (if present) are granted **retrieval** access but NOT search visibility — `private` contexts never appear in another DID's search results, even when that DID is in `audience`. To make a context discoverable to a defined cohort, producers MUST use `restricted` instead. **Contributors are NOT auto-authorized for either retrieval or search:** `contributors` is for attribution, not authorization. Producers wishing to grant a contributor read access MUST list the DID in `audience` explicitly (still retrieval-only for `private`; both retrieval and search for `restricted`).
 
 A registry MUST NOT include restricted contexts in `total_estimate` for non-audience requesters, and MUST NOT include private contexts in `total_estimate` for any requester other than the producer. Registries SHOULD make `total_estimate` deterministic per `(query, requester)` for a stable result set, OR omit it from responses entirely when visibility scoping is in play, to avoid leaking the existence of restricted contexts via timing or cross-requester variance analysis.
+
+**`total_estimate` is whole-result-set, not per-page (NORMATIVE).** When present, `total_estimate` MUST represent the total number of matching contexts visible to the requester across **all** pages of the paginated sequence — NOT the number of results remaining from the current cursor position. Its value MUST NOT decrease as the consumer advances through pages. (Because the count is an estimate over a possibly-changing index, it MAY drift slightly between pages within a single sequence; what is forbidden is the systematic "remaining count" interpretation, which would make page 1 report a larger number than page 2 by construction.) A registry that cannot produce a stable whole-set estimate SHOULD omit `total_estimate` rather than emit a per-page remaining count.
 
 ---
 

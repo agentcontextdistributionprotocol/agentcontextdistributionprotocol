@@ -34,7 +34,7 @@ The registry MUST execute the following steps in order:
 2. **Payload-size validation.** Verify total request size ≤ `limits.max_payload_bytes` (RFC-ACDP-0007). On overflow, return `payload_too_large` (HTTP 413).
 3. **Embedded validation.** For each `data_refs[].embedded`:
     - Verify decoded size ≤ 65536 bytes (per RFC-ACDP-0002 §6.3 decoding rules: `base64` → RFC 4648 decoded byte count; `utf8` → UTF-8 byte count; `json` → JCS-canonicalized byte count). On overflow, return `embedded_too_large` (HTTP 413).
-    - If `embedded.content_hash` is present, recompute the SHA-256 of the decoded bytes (same encoding-aware decoding) and verify it matches. On mismatch, return `hash_mismatch` (HTTP 400). This is distinct from the body-level `content_hash` check in step 4: step 3's hash-check binds an individual embedded payload to its declared digest; step 4 binds the whole producer-controlled body. Per-embedded `content_hash` is OPTIONAL on publish (the producer commits to whatever `embedded.content` they sign in step 4 either way), but present-and-mismatching is a hard error per RFC-ACDP-0002 §6.6 Check 8.
+    - If `embedded.content_hash` is present, recompute the SHA-256 of the decoded bytes (same encoding-aware decoding) and verify it matches. On mismatch, return `data_ref_hash_mismatch` (HTTP 400) — NOT `hash_mismatch`. This is distinct from the body-level `content_hash` check in step 4: step 3's hash-check binds an individual embedded payload to its declared digest (a DataRef-level integrity failure), while step 4 binds the whole producer-controlled body (a body-level failure). The two carry separate error codes precisely so a consumer can tell them apart — see RFC-ACDP-0007 §5 ("Distinguishing hash failures"). Per-embedded `content_hash` is OPTIONAL on publish (the producer commits to whatever `embedded.content` they sign in step 4 either way), but present-and-mismatching is a hard error per RFC-ACDP-0002 §6.6 Check 8.
 4. **Hash recomputation.** Compute SHA-256 over the JCS-canonicalized request body, with the exclusion set from RFC-ACDP-0001 §5.7. If the computed hash does not equal `content_hash`, return `hash_mismatch` (HTTP 400). **This step happens before signature verification:** verifying a signature against an untrusted submitted hash proves nothing — the registry must independently recompute the hash before treating it as the signing input.
 5. **Algorithm check.** If `signature.algorithm` is not in the registry's `supported_signature_algorithms` (RFC-ACDP-0007), return `unsupported_algorithm` (HTTP 400).
 6. **Key-id binding and key resolution.** First, verify that the DID portion of `signature.key_id` (everything before `#`) equals `body.agent_id`; on mismatch, return `key_not_authorized` (HTTP 403). This sub-check is a string comparison and registries MAY perform it earlier (before step 4) as an optimization to reject obvious mismatches without paying the SHA-256 cost. Then resolve the signing key per RFC-ACDP-0001 §5.11. On a permanent resolution failure (DID document fetched but JSON parse error, missing the requested key fragment in `verificationMethod`, or `key_id` lacks a fragment), return `key_resolution_failed` (HTTP 400). On a transient failure (DNS, TLS, HTTP non-2xx, timeout fetching the DID document), return `key_resolution_unreachable` (HTTP 502). On successful resolution, verify the resolved verification method is in the DID document's `assertionMethod` array; if not, return `key_not_authorized` (HTTP 403).
@@ -172,7 +172,8 @@ All errors use the envelope defined in RFC-ACDP-0007 §4 with codes from the reg
 |---|---|---|
 | Body fails schema validation | `schema_violation` | 400 |
 | Signature failed verification | `invalid_signature` | 400 |
-| Recomputed hash ≠ `content_hash` | `hash_mismatch` | 400 |
+| Recomputed body hash ≠ `content_hash` | `hash_mismatch` | 400 |
+| Embedded `data_ref.content_hash` ≠ decoded bytes | `data_ref_hash_mismatch` | 400 |
 | Algorithm not supported | `unsupported_algorithm` | 400 |
 | Key resolution failed (permanent) | `key_resolution_failed` | 400 |
 | Key resolution unreachable (transient) | `key_resolution_unreachable` | 502 |
@@ -304,7 +305,7 @@ Reproduced here in step-only form for cross-checking (full normative text in §2
 
 1. Schema validation (`schema_violation`).
 2. Payload size (`payload_too_large`).
-3. Embedded validation: decoded size ≤ 65536 (`embedded_too_large`); recompute optional `embedded.content_hash` (`hash_mismatch`).
+3. Embedded validation: decoded size ≤ 65536 (`embedded_too_large`); recompute optional `embedded.content_hash` (`data_ref_hash_mismatch`).
 4. ProducerContent hash recomputation against `content_hash` (`hash_mismatch`).
 5. Algorithm check against `supported_signature_algorithms` (`unsupported_algorithm`).
 6. Key-id ↔ agent_id binding (`key_not_authorized`); DID document resolution (`key_resolution_failed` permanent / `key_resolution_unreachable` transient); `assertionMethod` authorization (`key_not_authorized`).

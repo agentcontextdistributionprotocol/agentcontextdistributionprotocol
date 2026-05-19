@@ -135,13 +135,31 @@ Content-Type: application/acdp+json
 GET /lineages/{lineage_id}/current
 ```
 
-Returns the current non-superseded version of a lineage. If no such version exists (every version superseded — unusual), returns `not_found` (HTTP 404).
+Returns the current non-superseded version of a lineage. The current version is the version `v` in the lineage such that no other version in the lineage has `supersedes = v.ctx_id`.
 
-The current version is the unique version `v` in the lineage such that no other version in the lineage has `supersedes = v.ctx_id`.
+**Current semantics (NORMATIVE).**
+
+- `GET /lineages/{lineage_id}/current` returns the newest version that has **not been superseded** by another version in the same lineage.
+- A version with `status: expired` (i.e. `expires_at` has passed but no successor has been published) **IS a valid current head** — being expired does not make a version superseded. The response MUST carry `registry_state.status: expired` so the consumer knows the context is past its intended validity window. Consumers MUST NOT assume `current` implies `active`.
+- A version with `status: superseded` is **NEVER** the current head; it has been explicitly replaced. A registry MUST NOT return a superseded version from this endpoint as a fallback.
+- If **every** version in the lineage is `status: superseded` — an abnormal registry state reachable only through admin correction or data corruption — the endpoint MUST return `not_found` (HTTP 404). Registries SHOULD prevent this state via the supersession constraints of RFC-ACDP-0003 §3.1 (every supersession adds exactly one new non-superseded head).
+- Visibility filtering applies: see §5.4. If the current head exists but the requester is not authorized to retrieve it, the endpoint MUST behave as specified in §5.4 (return the newest authorized non-superseded version, or `not_found`).
+
+In short: **current = newest non-superseded version; `expired` counts as non-superseded, `superseded` never does.** This endpoint is exercised by the `ret-002` conformance fixture (all-superseded, expired-head, and active-head scenarios).
 
 ### 5.3 Lineage scoping
 
 `GET /lineages/{lineage_id}` is scoped to the registry serving the request — it returns only versions persisted on that registry. Because cross-registry supersession is forbidden in v0.0.1 (RFC-ACDP-0003 §3.1 step 2), every v0.0.1 lineage is wholly contained within one registry; per-registry scoping returns the complete lineage. Cross-registry lineage observability is reserved for RFC-ACDP-0009 §2.8.
+
+### 5.4 Lineage endpoint visibility (NORMATIVE)
+
+Each context version in a lineage carries its own `visibility` and `audience` (RFC-ACDP-0002 §7); versions in the same lineage MAY differ (a producer can narrow the audience in a successor — §7.1). Both lineage endpoints MUST therefore apply the **same per-context visibility rules as `GET /contexts/{ctx_id}`** (§2.3) to **every** version they would otherwise return. Knowing a `lineage_id` MUST NOT grant access to bodies that `ctx_id`-level access control would deny.
+
+- **`GET /lineages/{lineage_id}`** MUST return only the versions the requester is authorized to retrieve. Any version that would return `not_found` via `GET /contexts/{ctx_id}` (a `restricted` or `private` context the requester is not in the effective audience for — §2.3) MUST be omitted from the array. The result is the visible subsequence ordered by `version` ascending; omitted versions leave gaps in the `version` sequence, and that is expected — consumers MUST NOT treat a gap as an error. If the lineage exists but the requester is authorized to see zero versions, the response MUST be an empty array `[]` (HTTP 200), not `not_found` — *except* that a registry which does not advertise `anonymous_public_reads` MUST still reject an unauthenticated requester with `not_authorized` (HTTP 403) per RFC-ACDP-0008 §6.3, the same as any other endpoint.
+
+- **`GET /lineages/{lineage_id}/current`** MUST return the newest non-superseded version (per §5.2) **that the requester is authorized to retrieve**. If the true current head is not visible to the requester, the registry MUST NOT fall back to an older version the requester also cannot see; it returns the newest non-superseded version the requester *is* authorized to retrieve, or `not_found` (HTTP 404) if no such version exists. A registry MUST NOT distinguish "lineage does not exist" from "lineage exists but you may see none of it" on this endpoint — both return `not_found`.
+
+Rationale: lineage endpoints are a convenience projection over per-context retrieval. They MUST NOT widen the effective audience of any context. This is the same existence-leak-prevention principle as §2.3 and RFC-ACDP-0008 §4.5. The `vis-008` conformance fixture pins these behaviors.
 
 ---
 

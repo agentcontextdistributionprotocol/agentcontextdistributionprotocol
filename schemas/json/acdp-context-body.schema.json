@@ -55,9 +55,8 @@
       "description": "DIDs of agents that contributed but did not sign. May be empty."
     },
     "origin_registry": {
-      "type": "string",
-      "format": "hostname",
-      "description": "DNS hostname of the registry that originally accepted this context."
+      "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/hostname",
+      "description": "DNS hostname of the registry that originally accepted this context (e.g. registry.example.com). MUST be a bare hostname matching the authority component of ctx_id — NOT a DID URI. Storing did:web:<authority> here is a conformance violation (RFC-ACDP-0002 §3.1)."
     },
     "created_at": {
       "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/rfc3339_timestamp",

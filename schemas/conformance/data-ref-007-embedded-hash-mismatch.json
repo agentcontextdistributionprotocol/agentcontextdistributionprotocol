@@ -1,6 +1,6 @@
 {
   "id": "data-ref-007",
-  "description": "DataRef.embedded.content_hash is present but does not match the SHA-256 of the decoded bytes for the declared encoding. Registry MUST reject with hash_mismatch. Decoding rules per RFC-ACDP-0002 §6.3: base64 → decoded bytes; utf8 → UTF-8 bytes; json → JCS canonical bytes.",
+  "description": "DataRef.embedded.content_hash is present but does not match the SHA-256 of the decoded bytes for the declared encoding. Registry MUST reject with data_ref_hash_mismatch (NOT hash_mismatch, which is the body-level ProducerContent code; NOT invalid_signature). This is a DataRef-level integrity failure — the body's own content_hash and signature remain valid. See RFC-ACDP-0007 §5 'Distinguishing hash failures'. Decoding rules per RFC-ACDP-0002 §6.3: base64 → decoded bytes; utf8 → UTF-8 bytes; json → JCS canonical bytes.",
   "tags": ["failure", "publish", "data-refs", "integrity"],
   "input": {
     "endpoint": "POST /contexts",
@@ -17,7 +17,7 @@
   "expected": {
     "outcome": "failure",
     "http_status": 400,
-    "error_code": "hash_mismatch",
+    "error_code": "data_ref_hash_mismatch",
     "checklist_step": 8
   }
 }

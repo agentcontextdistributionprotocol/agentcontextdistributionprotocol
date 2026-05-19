@@ -200,7 +200,8 @@ The full registry is maintained in [`registries/error-codes.md`](../registries/e
 | Code | HTTP | Meaning | Source |
 |---|---|---|---|
 | `invalid_signature` | 400 | Signature verification failed. | RFC-ACDP-0001 §5.8, RFC-ACDP-0003 §2.1 |
-| `hash_mismatch` | 400 | `content_hash` does not match the canonicalized body. | RFC-ACDP-0001 §5.7, RFC-ACDP-0003 §2.1 |
+| `hash_mismatch` | 400 | The body's `content_hash` (over ProducerContent) does not match the canonicalized body. | RFC-ACDP-0001 §5.7, RFC-ACDP-0003 §2.1 |
+| `data_ref_hash_mismatch` | 400 | A DataRef's bytes do not match the producer-declared `data_ref.content_hash`. Returned by a registry at publish time when an embedded `data_ref.content_hash` does not match the decoded `embedded.content` (RFC-ACDP-0002 §6.6 Check 8). Also the code a consumer SHOULD surface when it fetches an external `data_ref.location` and the retrieved bytes do not match `data_ref.content_hash` (RFC-ACDP-0002 §6.5). The body's own `content_hash` and signature are still valid — the integrity failure is at the data-reference level, not the body level. | RFC-ACDP-0002 §6.5, §6.6 |
 | `schema_violation` | 400 | Request body or query failed structural validation. | RFC-ACDP-0003 §2.1 |
 | `not_authorized` | 403 | Agent lacks permission for the operation. Returned for supersession by a different `agent_id`, and for unauthenticated reads on a registry that does not advertise `anonymous_public_reads`. | RFC-ACDP-0003 §3.1, RFC-ACDP-0008 §6.3 |
 | `not_found` | 404 | Resource not found. (Also returned for visibility-restricted contexts to non-audience requesters; see RFC-ACDP-0008 §4.5.) | RFC-ACDP-0004 §7 |
@@ -220,6 +221,14 @@ The full registry is maintained in [`registries/error-codes.md`](../registries/e
 | `internal_error` | 500 | The registry encountered an unexpected internal condition. The standard error envelope MUST be used; `error.message` MUST NOT leak stack traces or sensitive context. Retryable. | RFC-ACDP-0007 §4 |
 
 > **Reserved codes (not in this table or the v0.0.1 wire enum):** `immutable_field` is reserved for v0.1+ mutation endpoints (retraction, attestation updates — see RFC-ACDP-0009 §2.1). `unsupported_embedding_model` is reserved for v0.1+ similarity endpoints (see RFC-ACDP-0009 §2.9). Implementations MUST NOT emit either in v0.0.1 responses.
+
+**Distinguishing hash failures.** Three failure codes can arise from integrity checks; implementations MUST keep them distinct so consumers can react correctly:
+
+- `hash_mismatch` — the body's ProducerContent hash, recomputed by the registry or consumer, does not match `body.content_hash`. The body's signed content cannot be verified; the **body is untrusted**.
+- `data_ref_hash_mismatch` — a DataRef's fetched (external) or decoded (embedded) bytes do not match the producer-declared `data_ref.content_hash`. The **body itself is cryptographically valid**; only the referenced data has diverged from what the producer signed. Returning `hash_mismatch` here would wrongly imply the whole body failed verification; returning `invalid_signature` would wrongly imply a signature-verification failure.
+- `invalid_signature` — `signature.value` does not verify against the resolved public key. The body's authorship cannot be established.
+
+A registry emits `data_ref_hash_mismatch` only at publish time, for embedded data (`embedded.content_hash` mismatch — RFC-ACDP-0002 §6.6 Check 8). For external `data_refs[].location`, hash verification happens consumer-side after fetch (RFC-ACDP-0002 §6.5); a consumer SHOULD surface the mismatch with the same `data_ref_hash_mismatch` semantic in its own diagnostics, logs, or API surface.
 
 ### 5.1 Adding a code
 
