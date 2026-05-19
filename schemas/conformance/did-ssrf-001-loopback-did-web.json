@@ -1,0 +1,34 @@
+{
+  "id": "did-ssrf-001",
+  "description": "Producer DID resolution is an SSRF vector identical to cross-registry resolution. A registry verifying a publish request (RFC-ACDP-0003 §2.1 step 6), and a consumer verifying a retrieved context end-to-end, both dereference the producer-controlled did:web identifier into an HTTPS URL. A did:web authority resolving to a loopback address (127.0.0.0/8, ::1, or the unspecified address 0.0.0.0) MUST be refused by default — see RFC-ACDP-0008 §4.8. A WebResolver that has no IP-range restriction can be turned into an SSRF proxy against the registry's own process-internal listeners.",
+  "tags": ["security", "ssrf", "did-resolution", "loopback"],
+  "ssrf_rule": "RFC-ACDP-0008 §4.8 (Producer DID resolution SSRF protection — loopback)",
+  "applies_to_profiles": ["acdp-registry-core", "acdp-consumer"],
+  "input": {
+    "scenario": "A publish request whose body.agent_id is a did:web identifier resolving to a loopback address",
+    "endpoint": "POST /contexts",
+    "body": {
+      "agent_id": "did:web:127.0.0.1",
+      "signature": {
+        "algorithm": "ed25519",
+        "key_id": "did:web:127.0.0.1#key-1",
+        "value": "AAAA"
+      }
+    },
+    "resolved_did_url": "https://127.0.0.1/.well-known/did.json",
+    "dns_resolution_results": ["127.0.0.1"],
+    "additional_test_cases": [
+      "did:web:127.0.0.5",
+      "did:web:%5B%3A%3A1%5D",
+      "did:web:0.0.0.0"
+    ]
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 400,
+    "error_code": "key_resolution_failed",
+    "behavior": "The resolver MUST refuse before connecting. Both IPv4 (127.0.0.0/8) and IPv6 (::1) loopback MUST be filtered, and 0.0.0.0 MUST also be rejected. The refusal is permanent, policy-driven, and producer-caused — key_resolution_failed (HTTP 400, not retryable), NOT key_resolution_unreachable (HTTP 502, retryable).",
+    "test_mode_exception": "A test harness MAY permit loopback did:web targets ONLY when an explicit non-default test-mode SSRF policy is configured. This MUST NOT be the default.",
+    "rationale": "Loopback resolution targets the registry's own host, exposing process-internal HTTP listeners (admin APIs, metrics, debug endpoints) normally bound only to 127.0.0.1."
+  }
+}

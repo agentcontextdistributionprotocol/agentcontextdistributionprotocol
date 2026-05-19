@@ -2,8 +2,8 @@
 # Agent Context Description Protocol (ACDP) — Publish & Supersession
 
 **Document:** RFC-ACDP-0003
-**Version:** 0.1.0-rc1
-**Status:** Community Standards Track (Release Candidate 1)
+**Version:** 0.1.0
+**Status:** Community Standards Track (Final)
 
 This RFC specifies how producers publish contexts to ACDP registries and how registries handle supersession. It depends on RFC-ACDP-0001 (Core) and RFC-ACDP-0002 (Context Body).
 
@@ -11,7 +11,7 @@ This RFC specifies how producers publish contexts to ACDP registries and how reg
 
 ## 1. Status of This Memo
 
-This document is a Release Candidate (acdp/0.1.0-rc1). Backward-incompatible changes remain possible until Final; only editorial fixes are expected during the RC window.
+This document is a Final ACDP specification (acdp/0.1.0). It is stable for the 0.1.0 release; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
 
 ---
 

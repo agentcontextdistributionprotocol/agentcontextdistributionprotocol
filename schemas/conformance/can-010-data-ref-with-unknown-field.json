@@ -1,0 +1,37 @@
+{
+  "id": "can-010",
+  "description": "Forward-compatibility hash verification for DataRef openness. A future-version producer adds an unknown producer-controlled field ('future_field' here, illustrative) at the root of a DataRef inside body.data_refs[]. Because each DataRef is part of ProducerContent (the content_hash preimage, RFC-ACDP-0001 §5.7), the unknown field is covered by the producer signature. A v0.1.0 consumer that recomputes content_hash from the raw received JSON — preserving all unknown DataRef fields — produces the same hash the producer signed. This fixture pins the canonical form and SHA-256 so v0.1.0 consumers can verify their DataRef deserialization path is forward-compatible. A consumer that drops 'future_field' before hashing (typical typed-struct deserialization of data_refs[] without a catch-all) would compute a different hash and falsely raise hash_mismatch — see RFC-ACDP-0002 §6.7 'DataRef Schema Openness' and RFC-ACDP-0001 §5.7 'Hash verification over raw JSON'.",
+  "tags": ["canonicalization", "hashing", "forward-compatibility", "raw-json", "data-ref"],
+  "vectors": [
+    {
+      "name": "Body whose data_ref carries an unknown producer-controlled field 'future_field' — included in hash",
+      "input": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:agent:test",
+        "contributors": [],
+        "title": "Forward-compat unknown data_ref field",
+        "type": "data_snapshot",
+        "data_refs": [
+          {
+            "type": "raw_data",
+            "location": "https://data.example.com/file.csv",
+            "future_field": "producer-signed-value"
+          }
+        ],
+        "derived_from": [],
+        "visibility": "public"
+      },
+      "expected": {
+        "canonical_form": "{\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_refs\":[{\"future_field\":\"producer-signed-value\",\"location\":\"https://data.example.com/file.csv\",\"type\":\"raw_data\"}],\"derived_from\":[],\"supersedes\":null,\"title\":\"Forward-compat unknown data_ref field\",\"type\":\"data_snapshot\",\"version\":1,\"visibility\":\"public\"}",
+        "sha256_hex": "27a9a58ecede233691f41570769229416189e9694a80415997385018fce59e0a",
+        "content_hash_field_value": "sha256:27a9a58ecede233691f41570769229416189e9694a80415997385018fce59e0a",
+        "content_hash_includes": "future_field"
+      },
+      "consumer_behavior": "REQUIRED. When a v0.1.0 consumer encounters this body shape, it MUST recompute content_hash over the raw parsed JSON (with the body-level exclusion set fields removed by name). The unknown 'future_field' inside data_refs[0] MUST appear in the canonical input. JCS sorts the DataRef object keys to future_field, location, type. The recomputed hash MUST equal the value above; only then does the consumer verify the signature.",
+      "non_conformant_behavior": "A consumer that deserializes data_refs[] into a typed DataRef struct without an unknown-field catch-all will lose 'future_field' before hashing, compute sha256 over a 2-key DataRef object instead of the 3-key one above, and raise a false hash_mismatch. DataRef is an OPEN schema (additionalProperties: true) precisely to forbid this silent break — see RFC-ACDP-0002 §6.7."
+    }
+  ],
+  "applies_to_profiles": ["acdp-registry-core", "acdp-consumer"],
+  "notes": "Pairs with can-008 (unknown field at the body root) and can-009 (exclusion-set membership is by name). can-010 is the DataRef-nested analogue: openness extends one level down into data_refs[]. The nested `embedded` sub-object is, by contrast, CLOSED — see schema-003."
+}

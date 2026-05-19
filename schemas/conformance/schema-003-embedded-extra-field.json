@@ -22,6 +22,6 @@
     "registry_outcome": "reject",
     "status": 400,
     "error_code": "schema_violation",
-    "rationale": "The embedded object is a tightly-scoped wire shape: encoding and content. New embedding semantics (different encodings, attached metadata) require an explicit schema bump, not field-level extensibility. Note: the SURROUNDING DataRef object is open by default (no additionalProperties on the data-ref top level); this fixture targets the embedded sub-object specifically."
+    "rationale": "The embedded object is a tightly-scoped wire shape: encoding and content. New embedding semantics (different encodings, attached metadata) require an explicit schema bump, not field-level extensibility. Note: the SURROUNDING DataRef root object is an OPEN schema (additionalProperties: true — see RFC-ACDP-0002 §6.7 and fixture can-010); this fixture targets the closed `embedded` sub-object specifically."
   }
 }

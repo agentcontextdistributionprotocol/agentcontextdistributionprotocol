@@ -1,0 +1,21 @@
+{
+  "id": "schema-005",
+  "description": "GET /contexts/search response whose 'next_cursor' is JSON null. The search-response schema types 'next_cursor' as a bare string (\"type\": \"string\" in acdp-search-response.schema.json), NOT as \"type\": [\"string\", \"null\"]. Absent optional fields MUST be omitted, never serialized as null (RFC-ACDP-0005 §2.2.1, absent-vs-null wire convention). A strict receiver MUST reject 'next_cursor: null' as schema_violation rather than coercing null to 'absent'.",
+  "tags": ["schema-openness", "negative", "search-response", "absent-vs-null"],
+  "input": {
+    "endpoint": "GET /contexts/search?q=test",
+    "response_status": 200,
+    "response_body": {
+      "matches": [],
+      "total_estimate": 0,
+      "next_cursor": null
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "consumer_outcome": "reject",
+    "consumer_error": "schema_violation",
+    "error_code": "schema_violation",
+    "rationale": "next_cursor is typed as a bare string. null is not a valid wire value for a non-nullable field; the only conformant way to express 'no next page' is to omit the key entirely. Coercing null to absent would force every receiver to special-case the coercion and would diverge from the canonical wire form. Contrast supersedes, whose schema type is string|null (RFC-ACDP-0002 §3.1) and which is therefore legitimately nullable."
+  }
+}

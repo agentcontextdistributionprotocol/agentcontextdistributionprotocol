@@ -1,0 +1,27 @@
+{
+  "id": "data-ref-008",
+  "description": "A consumer retrieves a context, verifies the body end-to-end (content_hash recomputes correctly AND the producer signature verifies), then fetches an external data_ref.location. The fetched bytes do NOT match the producer-declared data_ref.content_hash. This is a DataRef-level integrity failure at the data layer — the body itself remains cryptographically valid. The SDK SHOULD surface data_ref_hash_mismatch, NOT invalid_signature (which would wrongly imply a signature failure) and NOT hash_mismatch (which would wrongly imply the whole body is unverifiable). See RFC-ACDP-0007 §5 'Distinguishing hash failures' and §5.3 'SDK guidance'. This is the external/consumer-side counterpart to data-ref-007 (embedded/registry-side).",
+  "tags": ["failure", "consumer", "data-refs", "integrity"],
+  "input": {
+    "scenario": "Consumer-side verification after fetching an external data_ref.location",
+    "verified_body": "The retrieved context body verifies fully: recomputed content_hash equals body.content_hash, and body.signature verifies against the producer's resolved public key.",
+    "data_ref_under_test": {
+      "type": "raw_data",
+      "location": "https://data.example.com/sentiment-2026-q1.csv",
+      "format": "csv",
+      "content_hash": "sha256:b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
+      "_declared_hash_note": "The producer signed a body that declares this content_hash for the referenced CSV.",
+      "_fetched_bytes_actual_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "_fetched_bytes_note": "The bytes actually served at the location now hash to a different value — the upstream data store mutated the object after publication."
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "error_code": "data_ref_hash_mismatch",
+    "body_signature_still_valid": true,
+    "body_content_hash_still_valid": true,
+    "must_not_report": ["invalid_signature", "hash_mismatch"],
+    "rationale": "The producer signed the hash of the data they intended to reference; the data at that location has since changed. The integrity failure is at the data-reference layer, not the body layer. An SDK verification result SHOULD expose the body-level verdict (valid) and the data-ref-level verdict (data_ref_hash_mismatch) as separate fields so the application can still trust the body's metadata and derived_from lineage while treating this one DataRef as unusable.",
+    "consumer_behavior": "SHOULD. Consumers fetching data_refs[].location MUST treat the result as untrusted until verified against data_ref.content_hash (RFC-ACDP-0002 §6.5). On mismatch the consumer SHOULD surface the data_ref_hash_mismatch semantic in its diagnostics, logs, or API surface."
+  }
+}

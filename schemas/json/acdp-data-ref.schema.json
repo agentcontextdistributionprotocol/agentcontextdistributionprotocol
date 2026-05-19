@@ -102,5 +102,7 @@
       "required": ["embedded"],
       "not": { "required": ["location"] }
     }
-  ]
+  ],
+  "additionalProperties": true,
+  "$comment": "DataRef is an OPEN schema (additionalProperties: true). Root-level DataRef fields not defined in this RFC are producer-controlled and are included in ProducerContent (the content_hash preimage, RFC-ACDP-0001 §5.7) because each DataRef lives inside body.data_refs[]. Future ACDP minor versions MAY add producer-signed DataRef fields. Consumers MUST preserve unknown DataRef fields when recomputing content_hash; an implementation using typed structs MUST use an extension map (e.g. #[serde(flatten)] extensions) to avoid silently dropping fields the producer signed. The nested `embedded` sub-object is, by contrast, CLOSED. See RFC-ACDP-0002 §6.7 and the schema-openness map in RFC-ACDP-0007 §3.3.1."
 }

@@ -1,0 +1,39 @@
+{
+  "id": "lin-001",
+  "description": "Golden vectors for lineage_id derivation. lineage_id = 'lin:sha256:' + lowercase_hex(SHA-256(utf8(first_version_ctx_id))). The hash input is the UTF-8 bytes of the FULL acdp:// URI string, including the 'acdp://' prefix and the authority. Implementations MUST reproduce these outputs exactly; failure is non-conformance with RFC-ACDP-0001 §5.6. The bundled conformance runner (scripts/conformance-runner.py) executes lin-* fixtures with the same lineage-derivation check it applies to can-* fixtures.",
+  "tags": ["happy-path", "lineage", "hashing", "golden"],
+  "vectors": [
+    {
+      "name": "Lineage derivation — primary golden vector",
+      "input": {
+        "ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234"
+      },
+      "expected": {
+        "lineage_id": "lin:sha256:c7fef01c000f8edaa9cb46122ceb5d7bca38328f002fb0f40e362e3b289bbb2a"
+      },
+      "notes": "SHA-256 over the UTF-8 bytes of the full acdp:// URI string. This is the same ctx_id used by sig-001's registry_assigned block and can-001 lineage vector 2 — the three MUST agree."
+    },
+    {
+      "name": "Lineage derivation — short authority",
+      "input": {
+        "ctx_id": "acdp://reg.example/00000000-0000-4000-8000-000000000001"
+      },
+      "expected": {
+        "lineage_id": "lin:sha256:766b44a63adb664a46a205e19e9f9c19e0ba60512f402b0d97f5211cc7e3e878"
+      },
+      "notes": "Cross-checks can-001 lineage vector 1."
+    },
+    {
+      "name": "Lineage derivation — multi-label authority",
+      "input": {
+        "ctx_id": "acdp://other.registry.io/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
+      },
+      "expected": {
+        "lineage_id": "lin:sha256:d534b03c95757c75c512aff8c3e4616040ee97293fbb066fd511e04ba0443f58"
+      },
+      "notes": "Cross-checks can-001 lineage vector 3. A different authority produces a different lineage_id even though the UUID structure is similar — the authority is part of the hash input."
+    }
+  ],
+  "applies_to_profiles": ["acdp-registry-core", "acdp-consumer"],
+  "notes": "lineage_id derivation also appears inside can-001 (alongside JCS vectors) and is re-checked from sig-001's registry_assigned block. lin-001 is the dedicated, standalone golden-vector fixture for the derivation so the conformance manifest can reference it by a stable id. Registries MUST apply the same formula when walking back through supersedes to the first version (RFC-ACDP-0001 §5.6)."
+}

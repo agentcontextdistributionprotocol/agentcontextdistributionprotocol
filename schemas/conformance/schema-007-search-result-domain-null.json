@@ -1,0 +1,31 @@
+{
+  "id": "schema-007",
+  "description": "A match_summary inside a GET /contexts/search response whose optional 'domain' field is JSON null. match_summary types 'domain' as a bare string (\"type\": \"string\" in acdp-common.schema.json#/$defs/match_summary), NOT as \"type\": [\"string\", \"null\"]. An absent domain MUST be omitted, never serialized as null (RFC-ACDP-0005 §2.2.1). A strict receiver MUST reject 'domain: null' as schema_violation.",
+  "tags": ["schema-openness", "negative", "search-response", "match-summary", "absent-vs-null"],
+  "input": {
+    "endpoint": "GET /contexts/search?q=test",
+    "response_status": 200,
+    "response_body": {
+      "matches": [
+        {
+          "ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234",
+          "lineage_id": "lin:sha256:c7fef01c000f8edaa9cb46122ceb5d7bca38328f002fb0f40e362e3b289bbb2a",
+          "agent_id": "did:web:agents.example.com:market-data-collector",
+          "title": "BTC Price Snapshot",
+          "type": "data_snapshot",
+          "created_at": "2026-04-16T10:15:00.000Z",
+          "status": "active",
+          "domain": null
+        }
+      ],
+      "total_estimate": 1
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "consumer_outcome": "reject",
+    "consumer_error": "schema_violation",
+    "error_code": "schema_violation",
+    "rationale": "domain is an optional, non-nullable string. A context with no domain MUST be serialized with the domain key omitted, not with domain set to null. The same absent-vs-null rule applies uniformly to every optional bare-string field in every ACDP wire type."
+  }
+}

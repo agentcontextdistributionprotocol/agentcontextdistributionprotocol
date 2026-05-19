@@ -2,8 +2,8 @@
 # Agent Context Description Protocol (ACDP) — Core
 
 **Document:** RFC-ACDP-0001
-**Version:** 0.1.0-rc1
-**Status:** Community Standards Track (Release Candidate 1)
+**Version:** 0.1.0
+**Status:** Community Standards Track (Final)
 **Canonical wire format:** JSON over HTTP
 **Required JSON canonicalization:** [RFC 8785 — JSON Canonicalization Scheme (JCS)](https://datatracker.ietf.org/doc/html/rfc8785)
 **Intended status:** Stable Core
@@ -28,9 +28,9 @@ ACDP Core does not define discovery semantics, registry policy, retraction rules
 
 ## 1. Status of This Memo
 
-This document is a Release Candidate (acdp/0.1.0-rc1). Backward-incompatible changes remain possible until Final; only editorial fixes are expected during the RC window.
+This document is a Final ACDP specification (acdp/0.1.0). It is stable for the 0.1.0 release; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
 
-This is the **first published version** of ACDP. The numbering scheme treats `acdp/0.1.0` as the inaugural release.
+ACDP `0.1.0` is the **first published Final version** of the protocol; the numbering scheme treats `acdp/0.1.0` as the inaugural release. The `0.0.1` identifier was used only for internal pre-release drafts and was never promoted to a Release Candidate or Final status. `0.1.0` is wire-compatible with those drafts — the body format, JCS canonicalization, content-hash, and signature semantics are unchanged.
 
 ---
 
@@ -197,6 +197,8 @@ For first versions, the registry computes `lineage_id` from the `ctx_id` it just
 A producer publishing a first version (`supersedes: null`) MUST NOT include `lineage_id` in the publish request — the producer cannot know the registry-assigned `ctx_id` at signing time, so any supplied value would be a guess. Registries MUST reject first-version requests containing `lineage_id` with `schema_violation` (RFC-ACDP-0003 §2.2).
 
 A producer publishing a subsequent version (`supersedes != null`) MAY include `lineage_id` for self-verification. If supplied, the registry MUST verify it matches the deterministically-derived value and MUST reject mismatches with `superseded_target` (`details.reason = "lineage_mismatch"`, RFC-ACDP-0003 §3.1 step 4).
+
+The `lin-001` conformance fixture is the dedicated golden-vector set for this derivation; `can-001` additionally cross-checks the same vectors alongside the JCS canonicalization vectors, and `sig-001` re-derives the lineage from its registry-assigned `ctx_id`. All three MUST agree byte-for-byte. The bundled conformance runner (`scripts/conformance-runner.py`) executes `lin-*` and `can-*` lineage vectors directly.
 
 #### 5.6.1 Lineage walk failure
 
@@ -417,6 +419,10 @@ ACDP uses a layered compatibility model:
 - **Body protocol version** is advertised optionally inside each body as `body.acdp_version`. The body field is producer-signed and bound to the body's `content_hash`. An absent `body.acdp_version` MUST be treated as `0.1.0`, the inaugural release. Producers SHOULD set the field explicitly so verifiers can unambiguously apply the correct exclusion set (§5.7) and algorithm vocabulary for the body's declared version, especially as future versions evolve them.
 - **Body extensibility** is forward-compatible only via additive fields. Breaking body changes require a new protocol version, signaled by `body.acdp_version`.
 - **Registry-state extensibility** is open: future versions add fields (lifecycle events, relationships, attestations); consumers MUST tolerate unknown fields in registry state. Schema enums for known fields (e.g. `status`) use open string patterns so unknown values do not fail validation.
+
+**`acdp_version` and the content hash (NORMATIVE).** Producers SHOULD include `acdp_version: "0.1.0"` explicitly in every published body, even though the protocol treats its absence as equivalent to `0.1.0`. Explicit inclusion aids debugging, log analysis, and future version negotiation, and removes any ambiguity about which exclusion set (§5.7) and algorithm vocabulary a verifier should apply.
+
+Consumers, verifiers, and registries MUST NOT inject a default `acdp_version` value into a body before recomputing `content_hash`. The hash is computed over the body exactly as received (§5.7, "Hash verification over raw JSON"); adding a synthetic `acdp_version` field — or any other field — before hashing produces a different hash from the one the producer signed and raises a false `hash_mismatch`. A body that omits `acdp_version` MUST be hashed without it; a body that includes it MUST be hashed with it. The default-to-`0.1.0` rule above governs the *interpretation* of an absent field, never a *mutation* of the body: absence is read as `0.1.0`, but the absent field is never materialized.
 
 Major protocol version mismatches are not compatible. Minor versions are expected to be backward compatible. Consumers receiving an unknown `acdp_version` (in capabilities or in a body) SHOULD treat it as a higher version and degrade gracefully, using only operations defined in the version they understand.
 

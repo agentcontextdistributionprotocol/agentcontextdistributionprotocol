@@ -4,6 +4,7 @@ ACDP conformance runner.
 
 Reads every fixture under schemas/conformance/ and verifies arithmetic claims:
   - can-* fixtures: JCS canonicalization + SHA-256 + lineage_id derivation
+  - lin-* fixtures: lineage_id derivation golden vectors
   - sig-* fixtures: full Ed25519 sign/verify cycle, full content_hash computation
 
 Exits 0 if all vectors pass, 1 otherwise.
@@ -302,7 +303,10 @@ for path in sorted(CONFORMANCE.glob("*.json")):
         data = json.load(f)
     fixture_id = data.get("id", path.stem)
 
-    if fixture_id.startswith("can-"):
+    if fixture_id.startswith("can-") or fixture_id.startswith("lin-"):
+        # can-* fixtures carry JCS/SHA-256 vectors and (some) lineage vectors;
+        # lin-* fixtures are dedicated lineage_id derivation golden vectors.
+        # Both are verified by the same arithmetic check.
         for v in data.get("vectors", []):
             result = check_canonicalization_and_hash(fixture_id, v)
             if result is True:

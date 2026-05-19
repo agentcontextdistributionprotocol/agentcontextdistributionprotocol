@@ -2,8 +2,8 @@
 # Agent Context Description Protocol (ACDP) — Discovery
 
 **Document:** RFC-ACDP-0005
-**Version:** 0.1.0-rc1
-**Status:** Community Standards Track (Release Candidate 1)
+**Version:** 0.1.0
+**Status:** Community Standards Track (Final)
 
 This RFC specifies how consumers discover contexts on an ACDP registry. ACDP v0.1.0 defines one discovery modality: keyword search. Semantic similarity and push subscriptions are reserved for a future version (RFC-ACDP-0009 §2.4, §2.9).
 
@@ -11,7 +11,7 @@ This RFC specifies how consumers discover contexts on an ACDP registry. ACDP v0.
 
 ## 1. Status of This Memo
 
-This document is a Release Candidate (acdp/0.1.0-rc1). Backward-incompatible changes remain possible until Final; only editorial fixes are expected during the RC window.
+This document is a Final ACDP specification (acdp/0.1.0). It is stable for the 0.1.0 release; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
 
 ---
 
@@ -81,6 +81,19 @@ Each match contains a summary projection (`ctx_id`, `lineage_id`, `agent_id`, `t
 - For matches with `visibility: public`, registries SHOULD include `visibility: public` in the `match_summary`. Including this field gives consumers a cache-classification signal without an additional retrieval round-trip.
 - For matches with `visibility: restricted` or `visibility: private`, registries MUST include `visibility` ONLY when the requester is already authorized to retrieve the context (i.e., the effective requester DID is in `audience` for `restricted`, or is `agent_id` for either `restricted` or `private`). Including the field for any other requester leaks the visibility class to a non-authorized party even when the match itself is correctly scoped — a violation of the existence-leak prevention rule in RFC-ACDP-0008 §3.5.
 - When the field is absent, consumers MUST NOT infer anything about visibility — absence is the registry's choice. v0.1.0 deployments predating this clarification are conformant without the field. Consumers MUST NOT treat `visibility`-absent as a signal of any specific visibility class.
+
+#### 2.2.1 Absent vs null (wire convention, NORMATIVE)
+
+This rule governs every ACDP wire type — search responses, `match_summary`, bodies, capabilities, and error envelopes — but is stated here because the search response is where the distinction is most often mishandled.
+
+**All optional fields in ACDP wire types MUST be omitted when not present.** Implementations MUST NOT serialize an absent optional field as JSON `null`. A field is nullable on the wire **only** when its schema explicitly permits `null` — either via `"type": ["string", "null"]` or a `oneOf`/`anyOf` branch that includes `null`.
+
+- The ACDP schemas declare optional string fields as `"type": "string"` (for example `next_cursor` in `acdp-search-response.schema.json`, and `summary` and `domain` in `match_summary`). For these fields, `null` is **not** a valid wire value: a strict receiver MUST reject `next_cursor: null`, `summary: null`, or `domain: null` as `schema_violation` rather than silently coercing `null` to "absent".
+- `supersedes` is the canonical example of an **explicitly permitted** null: its schema type is `string | null` (RFC-ACDP-0002 §3.1), and `supersedes: null` is the required wire form for a first version. The difference is the schema, not convention — a receiver tells the two cases apart by consulting the field's declared type, never by guessing.
+
+The rationale is forward-compatibility and hash stability. JCS canonicalization treats an absent key and a `"key": null` entry as distinct (RFC-ACDP-0001 §5.2, fixture `can-001` "empty / null distinction"): they produce different canonical bytes and therefore different `content_hash` values. A producer or registry that emits `null` for a field the schema types as a bare string forces every receiver to special-case the coercion, and any receiver that does not will compute a divergent hash. Omitting absent fields keeps one unambiguous wire form.
+
+Producers, registries, and SDKs MUST therefore configure their JSON serializers to **skip** absent optional fields rather than emit explicit nulls (e.g. `#[serde(skip_serializing_if = "Option::is_none")]` in Rust, `exclude_none=True` / `model_dump(exclude_none=True)` in pydantic, omitting the key entirely in hand-built objects, `omitempty` in Go for fields where the zero value is unambiguous). Strict receivers MUST treat an unexpected `null` on a non-nullable field as a parse error (`schema_violation`). The `schema-005`, `schema-006`, and `schema-007` conformance fixtures pin this for `next_cursor`, `summary`, and `domain` respectively.
 
 ### 2.3 Pagination
 
