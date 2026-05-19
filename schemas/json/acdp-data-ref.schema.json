@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.acdp.io/v0.0.1/acdp-data-ref.schema.json",
+  "$id": "https://schemas.acdp.io/v0.1.0/acdp-data-ref.schema.json",
   "title": "ACDP Data Reference",
   "description": "A reference to a piece of data the context describes. Each data reference contains exactly one of 'location' (URI string or structured locator) or 'embedded' (inline content).",
 
@@ -32,7 +32,7 @@
       "description": "Producer-specific schema version for this data."
     },
     "content_hash": {
-      "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/content_hash",
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/content_hash",
       "description": "Optional SHA-256 hash for verifying data integrity at fetch time. For embedded data, computed over decoded bytes."
     },
     "location": {

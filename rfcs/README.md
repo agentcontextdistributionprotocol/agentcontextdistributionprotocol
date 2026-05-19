@@ -1,17 +1,17 @@
 # ACDP RFC Index
 
-This directory contains the normative RFCs that define the Agent Context Description Protocol (ACDP). ACDP is a coordination-agnostic substrate for **publishing, discovering, and verifying** units of agent-produced content; v0.0.1 is the first published version.
+This directory contains the normative RFCs that define the Agent Context Description Protocol (ACDP). ACDP is a coordination-agnostic substrate for **publishing, discovering, and verifying** units of agent-produced content; v0.1.0 is the first published version.
 
 | RFC | Title | Status |
 |---|---|---|
-| [RFC-ACDP-0001](RFC-ACDP-0001-core.md) | Core — identifiers, JCS, hashing, signatures | Draft |
-| [RFC-ACDP-0002](RFC-ACDP-0002-context-body.md) | Context Body | Draft |
-| [RFC-ACDP-0003](RFC-ACDP-0003-publish.md) | Publish & Supersession | Draft |
-| [RFC-ACDP-0004](RFC-ACDP-0004-retrieval.md) | Retrieval & Lineage | Draft |
-| [RFC-ACDP-0005](RFC-ACDP-0005-discovery.md) | Discovery (keyword search) | Draft |
-| [RFC-ACDP-0006](RFC-ACDP-0006-cross-registry.md) | Cross-Registry References | Draft |
-| [RFC-ACDP-0007](RFC-ACDP-0007-capabilities.md) | Capabilities & Errors | Draft |
-| [RFC-ACDP-0008](RFC-ACDP-0008-security.md) | Security & Threat Model | Draft |
+| [RFC-ACDP-0001](RFC-ACDP-0001-core.md) | Core — identifiers, JCS, hashing, signatures | Release Candidate 1 |
+| [RFC-ACDP-0002](RFC-ACDP-0002-context-body.md) | Context Body | Release Candidate 1 |
+| [RFC-ACDP-0003](RFC-ACDP-0003-publish.md) | Publish & Supersession | Release Candidate 1 |
+| [RFC-ACDP-0004](RFC-ACDP-0004-retrieval.md) | Retrieval & Lineage | Release Candidate 1 |
+| [RFC-ACDP-0005](RFC-ACDP-0005-discovery.md) | Discovery (keyword search) | Release Candidate 1 |
+| [RFC-ACDP-0006](RFC-ACDP-0006-cross-registry.md) | Cross-Registry References | Release Candidate 1 |
+| [RFC-ACDP-0007](RFC-ACDP-0007-capabilities.md) | Capabilities & Errors | Release Candidate 1 |
+| [RFC-ACDP-0008](RFC-ACDP-0008-security.md) | Security & Threat Model | Release Candidate 1 |
 | [RFC-ACDP-0009](RFC-ACDP-0009-extensions.md) | Extensions (lifecycle, attestations, walks) | Reserved |
 
 ## Reading order

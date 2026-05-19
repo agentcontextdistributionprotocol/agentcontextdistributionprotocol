@@ -2,22 +2,27 @@
 
 ACDP uses a layered versioning model so that the wire format, the canonical schemas, and the published RFCs can evolve at different rates without surprising implementers.
 
-`acdp/0.0.1` is the **first published version**. There is no earlier published version to migrate from. (Internal drafts under the `CXTM`/`CTXM` working title are not considered published versions.)
+`acdp/0.1.0` is the **first published version**. There is no earlier published version to migrate from. (The `0.0.1` identifier was used only by internal pre-release drafts and never reached a Release Candidate or Final status; internal drafts under the `CXTM`/`CTXM` working title are likewise not considered published versions.)
+
+The `0.1.0` line enters the world as a **Release Candidate** (`acdp/0.1.0-rc1`): RFCs 0001–0008 carry the `Release Candidate 1` status while the spec is exercised against implementations. It is promoted to `Final` once the conformance suite passes against interoperating implementations (see the status ladder below).
 
 ## Layers
 
 | Layer | Identifier | Example | Compat rules |
 |---|---|---|---|
-| Protocol version | `acdp_version` field on the capabilities document | `0.0.1` | Major mismatch ⇒ consumer SHOULD treat as a higher unknown version and degrade gracefully. |
-| Body version | Implicit via the protocol version on the registry that accepted it | n/a | Body fields are stable; future versions add fields only. |
+| Protocol version | `acdp_version` field on the capabilities document | `0.1.0` | Bare `<major>.<minor>.<patch>` (no `-rcN` suffix — the `acdp_version` wire field carries only released semver). Major mismatch ⇒ consumer SHOULD treat as a higher unknown version and degrade gracefully. |
+| Body version | `body.acdp_version` (optional); absent ⇒ `0.1.0` | `0.1.0` | Body fields are stable; future versions add fields only. |
 | Registry-state extensibility | Open object | n/a | Future versions add fields (lifecycle, relationships, attestations). Consumers MUST tolerate unknown fields. |
-| RFC version | RFC document `Version:` header | `0.0.1` | Stable RFCs carry the bare semver string. Pre-final candidates use `-rcN` during the Release Candidate window; reserved-numbering RFCs without normative text use `-reserved` (e.g. `0.0.1-reserved` for RFC-ACDP-0009). |
+| RFC version | RFC document `Version:` header | `0.1.0-rc1` | Final RFCs carry the bare semver string; pre-final candidates use `-rcN` during the Release Candidate window (e.g. `0.1.0-rc1`); reserved-numbering RFCs without normative text use `-reserved` (e.g. `0.1.0-reserved` for RFC-ACDP-0009). |
+| Schema namespace | `$id` URL path segment | `v0.1.0` | The canonical JSON Schemas live under `schemas.acdp.io/v<major>.<minor>.<patch>/`. The namespace carries the target release version (no `-rcN`); a breaking change opens a new namespace. |
 
 ## Change classes
 
 - **Editorial / clarification** — patch-level RFC bump. No schema or wire change.
 - **Backward-compatible addition** — minor RFC bump. New optional body fields, new registry-state fields, new error codes, new context types. Unknown fields MUST be ignored on consumers.
 - **Breaking change** — major RFC bump and a new schema namespace. Migration notes required.
+
+While the protocol is in the `0.x` series, the `0.x` semver convention applies: the **minor** component absorbs both additive and (rarely, with migration notes) breaking changes, and the spec does not yet offer the long-term stability guarantee that a `1.0.0` release would. Backward-compatible additions advance the minor component (`0.1.0` → `0.2.0`); pre-`1.0.0` breaking changes also advance the minor component and MUST ship migration notes and a new schema namespace.
 
 ## Forward / backward compatibility
 
@@ -42,7 +47,7 @@ Downstream consumers pin to a specific tag and upgrade on their own schedule.
 | `Draft` | Open for substantive change. |
 | `Review` | Under shepherded review. No structural changes during the FCP window. |
 | `Final Comment Period` | Last call. Editorial fixes only. |
-| `Release Candidate N` | A specific candidate (`rc1`, `rc2`, …) intended for implementation testing. Backward-incompatible changes remain possible until `Final`. ACDP v0.0.1 RFCs 0001–0008 are at `Draft`. |
-| `Final` | Stable. Breaking changes require a new RFC. |
+| `Release Candidate N` | A specific candidate (`rc1`, `rc2`, …) intended for implementation testing. Backward-incompatible changes remain possible until `Final`; only editorial fixes are expected during the RC window. ACDP `0.1.0` RFCs 0001–0008 are currently at `Release Candidate 1`. |
+| `Final` | Stable for the release. Breaking changes require a new RFC and a minor (pre-`1.0.0`) or major version bump. A `0.1.0` RFC is promoted to `Final` once the conformance suite (`schemas/conformance/`, including the behavioral fixtures) passes against at least two interoperating implementations. |
 | `Reserved` | Numbering pinned, no normative text yet (e.g. RFC-ACDP-0009). Implementations MUST NOT depend on its identifiers until promoted out of `Reserved`. |
 | `Deprecated` | Superseded by another RFC; retained for archaeology. |

@@ -1,6 +1,6 @@
 {
   "id": "status-001",
-  "description": "Registry state with a valid-but-unrecognized status value 'retracted'. The value matches the pattern `^[a-z][a-z0-9_]*$` (RFC-ACDP-0004 §4.1, acdp-common.schema.json#/$defs/status). v0.0.1 consumers MUST tolerate the value, SHOULD treat it as 'active' for functional decision-making, and SHOULD log a warning. 'retracted' is the value reserved by RFC-ACDP-0009 §2.1.",
+  "description": "Registry state with a valid-but-unrecognized status value 'retracted'. The value matches the pattern `^[a-z][a-z0-9_]*$` (RFC-ACDP-0004 §4.1, acdp-common.schema.json#/$defs/status). v0.1.0 consumers MUST tolerate the value, SHOULD treat it as 'active' for functional decision-making, and SHOULD log a warning. 'retracted' is the value reserved by RFC-ACDP-0009 §2.1.",
   "tags": ["status", "forward-compatibility", "happy-path"],
   "input": {
     "endpoint": "GET /contexts/{ctx_id}",
@@ -35,7 +35,7 @@
     "consumer_outcome": "accept",
     "treat_as": "active",
     "log_recommendation": "WARN: unknown status 'retracted' from registry; treating as 'active'",
-    "rationale": "An open status enum is the spec's forward-compat mechanism (§4.1). A consumer that fails on this value will silently break the day a registry adopts a v0.1+ status that v0.0.1 consumers haven't been updated for."
+    "rationale": "An open status enum is the spec's forward-compat mechanism (§4.1). A consumer that fails on this value will silently break the day a registry adopts a future-version status that v0.1.0 consumers haven't been updated for."
   },
-  "non_conformant_behavior": "Closed-enum deserializers (Rust enum without #[serde(other)], TypeScript zod with `z.enum([...])`, pydantic Literal) will deserialize-fail. That is a v0.0.1 conformance failure: the implementer-note recipes in RFC-ACDP-0004 §4.1 are mandatory."
+  "non_conformant_behavior": "Closed-enum deserializers (Rust enum without #[serde(other)], TypeScript zod with `z.enum([...])`, pydantic Literal) will deserialize-fail. That is a v0.1.0 conformance failure: the implementer-note recipes in RFC-ACDP-0004 §4.1 are mandatory."
 }

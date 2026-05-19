@@ -7,7 +7,7 @@ Content types used in ACDP transport bindings.
 | `application/acdp+json` | Stable | Canonical JSON encoding of ACDP messages (HTTP transport). All ACDP endpoints accept and emit this type. Protocol version is carried in JSON (`acdp_version` in capabilities, optional `body.acdp_version` in bodies — RFC-ACDP-0001 §6); the media type itself does NOT carry a `version` parameter. Implementations MAY include `; charset=utf-8` per RFC 8259. |
 | `application/acdp-context+json` | Provisional | A bare body or full `{body, registry_state}` payload, used in caching headers and inline payloads. Same versioning rules as `application/acdp+json` — version lives in JSON, not in a media-type parameter. |
 
-ACDP v0.0.1 is JSON-only. Binary transport bindings are out of scope for this version; if added in a future version, additional media types will be registered here.
+ACDP v0.1.0 is JSON-only. Binary transport bindings are out of scope for this version; if added in a future version, additional media types will be registered here.
 
 ## Content negotiation
 

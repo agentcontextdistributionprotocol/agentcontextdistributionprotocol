@@ -1,6 +1,6 @@
 {
   "id": "fed-006",
-  "description": "Cross-registry resolution MUST verify that the upstream registry's `registry_did` (declared in /.well-known/acdp.json) is consistent with the authority used to reach it. Per RFC-ACDP-0006 §3 and §4.1 step 3, the v0.0.1 binding is `did:web:<authority>`. If the capabilities document declares a `registry_did` whose method-specific identifier does NOT equal the authority component of the well-known URL, the resolver MUST treat the resolution as failed.",
+  "description": "Cross-registry resolution MUST verify that the upstream registry's `registry_did` (declared in /.well-known/acdp.json) is consistent with the authority used to reach it. Per RFC-ACDP-0006 §3 and §4.1 step 3, the v0.1.0 binding is `did:web:<authority>`. If the capabilities document declares a `registry_did` whose method-specific identifier does NOT equal the authority component of the well-known URL, the resolver MUST treat the resolution as failed.",
   "tags": ["security", "federated", "registry-identity", "did-binding"],
   "ssrf_rule": "RFC-ACDP-0006 §3 + §4.1 step 3 (registry-DID verification)",
   "applies_to_profiles": ["acdp-registry-federated", "acdp-consumer"],
@@ -8,7 +8,7 @@
     "scenario": "Resolver fetches https://registry.example.com/.well-known/acdp.json; the document declares a registry_did that does not match the authority",
     "fetched_well_known_url": "https://registry.example.com/.well-known/acdp.json",
     "capabilities_document_excerpt": {
-      "acdp_version": "0.0.1",
+      "acdp_version": "0.1.0",
       "registry_did": "did:web:other-registry.example.org",
       "supported_signature_algorithms": ["ed25519"]
     }
@@ -22,7 +22,7 @@
     "additional_failure_cases": [
       {
         "case": "registry_did is well-formed but uses a method other than did:web",
-        "expected_outcome": "Resolver MAY accept if it has out-of-band trust for that DID method; otherwise treat as failed. v0.0.1 producers and registries are required to use did:web (RFC-ACDP-0001 §5.4)."
+        "expected_outcome": "Resolver MAY accept if it has out-of-band trust for that DID method; otherwise treat as failed. v0.1.0 producers and registries are required to use did:web (RFC-ACDP-0001 §5.4)."
       },
       {
         "case": "registry_did is missing entirely from the capabilities document",

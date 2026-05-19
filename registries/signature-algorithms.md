@@ -26,7 +26,7 @@ For `ecdsa-p256`, the producer's DID document verification method MUST publish t
 - `x`: base64url-encoded big-endian 32-byte unsigned integer (the affine x coordinate)
 - `y`: base64url-encoded big-endian 32-byte unsigned integer (the affine y coordinate)
 
-Both `x` and `y` MUST be exactly 32 bytes after base64url decoding (left-pad with zero bytes if the natural integer encoding is shorter). The compressed-point form (`y` omitted) and the SEC1 single-string form are NOT accepted in v0.0.1; producers MUST publish the uncompressed `(x, y)` pair.
+Both `x` and `y` MUST be exactly 32 bytes after base64url decoding (left-pad with zero bytes if the natural integer encoding is shorter). The compressed-point form (`y` omitted) and the SEC1 single-string form are NOT accepted in v0.1.0; producers MUST publish the uncompressed `(x, y)` pair.
 
 Verifiers reconstruct the SEC1 uncompressed point as `0x04 || x || y` (65 bytes total). Compressed SEC1 (`0x02 || x` or `0x03 || x`) MUST NOT appear in DID documents but verifiers that accept it for compatibility MUST decompress before use.
 
@@ -62,13 +62,13 @@ The minimal conformant document:
 
 Rules:
 
-- `verificationMethod[].type` MUST be `"JsonWebKey2020"`. Implementations that emit `EcdsaSecp256r1VerificationKey2019` are NON-CONFORMANT for v0.0.1 (the cryptosuite differs in canonical-bytes binding; see RFC-ACDP-0001 §5.11 step 6).
-- `verificationMethod[].controller` MUST equal the DID document's `id` (no delegation of controller in v0.0.1).
+- `verificationMethod[].type` MUST be `"JsonWebKey2020"`. Implementations that emit `EcdsaSecp256r1VerificationKey2019` are NON-CONFORMANT for v0.1.0 (the cryptosuite differs in canonical-bytes binding; see RFC-ACDP-0001 §5.11 step 6).
+- `verificationMethod[].controller` MUST equal the DID document's `id` (no delegation of controller in v0.1.0).
 - `publicKeyJwk.kty` MUST be `"EC"`; `publicKeyJwk.crv` MUST be `"P-256"`.
 - `publicKeyJwk.x` and `publicKeyJwk.y` MUST each decode (base64url, RFC 4648 §5 with no padding) to exactly 32 bytes. If a producer's KMS or library exposes a natural-length integer shorter than 32 bytes, the producer MUST left-pad with zero bytes before base64url-encoding. Truncation MUST NOT be applied.
-- The compressed-point form is NOT accepted in v0.0.1 — `y` MUST be present.
+- The compressed-point form is NOT accepted in v0.1.0 — `y` MUST be present.
 - `signature.key_id` in a publish request MUST equal the `verificationMethod[].id` exactly, including the fragment (e.g. `did:web:agents.example.com#key-1`).
-- The verification method's `id` MUST appear in the document's `assertionMethod` array (either as a full URL or as a relative `#<fragment>`). v0.0.1 rejects keys not authorized for assertion (§5.11 step 5) with `key_not_authorized`.
+- The verification method's `id` MUST appear in the document's `assertionMethod` array (either as a full URL or as a relative `#<fragment>`). v0.1.0 rejects keys not authorized for assertion (§5.11 step 5) with `key_not_authorized`.
 
 Producers rotating keys MUST publish the new `verificationMethod` entry and include it in `assertionMethod` BEFORE signing with the new key; otherwise the registry's first publish with the new `key_id` will be rejected as `key_not_authorized`. Producers SHOULD retain the prior verification method in the document for as long as consumers may verify prior signatures (ACDP bodies are immutable; signatures remain mathematically valid as long as the key material is resolvable).
 

@@ -2,8 +2,8 @@
 # Agent Context Description Protocol (ACDP) — Retrieval & Lineage
 
 **Document:** RFC-ACDP-0004
-**Version:** 0.0.1
-**Status:** Community Standards Track (Draft)
+**Version:** 0.1.0-rc1
+**Status:** Community Standards Track (Release Candidate 1)
 
 This RFC specifies how consumers retrieve contexts and lineages from ACDP registries, and how registries derive `status`. It depends on RFC-ACDP-0001 (Core) and RFC-ACDP-0002 (Context Body).
 
@@ -11,7 +11,7 @@ This RFC specifies how consumers retrieve contexts and lineages from ACDP regist
 
 ## 1. Status of This Memo
 
-This document is a Draft. Backward-incompatible changes remain possible until Final.
+This document is a Release Candidate (acdp/0.1.0-rc1). Backward-incompatible changes remain possible until Final; only editorial fixes are expected during the RC window.
 
 ---
 
@@ -65,7 +65,7 @@ The HTTP status code is the same in both "really doesn't exist" and "exists but 
 
 ## 3. Registry State
 
-In v0.0.1, the registry state contains a single field:
+In v0.1.0, the registry state contains a single field:
 
 | Field | Type | Required | Description |
 |---|---|---|---|
@@ -93,9 +93,9 @@ Because `status` is derived, it MUST NOT be persisted into the body. The body's 
 
 ### 4.1 Forward compatibility
 
-Future ACDP versions will add new `status` values (e.g. `retracted` per RFC-ACDP-0009 §2.1). v0.0.1 consumers MUST NOT fail on unknown `status` values. If a registry returns a `status` value not listed in the table above, consumers SHOULD treat it as `active` for functional decision-making and SHOULD log a warning for operator review. v0.0.1 schemas use an open string pattern for `status` (`^[a-z][a-z0-9_]*$`) to enable this forward compatibility (RFC-ACDP-0001 §6).
+Future ACDP versions will add new `status` values (e.g. `retracted` per RFC-ACDP-0009 §2.1). v0.1.0 consumers MUST NOT fail on unknown `status` values. If a registry returns a `status` value not listed in the table above, consumers SHOULD treat it as `active` for functional decision-making and SHOULD log a warning for operator review. v0.1.0 schemas use an open string pattern for `status` (`^[a-z][a-z0-9_]*$`) to enable this forward compatibility (RFC-ACDP-0001 §6).
 
-**Pattern constraint (NORMATIVE).** Unknown `status` values MUST match the pattern `^[a-z][a-z0-9_]*$` and MUST be 1–64 characters long (lowercase ASCII letters and digits and underscore, starting with a letter). This is the same constraint enforced by `acdp-common.schema.json#/$defs/status`. Consumers MUST reject `status` values that do not match this pattern as malformed registry state — the response is structurally non-conformant and indicates either a registry bug or a man-in-the-middle. A valid-but-unrecognized status (matching the pattern) MUST be tolerated and SHOULD be treated as `active` for functional decisions until the consumer upgrades to a version that defines the new status. This permits future values like `retracted` (RFC-ACDP-0009 §2.1) and `archived` to ship without breaking v0.0.1 consumers, while still rejecting outright-malformed values like `"ACTIVE"`, `"in progress"`, or `""`. The conformance fixtures `status-001..004` pin representative cases.
+**Pattern constraint (NORMATIVE).** Unknown `status` values MUST match the pattern `^[a-z][a-z0-9_]*$` and MUST be 1–64 characters long (lowercase ASCII letters and digits and underscore, starting with a letter). This is the same constraint enforced by `acdp-common.schema.json#/$defs/status`. Consumers MUST reject `status` values that do not match this pattern as malformed registry state — the response is structurally non-conformant and indicates either a registry bug or a man-in-the-middle. A valid-but-unrecognized status (matching the pattern) MUST be tolerated and SHOULD be treated as `active` for functional decisions until the consumer upgrades to a version that defines the new status. This permits future values like `retracted` (RFC-ACDP-0009 §2.1) and `archived` to ship without breaking v0.1.0 consumers, while still rejecting outright-malformed values like `"ACTIVE"`, `"in progress"`, or `""`. The conformance fixtures `status-001..004` pin representative cases.
 
 **Library implementation requirement.** Library authors MUST implement `status` as an open string type (or an open enum that gracefully accepts unknown values) — NOT as a closed enum. A closed-enum implementation will deserialize-fail when a registry returns a future status value, breaking every consumer that depends on the library. Concretely:
 
@@ -149,7 +149,7 @@ In short: **current = newest non-superseded version; `expired` counts as non-sup
 
 ### 5.3 Lineage scoping
 
-`GET /lineages/{lineage_id}` is scoped to the registry serving the request — it returns only versions persisted on that registry. Because cross-registry supersession is forbidden in v0.0.1 (RFC-ACDP-0003 §3.1 step 2), every v0.0.1 lineage is wholly contained within one registry; per-registry scoping returns the complete lineage. Cross-registry lineage observability is reserved for RFC-ACDP-0009 §2.8.
+`GET /lineages/{lineage_id}` is scoped to the registry serving the request — it returns only versions persisted on that registry. Because cross-registry supersession is forbidden in v0.1.0 (RFC-ACDP-0003 §3.1 step 2), every v0.1.0 lineage is wholly contained within one registry; per-registry scoping returns the complete lineage. Cross-registry lineage observability is reserved for RFC-ACDP-0009 §2.8.
 
 ### 5.4 Lineage endpoint visibility (NORMATIVE)
 

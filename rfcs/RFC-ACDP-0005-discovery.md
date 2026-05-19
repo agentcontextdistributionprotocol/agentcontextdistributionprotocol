@@ -2,16 +2,16 @@
 # Agent Context Description Protocol (ACDP) — Discovery
 
 **Document:** RFC-ACDP-0005
-**Version:** 0.0.1
-**Status:** Community Standards Track (Draft)
+**Version:** 0.1.0-rc1
+**Status:** Community Standards Track (Release Candidate 1)
 
-This RFC specifies how consumers discover contexts on an ACDP registry. ACDP v0.0.1 defines one discovery modality: keyword search. Semantic similarity and push subscriptions are reserved for a future version (RFC-ACDP-0009 §2.4, §2.9).
+This RFC specifies how consumers discover contexts on an ACDP registry. ACDP v0.1.0 defines one discovery modality: keyword search. Semantic similarity and push subscriptions are reserved for a future version (RFC-ACDP-0009 §2.4, §2.9).
 
 ---
 
 ## 1. Status of This Memo
 
-This document is a Draft. Backward-incompatible changes remain possible until Final.
+This document is a Release Candidate (acdp/0.1.0-rc1). Backward-incompatible changes remain possible until Final; only editorial fixes are expected during the RC window.
 
 ---
 
@@ -80,7 +80,7 @@ Each match contains a summary projection (`ctx_id`, `lineage_id`, `agent_id`, `t
 
 - For matches with `visibility: public`, registries SHOULD include `visibility: public` in the `match_summary`. Including this field gives consumers a cache-classification signal without an additional retrieval round-trip.
 - For matches with `visibility: restricted` or `visibility: private`, registries MUST include `visibility` ONLY when the requester is already authorized to retrieve the context (i.e., the effective requester DID is in `audience` for `restricted`, or is `agent_id` for either `restricted` or `private`). Including the field for any other requester leaks the visibility class to a non-authorized party even when the match itself is correctly scoped — a violation of the existence-leak prevention rule in RFC-ACDP-0008 §3.5.
-- When the field is absent, consumers MUST NOT infer anything about visibility — absence is the registry's choice. v0.0.1 deployments predating this clarification are conformant without the field. Consumers MUST NOT treat `visibility`-absent as a signal of any specific visibility class.
+- When the field is absent, consumers MUST NOT infer anything about visibility — absence is the registry's choice. v0.1.0 deployments predating this clarification are conformant without the field. Consumers MUST NOT treat `visibility`-absent as a signal of any specific visibility class.
 
 ### 2.3 Pagination
 
@@ -90,7 +90,7 @@ The registry MAY return fewer results than `limit` even when more exist — `nex
 
 ### 2.4 Lineage-based discovery
 
-The `derived_from` filter is the foundation for lineage-based discovery. An agent that has published a context can periodically query with `derived_from=<my_ctx_id>` to discover what has been built on it. In v0.0.1 this is a polling pattern; future versions (RFC-ACDP-0009) will support push notification.
+The `derived_from` filter is the foundation for lineage-based discovery. An agent that has published a context can periodically query with `derived_from=<my_ctx_id>` to discover what has been built on it. In v0.1.0 this is a polling pattern; future versions (RFC-ACDP-0009) will support push notification.
 
 ### 2.5 Search semantics
 
@@ -106,13 +106,13 @@ Conformant registries MUST search the following body fields against `q`:
 - `domain`
 - `agent_id`
 
-Registries MAY additionally search `metadata` (when bound by `schema_uri`) or other producer-defined fields. Registries searching additional fields SHOULD declare them in capabilities under a `search_extended_fields` array (reserved namespace; out of scope for v0.0.1).
+Registries MAY additionally search `metadata` (when bound by `schema_uri`) or other producer-defined fields. Registries searching additional fields SHOULD declare them in capabilities under a `search_extended_fields` array (reserved namespace; out of scope for v0.1.0).
 
 #### 2.5.2 Tokenization and matching
 
 `q` is tokenized by whitespace into terms. A context matches if **all** terms are present in **at least one** searched field (AND-of-terms across the union of fields). Matching is case-insensitive. Diacritic normalization is registry-defined.
 
-Registries MUST NOT interpret special characters in `q` as boolean operators in v0.0.1. `AND`, `OR`, parentheses, quoted phrases, and similar are treated as literal terms. (Boolean and phrase semantics are reserved for a future version.)
+Registries MUST NOT interpret special characters in `q` as boolean operators in v0.1.0. `AND`, `OR`, parentheses, quoted phrases, and similar are treated as literal terms. (Boolean and phrase semantics are reserved for a future version.)
 
 #### 2.5.3 Ranking
 
@@ -194,7 +194,7 @@ See [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md). Specific to discovery:
 
 - Registries MUST scope keyword search results by the requesting agent's effective audience (RFC-ACDP-0008 §4.5).
 - `total_estimate` is informational and SHOULD NOT be relied upon for exact counts.
-- Cross-registry discovery is out of scope for v0.0.1; consumers wishing to search across registries MUST query each registry separately.
+- Cross-registry discovery is out of scope for v0.1.0; consumers wishing to search across registries MUST query each registry separately.
 
 ---
 

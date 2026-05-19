@@ -86,7 +86,7 @@ The runner interface is implementation-defined.
 | `pub-005` | `visibility: restricted` with no `audience` | failure: `schema_violation` |
 | `pub-006` | `signature.key_id` DID portion ≠ `body.agent_id` | failure: `key_not_authorized` |
 | `pub-007` | Publish response shape — exactly five fields, no `content_hash` or other body fields echoed back | success: HTTP 201; response object pinned to `{ctx_id, lineage_id, version, created_at, status}` |
-| `pub-008` | `body.agent_id` is not `did:web` (v0.0.1 §5.4 mandate) | failure: `schema_violation` (preferred) or `key_not_authorized` |
+| `pub-008` | `body.agent_id` is not `did:web` (v0.1.0 §5.4 mandate) | failure: `schema_violation` (preferred) or `key_not_authorized` |
 | `pub-009` | `signature.key_id` DID is not `did:web` while `agent_id` is `did:web` | failure: `key_not_authorized` |
 | `pub-010` | Non-`did:web` entry in `contributors[]` (attribution-only — registry MUST accept) | success |
 | `pub-011` | Persist-only-after-signature-verify atomicity — body MUST NOT be persisted if signature verification fails, even when `content_hash` is correct | failure: `invalid_signature` + post-failure invariants |
@@ -177,9 +177,9 @@ Rate-limit triggering depends on registry policy (window, bucket, threshold), so
 | `can-008` | Body with unknown producer-controlled field (`priority`) — consumer MUST include in hash recomputation (RFC-ACDP-0001 §5.7 raw-JSON rule) | success: byte-exact reproduction including the unknown field |
 | `can-009` | Stored Body → ProducerContent — exclusion set is stripped BY NAME, regardless of typed-model knowledge | success: byte-exact reproduction matches the stored `content_hash` |
 
-**Test DIDs.** The `can-*` canonicalization fixtures use `did:agent:test` as a deliberately short, fictitious DID method to keep canonical-form expected values readable. The precomputed `canonical_form` and `sha256_hex` values depend on the exact string. v0.0.1 wire deployments MUST use `did:web` (RFC-ACDP-0001 §5.4) — `did:agent:` is a test-only convention and is not a registered DID method.
+**Test DIDs.** The `can-*` canonicalization fixtures use `did:agent:test` as a deliberately short, fictitious DID method to keep canonical-form expected values readable. The precomputed `canonical_form` and `sha256_hex` values depend on the exact string. v0.1.0 wire deployments MUST use `did:web` (RFC-ACDP-0001 §5.4) — `did:agent:` is a test-only convention and is not a registered DID method.
 
-All v0.0.1 fixtures listed above are authored. The `can-005` fixture's "absent tags" vector cross-checks with `can-001` vector 1 — they have bit-identical input and MUST produce the same hash. Additional fixtures (embedded-too-large, payload-too-large, race on supersession, etc.) are welcome via PR.
+All v0.1.0 fixtures listed above are authored. The `can-005` fixture's "absent tags" vector cross-checks with `can-001` vector 1 — they have bit-identical input and MUST produce the same hash. Additional fixtures (embedded-too-large, payload-too-large, race on supersession, etc.) are welcome via PR.
 
 ### Cryptographic golden vectors (RFC-ACDP-0001)
 

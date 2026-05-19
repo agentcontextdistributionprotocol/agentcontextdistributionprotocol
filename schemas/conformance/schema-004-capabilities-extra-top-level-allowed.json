@@ -5,7 +5,7 @@
   "input": {
     "endpoint": "GET /.well-known/acdp.json",
     "response_body": {
-      "acdp_version": "0.0.1",
+      "acdp_version": "0.1.0",
       "registry_did": "did:web:registry.example.com",
       "supported_signature_algorithms": ["ed25519"],
       "supported_did_methods": ["did:web"],
@@ -19,7 +19,7 @@
   },
   "expected": {
     "consumer_outcome": "accept",
-    "rationale": "Capabilities is forward-compat-open at the top level. A v0.0.1 consumer must continue to read the document, route 'supports_receipts' into a catch-all extension map, and proceed. Cross-reference: the `limits` SUB-OBJECT is closed (additionalProperties: false at line 102) — caps-005 covers that case via the value constraint on max_embedded_bytes."
+    "rationale": "Capabilities is forward-compat-open at the top level. A v0.1.0 consumer must continue to read the document, route 'supports_receipts' into a catch-all extension map, and proceed. Cross-reference: the `limits` SUB-OBJECT is closed (additionalProperties: false at line 102) — caps-005 covers that case via the value constraint on max_embedded_bytes."
   },
   "see_also": ["caps-006", "RFC-ACDP-0007 §3.3 implementer note", "RFC-ACDP-0007 §3.3.1 schema openness map"]
 }

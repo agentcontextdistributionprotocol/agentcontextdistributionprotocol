@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.acdp.io/v0.0.1/acdp-publish-request.schema.json",
+  "$id": "https://schemas.acdp.io/v0.1.0/acdp-publish-request.schema.json",
   "title": "ACDP Publish Request",
   "description": "The producer-supplied portion of a context body for POST /contexts. Excludes registry-assigned fields (ctx_id, origin_registry, created_at) but includes content_hash and signature. lineage_id is OPTIONAL — if supplied, the registry verifies it matches the deterministically-derived value.",
 
@@ -25,19 +25,19 @@
     },
     "supersedes": {
       "oneOf": [
-        { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/ctx_id" },
+        { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
         { "type": "null" }
       ]
     },
-    "agent_id": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/did" },
+    "agent_id": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did" },
     "contributors": {
       "type": "array",
-      "items": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/did" },
+      "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did" },
       "uniqueItems": true,
       "maxItems": 100
     },
-    "content_hash": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/content_hash" },
-    "signature": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/signature" },
+    "content_hash": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/content_hash" },
+    "signature": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/signature" },
     "title": {
       "type": "string",
       "minLength": 1,
@@ -47,7 +47,7 @@
       "type": "string",
       "maxLength": 5000
     },
-    "type": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/context_type" },
+    "type": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/context_type" },
     "domain": {
       "type": "string",
       "maxLength": 200
@@ -58,26 +58,26 @@
     },
     "data_refs": {
       "type": "array",
-      "items": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-data-ref.schema.json" }
+      "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-data-ref.schema.json" }
     },
     "derived_from": {
       "type": "array",
-      "items": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/ctx_id" },
+      "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
       "uniqueItems": true,
       "maxItems": 1000
     },
     "tags": {
       "type": "array",
-      "items": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/tag" },
+      "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/tag" },
       "uniqueItems": true,
       "maxItems": 200
     },
-    "data_period": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/data_period" },
-    "expires_at": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/rfc3339_timestamp" },
-    "visibility": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/visibility" },
+    "data_period": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/data_period" },
+    "expires_at": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/rfc3339_timestamp" },
+    "visibility": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/visibility" },
     "audience": {
       "type": "array",
-      "items": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/did" },
+      "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did" },
       "uniqueItems": true,
       "maxItems": 1000
     },
@@ -91,13 +91,13 @@
       "additionalProperties": true
     },
     "lineage_id": {
-      "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/lineage_id",
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/lineage_id",
       "description": "Optional. If supplied, the registry verifies it matches the deterministically-derived value."
     },
     "acdp_version": {
       "type": "string",
       "pattern": "^\\d+\\.\\d+\\.\\d+$",
-      "description": "Optional. ACDP protocol version this body was authored under. Absent value MUST be treated as '0.0.1'. Producer-signed (part of the content_hash). v0.1+ producers SHOULD include this field; v0.0.1 producers MAY include '0.0.1' explicitly. Verifiers use this field to determine which exclusion set (RFC-ACDP-0001 §5.7) and signature algorithm registry to apply."
+      "description": "Optional. ACDP protocol version this body was authored under. Absent value MUST be treated as '0.1.0', the inaugural release. Producer-signed (part of the content_hash). Producers SHOULD include this field explicitly (a v0.1.0 producer sets '0.1.0'). Verifiers use this field to determine which exclusion set (RFC-ACDP-0001 §5.7) and signature algorithm registry to apply."
     }
   },
   "additionalProperties": false,
@@ -119,7 +119,7 @@
       "if": { "properties": { "version": { "type": "integer", "minimum": 2 } } },
       "then": {
         "properties": {
-          "supersedes": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/ctx_id" }
+          "supersedes": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" }
         }
       }
     },

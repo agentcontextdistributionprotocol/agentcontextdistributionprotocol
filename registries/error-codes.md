@@ -2,7 +2,7 @@
 
 ACDP error codes returned in error envelopes (`error.code`). The envelope shape and HTTP status mapping are defined in [RFC-ACDP-0007 §4–5](../rfcs/RFC-ACDP-0007-capabilities.md).
 
-## v0.0.1 codes
+## v0.1.0 codes
 
 | Code | Status | HTTP | Meaning | Source |
 |---|---|---|---|---|
@@ -31,12 +31,12 @@ ACDP error codes returned in error envelopes (`error.code`). The envelope shape 
 
 ## Reserved future codes
 
-These codes are NOT in the v0.0.1 wire schema enum. They are reserved for future ACDP versions and MUST NOT appear in v0.0.1 wire responses.
+These codes are NOT in the v0.1.0 wire schema enum. They are reserved for future ACDP versions and MUST NOT appear in v0.1.0 wire responses.
 
 | Code | Reserved for | Reference |
 |---|---|---|
-| `immutable_field` | v0.1+ mutation endpoints (retraction, attestation updates). No v0.0.1 endpoint mutates a body field. | [RFC-ACDP-0009 §2.1](../rfcs/RFC-ACDP-0009-extensions.md#21-retraction--lifecycle-events-likely-v01) |
-| `unsupported_embedding_model` | v0.1+ similarity endpoints. ACDP v0.0.1 has no similarity surface. | [RFC-ACDP-0009 §2.9](../rfcs/RFC-ACDP-0009-extensions.md#29-semantic-similarity-and-embeddings-likely-v01) |
+| `immutable_field` | A future version's mutation endpoints (retraction, attestation updates). No v0.1.0 endpoint mutates a body field. | [RFC-ACDP-0009 §2.1](../rfcs/RFC-ACDP-0009-extensions.md#21-retraction--lifecycle-events) |
+| `unsupported_embedding_model` | A future version's similarity endpoints. ACDP v0.1.0 has no similarity surface. | [RFC-ACDP-0009 §2.9](../rfcs/RFC-ACDP-0009-extensions.md#29-semantic-similarity-and-embeddings) |
 
 ## `superseded_target` reason codes
 

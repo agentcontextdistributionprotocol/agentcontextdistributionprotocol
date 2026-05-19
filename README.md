@@ -1,7 +1,7 @@
 # Agent Context Description Protocol (ACDP)
 
-**Version:** 0.0.1
-**Status:** Community Standards Track (Draft)
+**Version:** 0.1.0-rc1
+**Status:** Community Standards Track (Release Candidate 1)
 **Wire format:** JSON over HTTP
 **Required JSON canonicalization:** [JCS — RFC 8785](https://datatracker.ietf.org/doc/html/rfc8785)
 
@@ -15,7 +15,7 @@ The "producer-controlled portion" — the **ProducerContent** — comprises the 
 
 There is no central authority. Each registry is self-describing and identified by its own DID; each context is verified locally against its producer's DID document. ACDP is **coordination-agnostic** — it does not specify session, voting, consensus, marketplace, or reputation semantics.
 
-This is the **first published version** of ACDP. v0.0.1 defines the minimal substrate; lifecycle events, post-publication relationships, attestations, push subscriptions, and server-side traversal are deferred to future versions.
+This is the **first published version** of ACDP, released as **Release Candidate 1** (`acdp/0.1.0-rc1`) for implementation testing ahead of `Final`. v0.1.0 defines the minimal substrate; lifecycle events, post-publication relationships, attestations, push subscriptions, and server-side traversal are deferred to future versions.
 
 ---
 
@@ -169,19 +169,19 @@ There is no producer-only profile: producers MUST be able to verify any context 
 - **RFC-ACDP-0005 Discovery** — keyword search semantics, cursor pagination. Search ranking within results is registry-defined; ACDP does not normatively specify a ranking algorithm.
 - **RFC-ACDP-0006 Cross-Registry** — `acdp://` URI scheme, resolution flow, federation non-goals.
 - **RFC-ACDP-0007 Capabilities** — `/.well-known/acdp.json`, error envelope, error code registry.
-- **RFC-ACDP-0008 Security** — threat model and required defenses for v0.0.1.
+- **RFC-ACDP-0008 Security** — threat model and required defenses for v0.1.0.
 - **RFC-ACDP-0009 Extensions** *(reserved)* — retraction/lifecycle events, attestations, push subscriptions, walks.
 
 ---
 
 ## Compatibility model
 
-- **Protocol version** governs the wire envelope (`acdp_version: 0.0.1`).
+- **Protocol version** governs the wire envelope (`acdp_version: 0.1.0`).
 - **Registry capabilities** advertise per-registry options (algorithms, embedding models, limits).
 
 Major mismatches are not compatible. Minor versions are expected to be backward compatible. Unknown fields MUST be ignored on body and registry-state. See [VERSIONING.md](VERSIONING.md).
 
-ACDP v0.0.1 is **JSON-only**. Binary transport bindings are out of scope for this version.
+ACDP v0.1.0 is **JSON-only**. Binary transport bindings are out of scope for this version.
 
 ---
 

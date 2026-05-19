@@ -1,6 +1,6 @@
 {
   "id": "can-009",
-  "description": "Exclusion-set membership is by NAME, not by typed knowledge. A consumer recomputing content_hash MUST strip the v0.0.1 exclusion set ({ctx_id, lineage_id, origin_registry, created_at, content_hash, signature}) by exact key name, regardless of whether the consumer's typed model has fields for those names. This fixture demonstrates a stored Body (full retrieval response) whose exclusion-set fields are stripped by name to produce ProducerContent; the resulting hash MUST equal body.content_hash. Pairs with can-008 (which pins the producer-side: unknown producer-controlled fields are INCLUDED).",
+  "description": "Exclusion-set membership is by NAME, not by typed knowledge. A consumer recomputing content_hash MUST strip the v0.1.0 exclusion set ({ctx_id, lineage_id, origin_registry, created_at, content_hash, signature}) by exact key name, regardless of whether the consumer's typed model has fields for those names. This fixture demonstrates a stored Body (full retrieval response) whose exclusion-set fields are stripped by name to produce ProducerContent; the resulting hash MUST equal body.content_hash. Pairs with can-008 (which pins the producer-side: unknown producer-controlled fields are INCLUDED).",
   "tags": ["canonicalization", "hashing", "exclusion-set", "raw-json"],
   "vectors": [
     {
@@ -44,11 +44,11 @@
       },
       "verification_steps": [
         "1. Parse `stored_body` from the wire bytes into a structure that preserves all keys (e.g. serde_json::Value, dict[str, Any]).",
-        "2. Build ProducerContent by removing every key whose name appears in the v0.0.1 exclusion set: {ctx_id, lineage_id, origin_registry, created_at, content_hash, signature}. Removal MUST be by string name; the typed kind/content of the value is irrelevant.",
+        "2. Build ProducerContent by removing every key whose name appears in the v0.1.0 exclusion set: {ctx_id, lineage_id, origin_registry, created_at, content_hash, signature}. Removal MUST be by string name; the typed kind/content of the value is irrelevant.",
         "3. JCS-canonicalize ProducerContent and SHA-256 → expected.content_hash_field_value.",
         "4. Recomputed hash MUST equal stored_body.content_hash."
       ],
-      "consumer_behavior": "REQUIRED. The consumer's exclusion-set logic MUST be a static name list, not a function of which keys the typed model knows about. This is what guarantees a v0.0.1 consumer behaves correctly when the wire body contains the same six exclusion-set names — even if a future minor version adds documentation about new semantics for one of them.",
+      "consumer_behavior": "REQUIRED. The consumer's exclusion-set logic MUST be a static name list, not a function of which keys the typed model knows about. This is what guarantees a v0.1.0 consumer behaves correctly when the wire body contains the same six exclusion-set names — even if a future minor version adds documentation about new semantics for one of them.",
       "non_conformant_behavior": "A consumer that derives the exclusion set from struct field metadata (e.g., 'fields with #[serde(skip_serializing)]') rather than the spec-defined name list could miscompute when the typed model is patched without updating the exclusion-list logic. The exclusion set is normative, fixed by RFC-ACDP-0001 §5.7, and MUST be implemented as such."
     }
   ],

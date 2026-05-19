@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.acdp.io/v0.0.1/acdp-search-response.schema.json",
+  "$id": "https://schemas.acdp.io/v0.1.0/acdp-search-response.schema.json",
   "title": "ACDP Search Response",
   "description": "Response shape for GET /contexts/search and the keyword form of search.",
 
@@ -9,7 +9,7 @@
   "properties": {
     "matches": {
       "type": "array",
-      "items": { "$ref": "https://schemas.acdp.io/v0.0.1/acdp-common.schema.json#/$defs/match_summary" }
+      "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/match_summary" }
     },
     "next_cursor": {
       "type": "string",

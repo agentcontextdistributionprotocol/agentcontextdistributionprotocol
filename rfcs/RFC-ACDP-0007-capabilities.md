@@ -2,8 +2,8 @@
 # Agent Context Description Protocol (ACDP) — Capabilities & Errors
 
 **Document:** RFC-ACDP-0007
-**Version:** 0.0.1
-**Status:** Community Standards Track (Draft)
+**Version:** 0.1.0-rc1
+**Status:** Community Standards Track (Release Candidate 1)
 
 This RFC specifies the registry capability declaration document and the standard error envelope used by all ACDP endpoints.
 
@@ -11,7 +11,7 @@ This RFC specifies the registry capability declaration document and the standard
 
 ## 1. Status of This Memo
 
-This document is a Draft. Backward-incompatible changes remain possible until Final.
+This document is a Release Candidate (acdp/0.1.0-rc1). Backward-incompatible changes remain possible until Final; only editorial fixes are expected during the RC window.
 
 ---
 
@@ -41,7 +41,7 @@ Returns the registry's capability declaration. Conforms to [`schemas/json/acdp-c
 | `acdp_version` | string | The ACDP specification version this registry implements. Form: `<major>.<minor>.<patch>`. |
 | `registry_did` | string | The registry's own DID, typically `did:web:<hostname>`. |
 | `supported_signature_algorithms` | array of string | Signature algorithms accepted on publish. MUST contain at least `"ed25519"`. |
-| `supported_did_methods` | array of string | DID methods this registry can resolve. MUST be non-empty and MUST include `"did:web"` (RFC-ACDP-0001 §5.4 mandates `did:web` for v0.0.1 producers; RFC-ACDP-0001 §5.11 specifies the resolution algorithm). |
+| `supported_did_methods` | array of string | DID methods this registry can resolve. MUST be non-empty and MUST include `"did:web"` (RFC-ACDP-0001 §5.4 mandates `did:web` for v0.1.0 producers; RFC-ACDP-0001 §5.11 specifies the resolution algorithm). |
 | `profiles` | array of string | Profile(s) this implementation claims conformance to. Any registry MUST declare at least `"acdp-registry-core"`. See RFC-ACDP-0001 §9. |
 | `limits.max_payload_bytes` | integer | Maximum size of a publish request body in bytes. |
 | `limits.max_embedded_bytes` | integer | Maximum decoded size of any embedded data reference. **Fixed at 65536 by the spec.** |
@@ -67,7 +67,7 @@ The capabilities document is `additionalProperties: true` to support forward com
 - **TypeScript:** no action needed by default — object types are open. Runtime decoders (zod, valibot) MUST use a passthrough or partial-strict mode (e.g. zod's `.passthrough()`); decoders configured to strip or fail unknown keys MUST NOT be used.
 - **Go:** unmarshalling into `map[string]any` or a struct with an `Extensions json.RawMessage` field both work; do NOT use `json.UnmarshalDisallowUnknownFields`.
 
-Libraries that throw, panic, or strip unknown fields will break silently the next time ACDP adds a capability flag — for example, when push subscriptions ship in v0.1, registries will start advertising `supports_push_subscriptions: true`, and a strict-decoder consumer will fail to read the document at all. The same forward-compat policy applies to the `status` field on registry state (RFC-ACDP-0004 §4.1).
+Libraries that throw, panic, or strip unknown fields will break silently the next time ACDP adds a capability flag — for example, when push subscriptions ship in a future version, registries will start advertising `supports_push_subscriptions: true`, and a strict-decoder consumer will fail to read the document at all. The same forward-compat policy applies to the `status` field on registry state (RFC-ACDP-0004 §4.1).
 
 #### 3.3.1 Schema openness map (NORMATIVE)
 
@@ -97,7 +97,7 @@ Conformant consumers MUST reject deserializing a closed-schema object that conta
 
 ```json
 {
-  "acdp_version": "0.0.1",
+  "acdp_version": "0.1.0",
   "registry_did": "did:web:registry.example.com",
   "supported_signature_algorithms": ["ed25519"],
   "supported_did_methods": ["did:web"],
@@ -118,7 +118,7 @@ Conformant consumers MUST reject deserializing a closed-schema object that conta
 After fetching `/.well-known/acdp.json`, consumers and cross-registry resolvers MUST validate the following before relying on the document. Schema validation alone is necessary but not sufficient — the items marked **(value)** below are not enforceable by the JSON Schema in all toolchains, so implementations MUST verify them in code.
 
 1. `acdp_version` matches the semver pattern `^\d+\.\d+\.\d+$`.
-2. `registry_did` is a valid DID. For v0.0.1 registries, `registry_did` MUST be `did:web:<authority>`, and `<authority>` MUST equal the hostname the capabilities document was fetched from. **(value, cross-field)**
+2. `registry_did` is a valid DID. For v0.1.0 registries, `registry_did` MUST be `did:web:<authority>`, and `<authority>` MUST equal the hostname the capabilities document was fetched from. **(value, cross-field)**
 3. `supported_signature_algorithms` MUST contain `"ed25519"`.
 4. `supported_did_methods` MUST contain `"did:web"`.
 5. `profiles` MUST contain `"acdp-registry-core"`.
@@ -195,7 +195,7 @@ All error responses use the following structure, conforming to [`schemas/json/ac
 
 ## 5. Error Code Registry
 
-The full registry is maintained in [`registries/error-codes.md`](../registries/error-codes.md). The codes defined by v0.0.1:
+The full registry is maintained in [`registries/error-codes.md`](../registries/error-codes.md). The codes defined by v0.1.0:
 
 | Code | HTTP | Meaning | Source |
 |---|---|---|---|
@@ -220,7 +220,7 @@ The full registry is maintained in [`registries/error-codes.md`](../registries/e
 | `cross_registry_resolution_failed` | 502 | A cross-registry resolution failed (DNS resolution refused, response oversize, timeout, redirect-policy violation, or upstream registry unavailable). | RFC-ACDP-0006 §7 |
 | `internal_error` | 500 | The registry encountered an unexpected internal condition. The standard error envelope MUST be used; `error.message` MUST NOT leak stack traces or sensitive context. Retryable. | RFC-ACDP-0007 §4 |
 
-> **Reserved codes (not in this table or the v0.0.1 wire enum):** `immutable_field` is reserved for v0.1+ mutation endpoints (retraction, attestation updates — see RFC-ACDP-0009 §2.1). `unsupported_embedding_model` is reserved for v0.1+ similarity endpoints (see RFC-ACDP-0009 §2.9). Implementations MUST NOT emit either in v0.0.1 responses.
+> **Reserved codes (not in this table or the v0.1.0 wire enum):** `immutable_field` is reserved for a future version's mutation endpoints (retraction, attestation updates — see RFC-ACDP-0009 §2.1). `unsupported_embedding_model` is reserved for a future version's similarity endpoints (see RFC-ACDP-0009 §2.9). Implementations MUST NOT emit either in v0.1.0 responses.
 
 **Distinguishing hash failures.** Three failure codes can arise from integrity checks; implementations MUST keep them distinct so consumers can react correctly:
 

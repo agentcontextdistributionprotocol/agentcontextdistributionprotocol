@@ -31,7 +31,7 @@ Idea → Draft → Review → Final Comment Period → Release Candidate N → F
 
 **Release Candidate N**
 - A specific candidate (`rc1`, `rc2`, …) intended for implementation testing.
-- The RFC `Version:` header carries the `-rcN` suffix (e.g. `0.0.1-rc1`).
+- The RFC `Version:` header carries the `-rcN` suffix (e.g. `0.1.0-rc1`).
 - Backward-incompatible changes remain possible until `Final`; editorial fixes are expected.
 - Implementations MAY ship against an RC, but MUST be prepared for breaking changes before `Final`.
 
@@ -42,7 +42,7 @@ Idea → Draft → Review → Final Comment Period → Release Candidate N → F
 
 **Reserved** *(sidebar state)*
 - RFC number is pinned but contains no normative text.
-- `Version:` header carries the `-reserved` suffix (e.g. `0.0.1-reserved`).
+- `Version:` header carries the `-reserved` suffix (e.g. `0.1.0-reserved`).
 - Implementations MUST NOT depend on identifiers reserved here until promoted out of `Reserved`.
 
 **Rejected**

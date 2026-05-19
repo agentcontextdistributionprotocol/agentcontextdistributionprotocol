@@ -187,7 +187,7 @@ matches = resp.json()["matches"]
 # Each match has ctx_id, agent_id, title, summary, etc. — fetch each one for the full body.
 ```
 
-Semantic similarity is reserved for a future ACDP version (RFC-ACDP-0009 §2.9); v0.0.1 implementations expose keyword search only.
+Semantic similarity is reserved for a future ACDP version (RFC-ACDP-0009 §2.9); v0.1.0 implementations expose keyword search only.
 
 ---
 

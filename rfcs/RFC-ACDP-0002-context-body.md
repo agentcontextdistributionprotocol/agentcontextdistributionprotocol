@@ -2,8 +2,8 @@
 # Agent Context Description Protocol (ACDP) — Context Body
 
 **Document:** RFC-ACDP-0002
-**Version:** 0.0.1
-**Status:** Community Standards Track (Draft)
+**Version:** 0.1.0-rc1
+**Status:** Community Standards Track (Release Candidate 1)
 
 This RFC specifies the immutable, signed body of an ACDP context. It depends on RFC-ACDP-0001 Core (identifiers, JCS, content hash, signature).
 
@@ -11,7 +11,7 @@ This RFC specifies the immutable, signed body of an ACDP context. It depends on 
 
 ## 1. Status of This Memo
 
-This document is a Draft. Backward-incompatible changes remain possible until Final.
+This document is a Release Candidate (acdp/0.1.0-rc1). Backward-incompatible changes remain possible until Final; only editorial fixes are expected during the RC window.
 
 ---
 
@@ -24,7 +24,7 @@ A context consists of two parts (terminology defined in RFC-ACDP-0001 §2):
 
 When a context is retrieved (RFC-ACDP-0004 §2), both parts are returned together as a JSON object with two top-level keys: `body` and `registry_state`.
 
-This structural separation is preserved in v0.0.1 to enable forward compatibility: future versions will add lifecycle events, relationships, and attestations to RegistryState without changing the Body's structure or signing semantics.
+This structural separation is preserved in v0.1.0 to enable forward compatibility: future versions will add lifecycle events, relationships, and attestations to RegistryState without changing the Body's structure or signing semantics.
 
 ---
 
@@ -42,7 +42,7 @@ The canonical schema is [`schemas/json/acdp-context-body.schema.json`](../schema
 | `lineage_id` | string | Yes | Deterministically-derived identifier for the lineage. See RFC-ACDP-0001 §5.6. |
 | `version` | integer | Yes | Monotonically-increasing version number within the lineage, starting at 1. |
 | `supersedes` | string \| null | Yes | The `ctx_id` of the immediately previous version, or `null` for version 1. |
-| `agent_id` | string | Yes | The DID of the single signing identity for this context. v0.0.1 producers MUST use `did:web` so that any conformant registry can resolve their keys (RFC-ACDP-0001 §5.4, §5.11). |
+| `agent_id` | string | Yes | The DID of the single signing identity for this context. v0.1.0 producers MUST use `did:web` so that any conformant registry can resolve their keys (RFC-ACDP-0001 §5.4, §5.11). |
 | `contributors` | array of string | Yes | DIDs of agents that contributed to but did not sign this context. MAY be empty. |
 | `origin_registry` | string | Yes | DNS hostname of the registry that originally accepted this context. **Assigned by the registry**. See the clarification below. |
 | `created_at` | string | Yes | RFC 3339 timestamp of registry acceptance. **Assigned by the registry**. |
@@ -104,9 +104,9 @@ Producers requiring richer or larger structured metadata SHOULD use `data_refs` 
 |---|---|---|---|
 | `derived_from` | array of string | Yes | `ctx_id`s of contexts whose content directly informed this one. MAY be empty. |
 
-`derived_from` is the only graph field in v0.0.1. It captures *epistemic* lineage: contexts the producer actually consumed at publication time. Because it is part of the signed body, the lineage chain is end-to-end verifiable: a consumer following `derived_from` references can verify each context's signature independently.
+`derived_from` is the only graph field in v0.1.0. It captures *epistemic* lineage: contexts the producer actually consumed at publication time. Because it is part of the signed body, the lineage chain is end-to-end verifiable: a consumer following `derived_from` references can verify each context's signature independently.
 
-Future versions of ACDP will add post-publication relationships (third-party `builds_on` claims). v0.0.1 supports lineage-based discovery via the `derived_from` search filter (RFC-ACDP-0005 §2) but does not support post-publication relationship creation.
+Future versions of ACDP will add post-publication relationships (third-party `builds_on` claims). v0.1.0 supports lineage-based discovery via the `derived_from` search filter (RFC-ACDP-0005 §2) but does not support post-publication relationship creation.
 
 `derived_from` is REQUIRED on the wire even when empty (`derived_from: []`). This is for JCS canonicalization stability: an absent field and an empty array produce different canonical bytes (and therefore different `content_hash` values), so requiring the field uniformly removes ambiguity across implementations and ACDP versions. Producers with no upstream contexts MUST send `derived_from: []`.
 
@@ -128,7 +128,7 @@ Future versions of ACDP will add post-publication relationships (third-party `bu
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `acdp_version` | string | No | The ACDP body protocol version this body conforms to. Form: `<major>.<minor>.<patch>`. Producer-supplied and producer-signed (part of ProducerContent — RFC-ACDP-0001 §2, §5.7). An absent field MUST be treated as `"0.0.1"`. v0.1+ producers SHOULD set the field explicitly so verifiers can apply the correct exclusion set and algorithm vocabulary. See RFC-ACDP-0001 §6. |
+| `acdp_version` | string | No | The ACDP body protocol version this body conforms to. Form: `<major>.<minor>.<patch>`. Producer-supplied and producer-signed (part of ProducerContent — RFC-ACDP-0001 §2, §5.7). An absent field MUST be treated as `"0.1.0"`, the inaugural release. Producers SHOULD set the field explicitly so verifiers can unambiguously apply the correct exclusion set and algorithm vocabulary for the body's declared version, especially as future versions evolve them. See RFC-ACDP-0001 §6. |
 
 ---
 
@@ -151,7 +151,7 @@ A context's `version` MUST be 1 if `supersedes` is `null`, and MUST be `previous
 When publishing a context with `supersedes` set, the registry MUST verify per RFC-ACDP-0003 §3:
 
 1. The superseded context exists and is accessible.
-2. The publishing agent's `agent_id` matches the superseded context's `agent_id`, OR the publishing agent presents a valid delegation chain from the superseded context's `agent_id` (delegation is out of scope for v0.0.1; only direct match is required).
+2. The publishing agent's `agent_id` matches the superseded context's `agent_id`, OR the publishing agent presents a valid delegation chain from the superseded context's `agent_id` (delegation is out of scope for v0.1.0; only direct match is required).
 3. The new context's computed `lineage_id` matches the superseded context's `lineage_id`.
 
 The registry MUST reject the publication if any of these checks fail.
@@ -181,7 +181,7 @@ Each entry in `data_refs` is a JSON object describing one piece of data that the
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `type` | string | Yes | One of `primary_result`, `raw_data`, `supporting_info`, `derived_data`. The full registry, including selection guidance, is in [`registries/data-ref-types.md`](../registries/data-ref-types.md). v0.0.1 defines a **closed set**: custom or namespaced `DataRef.type` values are NOT supported (the schema's `enum` enforces this). Extensibility is reserved for a future ACDP version. |
+| `type` | string | Yes | One of `primary_result`, `raw_data`, `supporting_info`, `derived_data`. The full registry, including selection guidance, is in [`registries/data-ref-types.md`](../registries/data-ref-types.md). v0.1.0 defines a **closed set**: custom or namespaced `DataRef.type` values are NOT supported (the schema's `enum` enforces this). Extensibility is reserved for a future ACDP version. |
 | `description` | string | No | Human-readable description. |
 | `size_bytes` | integer | No | Size of the referenced data in bytes. |
 | `format` | string | No | Format identifier (e.g., `json`, `csv`, `parquet`, `binary`). |
