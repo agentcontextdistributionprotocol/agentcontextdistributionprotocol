@@ -1,0 +1,22 @@
+{
+  "id": "schema-010",
+  "description": "A capabilities document whose `limits` sub-object carries an unknown field. The capabilities document is OPEN at the top level (additionalProperties: true — see caps-006 / schema-004), but its `limits` sub-object is CLOSED (additionalProperties: false; see acdp-capabilities.schema.json and the openness map in RFC-ACDP-0007 §3.3.1). New limit keys are added by a spec version bump, not by registries inventing fields. Consumers fetching /.well-known/acdp.json MUST reject a document whose `limits` carries an unknown field as schema_violation — even though they MUST tolerate unknown keys at the document top level.",
+  "tags": ["schema-openness", "negative", "capabilities", "limits", "closed-schema"],
+  "input": {
+    "endpoint": "GET /.well-known/acdp.json",
+    "response_body_excerpt": {
+      "limits": {
+        "max_payload_bytes": 1048576,
+        "max_embedded_bytes": 65536,
+        "extra": "invalid"
+      }
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "consumer_outcome": "reject",
+    "consumer_error": "schema_violation",
+    "error_code": "schema_violation",
+    "rationale": "limits is a closed sub-object inside an open document. This split is deliberate: forward-compat capability FLAGS belong at the document top level (open), but the resource LIMITS that gate the protocol (max_payload_bytes, max_embedded_bytes, idempotency_key_ttl_seconds) are a fixed, version-pinned set. An unknown limits key is a misconfiguration or a version-drift bug, not a forward-compatible extension. Companion to caps-006 / schema-004, which pin the open behavior of the document top level."
+  }
+}

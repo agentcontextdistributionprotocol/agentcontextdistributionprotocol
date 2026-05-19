@@ -9,21 +9,24 @@ ACDP conformance fixtures are JSON files that describe a scenario, the input, an
 ```
 conformance/
 ├── README.md
-├── pub-*.json     Publish-flow scenarios (RFC-ACDP-0003)
-├── idem-*.json    Idempotency-Key scenarios (RFC-ACDP-0003 §6)
-├── rate-*.json    Rate-limiting wire-shape scenarios (RFC-ACDP-0008 §4.3)
-├── ret-*.json     Retrieval scenarios (RFC-ACDP-0004)
-├── vis-*.json     Visibility-leak prevention scenarios (RFC-ACDP-0002, RFC-ACDP-0008)
-├── can-*.json     Canonicalization / hashing test vectors (RFC-ACDP-0001)
-├── sig-*.json     Cryptographic golden vectors (signing & verification, RFC-ACDP-0001)
-├── fed-*.json     Cross-registry / SSRF protection scenarios (RFC-ACDP-0006)
-├── err-*.json     Error envelope and HTTP status fixtures (RFC-ACDP-0007)
-├── caps-*.json    Capabilities-document validation (RFC-ACDP-0007 §3.5)
-├── status-*.json  Registry-state status pattern validation (RFC-ACDP-0004 §4.1)
-├── schema-*.json  Schema openness (closed-vs-open) cases (RFC-ACDP-0007 §3.3.1)
-├── data-ref-*.json DataRef validation (RFC-ACDP-0002 §6.6)
-├── meta-*.json    Metadata limit cases (RFC-ACDP-0002 §3.3)
-└── body-*.json    Body identity-field validation (RFC-ACDP-0002 §3)
+├── pub-*.json      Publish-flow scenarios (RFC-ACDP-0003)
+├── idem-*.json     Idempotency-Key scenarios (RFC-ACDP-0003 §6)
+├── rate-*.json     Rate-limiting wire-shape scenarios (RFC-ACDP-0008 §4.3)
+├── ret-*.json      Retrieval scenarios (RFC-ACDP-0004)
+├── vis-*.json      Visibility-leak prevention scenarios (RFC-ACDP-0002, RFC-ACDP-0008)
+├── can-*.json      Canonicalization / hashing test vectors (RFC-ACDP-0001, RFC-ACDP-0002 §6.7)
+├── lin-*.json      Lineage-id derivation golden vectors (RFC-ACDP-0001 §5.6)
+├── sig-*.json      Cryptographic golden vectors (signing & verification, RFC-ACDP-0001)
+├── fed-*.json      Cross-registry / SSRF protection scenarios (RFC-ACDP-0006 §7)
+├── did-ssrf-*.json Producer DID resolution SSRF protection (RFC-ACDP-0008 §4.8)
+├── err-*.json      Error envelope and HTTP status fixtures (RFC-ACDP-0007)
+├── caps-*.json     Capabilities-document validation (RFC-ACDP-0007 §3.5)
+├── status-*.json   Registry-state status pattern validation (RFC-ACDP-0004 §4.1)
+├── schema-*.json   Schema openness + absent-vs-null wire convention (RFC-ACDP-0007 §3.3.1, RFC-ACDP-0005 §2.2.1)
+├── cur-*.json      Pagination cursor expiry / validity (RFC-ACDP-0005 §2.5.4)
+├── data-ref-*.json DataRef validation (RFC-ACDP-0002 §6.5, §6.6)
+├── meta-*.json     Metadata limit cases (RFC-ACDP-0002 §3.3)
+└── body-*.json     Body identity-field validation (RFC-ACDP-0002 §3)
 ```
 
 ---
@@ -33,13 +36,14 @@ conformance/
 `scripts/conformance-runner.py` verifies **arithmetic and cryptographic** vectors only:
 
 - `can-*.json` — JCS canonicalization, SHA-256 hashing, lineage_id derivation
-- `sig-*.json` — Ed25519 sign/verify golden vectors
+- `lin-*.json` — lineage_id derivation golden vectors
+- `sig-*.json` — Ed25519 / ECDSA-P256 sign/verify golden vectors
 
-**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`). Those fixtures define request/response scenarios that require a running registry to execute. They are machine-readable specifications for registry implementers to validate against their implementation.
+**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`, `cur-*`, `did-ssrf-*`, `schema-*`, …). Those fixtures define request/response scenarios that require a running registry or consumer to execute. They are machine-readable specifications for implementers to validate against their implementation.
 
 To claim full conformance a registry MUST:
 1. Pass `python3 scripts/conformance-runner.py` (arithmetic/cryptographic)
-2. Separately execute all `pub-*`, `vis-*`, `ret-*`, and `err-*` fixture scenarios against a live registry instance
+2. Separately execute all behavioral fixture scenarios (`pub-*`, `vis-*`, `ret-*`, `err-*`, `schema-*`, `cur-*`, `did-ssrf-*`, …) against a live registry instance
 
 ---
 
@@ -134,6 +138,7 @@ Rate-limit triggering depends on registry policy (window, bucket, threshold), so
 | `data-ref-005` | Embedded decoded size > 65536 bytes | failure: `embedded_too_large` |
 | `data-ref-006` | `embedded.encoding` is `utf8` or `base64` but `content` is not a string | failure: `schema_violation` |
 | `data-ref-007` | `embedded.content_hash` present but does not match decoded bytes | failure: `data_ref_hash_mismatch` |
+| `data-ref-008` | External `data_ref.location` whose fetched bytes do not match `data_ref.content_hash` — consumer-side fetch-time check; the body signature and body `content_hash` stay valid | failure: `data_ref_hash_mismatch` (body still verified) |
 
 ### Body identity fields (RFC-ACDP-0002 §3)
 
@@ -176,10 +181,19 @@ Rate-limit triggering depends on registry policy (window, bucket, threshold), so
 | `can-007` | Registry-side `created_at` MUST use canonical millisecond precision (RFC-ACDP-0001 §5.3) — descriptive fixture (no JCS round-trip; verify by registry code review + integration regex match `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$`) | conformance verified by registry implementer; runner skips |
 | `can-008` | Body with unknown producer-controlled field (`priority`) — consumer MUST include in hash recomputation (RFC-ACDP-0001 §5.7 raw-JSON rule) | success: byte-exact reproduction including the unknown field |
 | `can-009` | Stored Body → ProducerContent — exclusion set is stripped BY NAME, regardless of typed-model knowledge | success: byte-exact reproduction matches the stored `content_hash` |
+| `can-010` | Body whose `data_refs[]` entry carries an unknown producer-controlled field — DataRef is an open schema, the field MUST be retained in hash recomputation (RFC-ACDP-0002 §6.7) | success: byte-exact reproduction including the unknown DataRef field |
 
 **Test DIDs.** The `can-*` canonicalization fixtures use `did:agent:test` as a deliberately short, fictitious DID method to keep canonical-form expected values readable. The precomputed `canonical_form` and `sha256_hex` values depend on the exact string. v0.1.0 wire deployments MUST use `did:web` (RFC-ACDP-0001 §5.4) — `did:agent:` is a test-only convention and is not a registered DID method.
 
 All v0.1.0 fixtures listed above are authored. The `can-005` fixture's "absent tags" vector cross-checks with `can-001` vector 1 — they have bit-identical input and MUST produce the same hash. Additional fixtures (embedded-too-large, payload-too-large, race on supersession, etc.) are welcome via PR.
+
+### Lineage identifier derivation (RFC-ACDP-0001 §5.6)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `lin-001` | Dedicated golden vectors for `lineage_id = "lin:sha256:" + lowercase_hex(SHA-256(utf8(first_version_ctx_id)))`. Three vectors over different `ctx_id` authorities. | success: byte-exact reproduction of each `lineage_id` |
+
+`lin-001` is executed by `scripts/conformance-runner.py` with the same lineage-derivation check applied to `can-*` lineage vectors. Its vectors cross-check `can-001` (lineage vectors 1–3) and `sig-001` (`registry_assigned.lineage_id`); all three MUST agree.
 
 ### Cryptographic golden vectors (RFC-ACDP-0001)
 
@@ -229,7 +243,7 @@ These fixtures are required for `acdp-registry-federated` profile conformance (r
 | `status-003` | Value containing whitespace (`"in progress"`) | reject: `schema_violation` |
 | `status-004` | Empty string | reject: `schema_violation` |
 
-### Schema openness (RFC-ACDP-0007 §3.3.1)
+### Schema openness & wire convention (RFC-ACDP-0007 §3.3.1, RFC-ACDP-0005 §2.2.1)
 
 | ID | Description | Outcome |
 |---|---|---|
@@ -237,3 +251,30 @@ These fixtures are required for `acdp-registry-federated` profile conformance (r
 | `schema-002` | Publish response echoing `content_hash` (closed schema) — companion to `pub-007` | reject: `schema_violation` |
 | `schema-003` | DataRef `embedded` sub-object with extra field (closed sub-schema) | reject: `schema_violation` |
 | `schema-004` | Capabilities document with extra top-level field — duplicate angle on `caps-006` | accept |
+| `schema-005` | Search response with `next_cursor: null` — `next_cursor` is a non-nullable bare string; absent optional fields MUST be omitted, not nulled | reject: `schema_violation` |
+| `schema-006` | `match_summary` with `summary: null` — non-nullable bare string | reject: `schema_violation` |
+| `schema-007` | `match_summary` with `domain: null` — non-nullable bare string | reject: `schema_violation` |
+| `schema-008` | Body `signature` object with an extra field (closed sub-schema) | reject: `schema_violation` |
+| `schema-009` | Body `data_period` object with an extra field (closed sub-schema) | reject: `schema_violation` |
+| `schema-010` | Capabilities `limits` sub-object with an extra field (closed sub-schema inside the open document) | reject: `schema_violation` |
+
+`schema-005`..`schema-007` pin the absent-vs-null wire convention (RFC-ACDP-0005 §2.2.1): an optional field whose schema types it as a bare string is NOT nullable on the wire; `null` is rejected, `supersedes` (typed `string | null`) is the contrasting legitimately-nullable field. `schema-008`..`schema-010` pin the closed nested schemas in the openness map.
+
+### Pagination cursors (RFC-ACDP-0005 §2.5.4)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `cur-001` | Search request replays a cursor that was validly issued but is now stale (validity window elapsed or result set mutated) | failure: `cursor_expired` (HTTP 400) |
+| `cur-002` | Search request supplies a malformed / never-issued cursor the registry cannot parse | failure: `invalid_cursor` (HTTP 400) |
+
+`cursor_expired` (was valid, now stale) and `invalid_cursor` (never parseable) are kept distinct so a client can tell "restart pagination" apart from "this cursor is corrupt or forged". Both are required for the `acdp-registry-discovery` profile.
+
+### Producer DID resolution / SSRF (RFC-ACDP-0008 §4.8)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `did-ssrf-001` | Producer `did:web` authority resolves to a loopback address (`127.0.0.0/8`, `::1`, `0.0.0.0`) — MUST refuse before connecting | failure: `key_resolution_failed` (HTTP 400) |
+| `did-ssrf-002` | Producer `did:web` authority resolves to the cloud-metadata / IMDS address (`169.254.169.254`) or other link-local target | failure: `key_resolution_failed` (HTTP 400) |
+| `did-ssrf-003` | Producer `did:web` authority resolves to an RFC 1918 private-range address (`10/8`, `172.16/12`, `192.168/16`, `fc00::/7`) | failure: `key_resolution_failed` (HTTP 400) |
+
+Producer DID resolution happens at publish-time signature verification (RFC-ACDP-0003 §2.1 step 6) and at consumer-side end-to-end verification (RFC-ACDP-0008 §4.4). It is the same SSRF vector as cross-registry resolution (`fed-*`) and MUST be defended identically — see RFC-ACDP-0008 §4.8. The refusal is permanent and producer-caused, so the code is `key_resolution_failed` (HTTP 400, not retryable), never `key_resolution_unreachable` (HTTP 502). Required for `acdp-registry-core` and `acdp-consumer`.

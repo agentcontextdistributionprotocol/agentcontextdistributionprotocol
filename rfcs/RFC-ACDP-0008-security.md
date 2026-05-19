@@ -2,8 +2,8 @@
 # Agent Context Description Protocol (ACDP) — Security & Threat Model
 
 **Document:** RFC-ACDP-0008
-**Version:** 0.1.0-rc1
-**Status:** Community Standards Track (Release Candidate 1)
+**Version:** 0.1.0
+**Status:** Community Standards Track (Final)
 
 This RFC specifies the threat model for ACDP v0.1.0 and the defenses every implementation MUST provide. It depends on the entire core RFC stack (0001–0007).
 
@@ -11,7 +11,7 @@ This RFC specifies the threat model for ACDP v0.1.0 and the defenses every imple
 
 ## 1. Status of This Memo
 
-This document is a Release Candidate (acdp/0.1.0-rc1). Backward-incompatible changes remain possible until Final; only editorial fixes are expected during the RC window.
+This document is a Final ACDP specification (acdp/0.1.0). It is stable for the 0.1.0 release; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
 
 ---
 
@@ -111,6 +111,26 @@ The full visibility matrix (retrieval × search × visibility level × requester
 - Consumers resolving `acdp://` references MUST verify the producing agent's signature on every retrieved context. They MUST NOT trust the serving registry to vouch for context authenticity. Registry trust extends only to availability.
 - DNS spoofing or registry compromise MUST NOT be sufficient to forge a context — the producer's signature is the trust anchor.
 - When `acdp://` resolution is performed server-side (e.g., on a registry advertising the `acdp-registry-federated` profile), the resolving party MUST verify the upstream registry's DID per RFC-ACDP-0006 §4.1 step 3 (fetch `https://<authority>/.well-known/acdp.json`, extract `registry_did`, resolve the DID document, and confirm the DID's web binding matches `<authority>`). Mismatch MUST result in `cross_registry_resolution_failed`. Server-side resolution MUST also apply the SSRF protections of RFC-ACDP-0006 §7. Consumers performing client-side resolution SHOULD apply the same checks.
+
+### 4.8 Producer DID resolution SSRF protection
+
+RFC-ACDP-0006 §7 specifies SSRF defenses for cross-registry resolution. **Producer DID resolution is an equally attacker-controlled SSRF vector** and MUST be defended identically.
+
+Both a registry (verifying a signature during `POST /contexts` — RFC-ACDP-0003 §2.1 step 6) and a consumer (verifying a retrieved context end-to-end — §4.4) dereference a producer-supplied `did:web` identifier into an HTTPS URL: `did:web:agents.example.com` → `https://agents.example.com/.well-known/did.json`, and `did:web:example.com:path:to:agent` → `https://example.com/path/to/agent/did.json`. The host component is taken verbatim from `body.agent_id` and `signature.key_id`, which are producer-controlled. A registry that runs signature verification on user-submitted publish requests can therefore be turned into an SSRF proxy if its DID resolver applies no IP-range restrictions.
+
+Registries and consumers MUST apply the following defenses to producer `did:web` resolution, mirroring RFC-ACDP-0006 §7:
+
+- The resolved URL MUST use the `https://` scheme. `http://` and any other scheme MUST be refused without connecting.
+- The host MUST be resolved before connecting, and the connection MUST be refused if any resolved IP is:
+  - **Loopback** — `127.0.0.0/8`, `::1` (and the unspecified address `0.0.0.0`, which many OSes route to localhost).
+  - **RFC 1918 private** — `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, and IPv6 ULA `fc00::/7`.
+  - **Link-local, including the cloud-metadata endpoint** — `169.254.0.0/16`, `fe80::/10`, and specifically `169.254.169.254` (AWS / GCP / Azure IMDS).
+  - Any locally-defined private range relevant to the deployment.
+- The resolved IP MUST be pinned for the connection lifetime (one DNS resolution per request, used for both the filter check and the connection — no TOCTOU re-resolution), redirects MUST stay on the same authority and be capped, response size MUST be capped (DID documents MUST cap at 64 KB per RFC-ACDP-0006 §7.3), and connection/total timeouts MUST be bounded per RFC-ACDP-0006 §7.4.
+
+A registry that refuses a producer DID on these grounds MUST fail the publish with `key_resolution_failed` (HTTP 400): the refusal is a permanent, policy-driven, producer-caused condition and is **not** retryable, so `key_resolution_unreachable` (HTTP 502, retryable) MUST NOT be used. A consumer that refuses a producer DID on these grounds MUST treat the context as unverifiable and MUST NOT rely on it.
+
+Test harnesses MAY allow `localhost`/loopback targets only when an explicit, non-default test-mode SSRF policy is configured. Producers using `did:web:localhost%3A8443:...`-style DIDs are valid only in test and development deployments and MUST NOT appear in production publications. The `did-ssrf-001`, `did-ssrf-002`, and `did-ssrf-003` conformance fixtures pin loopback, IMDS, and private-range refusal respectively.
 
 ---
 

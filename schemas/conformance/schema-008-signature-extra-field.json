@@ -1,0 +1,25 @@
+{
+  "id": "schema-008",
+  "description": "A publish-request body whose `signature` object carries an unknown field. The `signature` sub-schema is CLOSED (additionalProperties: false; see acdp-common.schema.json#/$defs/signature and the openness map in RFC-ACDP-0007 §3.3.1). The signature object is a tightly-scoped wire shape — exactly algorithm, key_id, value. Future signature variants (proof chains, threshold attestations per RFC-ACDP-0009) require an explicit schema bump, not field-level extensibility. Registries MUST reject the publish at schema validation (RFC-ACDP-0003 §2.1 step 1); consumers MUST reject the body at deserialization.",
+  "tags": ["schema-openness", "negative", "signature", "closed-schema"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "request_body_excerpt": {
+      "signature": {
+        "algorithm": "ed25519",
+        "key_id": "did:web:agents.example.com:test-producer#key-1",
+        "value": "ErkbV+FUdn49TgF3zJ3RBe3AmyGxLVAQdMjlhabUfM96qendmWwdVodX/SV3O3aKLypbUu6gmb5Npt3O/w7nDQ==",
+        "extra": "invalid"
+      }
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "registry_outcome": "reject",
+    "consumer_outcome": "reject",
+    "status": 400,
+    "http_status": 400,
+    "error_code": "schema_violation",
+    "rationale": "The signature object is closed at exactly three fields. The whole signature object is excluded from ProducerContent (RFC-ACDP-0001 §5.7), but it is still part of the stored Body, so an unknown signature field would change the Body's JCS canonical form. Keeping the signature schema closed avoids that ambiguity; an unknown field signals a bug, not a forward-compatible extension."
+  }
+}

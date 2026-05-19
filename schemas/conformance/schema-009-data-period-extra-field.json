@@ -1,0 +1,24 @@
+{
+  "id": "schema-009",
+  "description": "A publish-request body whose `data_period` object carries an unknown field. The `data_period` sub-schema is CLOSED (additionalProperties: false; see acdp-common.schema.json#/$defs/data_period and the openness map in RFC-ACDP-0007 §3.3.1). `data_period` is exactly `start` and `end`. Registries MUST reject the publish at schema validation (RFC-ACDP-0003 §2.1 step 1); consumers MUST reject the body at deserialization.",
+  "tags": ["schema-openness", "negative", "data-period", "closed-schema"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "request_body_excerpt": {
+      "data_period": {
+        "start": "2026-01-01T00:00:00.000Z",
+        "end": "2026-12-31T23:59:59.000Z",
+        "extra": "invalid"
+      }
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "registry_outcome": "reject",
+    "consumer_outcome": "reject",
+    "status": 400,
+    "http_status": 400,
+    "error_code": "schema_violation",
+    "rationale": "data_period is a closed two-field wire shape (start, end). It is part of ProducerContent and therefore part of content_hash; an unknown field would silently change the hash preimage. New time-window semantics require an explicit schema bump, not field-level extensibility."
+  }
+}

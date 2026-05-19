@@ -1,0 +1,33 @@
+{
+  "id": "did-ssrf-002",
+  "description": "Producer DID resolution that targets the cloud-metadata endpoint (169.254.169.254 — AWS / GCP / Azure IMDS) MUST be refused. A registry that resolves a producer did:web without IP-range filtering can be coerced into reading IAM credentials, instance identity documents, and other secrets from the metadata service. See RFC-ACDP-0008 §4.8.",
+  "tags": ["security", "ssrf", "did-resolution", "imds", "link-local"],
+  "ssrf_rule": "RFC-ACDP-0008 §4.8 (Producer DID resolution SSRF protection — link-local / IMDS)",
+  "applies_to_profiles": ["acdp-registry-core", "acdp-consumer"],
+  "input": {
+    "scenario": "A publish request whose body.agent_id is a did:web identifier resolving to the IMDS address",
+    "endpoint": "POST /contexts",
+    "body": {
+      "agent_id": "did:web:169.254.169.254",
+      "signature": {
+        "algorithm": "ed25519",
+        "key_id": "did:web:169.254.169.254#key-1",
+        "value": "AAAA"
+      }
+    },
+    "resolved_did_url": "https://169.254.169.254/.well-known/did.json",
+    "dns_resolution_results": ["169.254.169.254"],
+    "additional_test_cases": [
+      "did:web:metadata.example.com",
+      "did:web:169.254.1.1"
+    ],
+    "additional_test_cases_note": "metadata.example.com is a hostname that itself resolves (via DNS) to 169.254.169.254 — the filter MUST run on the post-DNS IP, not the literal authority string. 169.254.1.1 is a non-IMDS link-local address and MUST also be refused (169.254.0.0/16, fe80::/10)."
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 400,
+    "error_code": "key_resolution_failed",
+    "behavior": "The resolver MUST refuse before connecting. The full link-local range (169.254.0.0/16, fe80::/10) MUST be filtered, with 169.254.169.254 explicitly rejected. Filtering MUST occur on the resolved IP, so a hostname that resolves to a link-local address is caught even though its authority string looks innocuous.",
+    "rationale": "The cloud-metadata endpoint exposes IAM role credentials and instance identity. An unfiltered DID resolver is a direct path to full cloud-account compromise."
+  }
+}

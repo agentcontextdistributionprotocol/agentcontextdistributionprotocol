@@ -1,0 +1,19 @@
+{
+  "id": "cur-001",
+  "description": "A GET /contexts/search request replays a pagination cursor that was validly issued by a previous response but is no longer usable — either more than the 1-hour minimum validity window has elapsed, or the underlying result set changed enough that the registry can no longer continue the sequence from that position. The registry MUST respond with cursor_expired (HTTP 400) and the standard error envelope. The client SHOULD restart pagination from the first page. See RFC-ACDP-0005 §2.5.4 'Cursor stability'.",
+  "tags": ["failure", "discovery", "pagination", "cursor"],
+  "input": {
+    "endpoint": "GET /contexts/search?q=market+data&cursor=<previously-issued-cursor>",
+    "scenario": "The cursor in the query string was returned as next_cursor by an earlier search response in this sequence. By the time it is replayed, the registry can no longer resume from it (validity window elapsed, or the result set mutated past the point of stable continuation).",
+    "cursor_state": "expired"
+  },
+  "expected": {
+    "outcome": "failure",
+    "error_code": "cursor_expired",
+    "http_status": 400,
+    "content_type": "application/acdp+json",
+    "envelope_conformant": true,
+    "client_behavior": "On cursor_expired the client SHOULD restart pagination from a cursor-less first-page request.",
+    "rationale": "cursor_expired (a cursor that WAS valid) is distinct from invalid_cursor (a cursor that was NEVER parseable — see cur-002). Keeping the two distinct lets a client tell 'my pagination session timed out, restart' apart from 'this cursor is corrupt or forged'. A registry MUST NOT silently treat an expired cursor as a first-page request — that would skip results or loop."
+  }
+}

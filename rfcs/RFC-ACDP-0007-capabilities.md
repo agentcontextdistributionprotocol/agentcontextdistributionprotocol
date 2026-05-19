@@ -2,8 +2,8 @@
 # Agent Context Description Protocol (ACDP) — Capabilities & Errors
 
 **Document:** RFC-ACDP-0007
-**Version:** 0.1.0-rc1
-**Status:** Community Standards Track (Release Candidate 1)
+**Version:** 0.1.0
+**Status:** Community Standards Track (Final)
 
 This RFC specifies the registry capability declaration document and the standard error envelope used by all ACDP endpoints.
 
@@ -11,7 +11,7 @@ This RFC specifies the registry capability declaration document and the standard
 
 ## 1. Status of This Memo
 
-This document is a Release Candidate (acdp/0.1.0-rc1). Backward-incompatible changes remain possible until Final; only editorial fixes are expected during the RC window.
+This document is a Final ACDP specification (acdp/0.1.0). It is stable for the 0.1.0 release; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
 
 ---
 
@@ -80,6 +80,7 @@ ACDP uses a mix of CLOSED schemas (`additionalProperties: false`, used for tight
 | `acdp-search-response.schema.json` | **Closed** | `false` |
 | `acdp-error.schema.json` | **Closed** | `false` |
 | `acdp-error.schema.json` (`error.details`) | **Open** | `true` |
+| `acdp-data-ref.schema.json` (`DataRef` root object) | **Open** | `true` |
 | `acdp-data-ref.schema.json` (`embedded` sub-object) | **Closed** | `false` |
 | `acdp-data-ref.schema.json` (structured `location` object) | **Open** | `true` |
 | `acdp-context-body.schema.json` (`Body` for retrieval) | **Open** | `true` |
@@ -91,7 +92,12 @@ ACDP uses a mix of CLOSED schemas (`additionalProperties: false`, used for tight
 | `signature` (in `acdp-common.schema.json`) | **Closed** | `false` |
 | `data_period` (in `acdp-common.schema.json`) | **Closed** | `false` |
 
-Conformant consumers MUST reject deserializing a closed-schema object that contains fields not defined in the schema (`schema_violation`). Conformant consumers MUST NOT reject deserializing an open-schema object that contains unknown fields. The fixtures `caps-006-extra-top-level-field` (open: tolerate), `pub-007` (closed publish response: forbid extras like `content_hash`), and the search/embedded extra-field fixtures pin specific instances; the table above governs every shape across the schema set.
+Conformant consumers MUST reject deserializing a closed-schema object that contains fields not defined in the schema (`schema_violation`). Conformant consumers MUST NOT reject deserializing an open-schema object that contains unknown fields. The fixtures pin specific instances of both rules:
+
+- **Open (tolerate):** `caps-006`/`schema-004` (capabilities document top level), `can-008` (unknown field at the body root), `can-010` (unknown field inside a `data_refs[]` entry).
+- **Closed (reject):** `pub-007`/`schema-002` (publish response — forbid extras like `content_hash`), `schema-001` (search response — forbid `results`), `schema-003` (DataRef `embedded` sub-object), `schema-008` (`signature` object), `schema-009` (`data_period` object), `schema-010` (capabilities `limits` sub-object).
+
+The table above governs every shape across the schema set; the fixtures are representative, not exhaustive.
 
 ### 3.4 Example
 
@@ -210,7 +216,7 @@ The full registry is maintained in [`registries/error-codes.md`](../registries/e
 | `rate_limited` | 429 | Per-agent rate limit exceeded. | RFC-ACDP-0008 §4.3 |
 | `payload_too_large` | 413 | Request body exceeds `limits.max_payload_bytes`. | RFC-ACDP-0003 §2.1 step 2 |
 | `embedded_too_large` | 413 | An embedded data reference exceeds 64 KB. | RFC-ACDP-0002 §6.3, RFC-ACDP-0003 §2.1 step 3 |
-| `key_resolution_failed` | 400 | The signing key referenced by `signature.key_id` could not be resolved due to a permanent condition (DID document parsed successfully but does not contain the requested key fragment, or fragment is missing from `key_id`). Producer error; not retryable. | RFC-ACDP-0003 §2.1 step 6 |
+| `key_resolution_failed` | 400 | The signing key referenced by `signature.key_id` could not be resolved due to a permanent condition: the DID document parsed successfully but does not contain the requested key fragment; the fragment is missing from `key_id`; or the producer DID resolves to a network target forbidden by SSRF policy (RFC-ACDP-0008 §4.8). Producer error; not retryable. | RFC-ACDP-0003 §2.1 step 6, RFC-ACDP-0008 §4.8 |
 | `key_resolution_unreachable` | 502 | The signing key could not be resolved due to a transient condition (DNS failure, TLS error, HTTP non-2xx, network timeout fetching the DID document). Retryable with backoff. | RFC-ACDP-0003 §2.1 step 6 |
 | `key_not_authorized` | 403 | The DID portion of `signature.key_id` does not equal `body.agent_id`, or the resolved verification method is not in the DID document's `assertionMethod` array. | RFC-ACDP-0003 §2.1 step 6 |
 | `not_implemented` | 501 | Endpoint or capability not implemented by this registry. Returned with the standard error envelope. Emitted when the requested endpoint requires a profile this registry does not advertise (e.g., `GET /contexts/search` on a registry that does not declare `acdp-registry-discovery` in `profiles`). All `acdp-registry-core` endpoints are mandatory and MUST NOT return `not_implemented`. | RFC-ACDP-0001 §9.1, RFC-ACDP-0007 §4 |
@@ -239,6 +245,20 @@ New codes are added via the [RFC process](../governance/RFC-PROCESS.md). Codes M
 Registries MUST NOT reveal which specific policy check failed beyond the registered code. The `error.message` string is informational only and MUST NOT be used in automated decision-making by consumers.
 
 For visibility-restricted contexts, registries MUST return `not_found` (HTTP 404) — they MUST NOT distinguish "not found" from "not authorized" externally. The internal label `visibility_denied` MAY be used in registry logs or metrics for auditing purposes but MUST NOT appear in wire responses.
+
+### 5.3 SDK guidance — `data_ref_hash_mismatch` vs body hash mismatch
+
+The error-code table and the "Distinguishing hash failures" note above are normative for the wire. This section is implementation guidance for SDK authors who expose a verification API to application code.
+
+SDKs exposing verification APIs MUST distinguish `data_ref_hash_mismatch` from body-level hash and signature failures:
+
+- Report `data_ref_hash_mismatch` when a DataRef's bytes — fetched from an external `data_ref.location` (RFC-ACDP-0002 §6.5) or decoded from `data_ref.embedded` (RFC-ACDP-0002 §6.6 Check 8) — do not match the producer-declared `data_ref.content_hash`.
+- An SDK MUST NOT report this case as `invalid_signature`. `invalid_signature` implies the producer's key or signature failed; here the signature is intact.
+- An SDK MUST NOT collapse this case into `hash_mismatch`. `hash_mismatch` implies the entire body's ProducerContent hash failed and the body is unverifiable; here the body is fully verifiable.
+
+A `data_ref_hash_mismatch` indicates the body remains cryptographically valid: the producer signed the hash of the data they intended to reference, but the data at that location has since changed (external case) or was mis-encoded (embedded case). It is an integrity failure at the **data layer**, not the **body layer**. A verification result object SHOULD therefore carry the body-level verdict and the data-ref-level verdict as separate fields, so an application can decide — for example — to trust the body's metadata and `derived_from` lineage while treating one stale DataRef as unusable.
+
+The `data-ref-007` fixture pins the embedded case (registry-side, publish time). The `data-ref-008` fixture pins the external case (consumer-side, fetch time): the body signature MUST still verify, and the SDK SHOULD surface `data_ref_hash_mismatch`, not `invalid_signature`.
 
 ---
 

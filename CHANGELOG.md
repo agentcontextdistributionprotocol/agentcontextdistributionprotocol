@@ -2,6 +2,23 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.1.0 — 2026-05-19
+
+**ACDP is promoted from Release Candidate to `Final`.** RFCs 0001–0008 now carry the `Final` status; RFC-ACDP-0009 remains `Reserved`. `0.1.0` is the first published Final version of the protocol — the `0.0.1` identifier named internal pre-release drafts only and was never promoted. `0.1.0` is wire-compatible with `0.1.0-rc1`: this release is a specification-hardening pass, not a wire change. No body field, schema `$id`, JCS rule, content-hash semantic, or signature semantic changed.
+
+### Specification hardening since `0.1.0-rc1`
+
+- **DataRef schema openness made explicit (RFC-ACDP-0002 §6.7, `acdp-data-ref.schema.json`).** The `DataRef` root object is now an explicit open schema (`additionalProperties: true`): root-level `DataRef` fields are producer-controlled and included in the `content_hash` preimage, so consumers MUST preserve unknown `DataRef` fields when recomputing the hash. The nested `embedded` sub-object remains closed. New fixture `can-010` pins the hash recomputation; the openness map in RFC-ACDP-0007 §3.3.1 gains a `DataRef` root row.
+- **Absent-vs-null wire convention (RFC-ACDP-0005 §2.2.1).** Optional fields MUST be omitted, never serialized as JSON `null`, unless the schema explicitly types them nullable (`supersedes` is the one explicitly-nullable example). New fixtures `schema-005`/`schema-006`/`schema-007` pin rejection of `next_cursor: null`, `summary: null`, `domain: null`.
+- **Producer DID resolution SSRF protection (RFC-ACDP-0008 §4.8).** Registries and consumers MUST apply the RFC-ACDP-0006 §7 SSRF defenses to producer `did:web` resolution, not only to cross-registry resolution. New fixtures `did-ssrf-001`/`did-ssrf-002`/`did-ssrf-003` pin loopback, IMDS, and private-range refusal; the `key_resolution_failed` code is broadened to cover SSRF-policy refusal.
+- **Closed nested-schema conformance (RFC-ACDP-0007 §3.3.1).** New fixtures `schema-008`/`schema-009`/`schema-010` pin rejection of unknown fields in the closed `signature`, `data_period`, and `capabilities.limits` sub-objects.
+- **`data_ref_hash_mismatch` SDK guidance (RFC-ACDP-0007 §5.3).** New guidance for SDK authors on keeping `data_ref_hash_mismatch` distinct from `hash_mismatch` and `invalid_signature`. New fixture `data-ref-008` pins the consumer-side external-DataRef mismatch case (body stays cryptographically valid).
+- **Cursor conformance fixtures (RFC-ACDP-0005 §2.5.4).** New fixtures `cur-001` (`cursor_expired`) and `cur-002` (`invalid_cursor`).
+- **`lineage_id` derivation golden vector (RFC-ACDP-0001 §5.6).** New dedicated fixture `lin-001`; the conformance runner now executes `lin-*` fixtures alongside `can-*`.
+- **`acdp_version` producer guidance (RFC-ACDP-0001 §6).** Producers SHOULD set `acdp_version` explicitly; consumers, verifiers, and registries MUST NOT inject a default `acdp_version` into a body before recomputing `content_hash`.
+- **Conformance manifest refresh (`registries/profiles.json`, `registries/profiles.md`, `schemas/conformance/README.md`).** All 14 new fixtures are wired into the `acdp-registry-core`, `acdp-registry-discovery`, and `acdp-consumer` profiles and the fixture index.
+- **Editorial.** RFC headers, the RFC index, `README.md`, and `VERSIONING.md` updated from `Release Candidate 1` to `Final`. A `RELEASE.md` promotion checklist was added.
+
 ## v0.1.0-rc1 — 2026-05-18
 
 **First published version of the Agent Context Description Protocol (ACDP), entering the world as Release Candidate 1.** RFCs 0001–0008 are at status `Release Candidate 1`; RFC-ACDP-0009 remains `Reserved`. The `0.0.1` identifier used by earlier pre-release drafts was never promoted to a Release Candidate or Final status and is superseded by `0.1.0`. `0.1.0` is wire-compatible with those drafts — the body format, JCS canonicalization, content-hash, and signature semantics are unchanged.

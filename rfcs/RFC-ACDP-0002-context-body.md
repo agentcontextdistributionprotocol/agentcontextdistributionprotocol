@@ -2,8 +2,8 @@
 # Agent Context Description Protocol (ACDP) — Context Body
 
 **Document:** RFC-ACDP-0002
-**Version:** 0.1.0-rc1
-**Status:** Community Standards Track (Release Candidate 1)
+**Version:** 0.1.0
+**Status:** Community Standards Track (Final)
 
 This RFC specifies the immutable, signed body of an ACDP context. It depends on RFC-ACDP-0001 Core (identifiers, JCS, content hash, signature).
 
@@ -11,7 +11,7 @@ This RFC specifies the immutable, signed body of an ACDP context. It depends on 
 
 ## 1. Status of This Memo
 
-This document is a Release Candidate (acdp/0.1.0-rc1). Backward-incompatible changes remain possible until Final; only editorial fixes are expected during the RC window.
+This document is a Final ACDP specification (acdp/0.1.0). It is stable for the 0.1.0 release; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
 
 ---
 
@@ -268,6 +268,19 @@ Several `DataRef` constraints cannot be expressed in JSON Schema 2020-12 and hav
 Checks 1, 3, 5, and 7 are also expressible as JSON Schema constraints in `acdp-data-ref.schema.json` and produce schema-validation failures at step 1 of the publish pipeline (RFC-ACDP-0003 §2.1). Check 2 is expressed via `oneOf` in the schema. Checks 4, 6, and 8 are runtime-only and execute after schema validation; they fail with the codes shown above.
 
 The corresponding negative-case conformance fixtures are listed in [`schemas/conformance/README.md`](../schemas/conformance/README.md) under "DataRef validation". Registries claiming `acdp-registry-core` conformance MUST pass all of them.
+
+### 6.7 DataRef Schema Openness
+
+`DataRef` is an **open schema**: root-level `DataRef` fields not defined in this RFC are treated as producer-controlled and are included in the `content_hash` preimage. This is a deliberate, normative decision and mirrors the forward-compatibility rule already in force for the body itself (RFC-ACDP-0001 §5.7).
+
+The reasoning: each `DataRef` lives inside `body.data_refs[]`, which is part of ProducerContent (the §5.7 hash preimage). Any unknown field a producer adds to a `DataRef` therefore affects `content_hash` and is covered by the producer signature. Future ACDP minor versions MAY add producer-signed `DataRef` fields without a major-version break.
+
+- Consumers and registries MUST preserve unknown `DataRef` fields when recomputing `content_hash`. A consumer that deserializes `data_refs[]` into a typed struct without an unknown-field catch-all will drop the producer's field, recompute a different hash, and raise a false `hash_mismatch` against a newer producer's body — the same silent-break hazard RFC-ACDP-0001 §5.7 forbids at the body level.
+- Implementations using typed models MUST use an extension map or equivalent (e.g. `#[serde(flatten)] extensions` in Rust serde, `ConfigDict(extra="allow")` in pydantic v2, an open index signature in TypeScript, `map[string]json.RawMessage` in Go) so that no producer-signed `DataRef` field is silently lost.
+
+The openness applies to the `DataRef` **root object only**. The nested `embedded` sub-object is a CLOSED schema (`additionalProperties: false`): it is a tightly-scoped wire shape (`encoding`, `content`, optional `content_hash`) where an unknown field signals a bug, not a forward-compatible extension. The structured `location` object is likewise open (producer-defined locator fields). The complete openness map is in RFC-ACDP-0007 §3.3.1; the canonical schema declares this explicitly via `additionalProperties: true` on the `DataRef` root and `additionalProperties: false` on `embedded`.
+
+The `can-010` conformance fixture pins the positive case: a `DataRef` carrying an unknown producer field MUST be retained, byte-for-byte, in the `content_hash` recomputation. The `schema-003` fixture pins the closed-`embedded` negative case.
 
 ---
 

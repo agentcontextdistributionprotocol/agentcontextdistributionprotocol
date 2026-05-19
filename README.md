@@ -1,7 +1,7 @@
 # Agent Context Description Protocol (ACDP)
 
-**Version:** 0.1.0-rc1
-**Status:** Community Standards Track (Release Candidate 1)
+**Version:** 0.1.0
+**Status:** Community Standards Track (Final)
 **Wire format:** JSON over HTTP
 **Required JSON canonicalization:** [JCS — RFC 8785](https://datatracker.ietf.org/doc/html/rfc8785)
 
@@ -15,7 +15,7 @@ The "producer-controlled portion" — the **ProducerContent** — comprises the 
 
 There is no central authority. Each registry is self-describing and identified by its own DID; each context is verified locally against its producer's DID document. ACDP is **coordination-agnostic** — it does not specify session, voting, consensus, marketplace, or reputation semantics.
 
-This is the **first published version** of ACDP, released as **Release Candidate 1** (`acdp/0.1.0-rc1`) for implementation testing ahead of `Final`. v0.1.0 defines the minimal substrate; lifecycle events, post-publication relationships, attestations, push subscriptions, and server-side traversal are deferred to future versions.
+This is the **first published version** of ACDP, released as **`Final`** (`acdp/0.1.0`). v0.1.0 defines the minimal substrate; lifecycle events, post-publication relationships, attestations, push subscriptions, and server-side traversal are deferred to future versions.
 
 ---
 

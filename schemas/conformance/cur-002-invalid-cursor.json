@@ -1,0 +1,18 @@
+{
+  "id": "cur-002",
+  "description": "A GET /contexts/search request supplies a cursor the registry cannot parse at all — a malformed, truncated, or fabricated opaque string that was never issued by this registry. The registry MUST respond with invalid_cursor (HTTP 400) and the standard error envelope. See RFC-ACDP-0005 §2.5.4 'Cursor stability'.",
+  "tags": ["failure", "discovery", "pagination", "cursor", "security"],
+  "input": {
+    "endpoint": "GET /contexts/search?q=market+data&cursor=not-a-real-cursor-%21%21%21",
+    "scenario": "The cursor value is garbage — supplied by a buggy client or a malicious client probing the pagination surface. It does not decode to any registry pagination state.",
+    "cursor_state": "malformed"
+  },
+  "expected": {
+    "outcome": "failure",
+    "error_code": "invalid_cursor",
+    "http_status": 400,
+    "content_type": "application/acdp+json",
+    "envelope_conformant": true,
+    "rationale": "invalid_cursor (never parseable) is distinct from cursor_expired (was valid, now stale — see cur-001). A registry MUST NOT leak why a cursor failed to parse beyond the registered code, and MUST NOT attempt to act on a partially-decoded cursor. Cursors are opaque and MUST NOT carry client-decodable visibility state (RFC-ACDP-0005 §2.5.4); a malformed cursor MUST be rejected outright, never best-effort interpreted."
+  }
+}

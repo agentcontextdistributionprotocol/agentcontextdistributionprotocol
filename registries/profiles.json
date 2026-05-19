@@ -24,6 +24,8 @@
         "can-007-registry-created-at",
         "can-008-body-with-unknown-producer-field",
         "can-009-body-with-unknown-excluded-field",
+        "can-010-data-ref-with-unknown-field",
+        "lin-001-lineage-derivation-golden",
         "sig-001-ed25519-golden",
         "pub-001-invalid-signature",
         "pub-002-hash-mismatch",
@@ -70,6 +72,12 @@
         "status-004-empty-status",
         "schema-002-publish-response-extra-content-hash",
         "schema-003-embedded-extra-field",
+        "schema-008-signature-extra-field",
+        "schema-009-data-period-extra-field",
+        "schema-010-capabilities-limits-extra-field",
+        "did-ssrf-001-loopback-did-web",
+        "did-ssrf-002-imds-did-web",
+        "did-ssrf-003-private-range-did-web",
         "rate-001-rate-limited-response-shape"
       ],
       "conditional_fixtures": [
@@ -99,7 +107,7 @@
       "self_test_only": [
         "rate-001-rate-limited-response-shape (per profiles.md note — black-box conformance cannot deterministically trigger per-agent rate limit)"
       ],
-      "notes": "All pub-001..014 fixtures are required. sig-002 is conditionally required only when the registry advertises ecdsa-p256 in supported_signature_algorithms. idem-001..005 are conditionally required when supports_idempotency_key is true; idem-006 documents a tolerated race outcome and is not a strict requirement."
+      "notes": "All pub-001..014 fixtures are required. sig-002 is conditionally required only when the registry advertises ecdsa-p256 in supported_signature_algorithms. idem-001..005 are conditionally required when supports_idempotency_key is true; idem-006 documents a tolerated race outcome and is not a strict requirement. can-010 extends the canonicalization golden vectors to DataRef-level openness; lin-001 is the dedicated lineage_id derivation golden vector; schema-008..010 pin the closed nested schemas (signature, data_period, capabilities.limits); did-ssrf-001..003 pin producer-DID-resolution SSRF refusal at publish-time signature verification (RFC-ACDP-0008 §4.8)."
     },
     {
       "id": "acdp-registry-discovery",
@@ -114,10 +122,15 @@
         "vis-006-search-match-public-visibility-disclosure",
         "vis-007-search-match-restricted-visibility-absent-for-unauthorized",
         "vis-009-anonymous-public-reads-search",
-        "schema-001-search-response-extra-results"
+        "schema-001-search-response-extra-results",
+        "schema-005-search-response-next-cursor-null",
+        "schema-006-search-result-summary-null",
+        "schema-007-search-result-domain-null",
+        "cur-001-expired-cursor",
+        "cur-002-invalid-cursor"
       ],
       "not_implemented_permitted_on": [],
-      "notes": "vis-005 also appears in acdp-registry-core but is re-stated here because the search-side enforcement is what this profile adds."
+      "notes": "vis-005 also appears in acdp-registry-core but is re-stated here because the search-side enforcement is what this profile adds. schema-005..007 pin the absent-vs-null wire convention (RFC-ACDP-0005 §2.2.1) for next_cursor, summary, and domain. cur-001/cur-002 pin cursor_expired vs invalid_cursor (RFC-ACDP-0005 §2.5.4)."
     },
     {
       "id": "acdp-registry-federated",
@@ -158,6 +171,8 @@
         "can-007-registry-created-at",
         "can-008-body-with-unknown-producer-field",
         "can-009-body-with-unknown-excluded-field",
+        "can-010-data-ref-with-unknown-field",
+        "lin-001-lineage-derivation-golden",
         "sig-001-ed25519-golden",
         "caps-001-valid-minimal",
         "caps-002-missing-ed25519",
@@ -173,18 +188,29 @@
         "schema-002-publish-response-extra-content-hash",
         "schema-003-embedded-extra-field",
         "schema-004-capabilities-extra-top-level-allowed",
+        "schema-005-search-response-next-cursor-null",
+        "schema-006-search-result-summary-null",
+        "schema-007-search-result-domain-null",
+        "schema-008-signature-extra-field",
+        "schema-009-data-period-extra-field",
+        "schema-010-capabilities-limits-extra-field",
+        "data-ref-008-external-data-ref-hash-mismatch",
+        "did-ssrf-001-loopback-did-web",
+        "did-ssrf-002-imds-did-web",
+        "did-ssrf-003-private-range-did-web",
         "body-001-origin-registry-hostname",
         "body-002-origin-registry-did",
         "vis-003-search-response-key",
         "pub-007-publish-response-shape",
         "pub-010-non-did-web-contributor"
       ],
-      "notes": "can-008 and can-009 are especially important: they exercise forward-compatible hash verification (RFC-ACDP-0001 §5.7) — a consumer that deserializes into a typed model that drops unknown fields will fail these and produce false hash_mismatch under future-version producers. A consumer that follows derived_from across registries additionally MUST pass the fed-* fixtures if it performs server-side resolution."
+      "notes": "can-008, can-009, and can-010 are especially important: they exercise forward-compatible hash verification (RFC-ACDP-0001 §5.7, RFC-ACDP-0002 §6.7) — a consumer that deserializes into a typed model that drops unknown body or DataRef fields will fail these and produce false hash_mismatch under future-version producers. lin-001 pins lineage_id derivation. schema-005..007 pin the absent-vs-null wire convention; schema-008..010 pin the closed nested schemas. data-ref-008 pins the consumer-side external-DataRef hash-mismatch semantic (data_ref_hash_mismatch, body still valid — RFC-ACDP-0007 §5.3). did-ssrf-001..003 pin producer-DID-resolution SSRF refusal (RFC-ACDP-0008 §4.8), which every consumer performs when verifying signatures end-to-end. A consumer that follows derived_from across registries additionally MUST pass the fed-* fixtures if it performs server-side resolution."
     }
   ],
   "fixture_families": {
     "body": "Body identity-field validation (RFC-ACDP-0002 §3)",
-    "can": "Canonicalization and hash recomputation (RFC-ACDP-0001 §5.2, §5.7)",
+    "can": "Canonicalization and hash recomputation (RFC-ACDP-0001 §5.2, §5.7; DataRef openness RFC-ACDP-0002 §6.7)",
+    "lin": "Lineage identifier derivation golden vectors (RFC-ACDP-0001 §5.6)",
     "sig": "Signature golden vectors (RFC-ACDP-0001 §5.8, §5.10)",
     "pub": "Publish flow (RFC-ACDP-0003 §2.1)",
     "data-ref": "DataRef invariants (RFC-ACDP-0002 §6)",
@@ -194,9 +220,11 @@
     "err": "Error-envelope shape (RFC-ACDP-0007 §4)",
     "caps": "Capabilities document validation (RFC-ACDP-0007 §3.5)",
     "status": "Registry-state status pattern (RFC-ACDP-0004 §4.1)",
-    "schema": "Closed-schema rejection / openness map (RFC-ACDP-0001 §3.3.1)",
+    "schema": "Closed-schema rejection / openness map (RFC-ACDP-0007 §3.3.1) and the absent-vs-null wire convention (RFC-ACDP-0005 §2.2.1)",
+    "cur": "Pagination cursor expiry and validity (RFC-ACDP-0005 §2.5.4)",
     "rate": "Rate-limit response shape (RFC-ACDP-0007 §5)",
-    "fed": "Federation / SSRF protections (RFC-ACDP-0006 §7)",
+    "fed": "Federation / cross-registry SSRF protections (RFC-ACDP-0006 §7)",
+    "did-ssrf": "Producer DID resolution SSRF protections (RFC-ACDP-0008 §4.8)",
     "idem": "Idempotency-key behavior (RFC-ACDP-0003 §6)"
   }
 }
