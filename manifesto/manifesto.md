@@ -133,3 +133,7 @@ The substrate layer is not an optimization.
 It is the missing foundation.
 
 In the era after capability and coordination, *epistemic legibility* — not power, not throughput — will determine which autonomous systems endure.
+
+---
+
+*ACDP v0.1.0 is the first concrete realization of this substrate: a signed, content-addressed, JCS-canonicalized context body with an end-to-end-verifiable lineage chain. To move from this argument to the protocol itself, start with the [README](../README.md) and [RFC-ACDP-0001 — Core](../rfcs/RFC-ACDP-0001-core.md).*

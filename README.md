@@ -73,10 +73,12 @@ agentcontextdescriptionprotocol/
     README.md
     auth-methods.md
     context-types.md
+    data-ref-types.md
     error-codes.md
     locator-schemes.md
     media-types.md
-    profiles.md
+    profiles.md                      # Profile registry (human-readable)
+    profiles.json                    # Profile + conformance manifest (machine-readable)
     signature-algorithms.md
 
   schemas/
@@ -93,19 +95,22 @@ agentcontextdescriptionprotocol/
       acdp-registry-state.schema.json
       acdp-search-response.schema.json
     conformance/                     # Pass/fail behavioral fixtures + golden vectors
-      README.md
-      can-*.json                     # JCS canonicalization / hashing vectors
-      err-*.json                     # Error envelope fixtures
-      pub-*.json                     # Publish-flow scenarios
-      ret-*.json                     # Retrieval scenarios
-      sig-*.json                     # Ed25519 cryptographic golden vectors
-      vis-*.json                     # Visibility-leak prevention scenarios
+      README.md                      #   — fixture index + family map
+      can-*.json  lin-*.json         # JCS canonicalization, hashing, lineage-id vectors
+      sig-*.json                     # Ed25519 / ECDSA-P256 cryptographic golden vectors
+      pub-*.json  idem-*.json        # Publish-flow and Idempotency-Key scenarios
+      ret-*.json  vis-*.json         # Retrieval and visibility-scoping scenarios
+      data-ref-*.json                # DataRef validation
+      did-ssrf-*.json  data-ref-ssrf-*.json  fed-*.json   # SSRF protections
+      caps-*.json  schema-*.json     # Capabilities + schema-openness validation
+      body-*.json  meta-*.json  status-*.json  cur-*.json  err-*.json  rate-*.json
 
   examples/
     README.md
     capabilities/                    # /.well-known/acdp.json (RFC-ACDP-0007)
     error/                           # Error envelope examples
     idempotency/                     # Idempotency-Key cycles (RFC-ACDP-0003 §6)
+    key-resolution/                  # DID document examples (RFC-ACDP-0001 §5.11)
     lineage/                         # derived_from chain walk (tutorial)
     mixed-data-refs/                 # All three data_refs forms in one body
     publish/                         # POST /contexts requests (RFC-ACDP-0003)
@@ -154,7 +159,7 @@ If you are new to ACDP, read in this order:
 | `acdp-registry-core` *(default)* | 0001–0004, 0007, 0008 | Every conformant registry. Implements canonicalization, body schema, publish, retrieval, capabilities, error envelope. |
 | `acdp-registry-discovery` | + 0005 | Adds keyword search. |
 | `acdp-registry-federated` | + 0006 | Resolves cross-registry `acdp://` references end-to-end. |
-| `acdp-consumer` | 0001, 0004 (read), 0006 | A consumer that retrieves and verifies contexts. |
+| `acdp-consumer` | 0001, 0002, 0004 (read), 0006, 0008 | A consumer that retrieves, verifies, and visibility-checks contexts. |
 
 There is no producer-only profile: producers MUST be able to verify any context they publish, and that requires the same cryptographic core as a registry.
 
@@ -176,8 +181,8 @@ There is no producer-only profile: producers MUST be able to verify any context 
 
 ## Compatibility model
 
-- **Protocol version** governs the wire envelope (`acdp_version: 0.1.0`).
-- **Registry capabilities** advertise per-registry options (algorithms, embedding models, limits).
+- **Protocol version** is `0.1.0`. A registry advertises it as `acdp_version` in its capabilities document; a producer optionally carries it per-body as the producer-signed `body.acdp_version`. An absent `body.acdp_version` is interpreted as `0.1.0` (RFC-ACDP-0001 §6).
+- **Registry capabilities** advertise per-registry options — supported signature algorithms, supported DID methods, read-authentication methods, profiles, and limits (RFC-ACDP-0007 §3).
 
 Major mismatches are not compatible. Minor versions are expected to be backward compatible. Unknown fields MUST be ignored on body and registry-state. See [VERSIONING.md](VERSIONING.md).
 
