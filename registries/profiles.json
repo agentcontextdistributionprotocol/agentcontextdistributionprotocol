@@ -195,6 +195,9 @@
         "schema-009-data-period-extra-field",
         "schema-010-capabilities-limits-extra-field",
         "data-ref-008-external-data-ref-hash-mismatch",
+        "data-ref-ssrf-001-ip-literal-private",
+        "data-ref-ssrf-002-dns-rebinding-loopback",
+        "data-ref-ssrf-003-cross-authority-redirect",
         "did-ssrf-001-loopback-did-web",
         "did-ssrf-002-imds-did-web",
         "did-ssrf-003-private-range-did-web",
@@ -204,7 +207,7 @@
         "pub-007-publish-response-shape",
         "pub-010-non-did-web-contributor"
       ],
-      "notes": "can-008, can-009, and can-010 are especially important: they exercise forward-compatible hash verification (RFC-ACDP-0001 §5.7, RFC-ACDP-0002 §6.7) — a consumer that deserializes into a typed model that drops unknown body or DataRef fields will fail these and produce false hash_mismatch under future-version producers. lin-001 pins lineage_id derivation. schema-005..007 pin the absent-vs-null wire convention; schema-008..010 pin the closed nested schemas. data-ref-008 pins the consumer-side external-DataRef hash-mismatch semantic (data_ref_hash_mismatch, body still valid — RFC-ACDP-0007 §5.3). did-ssrf-001..003 pin producer-DID-resolution SSRF refusal (RFC-ACDP-0008 §4.8), which every consumer performs when verifying signatures end-to-end. A consumer that follows derived_from across registries additionally MUST pass the fed-* fixtures if it performs server-side resolution."
+      "notes": "can-008, can-009, and can-010 are especially important: they exercise forward-compatible hash verification (RFC-ACDP-0001 §5.7, RFC-ACDP-0002 §6.7) — a consumer that deserializes into a typed model that drops unknown body or DataRef fields will fail these and produce false hash_mismatch under future-version producers. lin-001 pins lineage_id derivation. schema-005..007 pin the absent-vs-null wire convention; schema-008..010 pin the closed nested schemas. data-ref-008 pins the consumer-side external-DataRef hash-mismatch semantic (data_ref_hash_mismatch, body still valid — RFC-ACDP-0007 §5.3). data-ref-ssrf-001..003 pin consumer-side DataRef-location SSRF refusal at fetch time (RFC-ACDP-0008 §4.9): IP-literal, DNS-rebinding, and cross-authority-redirect refusal — they are consumer-only because a registry does not fetch external data_refs and MUST NOT reject a publish on these grounds. did-ssrf-001..003 pin producer-DID-resolution SSRF refusal (RFC-ACDP-0008 §4.8), which every consumer performs when verifying signatures end-to-end. A consumer that follows derived_from across registries additionally MUST pass the fed-* fixtures if it performs server-side resolution."
     }
   ],
   "fixture_families": {
@@ -214,6 +217,7 @@
     "sig": "Signature golden vectors (RFC-ACDP-0001 §5.8, §5.10)",
     "pub": "Publish flow (RFC-ACDP-0003 §2.1)",
     "data-ref": "DataRef invariants (RFC-ACDP-0002 §6)",
+    "data-ref-ssrf": "DataRef location fetch SSRF protections — consumer fetch-time (RFC-ACDP-0008 §4.9)",
     "meta": "Metadata depth/size limits (RFC-ACDP-0002 §5.2)",
     "ret": "Retrieval and lineage flow (RFC-ACDP-0004 §2, §5)",
     "vis": "Visibility scoping (RFC-ACDP-0008 §4.5, RFC-ACDP-0004 §5.4, RFC-ACDP-0005 §2.5.5)",

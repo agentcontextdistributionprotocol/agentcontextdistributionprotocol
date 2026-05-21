@@ -424,6 +424,16 @@ ACDP uses a layered compatibility model:
 
 Consumers, verifiers, and registries MUST NOT inject a default `acdp_version` value into a body before recomputing `content_hash`. The hash is computed over the body exactly as received (§5.7, "Hash verification over raw JSON"); adding a synthetic `acdp_version` field — or any other field — before hashing produces a different hash from the one the producer signed and raises a false `hash_mismatch`. A body that omits `acdp_version` MUST be hashed without it; a body that includes it MUST be hashed with it. The default-to-`0.1.0` rule above governs the *interpretation* of an absent field, never a *mutation* of the body: absence is read as `0.1.0`, but the absent field is never materialized.
 
+**SDK default behavior guidance.** For SDKs that auto-construct `PublishRequest` objects via a builder, the RECOMMENDED default is to **emit `acdp_version: "0.1.0"` explicitly**. This makes the protocol version visible in every produced request without the producer having to call an explicit setter, and aligns the builder's default with the producer SHOULD above.
+
+An SDK MAY instead ship with the omission default — emitting no `acdp_version` field — for golden-vector compatibility or other reasons (an absent field and `"0.1.0"` are wire-equivalent for consumers: the default-to-`0.1.0` interpretation rule makes them semantically identical, though they produce different `content_hash` values because the bytes differ). An SDK that takes the omission default MUST:
+
+1. Document the choice prominently — in the builder's API documentation and in the SDK README.
+2. Provide a one-line override that emits the version explicitly (e.g. `.acdp_version(ACDP_VERSION)`).
+3. State that absent and explicit `"0.1.0"` are interpreted identically by conformant consumers, while noting they are distinct byte sequences and therefore distinct `content_hash` preimages — a producer MUST pick one and sign over exactly what it emits.
+
+Whichever default an SDK chooses, it MUST NOT mutate a *received* body to add or normalize `acdp_version` before hash recomputation — that is the verifier-side prohibition in the NORMATIVE paragraph above.
+
 Major protocol version mismatches are not compatible. Minor versions are expected to be backward compatible. Consumers receiving an unknown `acdp_version` (in capabilities or in a body) SHOULD treat it as a higher version and degrade gracefully, using only operations defined in the version they understand.
 
 ---
@@ -522,6 +532,18 @@ A consumer of contexts (not a registry). Implementations MUST:
 - Tolerate unknown fields in body and registry state.
 
 There is no producer-only profile: producers MUST be able to verify their own publications, which requires the same cryptographic core as a consumer.
+
+### 9.2 Verification profile names (RECOMMENDED)
+
+v0.1.0 verification is always strict for any conformance claim — §5.11 ("v0.1.0 strict verification profile") defines the strict pipeline and requires that it be the non-loosenable default. SDKs MAY additionally expose relaxed or diagnostic verification modes for debugging and test harnesses. When they do, they SHOULD use the following identifiers so documentation, logs, and error messages are consistent across language implementations:
+
+| Profile name | What it verifies | Conformant for v0.1.0? |
+|---|---|---|
+| `StrictV010` | The full §5.11 strict pipeline: schema validation, `content_hash` recomputation, `did:web` resolution, signature verification, and embedded `data_ref.content_hash` verification. Returns on the first failure. | **Yes** — the only mode covered by the `acdp-consumer` conformance profile. |
+| `Diagnostic` | Runs every strict-pipeline stage but records each stage's outcome rather than returning on the first failure, producing a per-stage report (the §5.11 "verification report stage names"). | **No** — debugging only. A `Diagnostic` run that reports any stage failure MUST be treated as an overall verification failure. |
+| `UnsafeForTests` | May skip DID resolution, signature verification, or schema validation (e.g. to exercise fixtures offline). | **No** — test harness only. |
+
+`StrictV010` is the profile-name spelling of the §5.11 strict policy; the two refer to the same behavior. SDKs MUST NOT expose `Diagnostic` or `UnsafeForTests` as default behavior — the default constructor MUST be `StrictV010`, reachable without opt-in, and any weaker mode MUST require an explicit, separately-named opt-in (§5.11). If an SDK offers a `VerificationPolicy` type, any policy that weakens a strict-mode requirement MUST be documented as **non-conformant with v0.1.0**, and a verification result produced under it MUST NOT be presented as a conformant verification.
 
 ---
 

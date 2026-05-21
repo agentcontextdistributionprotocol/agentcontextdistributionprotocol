@@ -1,0 +1,25 @@
+{
+  "id": "data-ref-ssrf-003",
+  "description": "When a consumer fetches a `data_refs[].location` over HTTPS, an HTTP redirect whose target authority (host + port) differs from the original request's authority MUST be refused — see RFC-ACDP-0008 §4.9. A cooperating attacker server can pass the initial IP-range filter on its own public IP and then issue a 30x redirect to an internal address; the same-authority redirect rule blocks this. Total redirects MUST also be capped at 3 follows, and a same-authority redirect MUST reuse the pinned IP rather than triggering a fresh DNS lookup.",
+  "tags": ["security", "ssrf", "data-refs", "redirects"],
+  "ssrf_rule": "RFC-ACDP-0008 §4.9 (DataRef location SSRF protection — same-authority redirect cap)",
+  "applies_to_profiles": ["acdp-consumer"],
+  "input": {
+    "scenario": "Consumer fetches https://data.example.com/file; the server returns a 30x whose Location header points to a different authority",
+    "data_ref_under_test": {
+      "type": "raw_data",
+      "location": "https://data.example.com/file"
+    },
+    "initial_request_authority": "data.example.com",
+    "redirect_response": {
+      "status": 302,
+      "Location": "https://internal.corp/secret"
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "behavior": "The consumer MUST refuse to follow the cross-authority redirect. The check MUST be a string comparison on the authority (host AND port) component of the URL. Path/query changes within the same authority MAY be followed up to the cap of 3 follows; a same-authority redirect MUST reuse the pinned IP and MUST NOT trigger a fresh DNS resolution. The DataRef MUST be treated as unfetchable and unverifiable.",
+    "body_remains_valid": true,
+    "rationale": "Without same-authority enforcement, an attacker who controls a public-facing host can use it as a bounce point to any internal address, bypassing the IP-range filter that ran only on the initial DNS resolution."
+  }
+}

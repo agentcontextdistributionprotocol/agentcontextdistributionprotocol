@@ -1,0 +1,27 @@
+{
+  "id": "data-ref-ssrf-001",
+  "description": "An external `data_refs[].location` URL is producer-controlled (it is part of the signed body) and is therefore an SSRF vector identical to producer DID resolution and cross-registry resolution. A consumer that dereferences a `data_refs[].location` over HTTP(S) whose host is an IP literal in a private, loopback, link-local, or IMDS range MUST refuse the fetch before connecting — see RFC-ACDP-0008 §4.9. This is a consumer fetch-time check: the body itself stays valid (the producer signature and body `content_hash` are unaffected), and a registry MUST NOT reject the publish, because a non-HTTP `data_refs[].location` may legitimately reference an internal datastore.",
+  "tags": ["security", "ssrf", "data-refs", "ip-range-filter"],
+  "ssrf_rule": "RFC-ACDP-0008 §4.9 (DataRef location SSRF protection — IP-literal URL-level check)",
+  "applies_to_profiles": ["acdp-consumer"],
+  "input": {
+    "scenario": "A consumer verifying a retrieved context attempts to fetch a data_refs[] entry whose https:// location host is a private IP literal",
+    "data_ref_under_test": {
+      "type": "raw_data",
+      "location": "https://10.0.0.1/data.csv"
+    },
+    "additional_test_cases": [
+      "https://127.0.0.1/data.csv",
+      "https://[::1]/data.csv",
+      "https://169.254.169.254/latest/meta-data/",
+      "https://192.168.1.10/export.parquet"
+    ]
+  },
+  "expected": {
+    "outcome": "failure",
+    "behavior": "The consumer's DataRef fetcher MUST refuse the fetch before any connection attempt: the host is an IP literal in a disallowed range (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, fc00::/7, 127.0.0.0/8, ::1, 0.0.0.0, 169.254.0.0/16, fe80::/10, 224.0.0.0/4, ff00::/8). The DataRef MUST be treated as unfetchable and unverifiable — the consumer MUST NOT use the referenced data, and if `data_refs[].content_hash` was present that DataRef MUST NOT be reported as verified.",
+    "body_remains_valid": true,
+    "registry_publish_behavior": "A registry MUST NOT reject the publish on these grounds — the SSRF defense lives entirely at the consumer's HTTP(S) fetch step (RFC-ACDP-0008 §4.9).",
+    "rationale": "A consumer that fetches producer-controlled `data_refs[].location` URLs on behalf of an application can be turned into an SSRF proxy against internal services (databases, admin endpoints, cloud metadata) exactly as an unprotected DID resolver can."
+  }
+}

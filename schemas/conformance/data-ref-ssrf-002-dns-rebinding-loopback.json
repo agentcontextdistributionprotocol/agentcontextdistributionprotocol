@@ -1,0 +1,26 @@
+{
+  "id": "data-ref-ssrf-002",
+  "description": "A `data_refs[].location` URL whose hostname passes URL-syntax checks but resolves via DNS to a loopback (or otherwise disallowed) address MUST be refused by the consumer's DataRef fetcher — see RFC-ACDP-0008 §4.9. URL-string checks are necessary but insufficient: the IP-range filter MUST run on the resolved address(es), and the resolved IP MUST be pinned for the connection lifetime so a second DNS lookup cannot rebind to an internal target. A fetcher that calls a URL-syntax SSRF check and then hands the string to an unconstrained HTTP client that resolves DNS normally is NOT conformant.",
+  "tags": ["security", "ssrf", "data-refs", "dns-rebinding"],
+  "ssrf_rule": "RFC-ACDP-0008 §4.9 (DataRef location SSRF protection — DNS-level check + IP pinning)",
+  "applies_to_profiles": ["acdp-consumer"],
+  "input": {
+    "scenario": "A consumer fetches a data_refs[] entry whose https:// location hostname is syntactically a public DNS name but resolves to a loopback address",
+    "data_ref_under_test": {
+      "type": "raw_data",
+      "location": "https://data-host-resolving-to-127-0-0-1.example/data.csv"
+    },
+    "dns_resolution_results": ["127.0.0.1"],
+    "additional_test_cases": [
+      { "location_host": "split-horizon.example", "dns_resolution_results": ["169.254.169.254"] },
+      { "location_host": "rebind.example", "dns_resolution_results": ["203.0.113.10", "10.0.0.1"] }
+    ]
+  },
+  "expected": {
+    "outcome": "failure",
+    "behavior": "The consumer MUST resolve the hostname before connecting and validate EVERY resolved address against the disallowed ranges; if any answer is disallowed the fetch MUST be refused. The resolved IP MUST be pinned and reused for the connection (one DNS resolution per request — no TOCTOU re-resolution). The DataRef MUST be treated as unfetchable and unverifiable. An implementation that only checks the URL string and lets a standard HTTP client re-resolve DNS at connect time fails this fixture.",
+    "body_remains_valid": true,
+    "non_conformant_implementation": "Calling a URL-syntax check such as `check_url()` on the location string, then fetching with an unconstrained HTTP client — vulnerable to DNS rebinding and split-horizon DNS.",
+    "rationale": "A hostname can be strings-wise safe yet resolve to a private address; the multi-answer case shows the filter MUST reject the whole resolution if any single answer is disallowed."
+  }
+}

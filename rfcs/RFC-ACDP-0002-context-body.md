@@ -57,6 +57,19 @@ The canonical schema is [`schemas/json/acdp-context-body.schema.json`](../schema
 
 The `body-001`/`body-002` conformance fixtures pin the accept/reject behavior.
 
+**Hostname vs host:port usage in ACDP identifiers (NORMATIVE).** ACDP uses "hostname" for `origin_registry` and the `ctx_id` authority, while DID Web identifiers may carry an encoded port (`did:web:localhost%3A8443` appears in test fixtures). Implementors MUST NOT assume that the host:port form valid in a `did:web` URI is also valid in `origin_registry` or a `ctx_id` authority:
+
+| Field | Allows a port? | Schema type | Example |
+|---|---|---|---|
+| `origin_registry` | No | `hostname` (`acdp-common.schema.json#/$defs/hostname` — LDH labels, no colons) | `registry.example.com` |
+| `ctx_id` authority | No | DNS hostname, lowercase, inside the `acdp://` URI | `acdp://registry.example.com/<uuid>` |
+| `capabilities.registry_did` | Yes, when present (percent-encoded `%3A`) | `did:web` URI | `did:web:registry.example.com` |
+| Test `did:web` only | Yes, when present (percent-encoded `%3A`) | `did:web` URI — test/development only | `did:web:localhost%3A8443` |
+
+The `origin_registry` field and the `ctx_id` authority MUST be a bare DNS hostname with no port component. The port is omitted because registries SHOULD serve on the standard HTTPS port (443); a host:port `origin_registry` or `ctx_id` authority is schema-invalid and MUST be rejected as `schema_violation` by conformant registries and consumers.
+
+The `did:web` form used in `capabilities.registry_did`, in `agent_id` / `signature.key_id`, and in DID documents follows the [DID Web method] spec, which encodes a `:` port separator as `%3A`. A `did:web:<host>%3A<port>` identifier is valid only in test and development deployments and MUST NOT appear in production publications (RFC-ACDP-0008 §4.8); production registry and producer DIDs resolve over HTTPS on port 443.
+
 ### 3.2 Integrity Fields
 
 | Field | Type | Required | Description |
@@ -249,6 +262,8 @@ For `data_refs[].location` values that are URIs (URL form per §6.2):
 - Producers in trusted-network deployments MAY use `http://` without `content_hash`; this is a deployment-policy decision but reduces the verifiable-trust budget.
 
 Consumers fetching `data_refs[].location` MUST treat the result as untrusted until verified. If `data_refs[].content_hash` is present, consumers MUST verify the fetched bytes match before treating the data as authentic. A consumer that detects a mismatch SHOULD surface it with the `data_ref_hash_mismatch` semantic (RFC-ACDP-0007 §5) — distinct from `invalid_signature` and `hash_mismatch`, because the body's own signature and `content_hash` may still be valid; only the externally-referenced data has diverged from what the producer signed. If `content_hash` is absent and the location is `http://`, consumers SHOULD treat the data as untrusted indefinitely.
+
+`data_refs[].location` is producer-controlled, so a consumer that fetches it over HTTP(S) is making an attacker-influenced outbound request and MUST apply the SSRF protections of [RFC-ACDP-0008 §4.9](RFC-ACDP-0008-security.md#49-dataref-location-ssrf-protection) — HTTPS-only, DNS-level IP-range filtering on every resolved address, IP pinning, and a same-authority redirect cap. This is the same SSRF posture mandated for producer DID resolution and cross-registry resolution.
 
 ### 6.6 DataRef Validation Checklist
 

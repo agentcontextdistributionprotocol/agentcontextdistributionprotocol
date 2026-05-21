@@ -132,6 +132,41 @@ A registry that refuses a producer DID on these grounds MUST fail the publish wi
 
 Test harnesses MAY allow `localhost`/loopback targets only when an explicit, non-default test-mode SSRF policy is configured. Producers using `did:web:localhost%3A8443:...`-style DIDs are valid only in test and development deployments and MUST NOT appear in production publications. The `did-ssrf-001`, `did-ssrf-002`, and `did-ssrf-003` conformance fixtures pin loopback, IMDS, and private-range refusal respectively.
 
+### 4.9 DataRef location SSRF protection
+
+§4.8 covers producer DID resolution and RFC-ACDP-0006 §7 covers cross-registry resolution. There is a **third attacker-controlled outbound fetch**: a consumer that dereferences a `data_refs[].location` URL to fetch and verify the referenced data (RFC-ACDP-0002 §6.5). `data_refs[].location` is producer-controlled — it is part of the signed body — and a consumer that fetches it on behalf of an application can be turned into an SSRF proxy exactly as a DID resolver can.
+
+This section governs the case where a consumer dereferences a `data_refs[].location` value **over HTTP(S)** (the `https://`/`http://` URL form of RFC-ACDP-0002 §6.2). Non-HTTP location schemes (`s3://`, `postgres://`, `kafka://`, structured locators, …) are dereferenced by their own client libraries and are governed by those clients plus the deployment's egress policy; this section does not constrain them. A `data_refs[].location` carrying a private, loopback, or link-local IP is **not** itself a publish-time error — a producer may legitimately reference an internal `postgres://10.0.0.1/...` datastore — so registries MUST NOT reject such a publish. The defense lives entirely at the consumer's fetch step.
+
+When a consumer fetches a `data_refs[].location` over HTTP(S), it MUST apply the same SSRF posture as producer DID resolution (§4.8) and cross-registry resolution (RFC-ACDP-0006 §7):
+
+**URL-level checks (necessary but insufficient):**
+
+- The fetched URL MUST use the `https://` scheme. A consumer MUST NOT silently fall back to `http://`; per RFC-ACDP-0002 §6.5 an `http://` location is fetched only as an explicit, integrity-checked deployment-policy decision and is outside the SSRF-safe path.
+- If the host is an IP literal, it MUST NOT be in any private (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `fc00::/7`), loopback (`127.0.0.0/8`, `::1`, `0.0.0.0`), link-local (`169.254.0.0/16`, `fe80::/10`, including the IMDS address `169.254.169.254`), or multicast (`224.0.0.0/4`, `ff00::/8`) range.
+
+**DNS-level checks (required for full protection):**
+
+- The host MUST be resolved before connecting and EVERY resolved IP address MUST be validated against the same disallowed ranges (RFC-ACDP-0006 §7.1).
+- The resolved IP MUST be pinned for the connection lifetime — one DNS resolution per request, used for both the filter check and the connection (no TOCTOU re-resolution; RFC-ACDP-0006 §7.6). Acceptable implementation: install a `SafeDnsResolver` in the HTTP client that rejects disallowed addresses.
+
+**Redirect policy:**
+
+- Redirects MUST NOT cross to a different authority (host + port), and the total redirect count MUST be capped at 3 follows (same limit as cross-registry, RFC-ACDP-0006 §7.5).
+- A same-authority redirect MUST NOT trigger a fresh DNS lookup — the pinned IP is reused.
+
+**Response and timeout caps:**
+
+- The connection and total-request timeouts MUST be bounded per RFC-ACDP-0006 §7.4. Consumers SHOULD cap the response size for a DataRef fetch at a deployment-appropriate limit and abort before parsing if exceeded.
+
+**Insufficient approach (explicitly disallowed):**
+
+- Calling a URL-syntax check (`check_url()` or equivalent) on the `location` string and then using an unconstrained HTTP client that resolves DNS normally at connect time. DNS rebinding and split-horizon DNS can still route such requests to internal services. See §4.8 and RFC-ACDP-0006 §7.6.
+
+A consumer that refuses a `data_refs[].location` fetch on these grounds MUST treat that DataRef as unfetchable and unverifiable: it MUST NOT use the referenced data, and if a `data_refs[].content_hash` was present the DataRef MUST NOT be reported as verified. The refusal does **not** invalidate the body — the producer signature and body `content_hash` remain valid; only the external reference is unreachable on the SSRF-safe path (the same body-stays-valid principle as the consumer-side `data_ref_hash_mismatch` case, RFC-ACDP-0007 §5.3).
+
+Implementations exposing a `DataRefFetcher` (or equivalent) abstraction MUST apply this policy in the default fetcher and SHOULD apply it to custom fetchers; where a caller supplies a custom fetcher that deviates, the SDK MUST document the deviation as outside the SSRF-safe path. The `data-ref-ssrf-001`, `data-ref-ssrf-002`, and `data-ref-ssrf-003` conformance fixtures pin IP-literal, DNS-rebinding, and cross-authority-redirect refusal respectively.
+
 ---
 
 ## 5. Known Gaps (Acknowledged)
