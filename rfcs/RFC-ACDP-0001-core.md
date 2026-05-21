@@ -391,7 +391,7 @@ Without these surfaces, conformance testing for `pub-001` and `pub-006` requires
 4. Verify the producer signature per the resolution algorithm above.
 5. Verify every embedded `data_ref.content_hash` against its decoded `embedded.content` (RFC-ACDP-0002 §6.3); on mismatch, report `data_ref_hash_mismatch` (RFC-ACDP-0007 §5).
 
-Library authors MAY expose configuration to relax these requirements (e.g. for test environments, compatibility bridges, or future protocol versions), but any relaxed mode MUST be explicitly labeled as **non-conformant with v0.1.0** and MUST NOT be the default. The RECOMMENDED API shape is a strict default that cannot be loosened without an explicit, named opt-in — e.g. a `VerificationPolicy::strict_v0_0_1()` (Rust) / `VerificationPolicy.strict_v0_0_1()` (Python/TypeScript) constructor as the default, with any other mode reachable only through a separately-named constructor. Implementations MUST document that only the strict mode is covered by the `acdp-consumer` conformance profile.
+Library authors MAY expose configuration to relax these requirements (e.g. for test environments, compatibility bridges, or future protocol versions), but any relaxed mode MUST be explicitly labeled as **non-conformant with v0.1.0** and MUST NOT be the default. The RECOMMENDED API shape is a strict default that cannot be loosened without an explicit, named opt-in — e.g. a `VerificationPolicy::strict_v0_1_0()` (Rust) / `VerificationPolicy.strict_v0_1_0()` (Python/TypeScript) constructor as the default, with any other mode reachable only through a separately-named constructor. This strict default is the `StrictV010` verification profile of §9.2. Implementations MUST document that only the strict mode is covered by the `acdp-consumer` conformance profile.
 
 **Recommended verification report stage names (NON-NORMATIVE).** SDKs that expose a diagnostic verification report (a per-stage pass/fail breakdown) SHOULD use the following stage identifiers, so logs and telemetry are comparable across language implementations. The identifier is the snake_case form for code and config; the display name is for human-facing output.
 
@@ -528,6 +528,7 @@ A consumer of contexts (not a registry). Implementations MUST:
 
 - Verify producer signatures end-to-end on every retrieved context they rely on.
 - Resolve cross-registry `acdp://` references per RFC-ACDP-0006 if they follow them (and apply the SSRF protections of §7 if they perform server-side resolution).
+- Apply SSRF protections when dereferencing any producer-controlled URL: producer `did:web` resolution during signature verification (RFC-ACDP-0008 §4.8) and external `data_refs[].location` fetches (RFC-ACDP-0008 §4.9).
 - Apply visibility rules per RFC-ACDP-0008 §4.5 when retrieving (do not assume a registry's results are scoped on their behalf — verify locally where possible).
 - Tolerate unknown fields in body and registry state.
 

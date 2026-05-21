@@ -65,6 +65,8 @@ For each ci:
 
 Each step is independent. The serving registry is **not** a trust anchor — only availability.
 
+Every `<authority>` here comes from a producer-controlled `acdp://` reference, so each `GET` is an attacker-influenced outbound request. Cross-registry resolution MUST apply the SSRF protections of [RFC-ACDP-0006 §7](../rfcs/RFC-ACDP-0006-cross-registry.md#7-server-side-request-forgery-ssrf-protections) — the same posture ACDP requires for producer `did:web` resolution (RFC-ACDP-0008 §4.8) and external `data_refs[].location` fetches (RFC-ACDP-0008 §4.9): HTTPS-only, DNS-level IP-range filtering on every resolved address, IP pinning, and same-authority redirect caps.
+
 ### 2.4 Discovery
 
 ```

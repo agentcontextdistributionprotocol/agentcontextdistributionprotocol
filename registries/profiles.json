@@ -158,6 +158,7 @@
       "behavioral_requirements": [
         "End-to-end signature verification (RFC-ACDP-0001 §5.11) on every retrieved context",
         "acdp:// cross-registry resolution per RFC-ACDP-0006 if followed (with SSRF protections of §7 if performed server-side)",
+        "SSRF protections on every producer-controlled outbound fetch: producer did:web resolution (RFC-ACDP-0008 §4.8) and external data_refs[].location fetches (RFC-ACDP-0008 §4.9)",
         "Local visibility re-verification per RFC-ACDP-0008 §4.5",
         "Tolerance of unknown body / registry-state fields (RFC-ACDP-0001 §6, RFC-ACDP-0004 §4.1, RFC-ACDP-0007 §3.3)"
       ],

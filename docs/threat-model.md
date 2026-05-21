@@ -15,6 +15,8 @@ The full normative threat model is [RFC-ACDP-0008 Security](../rfcs/RFC-ACDP-000
 | DoS via oversize bodies | `limits.max_payload_bytes` and 64 KB embedded cap. |
 | Spam / Sybil | Per-agent rate limiting required. |
 | Algorithm downgrade | Algorithm named in body; verifier checks against registry's `supported_signature_algorithms` and the resolved key type. |
+| Race on supersession | Registry serializes supersession events; the loser of a race gets `superseded_target`. |
+| Server-side request forgery (SSRF) | Producer `did:web` resolution, cross-registry `acdp://` resolution, and external `data_refs[].location` fetches all dereference producer-controlled URLs. Each applies HTTPS-only, DNS-level IP-range filtering on every resolved address, IP pinning against rebinding, and same-authority redirect caps. See RFC-ACDP-0008 §4.7–§4.9 and RFC-ACDP-0006 §7. |
 
 ## Known gaps in v0.1.0
 
@@ -46,4 +48,8 @@ The full normative threat model is [RFC-ACDP-0008 Security](../rfcs/RFC-ACDP-000
 ### 5. Visibility-restricted lookup by an unauthorized consumer
 **Result.** Registry returns `not_found` (HTTP 404). Consumer cannot distinguish "doesn't exist" from "exists but you can't see it".
 
-See [RFC-ACDP-0008 Security](../rfcs/RFC-ACDP-0008-security.md) §7 for the full scenarios.
+Scenarios 1–5 above are the [RFC-ACDP-0008 §7](../rfcs/RFC-ACDP-0008-security.md#7-attack-scenarios) attack scenarios. One further class is worth calling out:
+
+### 6. SSRF via a producer-controlled URL
+**Setup.** A producer publishes a body whose `agent_id`/`signature.key_id` or `data_refs[].location` points at an internal address — e.g. `did:web:169.254.169.254` (cloud metadata) or `https://data-host.example/x` whose DNS resolves to `127.0.0.1`. A registry verifying the publish, or a consumer verifying end-to-end and fetching the DataRef, is induced to make the request.
+**Result.** The resolver/fetcher resolves the hostname, rejects it because a resolved IP falls in a private/loopback/link-local/IMDS range, and refuses before connecting. The resolved IP is pinned so a second DNS lookup cannot rebind to an internal target, and a cross-authority redirect is refused. A registry refusing a producer DID fails the publish with `key_resolution_failed`; a consumer treats the context (or the DataRef) as unverifiable. See [RFC-ACDP-0008 §4.7–§4.9](../rfcs/RFC-ACDP-0008-security.md#48-producer-did-resolution-ssrf-protection) and [RFC-ACDP-0006 §7](../rfcs/RFC-ACDP-0006-cross-registry.md#7-server-side-request-forgery-ssrf-protections).
