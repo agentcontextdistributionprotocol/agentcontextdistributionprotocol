@@ -149,6 +149,23 @@ Resolve hostnames before connection and refuse to connect if any resolved IP is 
 
 Registries MUST refuse the resolution and MAY return `cross_registry_resolution_failed` (HTTP 502) to the requesting consumer.
 
+**DNS-level protection is required.** URL host-syntax checks — verifying that the raw hostname string does not look like a private IP literal — are necessary but **insufficient**. A conformant implementation MUST also:
+
+1. Resolve the hostname to one or more IP addresses.
+2. Validate that EVERY resolved address is in an allowed range (no answer in the disallowed ranges above; an attacker MUST NOT be able to bypass the filter by mixing one public and one private answer in a single DNS response).
+3. Connect only to the validated address(es), and not re-resolve at connect time (see §7.6).
+
+Acceptable approaches:
+
+- Install a custom DNS resolver in the HTTP client that filters out disallowed addresses (e.g. a `reqwest` `dns_resolver` hook, a `SafeDnsResolver`, or a custom `Resolver` trait implementation).
+- Resolve before constructing the HTTP client and pin the resolved IP via the HTTP client's `resolve()` / `connect_to()` API.
+
+Unacceptable approach (NOT conformant):
+
+- Call a URL-syntax SSRF check on the reference string, then use a standard HTTP client that resolves DNS normally at connect time. This is vulnerable to DNS rebinding and split-horizon DNS — a hostname can pass a string check yet resolve to a private address. The IP-range filter and the connection MUST consume the **same** DNS resolution.
+
+This requirement applies identically to producer DID resolution (RFC-ACDP-0008 §4.8) and DataRef location fetches (RFC-ACDP-0008 §4.9).
+
 ### 7.2 HTTPS-only
 
 Cross-registry calls MUST use `https://`. Plain HTTP, file://, ftp://, and other schemes MUST be refused without attempting connection.

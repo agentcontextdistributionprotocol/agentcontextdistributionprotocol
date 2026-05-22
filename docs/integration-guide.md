@@ -17,10 +17,13 @@ How to integrate ACDP into a producer or consumer agent. This document is non-no
 
 ### Step 1: Build the body
 
-Construct the producer-supplied portion of the body — everything except the registry-assigned fields (`ctx_id`, `origin_registry`, `created_at`). For first versions, set `version: 1` and `supersedes: null`.
+Construct the producer-supplied portion of the body — everything except the registry-assigned fields (`ctx_id`, `lineage_id`, `origin_registry`, `created_at`). For first versions, set `version: 1` and `supersedes: null`.
+
+Set `acdp_version: "0.1.0"` explicitly. RFC-ACDP-0001 §6 RECOMMENDS that producers — and SDK builders, by default — emit `acdp_version` in every body: it is producer-signed and part of `content_hash`, and it removes any ambiguity about which exclusion set and algorithm vocabulary a verifier should apply. An absent field is interpreted as `"0.1.0"`, but absent and explicit `"0.1.0"` are distinct byte sequences and therefore distinct `content_hash` preimages — pick one and sign exactly what you emit.
 
 ```python
 body = {
+    "acdp_version": "0.1.0",
     "version": 1,
     "supersedes": None,
     "agent_id": "did:web:agent.example",
@@ -141,9 +144,15 @@ producer_pubkey.verify(sig_bytes, body["content_hash"].encode("ascii"))
 
 If `verify` raises, the body is not authentically from `agent_id`.
 
+> **SSRF — DID resolution.** `signature.key_id` is producer-controlled, so `resolve_did_key` dereferences a `did:web` host taken verbatim from the body. The resolver MUST apply SSRF protection (RFC-ACDP-0008 §4.8): resolve the host, refuse if any resolved IP is in a private/loopback/link-local/IMDS range, pin the resolved IP for the connection, HTTPS-only, and cap redirects to the same authority. A URL-string check alone is **not** sufficient — DNS rebinding defeats it (RFC-ACDP-0006 §7.1). A producer DID that resolves to a forbidden target is treated as unverifiable.
+
+Steps 1–3 are the **`StrictV010`** verification profile (RFC-ACDP-0001 §9.2, §5.11): schema validation → `content_hash` recomputation → `did:web` resolution → signature verification → embedded `data_ref.content_hash` checks, returning on the first failure. It is the only verification mode valid for an `acdp-consumer` conformance claim. SDKs MAY expose `Diagnostic` (records every stage) or `UnsafeForTests` (skips steps) modes, but neither may be the default and neither is conformant.
+
 ### Step 4: Use the context
 
-At this point the body is verifiably authentic. Inspect `data_refs`, fetch any `location` references (with their own access control), check `data_period` against the use case, check `state["status"]` and `body.get("expires_at")` for currency.
+At this point the body is verifiably authentic. Inspect `data_refs`, fetch any `location` references, check `data_period` against the use case, check `state["status"]` and `body.get("expires_at")` for currency.
+
+> **SSRF — DataRef fetches.** `data_refs[].location` is producer-controlled. When a `location` is an `https://` URL and you dereference it, you are making an outbound request to a host the producer chose — apply the SSRF protections of RFC-ACDP-0008 §4.9 (HTTPS-only, DNS-level IP-range filtering on every resolved address, IP pinning against rebinding, same-authority redirect cap capped at 3 follows). A refused fetch does not invalidate the body — the producer signature and `content_hash` stay valid; only the external reference is unreachable on the SSRF-safe path. Non-HTTP schemes (`s3://`, `postgres://`, …) are dereferenced by their own clients under your deployment's egress policy. Access to the referenced data is governed by that system's own ACLs, not by ACDP `visibility` (RFC-ACDP-0002 §6.4).
 
 ---
 
@@ -166,7 +175,9 @@ def walk_derived_from(body, depth=10):
         walk_derived_from(ref["body"], depth - 1)
 ```
 
-The `depth` parameter is a defense against deep chains. Real `derived_from` chains are typically shallow (1–3 levels); set `depth` accordingly.
+The `depth` parameter is a defense against deep chains. Real `derived_from` chains are typically shallow (1–3 levels); set `depth` accordingly. A production walk also bounds total nodes, fanout, and wall-clock time per RFC-ACDP-0006 §4.1.
+
+> **SSRF — cross-registry resolution.** The `authority` in the loop above comes from a producer-signed `acdp://` reference, so every `httpx.get` is an outbound request to a host an upstream producer chose. Cross-registry resolution MUST apply the SSRF protections of RFC-ACDP-0006 §7 — the same posture as DID resolution and DataRef fetches: HTTPS-only, DNS-level IP-range filtering on every resolved address, IP pinning, response-size caps (64 KB for capabilities/DID documents, 1 MB for context retrievals), bounded timeouts, and a same-authority redirect cap. The minimal example above omits these for brevity; a production resolver MUST NOT.
 
 ---
 

@@ -71,7 +71,7 @@ Why is this needed? What problem does it solve?
 
 ## Design
 
-Detailed proposal. Include schema changes, proto changes, error-code additions, security implications.
+Detailed proposal. Include JSON Schema changes, registry additions (error codes, context types, …), conformance-fixture impact, and security implications.
 
 ## Alternatives considered
 
@@ -111,4 +111,4 @@ What does NOT require an RFC:
 
 ## Core Team
 
-The core team is responsible for shepherding RFCs and voting on acceptance. Contact via the issue tracker; the current core team is listed in [GOVERNANCE.md](GOVERNANCE.md).
+The core team is responsible for shepherding RFCs and voting on acceptance. It is the project's set of maintainers — the accounts with merge access to this repository, as described in [GOVERNANCE.md § Maintainers](GOVERNANCE.md#maintainers). Contact the core team via the issue tracker.

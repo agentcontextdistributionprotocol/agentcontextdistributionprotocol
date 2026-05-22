@@ -25,6 +25,7 @@ conformance/
 ├── schema-*.json   Schema openness + absent-vs-null wire convention (RFC-ACDP-0007 §3.3.1, RFC-ACDP-0005 §2.2.1)
 ├── cur-*.json      Pagination cursor expiry / validity (RFC-ACDP-0005 §2.5.4)
 ├── data-ref-*.json DataRef validation (RFC-ACDP-0002 §6.5, §6.6)
+├── data-ref-ssrf-*.json DataRef location fetch SSRF protection (RFC-ACDP-0008 §4.9)
 ├── meta-*.json     Metadata limit cases (RFC-ACDP-0002 §3.3)
 └── body-*.json     Body identity-field validation (RFC-ACDP-0002 §3)
 ```
@@ -39,11 +40,11 @@ conformance/
 - `lin-*.json` — lineage_id derivation golden vectors
 - `sig-*.json` — Ed25519 / ECDSA-P256 sign/verify golden vectors
 
-**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`, `cur-*`, `did-ssrf-*`, `schema-*`, …). Those fixtures define request/response scenarios that require a running registry or consumer to execute. They are machine-readable specifications for implementers to validate against their implementation.
+**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `schema-*`, …). Those fixtures define request/response scenarios that require a running registry or consumer to execute. They are machine-readable specifications for implementers to validate against their implementation.
 
 To claim full conformance a registry MUST:
 1. Pass `python3 scripts/conformance-runner.py` (arithmetic/cryptographic)
-2. Separately execute all behavioral fixture scenarios (`pub-*`, `vis-*`, `ret-*`, `err-*`, `schema-*`, `cur-*`, `did-ssrf-*`, …) against a live registry instance
+2. Separately execute all behavioral fixture scenarios (`pub-*`, `vis-*`, `ret-*`, `err-*`, `schema-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, …) against a live registry instance
 
 ---
 
@@ -139,6 +140,16 @@ Rate-limit triggering depends on registry policy (window, bucket, threshold), so
 | `data-ref-006` | `embedded.encoding` is `utf8` or `base64` but `content` is not a string | failure: `schema_violation` |
 | `data-ref-007` | `embedded.content_hash` present but does not match decoded bytes | failure: `data_ref_hash_mismatch` |
 | `data-ref-008` | External `data_ref.location` whose fetched bytes do not match `data_ref.content_hash` — consumer-side fetch-time check; the body signature and body `content_hash` stay valid | failure: `data_ref_hash_mismatch` (body still verified) |
+
+### DataRef location SSRF (RFC-ACDP-0008 §4.9)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `data-ref-ssrf-001` | Consumer fetches a `data_refs[].location` whose `https://` host is a private/loopback/link-local/IMDS IP literal — MUST refuse before connecting | failure: fetch refused; DataRef unfetchable, body still valid |
+| `data-ref-ssrf-002` | `data_refs[].location` hostname passes URL-syntax checks but resolves via DNS to a loopback/IMDS/private address — MUST refuse after DNS, with the IP pinned (no rebinding) | failure: fetch refused; DataRef unfetchable, body still valid |
+| `data-ref-ssrf-003` | `data_refs[].location` fetch receives a cross-authority HTTP redirect — MUST refuse to follow | failure: fetch refused; DataRef unfetchable, body still valid |
+
+A `data_refs[].location` URL is producer-controlled, so a consumer dereferencing it over HTTP(S) is making an attacker-influenced outbound request — the same SSRF vector as producer DID resolution (`did-ssrf-*`) and cross-registry resolution (`fed-*`), and it MUST be defended identically (RFC-ACDP-0008 §4.9). These are **consumer-side** fixtures: a registry does not fetch external `data_refs` and MUST NOT reject a publish on these grounds. A refused fetch does not invalidate the body — the producer signature and body `content_hash` remain valid; only the external reference is unreachable on the SSRF-safe path. Required for `acdp-consumer`.
 
 ### Body identity fields (RFC-ACDP-0002 §3)
 
