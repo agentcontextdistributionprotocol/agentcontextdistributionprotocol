@@ -126,11 +126,12 @@ Registries and consumers MUST apply the following defenses to producer `did:web`
   - **RFC 1918 private** — `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, and IPv6 ULA `fc00::/7`.
   - **Link-local, including the cloud-metadata endpoint** — `169.254.0.0/16`, `fe80::/10`, and specifically `169.254.169.254` (AWS / GCP / Azure IMDS).
   - Any locally-defined private range relevant to the deployment.
-- The resolved IP MUST be pinned for the connection lifetime (one DNS resolution per request, used for both the filter check and the connection — no TOCTOU re-resolution), redirects MUST stay on the same authority and be capped, response size MUST be capped (DID documents MUST cap at 64 KB per RFC-ACDP-0006 §7.3), and connection/total timeouts MUST be bounded per RFC-ACDP-0006 §7.4.
+- If DNS resolution returns multiple addresses and **any** of them is forbidden, the **entire** resolution MUST be rejected. The resolver MUST NOT filter out the forbidden addresses and connect to the remaining safe ones — partial filtering is non-conformant (RFC-ACDP-0006 §7.1, mixed-answer rejection; fixture `did-ssrf-004`).
+- The resolved IP MUST be pinned for the connection lifetime (one DNS resolution per request, used for both the filter check and the connection — no TOCTOU re-resolution). Redirects MUST stay on the **same authority** — defined in RFC-ACDP-0006 §7.5 as an identical (scheme, host, effective port) triple, so a redirect to the same host on a different port MUST be rejected (fixture `did-ssrf-005`) — and MUST be capped at 3 follows. Response size MUST be capped (DID documents MUST cap at 64 KB per RFC-ACDP-0006 §7.3), and connection/total timeouts MUST be bounded per RFC-ACDP-0006 §7.4.
 
 A registry that refuses a producer DID on these grounds MUST fail the publish with `key_resolution_failed` (HTTP 400): the refusal is a permanent, policy-driven, producer-caused condition and is **not** retryable, so `key_resolution_unreachable` (HTTP 502, retryable) MUST NOT be used. A consumer that refuses a producer DID on these grounds MUST treat the context as unverifiable and MUST NOT rely on it.
 
-Test harnesses MAY allow `localhost`/loopback targets only when an explicit, non-default test-mode SSRF policy is configured. Producers using `did:web:localhost%3A8443:...`-style DIDs are valid only in test and development deployments and MUST NOT appear in production publications. The `did-ssrf-001`, `did-ssrf-002`, and `did-ssrf-003` conformance fixtures pin loopback, IMDS, and private-range refusal respectively.
+Test harnesses MAY allow `localhost`/loopback targets only when an explicit, non-default test-mode SSRF policy is configured. Producers using `did:web:localhost%3A8443:...`-style DIDs are valid only in test and development deployments and MUST NOT appear in production publications. The `did-ssrf-001`, `did-ssrf-002`, and `did-ssrf-003` conformance fixtures pin loopback, IMDS, and private-range refusal respectively; `did-ssrf-004` pins mixed-answer rejection (a DNS answer set mixing a public and a private address MUST be rejected entirely); `did-ssrf-005` pins same-host-different-port redirect rejection.
 
 ### 4.9 DataRef location SSRF protection
 
@@ -147,12 +148,12 @@ When a consumer fetches a `data_refs[].location` over HTTP(S), it MUST apply the
 
 **DNS-level checks (required for full protection):**
 
-- The host MUST be resolved before connecting and EVERY resolved IP address MUST be validated against the same disallowed ranges (RFC-ACDP-0006 §7.1).
-- The resolved IP MUST be pinned for the connection lifetime — one DNS resolution per request, used for both the filter check and the connection (no TOCTOU re-resolution; RFC-ACDP-0006 §7.6). Acceptable implementation: install a `SafeDnsResolver` in the HTTP client that rejects disallowed addresses.
+- The host MUST be resolved before connecting and EVERY resolved IP address MUST be validated against the same disallowed ranges (RFC-ACDP-0006 §7.1). If the DNS answer set contains multiple addresses and **any** of them is forbidden, the **entire** resolution MUST be rejected — the fetcher MUST NOT keep the safe addresses and connect to them (RFC-ACDP-0006 §7.1, mixed-answer rejection; fixture `data-ref-ssrf-004`).
+- The resolved IP MUST be pinned for the connection lifetime — one DNS resolution per request, used for both the filter check and the connection (no TOCTOU re-resolution; RFC-ACDP-0006 §7.6). Acceptable implementation: install a `SafeDnsResolver` in the HTTP client that rejects the whole resolution when any address is disallowed (it MUST fail, not return a filtered subset).
 
 **Redirect policy:**
 
-- Redirects MUST NOT cross to a different authority (host + port), and the total redirect count MUST be capped at 3 follows (same limit as cross-registry, RFC-ACDP-0006 §7.5).
+- Redirects MUST NOT cross to a different authority — defined in RFC-ACDP-0006 §7.5 as an identical (scheme, host, effective port) triple, so a redirect to the same host on a different port MUST be rejected (fixture `data-ref-ssrf-005`) — and the total redirect count MUST be capped at 3 follows (same limit as cross-registry, RFC-ACDP-0006 §7.5).
 - A same-authority redirect MUST NOT trigger a fresh DNS lookup — the pinned IP is reused.
 
 **Response and timeout caps:**
@@ -165,7 +166,7 @@ When a consumer fetches a `data_refs[].location` over HTTP(S), it MUST apply the
 
 A consumer that refuses a `data_refs[].location` fetch on these grounds MUST treat that DataRef as unfetchable and unverifiable: it MUST NOT use the referenced data, and if a `data_refs[].content_hash` was present the DataRef MUST NOT be reported as verified. The refusal does **not** invalidate the body — the producer signature and body `content_hash` remain valid; only the external reference is unreachable on the SSRF-safe path (the same body-stays-valid principle as the consumer-side `data_ref_hash_mismatch` case, RFC-ACDP-0007 §5.3).
 
-Implementations exposing a `DataRefFetcher` (or equivalent) abstraction MUST apply this policy in the default fetcher and SHOULD apply it to custom fetchers; where a caller supplies a custom fetcher that deviates, the SDK MUST document the deviation as outside the SSRF-safe path. The `data-ref-ssrf-001`, `data-ref-ssrf-002`, and `data-ref-ssrf-003` conformance fixtures pin IP-literal, DNS-rebinding, and cross-authority-redirect refusal respectively.
+Implementations exposing a `DataRefFetcher` (or equivalent) abstraction MUST apply this policy in the default fetcher and SHOULD apply it to custom fetchers; where a caller supplies a custom fetcher that deviates, the SDK MUST document the deviation as outside the SSRF-safe path. The `data-ref-ssrf-001`, `data-ref-ssrf-002`, and `data-ref-ssrf-003` conformance fixtures pin IP-literal, DNS-rebinding, and cross-authority-redirect refusal respectively; `data-ref-ssrf-004` pins mixed-answer rejection; `data-ref-ssrf-005` pins same-host-different-port redirect rejection.
 
 ---
 

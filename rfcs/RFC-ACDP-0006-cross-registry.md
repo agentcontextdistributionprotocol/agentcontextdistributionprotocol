@@ -157,14 +157,36 @@ Registries MUST refuse the resolution and MAY return `cross_registry_resolution_
 
 Acceptable approaches:
 
-- Install a custom DNS resolver in the HTTP client that filters out disallowed addresses (e.g. a `reqwest` `dns_resolver` hook, a `SafeDnsResolver`, or a custom `Resolver` trait implementation).
+- Install a custom DNS resolver in the HTTP client that **rejects the whole resolution** if any returned address is disallowed (e.g. a `reqwest` `dns_resolver` hook, a `SafeDnsResolver`, or a custom `Resolver` trait implementation). The resolver MUST fail — not return a filtered subset (see "Mixed-answer rejection" below).
 - Resolve before constructing the HTTP client and pin the resolved IP via the HTTP client's `resolve()` / `connect_to()` API.
 
 Unacceptable approach (NOT conformant):
 
 - Call a URL-syntax SSRF check on the reference string, then use a standard HTTP client that resolves DNS normally at connect time. This is vulnerable to DNS rebinding and split-horizon DNS — a hostname can pass a string check yet resolve to a private address. The IP-range filter and the connection MUST consume the **same** DNS resolution.
 
-This requirement applies identically to producer DID resolution (RFC-ACDP-0008 §4.8) and DataRef location fetches (RFC-ACDP-0008 §4.9).
+**Mixed-answer rejection (NORMATIVE).** If DNS resolution for a hostname returns multiple IP addresses and **any** of them is in a forbidden range (loopback, private, link-local, multicast, IMDS, unspecified, documentation-range where disallowed by local policy), the implementation MUST reject the **entire** resolution for that hostname.
+
+Implementations MUST NOT silently filter out the forbidden addresses and connect to the remaining safe addresses. Partial filtering defeats the SSRF defense: an attacker controlling both a public IP and a private target can return both addresses, causing a filter-based implementation to proceed to the private target on a retry, a connection-pool reconnect, or a TOCTOU second resolution. The IP-range filter is all-or-nothing per hostname.
+
+**Non-conformant behavior (explicitly disallowed):**
+
+```
+resolve("attacker.example")  → ["203.0.113.10", "10.0.0.1"]
+filter to safe:              → ["203.0.113.10"]
+connect to:                  → 203.0.113.10  ← WRONG: should reject entirely
+```
+
+**Required behavior:**
+
+```
+resolve("attacker.example")  → ["203.0.113.10", "10.0.0.1"]
+validate all:                → 10.0.0.1 is forbidden → reject resolution
+result:                      → error, no connection made
+```
+
+The `fed-007` conformance fixture pins mixed-answer rejection for cross-registry resolution; `did-ssrf-004` and `data-ref-ssrf-004` pin it for producer DID resolution and DataRef location fetches respectively.
+
+This requirement — including mixed-answer rejection — applies identically to producer DID resolution (RFC-ACDP-0008 §4.8) and DataRef location fetches (RFC-ACDP-0008 §4.9).
 
 ### 7.2 HTTPS-only
 
@@ -191,6 +213,26 @@ Hung connections beyond these limits MUST be aborted.
 
 This prevents an attacker who controls a cooperating server from redirecting the registry to internal endpoints after passing the initial IP filter.
 
+**Same-authority definition (NORMATIVE).** For the purpose of redirect enforcement in this specification, two URLs share the same authority if and only if all three of the following match:
+
+1. **Scheme** — both use `https://` (HTTP is not permitted regardless — §7.2).
+2. **Host** — the hostname or IP literal is identical (case-insensitive per [RFC 3986]).
+3. **Effective port** — the port after applying the scheme default (443 for `https`, 80 for `http`) is identical. An explicit `:443` on an `https://` URL is the same effective port as the implicit default; `:8443` is not.
+
+Examples:
+
+| From | To | Authority match? |
+|---|---|---|
+| `https://a.example/x` | `https://a.example/y` | ✅ Yes |
+| `https://a.example/x` | `https://a.example:443/y` | ✅ Yes (same effective port) |
+| `https://a.example/x` | `https://a.example:8443/y` | ❌ No (different port) |
+| `https://a.example/x` | `http://a.example/y` | ❌ No (scheme change) |
+| `https://a.example/x` | `https://b.example/y` | ❌ No (different host) |
+
+A host-only comparison is **non-conformant**: it would follow a redirect to a different port on the same host, crossing a service boundary the attacker may not control on the original port. Implementations MUST compare the full (scheme, host, effective port) triple.
+
+This definition applies identically to all three producer-controlled outbound fetch contexts: cross-registry resolution (§7.5), producer DID resolution (RFC-ACDP-0008 §4.8), and DataRef location fetches (RFC-ACDP-0008 §4.9). The `fed-008` conformance fixture pins same-host-different-port redirect rejection for cross-registry resolution; `did-ssrf-005` and `data-ref-ssrf-005` pin it for the other two contexts.
+
 ### 7.6 DNS rebinding protection
 
 Registries MUST pin the resolved IP for the connection lifetime: a single DNS resolution per request, with the resolved IP used for both the IP-range filter check and the connection. A second resolution between filter check and connection (TOCTOU) MUST NOT be performed.
@@ -216,3 +258,4 @@ See [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md). Specific to cross-regis
 - [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md)
 - [DID-CORE] W3C, "Decentralized Identifiers (DIDs) v1.0".
 - [RFC 1035] Mockapetris, P., "Domain names — implementation and specification".
+- [RFC 3986] Berners-Lee, T., Fielding, R., and L. Masinter, "Uniform Resource Identifier (URI): Generic Syntax".

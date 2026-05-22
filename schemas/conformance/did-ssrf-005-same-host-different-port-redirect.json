@@ -1,0 +1,35 @@
+{
+  "id": "did-ssrf-005",
+  "description": "Producer did:web resolution MUST reject an HTTP redirect to the SAME host but a DIFFERENT port. Per the same-authority definition (RFC-ACDP-0006 §7.5, cross-referenced from RFC-ACDP-0008 §4.8), two URLs share an authority only when scheme, host, and effective port all match. A redirect of a DID-document fetch from https://agents.example.com/.well-known/did.json to https://agents.example.com:8443/.well-known/did.json changes the effective port and therefore the service boundary; a host-only comparison would wrongly follow it.",
+  "tags": ["security", "ssrf", "did-resolution", "redirects", "same-authority"],
+  "ssrf_rule": "RFC-ACDP-0008 §4.8 (Producer DID resolution SSRF protection — same-authority = scheme + host + effective port, RFC-ACDP-0006 §7.5)",
+  "applies_to_profiles": ["acdp-registry-core", "acdp-consumer"],
+  "input": {
+    "scenario": "Resolver fetches a producer DID document; the server returns a 30x whose Location header keeps the host but changes the port",
+    "endpoint": "POST /contexts",
+    "did_under_test": "did:web:agents.example.com",
+    "resolved_did_url": "https://agents.example.com/.well-known/did.json",
+    "initial_request_authority": "agents.example.com:443",
+    "redirect_from": "https://agents.example.com/.well-known/did.json",
+    "redirect_to": "https://agents.example.com:8443/.well-known/did.json",
+    "redirect_response": {
+      "status": 302,
+      "Location": "https://agents.example.com:8443/.well-known/did.json"
+    },
+    "additional_test_cases": [
+      {
+        "note": "explicit :443 is the SAME effective port as the https default — same authority, redirect MAY be followed",
+        "redirect_to": "https://agents.example.com:443/.well-known/did.json",
+        "authority_match": true
+      }
+    ]
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 400,
+    "error_code": "key_resolution_failed",
+    "behavior": "The DID resolver MUST refuse the cross-port redirect. The authority comparison MUST be over scheme + host (case-insensitive) + effective port. A host-only comparison is non-conformant. The refusal is permanent and producer-caused — key_resolution_failed (HTTP 400), NOT key_resolution_unreachable (HTTP 502).",
+    "non_conformant_implementation": "A redirect check that compares only the hostname and treats a :8443 redirect target as same-authority with the :443 origin.",
+    "rationale": "A different port is a different service boundary; conflating the two re-opens the SSRF path the redirect cap is meant to close."
+  }
+}

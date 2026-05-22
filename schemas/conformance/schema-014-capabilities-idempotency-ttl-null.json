@@ -1,0 +1,29 @@
+{
+  "id": "schema-014",
+  "description": "A capabilities document whose optional 'limits.idempotency_key_ttl_seconds' field is JSON null. acdp-capabilities.schema.json types it as an integer (\"type\": \"integer\", range 86400..604800), NOT as a nullable type. Per the absent-vs-null wire convention (RFC-ACDP-0005 §2.2.1), a registry that does not advertise idempotency-key support MUST OMIT 'idempotency_key_ttl_seconds', never serialize it as null. A consumer validating a capabilities document (validate_capabilities, RFC-ACDP-0007 §3.5) MUST reject 'idempotency_key_ttl_seconds': null as schema_violation. (When the registry DOES advertise supports_idempotency_key: true, the field is required AND non-null — null fails for both reasons; the absent-vs-null violation is independent of the supports_idempotency_key value.)",
+  "tags": ["schema-openness", "negative", "capabilities", "absent-vs-null"],
+  "input": {
+    "endpoint": "GET /.well-known/acdp.json",
+    "response_status": 200,
+    "response_body": {
+      "acdp_version": "0.1.0",
+      "registry_did": "did:web:registry.example.com",
+      "supported_signature_algorithms": ["ed25519"],
+      "supported_did_methods": ["did:web"],
+      "supports_idempotency_key": false,
+      "profiles": ["acdp-registry-core"],
+      "limits": {
+        "max_payload_bytes": 1048576,
+        "max_embedded_bytes": 65536,
+        "idempotency_key_ttl_seconds": null
+      }
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "consumer_outcome": "reject",
+    "consumer_error": "schema_violation",
+    "error_code": "schema_violation",
+    "rationale": "idempotency_key_ttl_seconds is an optional, non-nullable integer. A registry not honoring Idempotency-Key omits the key entirely rather than emitting null. A consumer that coerces null to absent special-cases the wire form; a strict consumer rejects the document as a schema_violation per the absent-vs-null convention."
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "id": "data-ref-ssrf-004",
+  "description": "When a consumer fetches a data_refs[].location over HTTP(S) and the host resolves to a DNS answer set containing one public and at least one forbidden address, the consumer's DataRef fetcher MUST reject the ENTIRE resolution — see RFC-ACDP-0008 §4.9 and the mixed-answer rejection rule in RFC-ACDP-0006 §7.1. The fetcher MUST NOT filter out the forbidden address(es) and connect to the remaining safe one(s). This is a consumer fetch-time check: the body itself stays valid, and a registry MUST NOT reject a publish on these grounds.",
+  "tags": ["security", "ssrf", "data-refs", "ip-range-filter", "mixed-answer"],
+  "ssrf_rule": "RFC-ACDP-0008 §4.9 (DataRef location SSRF protection — mixed-answer rejection, RFC-ACDP-0006 §7.1)",
+  "applies_to_profiles": ["acdp-consumer"],
+  "input": {
+    "scenario": "A consumer verifying a retrieved context fetches a data_refs[] entry whose https:// location host resolves to one public and one private address",
+    "data_ref_under_test": {
+      "type": "raw_data",
+      "location": "https://data.attacker.example/export.csv"
+    },
+    "dns_mock": { "host": "data.attacker.example", "answers": ["203.0.113.10", "10.0.0.1"] },
+    "additional_test_cases": [
+      { "host": "dataref-mixed-loopback.example", "answers": ["198.51.100.7", "127.0.0.1"] },
+      { "host": "dataref-mixed-imds.example", "answers": ["203.0.113.50", "169.254.169.254"] }
+    ]
+  },
+  "expected": {
+    "outcome": "failure",
+    "behavior": "The consumer MUST reject the whole resolution as soon as one forbidden address appears in the answer set, before connecting. It MUST NOT connect to the surviving public address. The DataRef MUST be treated as unfetchable and unverifiable — the consumer MUST NOT use the referenced data, and if data_refs[].content_hash was present that DataRef MUST NOT be reported as verified.",
+    "body_remains_valid": true,
+    "non_conformant_implementation": "A DataRefFetcher whose DNS resolver drops forbidden addresses and returns the safe remainder instead of failing the fetch.",
+    "registry_publish_behavior": "A registry MUST NOT reject the publish on these grounds — the SSRF defense lives entirely at the consumer's HTTP(S) fetch step (RFC-ACDP-0008 §4.9).",
+    "rationale": "Partial filtering defeats the SSRF defense — the forbidden address stays in DNS and a reconnect or rebinding second lookup can still route the fetch to the private target."
+  }
+}

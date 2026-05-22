@@ -70,6 +70,10 @@ The `origin_registry` field and the `ctx_id` authority MUST be a bare DNS hostna
 
 The `did:web` form used in `capabilities.registry_did`, in `agent_id` / `signature.key_id`, and in DID documents follows the [DID Web method] spec, which encodes a `:` port separator as `%3A`. A `did:web:<host>%3A<port>` identifier is valid only in test and development deployments and MUST NOT appear in production publications (RFC-ACDP-0008 §4.8); production registry and producer DIDs resolve over HTTPS on port 443.
 
+**Server-side authority validation (NORMATIVE).** A registry implementation MUST validate its own authority string before using it to mint `ctx_id` or `origin_registry` values. The authority MUST be a valid DNS hostname per the `acdp://` URI syntax (RFC-ACDP-0001 §5.4): lowercase ASCII LDH labels separated by dots, no port, no scheme prefix, no DID prefix — i.e. it MUST satisfy `acdp-common.schema.json#/$defs/hostname`.
+
+A registry MUST NOT mint `ctx_id` or `origin_registry` values from a `host:port` authority, a URL-form authority (`https://...`), an uppercase authority, or a DID-form authority (`did:web:...`) — even if such a value was supplied at server construction time. Libraries SHOULD enforce this at the constructor (or configuration-load) level rather than at mint time, so an invalid registry instance cannot be created accidentally and a misconfiguration fails fast at startup rather than producing non-conformant `ctx_id`s under load. The `body-001` / `body-002` fixtures pin the consumer-side accept/reject behavior for the resulting `origin_registry`; this paragraph pins the registry-side obligation that produces it.
+
 ### 3.2 Integrity Fields
 
 | Field | Type | Required | Description |
@@ -296,6 +300,17 @@ The reasoning: each `DataRef` lives inside `body.data_refs[]`, which is part of 
 The openness applies to the `DataRef` **root object only**. The nested `embedded` sub-object is a CLOSED schema (`additionalProperties: false`): it is a tightly-scoped wire shape (`encoding`, `content`, optional `content_hash`) where an unknown field signals a bug, not a forward-compatible extension. The structured `location` object is likewise open (producer-defined locator fields). The complete openness map is in RFC-ACDP-0007 §3.3.1; the canonical schema declares this explicitly via `additionalProperties: true` on the `DataRef` root and `additionalProperties: false` on `embedded`.
 
 The `can-010` conformance fixture pins the positive case: a `DataRef` carrying an unknown producer field MUST be retained, byte-for-byte, in the `content_hash` recomputation. The `schema-003` fixture pins the closed-`embedded` negative case.
+
+### 6.8 DataRef optional fields and the absent-vs-null convention
+
+`DataRef` optional fields follow the global absent-vs-null wire convention (RFC-ACDP-0005 §2.2.1) without exception. The optional fields are `description`, `size_bytes`, `format`, `schema_version`, `content_hash`, `location`, and `embedded`. When a producer does not set one of these fields, it MUST be **omitted** from the wire object. An explicit JSON `null` for any of them is **not** a valid wire value: none is typed as nullable in `acdp-data-ref.schema.json`, so `null` is a `schema_violation` and MUST be rejected — by a registry at publish time, and by a consumer validating a retrieved body.
+
+Two clarifications specific to `DataRef`:
+
+- **Mutual exclusivity is not nullability.** `location` and `embedded` are mutually exclusive and exactly one MUST be present (§6). This does not make either field nullable: the form that is not used is simply **omitted**, never set to `null`. A `DataRef` with `"location": null` (or `"embedded": null`) is a `schema_violation`, distinct from the "neither present" case (`data-ref-001`) and the "both present" case (`data-ref-002`).
+- **`null` is hash-distinct from absent.** JCS canonicalization treats an absent key and a `"key": null` entry as different bytes (RFC-ACDP-0001 §5.2). Because `DataRef` lives inside ProducerContent (§6.7), a `DataRef` field emitted as `null` changes `content_hash` relative to the same `DataRef` with the field omitted. A permissive deserializer that silently coerces `null` to "absent" — rather than rejecting it — will accept non-conformant input and can compute a divergent hash. Implementations MUST distinguish the two states and reject `null` on every non-nullable `DataRef` field.
+
+The `schema-011` and `schema-012` conformance fixtures pin rejection of `"format": null` and `"location": null` respectively.
 
 ---
 

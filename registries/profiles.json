@@ -75,9 +75,14 @@
         "schema-008-signature-extra-field",
         "schema-009-data-period-extra-field",
         "schema-010-capabilities-limits-extra-field",
+        "schema-011-data-ref-format-null",
+        "schema-012-data-ref-location-null",
+        "schema-014-capabilities-idempotency-ttl-null",
         "did-ssrf-001-loopback-did-web",
         "did-ssrf-002-imds-did-web",
         "did-ssrf-003-private-range-did-web",
+        "did-ssrf-004-mixed-answer-rejection",
+        "did-ssrf-005-same-host-different-port-redirect",
         "rate-001-rate-limited-response-shape"
       ],
       "conditional_fixtures": [
@@ -107,7 +112,7 @@
       "self_test_only": [
         "rate-001-rate-limited-response-shape (per profiles.md note — black-box conformance cannot deterministically trigger per-agent rate limit)"
       ],
-      "notes": "All pub-001..014 fixtures are required. sig-002 is conditionally required only when the registry advertises ecdsa-p256 in supported_signature_algorithms. idem-001..005 are conditionally required when supports_idempotency_key is true; idem-006 documents a tolerated race outcome and is not a strict requirement. can-010 extends the canonicalization golden vectors to DataRef-level openness; lin-001 is the dedicated lineage_id derivation golden vector; schema-008..010 pin the closed nested schemas (signature, data_period, capabilities.limits); did-ssrf-001..003 pin producer-DID-resolution SSRF refusal at publish-time signature verification (RFC-ACDP-0008 §4.8)."
+      "notes": "All pub-001..014 fixtures are required. sig-002 is conditionally required only when the registry advertises ecdsa-p256 in supported_signature_algorithms. idem-001..005 are conditionally required when supports_idempotency_key is true; idem-006 documents a tolerated race outcome and is not a strict requirement. can-010 extends the canonicalization golden vectors to DataRef-level openness; lin-001 is the dedicated lineage_id derivation golden vector; schema-008..010 pin the closed nested schemas (signature, data_period, capabilities.limits); schema-011/012 pin absent-vs-null rejection for the DataRef fields format and location (RFC-ACDP-0002 §6.8) and schema-014 for capabilities.limits.idempotency_key_ttl_seconds (RFC-ACDP-0005 §2.2.1); did-ssrf-001..003 pin producer-DID-resolution SSRF refusal at publish-time signature verification (RFC-ACDP-0008 §4.8); did-ssrf-004 pins mixed-answer rejection (RFC-ACDP-0006 §7.1) and did-ssrf-005 same-host-different-port redirect rejection (RFC-ACDP-0006 §7.5)."
     },
     {
       "id": "acdp-registry-discovery",
@@ -142,7 +147,9 @@
         "fed-003-loopback",
         "fed-004-link-local-imds",
         "fed-005-cross-authority-redirect",
-        "fed-006-registry-did-mismatch"
+        "fed-006-registry-did-mismatch",
+        "fed-007-mixed-answer-rejection",
+        "fed-008-same-host-different-port-redirect"
       ],
       "self_test_only_added": [
         "Response-size caps (RFC-ACDP-0006 §7.3)",
@@ -150,7 +157,7 @@
         "DNS-rebinding pinning (RFC-ACDP-0006 §7.6)"
       ],
       "not_implemented_permitted_on": [],
-      "notes": "Response-size caps, timeouts, and DNS-rebinding pinning are operational requirements that registry implementers MUST self-test; they are not exposed as standalone fixtures because the protocol surface alone does not allow a black-box assertion."
+      "notes": "fed-007 pins mixed-answer rejection — a DNS answer set mixing a public and a forbidden address MUST be rejected entirely; filter-and-proceed is non-conformant (RFC-ACDP-0006 §7.1). fed-008 pins the same-authority redirect definition — authority is scheme + host + effective port, so a redirect to the same host on a different port MUST be rejected (RFC-ACDP-0006 §7.5). Response-size caps, timeouts, and DNS-rebinding pinning are operational requirements that registry implementers MUST self-test; they are not exposed as standalone fixtures because the protocol surface alone does not allow a black-box assertion."
     },
     {
       "id": "acdp-consumer",
@@ -195,20 +202,28 @@
         "schema-008-signature-extra-field",
         "schema-009-data-period-extra-field",
         "schema-010-capabilities-limits-extra-field",
+        "schema-011-data-ref-format-null",
+        "schema-012-data-ref-location-null",
+        "schema-013-error-details-null",
+        "schema-014-capabilities-idempotency-ttl-null",
         "data-ref-008-external-data-ref-hash-mismatch",
         "data-ref-ssrf-001-ip-literal-private",
         "data-ref-ssrf-002-dns-rebinding-loopback",
         "data-ref-ssrf-003-cross-authority-redirect",
+        "data-ref-ssrf-004-mixed-answer-rejection",
+        "data-ref-ssrf-005-same-host-different-port-redirect",
         "did-ssrf-001-loopback-did-web",
         "did-ssrf-002-imds-did-web",
         "did-ssrf-003-private-range-did-web",
+        "did-ssrf-004-mixed-answer-rejection",
+        "did-ssrf-005-same-host-different-port-redirect",
         "body-001-origin-registry-hostname",
         "body-002-origin-registry-did",
         "vis-003-search-response-key",
         "pub-007-publish-response-shape",
         "pub-010-non-did-web-contributor"
       ],
-      "notes": "can-008, can-009, and can-010 are especially important: they exercise forward-compatible hash verification (RFC-ACDP-0001 §5.7, RFC-ACDP-0002 §6.7) — a consumer that deserializes into a typed model that drops unknown body or DataRef fields will fail these and produce false hash_mismatch under future-version producers. lin-001 pins lineage_id derivation. schema-005..007 pin the absent-vs-null wire convention; schema-008..010 pin the closed nested schemas. data-ref-008 pins the consumer-side external-DataRef hash-mismatch semantic (data_ref_hash_mismatch, body still valid — RFC-ACDP-0007 §5.3). data-ref-ssrf-001..003 pin consumer-side DataRef-location SSRF refusal at fetch time (RFC-ACDP-0008 §4.9): IP-literal, DNS-rebinding, and cross-authority-redirect refusal — they are consumer-only because a registry does not fetch external data_refs and MUST NOT reject a publish on these grounds. did-ssrf-001..003 pin producer-DID-resolution SSRF refusal (RFC-ACDP-0008 §4.8), which every consumer performs when verifying signatures end-to-end. A consumer that follows derived_from across registries additionally MUST pass the fed-* fixtures if it performs server-side resolution."
+      "notes": "can-008, can-009, and can-010 are especially important: they exercise forward-compatible hash verification (RFC-ACDP-0001 §5.7, RFC-ACDP-0002 §6.7) — a consumer that deserializes into a typed model that drops unknown body or DataRef fields will fail these and produce false hash_mismatch under future-version producers. lin-001 pins lineage_id derivation. schema-005..007 pin the absent-vs-null wire convention; schema-008..010 pin the closed nested schemas; schema-011..014 extend the absent-vs-null convention to the DataRef fields format and location (RFC-ACDP-0002 §6.8), the error envelope (error.details), and the capabilities document (limits.idempotency_key_ttl_seconds). data-ref-008 pins the consumer-side external-DataRef hash-mismatch semantic (data_ref_hash_mismatch, body still valid — RFC-ACDP-0007 §5.3). data-ref-ssrf-001..005 pin consumer-side DataRef-location SSRF refusal at fetch time (RFC-ACDP-0008 §4.9): IP-literal, DNS-rebinding, cross-authority-redirect, mixed-answer, and same-host-different-port-redirect refusal — they are consumer-only because a registry does not fetch external data_refs and MUST NOT reject a publish on these grounds. did-ssrf-001..005 pin producer-DID-resolution SSRF refusal (RFC-ACDP-0008 §4.8), which every consumer performs when verifying signatures end-to-end, including mixed-answer rejection (did-ssrf-004) and same-host-different-port redirect rejection (did-ssrf-005). A consumer that follows derived_from across registries additionally MUST pass the fed-* fixtures if it performs server-side resolution."
     }
   ],
   "fixture_families": {

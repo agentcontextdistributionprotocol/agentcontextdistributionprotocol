@@ -1,0 +1,33 @@
+{
+  "id": "did-ssrf-004",
+  "description": "Producer did:web resolution whose host resolves to a DNS answer set containing one public and at least one forbidden address MUST reject the ENTIRE resolution — see RFC-ACDP-0008 §4.8 and the mixed-answer rejection rule in RFC-ACDP-0006 §7.1. A DID resolver MUST NOT filter out the forbidden address(es) and connect to the remaining safe one(s); filter-and-proceed lets an attacker who controls both a public IP and a private target bypass the filter on a retry or reconnect.",
+  "tags": ["security", "ssrf", "did-resolution", "ip-range-filter", "mixed-answer"],
+  "ssrf_rule": "RFC-ACDP-0008 §4.8 (Producer DID resolution SSRF protection — mixed-answer rejection, RFC-ACDP-0006 §7.1)",
+  "applies_to_profiles": ["acdp-registry-core", "acdp-consumer"],
+  "input": {
+    "scenario": "A publish request whose body.agent_id is a did:web identifier whose host resolves to one public and one private address",
+    "endpoint": "POST /contexts",
+    "body": {
+      "agent_id": "did:web:agents.attacker.example",
+      "signature": {
+        "algorithm": "ed25519",
+        "key_id": "did:web:agents.attacker.example#key-1",
+        "value": "AAAA"
+      }
+    },
+    "resolved_did_url": "https://agents.attacker.example/.well-known/did.json",
+    "dns_mock": { "host": "agents.attacker.example", "answers": ["203.0.113.10", "10.0.0.1"] },
+    "additional_test_cases": [
+      { "host": "did-mixed-loopback.example", "answers": ["198.51.100.7", "127.0.0.1"] },
+      { "host": "did-mixed-imds.example", "answers": ["203.0.113.50", "169.254.169.254"] }
+    ]
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 400,
+    "error_code": "key_resolution_failed",
+    "behavior": "The DID resolver MUST reject the whole resolution as soon as one forbidden address appears in the answer set, before connecting. It MUST NOT connect to the surviving public address. The refusal is permanent, policy-driven, and producer-caused — key_resolution_failed (HTTP 400, not retryable), NOT key_resolution_unreachable (HTTP 502).",
+    "non_conformant_implementation": "A WebResolver whose DNS hook drops forbidden addresses and returns the safe remainder rather than failing the resolution.",
+    "rationale": "Partial filtering defeats the SSRF defense — the forbidden address stays in DNS and a reconnect or rebinding second lookup can still reach the private target. A consumer that refuses on these grounds MUST treat the context as unverifiable."
+  }
+}

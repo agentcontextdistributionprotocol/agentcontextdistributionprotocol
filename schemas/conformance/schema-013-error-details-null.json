@@ -1,0 +1,24 @@
+{
+  "id": "schema-013",
+  "description": "An ACDP error envelope whose optional 'error.details' field is JSON null. acdp-error.schema.json types 'details' as an object (\"type\": \"object\"), NOT as a nullable type. Per the absent-vs-null wire convention (RFC-ACDP-0005 §2.2.1), an error with no structured details MUST OMIT 'details', never serialize it as null. A registry MUST NOT emit 'error.details': null; a strict receiver MUST reject it as a non-conformant wire shape.",
+  "tags": ["schema-openness", "negative", "error-envelope", "absent-vs-null"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "response_status": 500,
+    "response_body": {
+      "error": {
+        "code": "internal_error",
+        "message": "an unexpected error occurred",
+        "details": null
+      }
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "consumer_outcome": "reject",
+    "consumer_error": "schema_violation",
+    "error_code": "schema_violation",
+    "registry_emit_behavior": "A registry MUST NOT emit 'error.details': null. An error with no structured detail object omits the 'details' key entirely.",
+    "rationale": "error.details is an optional, non-nullable object. The conformant wire form for 'no details' is an omitted key, not an explicit null. A receiver that coerces null to absent special-cases the wire format and diverges from the single unambiguous form the convention mandates; a strict receiver treats 'details': null as a parse error."
+  }
+}
