@@ -84,7 +84,7 @@ Each match contains a summary projection (`ctx_id`, `lineage_id`, `agent_id`, `t
 
 #### 2.2.1 Absent vs null (wire convention, NORMATIVE)
 
-This rule governs every ACDP wire type — search responses, `match_summary`, bodies, capabilities, and error envelopes — but is stated here because the search response is where the distinction is most often mishandled.
+This rule governs every ACDP wire type — search responses, `match_summary`, bodies (including `data_refs[]` entries — RFC-ACDP-0002 §6.8), capabilities, and error envelopes — but is stated here because the search response is where the distinction is most often mishandled.
 
 **All optional fields in ACDP wire types MUST be omitted when not present.** Implementations MUST NOT serialize an absent optional field as JSON `null`. A field is nullable on the wire **only** when its schema explicitly permits `null` — either via `"type": ["string", "null"]` or a `oneOf`/`anyOf` branch that includes `null`.
 
@@ -93,7 +93,7 @@ This rule governs every ACDP wire type — search responses, `match_summary`, bo
 
 The rationale is forward-compatibility and hash stability. JCS canonicalization treats an absent key and a `"key": null` entry as distinct (RFC-ACDP-0001 §5.2, fixture `can-001` "empty / null distinction"): they produce different canonical bytes and therefore different `content_hash` values. A producer or registry that emits `null` for a field the schema types as a bare string forces every receiver to special-case the coercion, and any receiver that does not will compute a divergent hash. Omitting absent fields keeps one unambiguous wire form.
 
-Producers, registries, and SDKs MUST therefore configure their JSON serializers to **skip** absent optional fields rather than emit explicit nulls (e.g. `#[serde(skip_serializing_if = "Option::is_none")]` in Rust, `exclude_none=True` / `model_dump(exclude_none=True)` in pydantic, omitting the key entirely in hand-built objects, `omitempty` in Go for fields where the zero value is unambiguous). Strict receivers MUST treat an unexpected `null` on a non-nullable field as a parse error (`schema_violation`). The `schema-005`, `schema-006`, and `schema-007` conformance fixtures pin this for `next_cursor`, `summary`, and `domain` respectively.
+Producers, registries, and SDKs MUST therefore configure their JSON serializers to **skip** absent optional fields rather than emit explicit nulls (e.g. `#[serde(skip_serializing_if = "Option::is_none")]` in Rust, `exclude_none=True` / `model_dump(exclude_none=True)` in pydantic, omitting the key entirely in hand-built objects, `omitempty` in Go for fields where the zero value is unambiguous). Strict receivers MUST treat an unexpected `null` on a non-nullable field as a parse error (`schema_violation`). The `schema-005`, `schema-006`, and `schema-007` conformance fixtures pin this for `next_cursor`, `summary`, and `domain`; `schema-011` and `schema-012` pin it for the `DataRef` fields `format` and `location` (RFC-ACDP-0002 §6.8); `schema-013` pins it for `error.details`; and `schema-014` pins it for `capabilities.limits.idempotency_key_ttl_seconds`.
 
 ### 2.3 Pagination
 

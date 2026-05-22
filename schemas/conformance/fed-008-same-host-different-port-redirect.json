@@ -1,0 +1,39 @@
+{
+  "id": "fed-008",
+  "description": "Cross-registry resolution MUST reject an HTTP redirect to the SAME host but a DIFFERENT port. Same host is not the same authority. Per the same-authority definition (RFC-ACDP-0006 §7.5), two URLs share an authority only when scheme, host, and effective port all match. A redirect from https://registry.example.com/context to https://registry.example.com:8443/context changes the effective port (443 -> 8443) and therefore the service boundary; an implementation that compares host only would wrongly follow it. The effective port is the port after applying the scheme default, so an explicit :443 on an https:// URL is the same authority as the implicit default, but :8443 is not.",
+  "tags": ["security", "ssrf", "federated", "redirects", "same-authority"],
+  "ssrf_rule": "RFC-ACDP-0006 §7.5 (Redirect handling — same-authority = scheme + host + effective port)",
+  "applies_to_profiles": ["acdp-registry-federated", "acdp-consumer"],
+  "input": {
+    "scenario": "Resolver fetches https://registry.example.com/.well-known/acdp.json; the server returns a 30x whose Location header keeps the host but changes the port",
+    "initial_request_authority": "registry.example.com:443",
+    "redirect_from": "https://registry.example.com/context",
+    "redirect_to": "https://registry.example.com:8443/context",
+    "redirect_response": {
+      "status": 302,
+      "Location": "https://registry.example.com:8443/context"
+    },
+    "additional_test_cases": [
+      {
+        "note": "explicit :443 is the SAME effective port as the https default — same authority, redirect MAY be followed",
+        "redirect_from": "https://registry.example.com/context",
+        "redirect_to": "https://registry.example.com:443/context",
+        "authority_match": true
+      },
+      {
+        "note": "scheme downgrade is also an authority change and MUST be rejected (and https-only already forbids it)",
+        "redirect_from": "https://registry.example.com/context",
+        "redirect_to": "http://registry.example.com/context",
+        "authority_match": false
+      }
+    ]
+  },
+  "expected": {
+    "outcome": "failure",
+    "error_code": "cross_registry_resolution_failed",
+    "http_status": 502,
+    "behavior": "The resolver MUST refuse the cross-port redirect. The authority comparison MUST be over scheme + host (case-insensitive) + effective port (the port after applying the scheme default — 443 for https). https://registry.example.com:443/... is the same authority as https://registry.example.com/...; https://registry.example.com:8443/... is NOT. A host-only comparison is non-conformant.",
+    "non_conformant_implementation": "A redirect check that compares only the hostname and treats https://registry.example.com:8443/... as same-authority with https://registry.example.com/....",
+    "rationale": "A different port is a different service boundary. An attacker who controls registry.example.com on port 443 may not control an internal service the host also exposes on 8443; conflating the two re-opens the SSRF path the redirect cap is meant to close."
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "id": "data-ref-ssrf-005",
+  "description": "When a consumer fetches a data_refs[].location over HTTPS, an HTTP redirect to the SAME host but a DIFFERENT port MUST be refused. Per the same-authority definition (RFC-ACDP-0006 §7.5, cross-referenced from RFC-ACDP-0008 §4.9), two URLs share an authority only when scheme, host, and effective port all match. A redirect from https://data.example.com/file to https://data.example.com:8443/file changes the effective port and therefore the service boundary; a host-only comparison would wrongly follow it. This is a consumer fetch-time check: the body itself stays valid.",
+  "tags": ["security", "ssrf", "data-refs", "redirects", "same-authority"],
+  "ssrf_rule": "RFC-ACDP-0008 §4.9 (DataRef location SSRF protection — same-authority = scheme + host + effective port, RFC-ACDP-0006 §7.5)",
+  "applies_to_profiles": ["acdp-consumer"],
+  "input": {
+    "scenario": "Consumer fetches https://data.example.com/file; the server returns a 30x whose Location header keeps the host but changes the port",
+    "data_ref_under_test": {
+      "type": "raw_data",
+      "location": "https://data.example.com/file"
+    },
+    "initial_request_authority": "data.example.com:443",
+    "redirect_from": "https://data.example.com/file",
+    "redirect_to": "https://data.example.com:8443/file",
+    "redirect_response": {
+      "status": 302,
+      "Location": "https://data.example.com:8443/file"
+    },
+    "additional_test_cases": [
+      {
+        "note": "explicit :443 is the SAME effective port as the https default — same authority, redirect MAY be followed",
+        "redirect_to": "https://data.example.com:443/file",
+        "authority_match": true
+      }
+    ]
+  },
+  "expected": {
+    "outcome": "failure",
+    "behavior": "The consumer MUST refuse the cross-port redirect. The authority comparison MUST be over scheme + host (case-insensitive) + effective port (the port after applying the scheme default — 443 for https). A host-only comparison is non-conformant. The DataRef MUST be treated as unfetchable and unverifiable.",
+    "body_remains_valid": true,
+    "non_conformant_implementation": "A redirect check that compares only the hostname and treats a :8443 redirect target as same-authority with the :443 origin.",
+    "rationale": "A different port is a different service boundary. An attacker who controls data.example.com on port 443 may not control an internal service the host also exposes on 8443; conflating the two re-opens the SSRF path the redirect cap is meant to close."
+  }
+}

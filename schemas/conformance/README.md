@@ -148,8 +148,10 @@ Rate-limit triggering depends on registry policy (window, bucket, threshold), so
 | `data-ref-ssrf-001` | Consumer fetches a `data_refs[].location` whose `https://` host is a private/loopback/link-local/IMDS IP literal — MUST refuse before connecting | failure: fetch refused; DataRef unfetchable, body still valid |
 | `data-ref-ssrf-002` | `data_refs[].location` hostname passes URL-syntax checks but resolves via DNS to a loopback/IMDS/private address — MUST refuse after DNS, with the IP pinned (no rebinding) | failure: fetch refused; DataRef unfetchable, body still valid |
 | `data-ref-ssrf-003` | `data_refs[].location` fetch receives a cross-authority HTTP redirect — MUST refuse to follow | failure: fetch refused; DataRef unfetchable, body still valid |
+| `data-ref-ssrf-004` | `data_refs[].location` host resolves to a DNS answer set mixing a public and a forbidden address — MUST reject the entire resolution (filter-and-proceed is non-conformant) | failure: fetch refused; DataRef unfetchable, body still valid |
+| `data-ref-ssrf-005` | `data_refs[].location` fetch is redirected to the same host but a different port — MUST refuse (authority = scheme + host + effective port) | failure: fetch refused; DataRef unfetchable, body still valid |
 
-A `data_refs[].location` URL is producer-controlled, so a consumer dereferencing it over HTTP(S) is making an attacker-influenced outbound request — the same SSRF vector as producer DID resolution (`did-ssrf-*`) and cross-registry resolution (`fed-*`), and it MUST be defended identically (RFC-ACDP-0008 §4.9). These are **consumer-side** fixtures: a registry does not fetch external `data_refs` and MUST NOT reject a publish on these grounds. A refused fetch does not invalidate the body — the producer signature and body `content_hash` remain valid; only the external reference is unreachable on the SSRF-safe path. Required for `acdp-consumer`.
+A `data_refs[].location` URL is producer-controlled, so a consumer dereferencing it over HTTP(S) is making an attacker-influenced outbound request — the same SSRF vector as producer DID resolution (`did-ssrf-*`) and cross-registry resolution (`fed-*`), and it MUST be defended identically (RFC-ACDP-0008 §4.9). These are **consumer-side** fixtures: a registry does not fetch external `data_refs` and MUST NOT reject a publish on these grounds. A refused fetch does not invalidate the body — the producer signature and body `content_hash` remain valid; only the external reference is unreachable on the SSRF-safe path. `data-ref-ssrf-004` pins the mixed-answer rejection rule (RFC-ACDP-0006 §7.1) and `data-ref-ssrf-005` the same-authority redirect definition (RFC-ACDP-0006 §7.5). Required for `acdp-consumer`.
 
 ### Body identity fields (RFC-ACDP-0002 §3)
 
@@ -225,8 +227,10 @@ The `sig-*` fixtures are checked by `scripts/conformance-runner.py` (CI). A fail
 | `fed-004` | Authority resolves to link-local (169.254/16, fe80::/10) including IMDS 169.254.169.254 — MUST reject | failure: `cross_registry_resolution_failed` |
 | `fed-005` | Cross-authority HTTP redirect from initial request — MUST reject after first redirect | failure: `cross_registry_resolution_failed` |
 | `fed-006` | Capabilities document declares `registry_did` ≠ `did:web:<authority>` — MUST reject | failure: `cross_registry_resolution_failed` |
+| `fed-007` | DNS answer set mixing a public and a forbidden address — MUST reject the entire resolution (filter-and-proceed is non-conformant) | failure: `cross_registry_resolution_failed` |
+| `fed-008` | Redirect to the same host but a different port — MUST reject (same host ≠ same authority; authority = scheme + host + effective port) | failure: `cross_registry_resolution_failed` |
 
-These fixtures are required for `acdp-registry-federated` profile conformance (registries/profiles.md). The bundled conformance runner does not execute them; they describe black-box scenarios that registry integration tests MUST verify against a live deployment.
+These fixtures are required for `acdp-registry-federated` profile conformance (registries/profiles.md). The bundled conformance runner does not execute them; they describe black-box scenarios that registry integration tests MUST verify against a live deployment. `fed-007` pins the mixed-answer rejection rule (RFC-ACDP-0006 §7.1) and `fed-008` the same-authority redirect definition (RFC-ACDP-0006 §7.5).
 
 ### Error envelope (RFC-ACDP-0007)
 
@@ -268,8 +272,12 @@ These fixtures are required for `acdp-registry-federated` profile conformance (r
 | `schema-008` | Body `signature` object with an extra field (closed sub-schema) | reject: `schema_violation` |
 | `schema-009` | Body `data_period` object with an extra field (closed sub-schema) | reject: `schema_violation` |
 | `schema-010` | Capabilities `limits` sub-object with an extra field (closed sub-schema inside the open document) | reject: `schema_violation` |
+| `schema-011` | `DataRef.format` is `null` — optional, non-nullable string; MUST be omitted, not nulled (RFC-ACDP-0002 §6.8) | reject: `schema_violation` |
+| `schema-012` | `DataRef.location` is `null` — not nullable; mutual exclusivity with `embedded` does not make it nullable (RFC-ACDP-0002 §6.8) | reject: `schema_violation` |
+| `schema-013` | Error envelope `error.details` is `null` — optional, non-nullable object; MUST be omitted, not nulled | reject: `schema_violation` |
+| `schema-014` | Capabilities `limits.idempotency_key_ttl_seconds` is `null` — optional, non-nullable integer; MUST be omitted, not nulled | reject: `schema_violation` |
 
-`schema-005`..`schema-007` pin the absent-vs-null wire convention (RFC-ACDP-0005 §2.2.1): an optional field whose schema types it as a bare string is NOT nullable on the wire; `null` is rejected, `supersedes` (typed `string | null`) is the contrasting legitimately-nullable field. `schema-008`..`schema-010` pin the closed nested schemas in the openness map.
+`schema-005`..`schema-007` pin the absent-vs-null wire convention (RFC-ACDP-0005 §2.2.1): an optional field whose schema types it as a bare string is NOT nullable on the wire; `null` is rejected, `supersedes` (typed `string | null`) is the contrasting legitimately-nullable field. `schema-008`..`schema-010` pin the closed nested schemas in the openness map. `schema-011`..`schema-014` extend the absent-vs-null convention to `DataRef` optional fields (`format`, `location` — RFC-ACDP-0002 §6.8), the error envelope (`error.details`), and the capabilities document (`limits.idempotency_key_ttl_seconds`): in every case an unset optional field MUST be omitted, and an explicit `null` is a `schema_violation`.
 
 ### Pagination cursors (RFC-ACDP-0005 §2.5.4)
 
@@ -287,5 +295,7 @@ These fixtures are required for `acdp-registry-federated` profile conformance (r
 | `did-ssrf-001` | Producer `did:web` authority resolves to a loopback address (`127.0.0.0/8`, `::1`, `0.0.0.0`) — MUST refuse before connecting | failure: `key_resolution_failed` (HTTP 400) |
 | `did-ssrf-002` | Producer `did:web` authority resolves to the cloud-metadata / IMDS address (`169.254.169.254`) or other link-local target | failure: `key_resolution_failed` (HTTP 400) |
 | `did-ssrf-003` | Producer `did:web` authority resolves to an RFC 1918 private-range address (`10/8`, `172.16/12`, `192.168/16`, `fc00::/7`) | failure: `key_resolution_failed` (HTTP 400) |
+| `did-ssrf-004` | Producer `did:web` host resolves to a DNS answer set mixing a public and a forbidden address — MUST reject the entire resolution (filter-and-proceed is non-conformant) | failure: `key_resolution_failed` (HTTP 400) |
+| `did-ssrf-005` | Producer DID-document fetch is redirected to the same host but a different port — MUST reject (authority = scheme + host + effective port) | failure: `key_resolution_failed` (HTTP 400) |
 
-Producer DID resolution happens at publish-time signature verification (RFC-ACDP-0003 §2.1 step 6) and at consumer-side end-to-end verification (RFC-ACDP-0008 §4.4). It is the same SSRF vector as cross-registry resolution (`fed-*`) and MUST be defended identically — see RFC-ACDP-0008 §4.8. The refusal is permanent and producer-caused, so the code is `key_resolution_failed` (HTTP 400, not retryable), never `key_resolution_unreachable` (HTTP 502). Required for `acdp-registry-core` and `acdp-consumer`.
+Producer DID resolution happens at publish-time signature verification (RFC-ACDP-0003 §2.1 step 6) and at consumer-side end-to-end verification (RFC-ACDP-0008 §4.4). It is the same SSRF vector as cross-registry resolution (`fed-*`) and MUST be defended identically — see RFC-ACDP-0008 §4.8. The refusal is permanent and producer-caused, so the code is `key_resolution_failed` (HTTP 400, not retryable), never `key_resolution_unreachable` (HTTP 502). `did-ssrf-004` pins the mixed-answer rejection rule (RFC-ACDP-0006 §7.1) and `did-ssrf-005` the same-authority redirect definition (RFC-ACDP-0006 §7.5). Required for `acdp-registry-core` and `acdp-consumer`.

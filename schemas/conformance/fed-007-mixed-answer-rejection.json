@@ -1,0 +1,25 @@
+{
+  "id": "fed-007",
+  "description": "Cross-registry DNS resolution that returns multiple IP addresses, where one is public and at least one is in a forbidden range, MUST reject the ENTIRE resolution. An implementation MUST NOT silently filter out the forbidden address(es) and connect to the remaining safe one(s). Filter-and-proceed is explicitly non-conformant: an attacker who controls both a public IP and a private target can return both addresses, and a filter-based resolver would proceed to the private target on a retry, reconnect, or DNS-rebinding second resolution. The IP-range filter is all-or-nothing per hostname (RFC-ACDP-0006 §7.1, mixed-answer rejection).",
+  "tags": ["security", "ssrf", "federated", "ip-range-filter", "mixed-answer"],
+  "ssrf_rule": "RFC-ACDP-0006 §7.1 (IP-range filtering — mixed-answer rejection)",
+  "applies_to_profiles": ["acdp-registry-federated", "acdp-consumer"],
+  "input": {
+    "scenario": "Resolver dereferences an acdp:// reference whose authority resolves to a DNS answer set containing one public and one private address",
+    "acdp_reference": "acdp://attacker.example/550e8400-e29b-41d4-a716-446655440000",
+    "dns_mock": { "host": "attacker.example", "answers": ["203.0.113.10", "10.0.0.1"] },
+    "additional_test_cases": [
+      { "host": "mixed-loopback.example", "answers": ["198.51.100.7", "127.0.0.1"] },
+      { "host": "mixed-imds.example", "answers": ["203.0.113.50", "169.254.169.254"] },
+      { "host": "mixed-ipv6.example", "answers": ["2001:db8::1", "::1"] }
+    ]
+  },
+  "expected": {
+    "outcome": "failure",
+    "error_code": "cross_registry_resolution_failed",
+    "http_status": 502,
+    "behavior": "The resolver MUST reject the whole resolution for the hostname the moment it observes a single forbidden address in the answer set — before any TCP connect. It MUST NOT keep the public address(es) and proceed. Non-conformant: resolve(\"attacker.example\") -> [\"203.0.113.10\",\"10.0.0.1\"] -> filter to [\"203.0.113.10\"] -> connect to 203.0.113.10. Required: validate all -> 10.0.0.1 is forbidden -> reject the resolution -> no connection made.",
+    "non_conformant_implementation": "A SafeDnsResolver (or equivalent DNS hook) that returns the surviving safe addresses after dropping the forbidden ones, instead of failing the resolution outright.",
+    "rationale": "Partial filtering defeats the SSRF defense. The forbidden address remains in DNS; a retry, a connection-pool reconnect, or a TOCTOU second resolution can still route to the private target. Rejecting the entire resolution is the only behavior that holds under reconnect and rebinding."
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "id": "schema-012",
+  "description": "A DataRef whose 'location' field is JSON null. Each DataRef MUST contain exactly one of 'location' or 'embedded' (RFC-ACDP-0002 §6, acdp-data-ref.schema.json oneOf). 'location' is typed as a URI string or a structured locator object — never null. Per the absent-vs-null wire convention (RFC-ACDP-0005 §2.2.1, RFC-ACDP-0002 §6.8), a DataRef that uses 'embedded' MUST OMIT 'location' entirely; it MUST NOT carry 'location': null. 'location' and 'embedded' being mutually exclusive does not make either nullable. A registry MUST reject 'location': null as schema_violation, and a consumer validating a retrieved body MUST reject it.",
+  "tags": ["schema-openness", "negative", "data-refs", "absent-vs-null"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "data_ref_under_test": {
+      "type": "raw_data",
+      "location": null
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 400,
+    "error_code": "schema_violation",
+    "consumer_outcome": "reject",
+    "consumer_error": "schema_violation",
+    "rationale": "location is not nullable. A DataRef with 'location': null satisfies neither oneOf branch (the value is neither a URI string nor a structured locator object) and also has no 'embedded', so it fails the exactly-one-of constraint. An implementation that coerces null to absent would treat this DataRef as having neither location nor embedded and should already fail it as data-ref-001 does; an implementation that coerces null toward 'present' would mis-handle it. Either way the conformant outcome is schema_violation, and the only conformant way to express 'no location' is to omit the key and supply 'embedded' instead."
+  }
+}

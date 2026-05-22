@@ -1,0 +1,21 @@
+{
+  "id": "schema-011",
+  "description": "A DataRef whose optional 'format' field is JSON null. acdp-data-ref.schema.json types 'format' as a bare string (\"type\": \"string\"), NOT as \"type\": [\"string\", \"null\"]. Per the absent-vs-null wire convention (RFC-ACDP-0005 §2.2.1, RFC-ACDP-0002 §6.8), an absent optional DataRef field MUST be omitted, never serialized as null. A registry MUST reject a publish carrying 'format': null, and a consumer validating a retrieved body MUST reject it — in both cases as schema_violation.",
+  "tags": ["schema-openness", "negative", "data-refs", "absent-vs-null"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "data_ref_under_test": {
+      "type": "raw_data",
+      "location": "https://data.example.com/f.csv",
+      "format": null
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 400,
+    "error_code": "schema_violation",
+    "consumer_outcome": "reject",
+    "consumer_error": "schema_violation",
+    "rationale": "DataRef.format is optional and non-nullable: it is either absent or a string. null is not a valid wire value. The only conformant way to express 'no format' is to omit the key. A permissive deserializer that coerces null to None/absent (e.g. one not applying a present-vs-null guard) silently accepts non-conformant input and would also diverge on content_hash, since JCS treats an absent key and \"format\": null as distinct bytes. Contrast supersedes (RFC-ACDP-0002 §3.1), whose schema type is string|null and which is therefore legitimately nullable."
+  }
+}
