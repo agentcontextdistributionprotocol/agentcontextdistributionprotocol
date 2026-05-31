@@ -195,6 +195,7 @@ A `data_refs[].location` URL is producer-controlled, so a consumer dereferencing
 | `can-008` | Body with unknown producer-controlled field (`priority`) — consumer MUST include in hash recomputation (RFC-ACDP-0001 §5.7 raw-JSON rule) | success: byte-exact reproduction including the unknown field |
 | `can-009` | Stored Body → ProducerContent — exclusion set is stripped BY NAME, regardless of typed-model knowledge | success: byte-exact reproduction matches the stored `content_hash` |
 | `can-010` | Body whose `data_refs[]` entry carries an unknown producer-controlled field — DataRef is an open schema, the field MUST be retained in hash recomputation (RFC-ACDP-0002 §6.7) | success: byte-exact reproduction including the unknown DataRef field |
+| `can-011` | RFC 8785 §3.2.2.3 numeric serialization (RFC-ACDP-0001 §5.2) — exponential-notation boundaries (≥ 1e21 → `e+`, ≤ 1e-7 → `e-`), the plain-decimal band, integer exactness through 2^53, negative-zero normalization, and IEEE 754 magnitude extremes | success: byte-exact reproduction of all six numeric vectors |
 
 **Test DIDs.** The `can-*` canonicalization fixtures use `did:agent:test` as a deliberately short, fictitious DID method to keep canonical-form expected values readable. The precomputed `canonical_form` and `sha256_hex` values depend on the exact string. v0.1.0 wire deployments MUST use `did:web` (RFC-ACDP-0001 §5.4) — `did:agent:` is a test-only convention and is not a registered DID method.
 

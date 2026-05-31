@@ -101,6 +101,10 @@ Cursor pagination is opaque: the registry returns `next_cursor` in the response 
 
 The registry MAY return fewer results than `limit` even when more exist — `next_cursor` is the only correct signal for "there are more results".
 
+**Post-filtering MUST NOT terminate a cursor sequence early (NORMATIVE).** Visibility scoping (§2.5.5, §3) and any other per-requester filter are applied **after** a storage page is read and **before** matches are emitted on the wire. A registry MUST NOT stop pagination — i.e. MUST NOT omit `next_cursor` and signal exhaustion — merely because a given storage page, after post-filtering, contributed zero visible rows. So long as unscanned storage remains in the paginated sequence, the registry MUST advance the cursor to the next storage page (re-applying the filter there) rather than treating the empty page as the end of results.
+
+Concretely, a registry MAY return a page with an empty `matches[]` array *together with* a non-empty `next_cursor` when the underlying storage page held only hidden/post-filtered rows; the consumer follows `next_cursor` to reach the still-pending visible results. `next_cursor` is absent **only** when the entire paginated sequence — across all remaining storage pages — has been scanned and no further visible result exists. Early termination on a fully-filtered page would silently truncate results and would also leak the boundaries of hidden rows to a client correlating page sizes; both are forbidden. (Registries MAY internally continue scanning subsequent storage pages before responding, to return a non-empty page; that is an implementation choice, but it MUST NOT come at the cost of dropping still-reachable visible results.)
+
 ### 2.4 Lineage-based discovery
 
 The `derived_from` filter is the foundation for lineage-based discovery. An agent that has published a context can periodically query with `derived_from=<my_ctx_id>` to discover what has been built on it. In v0.1.0 this is a polling pattern; future versions (RFC-ACDP-0009) will support push notification.

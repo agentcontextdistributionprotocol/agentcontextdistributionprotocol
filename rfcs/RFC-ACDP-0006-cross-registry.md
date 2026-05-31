@@ -100,6 +100,19 @@ This caching guidance applies to the capabilities document only. DID document ca
 
 Bodies are immutable. Consumers MAY cache fetched bodies indefinitely, keyed by `ctx_id` and validated by `content_hash`. Registry state (status) is mutable; consumers MUST NOT cache `registry_state.status` beyond the freshness window appropriate to their use case.
 
+### 4.4 Authentication scope — public-only in v0.1.0 (NORMATIVE)
+
+v0.1.0 cross-registry resolution is **public-only**. The retrieval in §4.1 step 4 is an ordinary `GET https://<authority>/contexts/{encoded_ctx_id}` carrying no caller credentials for the *remote* registry. ACDP v0.1.0 defines **no** mechanism for a consumer (or a resolving registry acting on the consumer's behalf) to authenticate to a remote registry when following an `acdp://` reference: there is no bearer-token forwarding, no token exchange, no delegated-credential, and no cross-registry identity-federation protocol.
+
+The consequence follows directly from the visibility model (RFC-ACDP-0004 §2.3, RFC-ACDP-0008 §4.5), which scopes retrieval to the requester's **effective audience** as established by the serving registry's own read-authentication (RFC-ACDP-0008 §6.2):
+
+- A `public` context resolves across registries as expected.
+- A `restricted` or `private` context on the remote registry is **not** resolvable cross-registry by an unauthenticated caller. The remote registry establishes no `effective_requester_did` for the cross-registry fetch (or, for an anonymous fetch, an empty audience), so the requester is outside the effective audience and the registry returns `not_found` (HTTP 404), indistinguishable from a genuinely missing context (RFC-ACDP-0004 §2.3).
+
+A consumer that needs a non-public context held on another registry MUST authenticate to that registry directly, out of band, using whatever read-authentication method that registry advertises in its `/.well-known/acdp.json` (`read_authentication_methods`, RFC-ACDP-0008 §6.2) — i.e. by making a first-party retrieval against that registry, not by relying on `acdp://` resolution to forward credentials. Producers SHOULD assume that any `derived_from` (or other `acdp://`) reference to a non-public context will be opaque (404) to third-party consumers resolving it in v0.1.0.
+
+Authenticated remote retrieval — bearer-forwarding / token-exchange expectations, the authority-trust rules governing which registries a credential may be presented to, and the cross-registry audience-mapping semantics — is **out of scope for v0.1.0** and reserved for a future version (see RFC-ACDP-0009 §2.6, Federation peering). Until then, deployments MUST NOT assume cross-registry resolution conveys any identity to the remote registry.
+
 ---
 
 ## 5. Failure Modes
@@ -112,7 +125,7 @@ Bodies are immutable. Consumers MAY cache fetched bodies indefinitely, keyed by 
 | Retrieval returns 404 | The reference is unresolvable. The consumer MUST NOT infer that the context never existed; only that it is not currently retrievable. |
 | Signature verification fails | The retrieved body is **untrustworthy**. The consumer MUST NOT use it as evidence regardless of which registry served it. |
 | Hash mismatch | Same as signature failure — body is corrupt. |
-| Visibility-restricted (404 `not_found` returned indistinguishably) | The reference is not accessible to the consumer. The serving registry returns `not_found`; consumers cannot distinguish from a genuinely missing context. |
+| Visibility-restricted (404 `not_found` returned indistinguishably) | The reference is not accessible to the consumer. The serving registry returns `not_found`; consumers cannot distinguish from a genuinely missing context. v0.1.0 has no bearer-forwarding or token-exchange mechanism to authenticate the cross-registry fetch — see §4.4. The consumer must authenticate to the remote registry directly (out of band) to retrieve a non-public context. |
 
 ---
 
