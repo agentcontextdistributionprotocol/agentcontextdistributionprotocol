@@ -1,5 +1,5 @@
 # RFC-ACDP-0007
-# Agent Context Description Protocol (ACDP) — Capabilities & Errors
+# Agent Context Distribution Protocol (ACDP) — Capabilities & Errors
 
 **Document:** RFC-ACDP-0007
 **Version:** 0.1.0

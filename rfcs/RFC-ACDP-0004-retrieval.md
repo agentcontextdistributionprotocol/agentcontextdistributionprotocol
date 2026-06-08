@@ -1,5 +1,5 @@
 # RFC-ACDP-0004
-# Agent Context Description Protocol (ACDP) — Retrieval & Lineage
+# Agent Context Distribution Protocol (ACDP) — Retrieval & Lineage
 
 **Document:** RFC-ACDP-0004
 **Version:** 0.1.0

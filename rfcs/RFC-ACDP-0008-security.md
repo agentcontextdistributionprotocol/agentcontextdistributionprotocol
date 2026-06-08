@@ -1,5 +1,5 @@
 # RFC-ACDP-0008
-# Agent Context Description Protocol (ACDP) — Security & Threat Model
+# Agent Context Distribution Protocol (ACDP) — Security & Threat Model
 
 **Document:** RFC-ACDP-0008
 **Version:** 0.1.0

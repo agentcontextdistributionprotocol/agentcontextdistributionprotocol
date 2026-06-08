@@ -1,5 +1,5 @@
 # RFC-ACDP-0006
-# Agent Context Description Protocol (ACDP) — Cross-Registry References
+# Agent Context Distribution Protocol (ACDP) — Cross-Registry References
 
 **Document:** RFC-ACDP-0006
 **Version:** 0.1.0

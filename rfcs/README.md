@@ -1,6 +1,6 @@
 # ACDP RFC Index
 
-This directory contains the normative RFCs that define the Agent Context Description Protocol (ACDP). ACDP is a coordination-agnostic substrate for **publishing, discovering, and verifying** units of agent-produced content; v0.1.0 is the first published version.
+This directory contains the normative RFCs that define the Agent Context Distribution Protocol (ACDP). ACDP is a coordination-agnostic substrate for **publishing, discovering, and verifying** units of agent-produced content; v0.1.0 is the first published version.
 
 | RFC | Title | Status |
 |---|---|---|

@@ -1,5 +1,5 @@
 # RFC-ACDP-0009
-# Agent Context Description Protocol (ACDP) — Extensions
+# Agent Context Distribution Protocol (ACDP) — Extensions
 
 **Document:** RFC-ACDP-0009
 **Version:** 0.1.0-reserved
