@@ -210,6 +210,18 @@ Registries MUST declare which read-authentication methods they support in `/.wel
 
 Registries MAY allow anonymous reads of `visibility: public` contexts. Anonymous requests have no `effective_requester_did`; registries MUST treat such requests as having empty audience membership and MUST NOT return any restricted or private context to an anonymous requester. A registry supporting anonymous public reads MUST declare `"anonymous_public_reads": true` in capabilities; otherwise unauthenticated requests MUST be rejected with `not_authorized` (HTTP 403).
 
+### 6.4 Multi-tenancy (implementation note)
+
+ACDP core does not define multi-tenant assignment. There is no protocol-level tenant identifier, no tenant field in the body, registry state, or capabilities document, and no normative mapping from a request to a tenant. Whether a deployment is single-tenant or partitions contexts across tenants — and how a request is attributed to one — is entirely an implementation and deployment concern, layered above the protocol's DID-based authentication (§6.2) and visibility model (§4.5).
+
+Where a deployment does partition by tenant, the attribution MUST rest on an authenticated signal. Implementations MUST NOT trust an unauthenticated tenant indicator — a request header such as `X-Tenant`, a hostname or path segment, or any other client-supplied value — as the basis for tenant assignment unless one of the following protects it:
+
+- **Deployment policy** at a trust boundary the client cannot cross (e.g. a per-tenant ingress/listener that the platform — not the request — selects, with the client-supplied indicator stripped or ignored).
+- **An authenticated gateway** that establishes the tenant from the requester's authenticated identity and stamps it on the request after authentication, rejecting or overwriting any client-supplied value.
+- **Signed token claims** (e.g. an OAuth 2.0 / OIDC access token whose subject is bound to the requester's DID per §6.2) carrying the tenant as a verified claim.
+
+Treating an unauthenticated header as authoritative for tenant selection is a cross-tenant authorization bypass: an attacker sets the header to a victim tenant and the registry scopes visibility (§4.5) to the wrong partition. The visibility checks in §4.5 are necessary but not sufficient here — they enforce audience membership *within* whatever tenant the request was attributed to, so a forged tenant attribution defeats them before they run.
+
 ---
 
 ## 7. Attack Scenarios

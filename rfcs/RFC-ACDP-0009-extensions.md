@@ -138,6 +138,41 @@ A future ACDP version will define:
 
 Reserved profile name: `acdp-registry-similarity` (added to a future RFC-ACDP-0001 §9.1; current registries advertising similarity gating remain non-conformant in v0.1.0).
 
+### 2.10 Registry webhook event profile
+
+An OPTIONAL companion profile for **registry-to-control-plane events**: signed notifications a registry emits to an operator's control plane when a context is published, superseded, or otherwise changes lifecycle state. This is distinct from §2.4 (push subscriptions), which delivers **search matches** to ordinary discovery *consumers*; the webhook event profile is a server-to-operator integration channel and carries no body, only registry-attested metadata about the event.
+
+This profile is reserved, not normative — its concrete shape (transport, retry/backpressure, exact field encodings, signature construction) will be specified in a future version, and implementations MUST NOT depend on the sketch below for interoperability.
+
+#### Reserved profile name
+
+`acdp-registry-events` (to be added to a future RFC-ACDP-0001 §9.1). Registries emitting these events in v0.1.0 do so as a private operational feature; the profile is not advertisable for conformance in v0.1.0.
+
+#### Reserved event shape
+
+A future version will define a registry-event object carrying at least:
+
+| Field | Meaning |
+|---|---|
+| `event_id` | Unique identifier for this event instance (the idempotency key — see below). |
+| `event_version` | Schema version of the event envelope (independent of `acdp_version`). |
+| `event_type` | Lifecycle event kind, e.g. `context_published`, `context_superseded`, `status_changed`. |
+| `registry_authority` | DNS authority of the emitting registry (matches the `<authority>` in minted `ctx_id`s). |
+| `ctx_id` | The affected context. |
+| `lineage_id` | The affected context's lineage (RFC-ACDP-0001 §5.6). |
+| `agent_id` | Producer DID of the affected context. |
+| `visibility` | `public` / `restricted` / `private` of the affected context. |
+| `derived_from` | The affected context's `derived_from` references, if any. |
+| `created_at` | Registry-clock timestamp of the event (RFC 3339, millisecond precision per RFC-ACDP-0001 §5.3). |
+
+#### Tenanting, signing, and delivery semantics
+
+- **Tenant binding is by deployment policy.** Consistent with RFC-ACDP-0008 §6.4, the event envelope defines no protocol-level tenant field; tenant attribution on emitted events is established by the registry's deployment policy (the registry knows the tenant of the context it is emitting about) and MUST NOT be derived from any unauthenticated request input.
+- **HMAC signature header.** Events SHOULD be authenticated to the receiving control plane with a keyed HMAC over the canonical event bytes (JCS per RFC-ACDP-0001 §5.2, then HMAC-SHA-256) carried in a signature header, with a shared secret provisioned out of band between the registry and its control plane. This is a registry-to-operator integrity check — it is **not** the producer signature (RFC-ACDP-0001 §5.8) and conveys no producer authenticity; receivers MUST still retrieve and verify the context per RFC-ACDP-0004 before treating its body as trustworthy.
+- **Idempotency.** Delivery is at-least-once; receivers MUST deduplicate by `event_id` and process idempotently. `event_id` is stable across redeliveries of the same logical event, so a receiver that has already applied an `event_id` MUST treat a repeat as a no-op.
+
+**Why deferred:** the same reasoning as §2.4 — push delivery requires operational machinery (delivery guarantees, retry, backpressure, idempotency, signing-key management) that does not belong in the substrate's first release. v0.1.0 control planes poll the discovery/search endpoints (RFC-ACDP-0005) instead.
+
 ---
 
 ## 3. Forward Compatibility

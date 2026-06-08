@@ -1,0 +1,139 @@
+{
+  "id": "can-011",
+  "description": "RFC 8785 (JCS) numeric serialization conformance vectors. These pin the ECMAScript Number-to-String behavior that RFC 8785 §3.2.2.3 normatively requires: exponential-notation boundaries (>= 1e21 and <= 1e-7), the plain-decimal band, integer exactness through 2^53, negative-zero normalization, and IEEE 754 magnitude extremes. Implementations MUST reproduce these canonical forms and SHA-256 digests exactly; failure is non-conformance with RFC-ACDP-0001 §5.2.",
+  "tags": [
+    "canonicalization",
+    "numeric",
+    "rfc8785",
+    "hashing"
+  ],
+  "vectors": [
+    {
+      "name": "JCS — exponential notation, large magnitude (RFC 8785 §3.2.2.3)",
+      "description": "Numbers with magnitude >= 1e21 MUST serialize in exponential form with a '+' sign on the exponent and no leading zeros (e.g. 1e+21, not 1e21 or 1E21 or 1.0e+21). This is the ECMAScript Number-to-String algorithm RFC 8785 normatively references.",
+      "input": {
+        "values": [
+          1e+21,
+          1e+22,
+          1.23e+25,
+          1e+100
+        ]
+      },
+      "expected": {
+        "canonical_form": "{\"values\":[1e+21,1e+22,1.23e+25,1e+100]}",
+        "sha256_hex": "881882253d72cbf9717fe390b583e608c67cef87ea42741c4607f69734ab7437",
+        "content_hash_field_value": "sha256:881882253d72cbf9717fe390b583e608c67cef87ea42741c4607f69734ab7437"
+      },
+      "implementer_notes": [
+        "RFC 8785 §3.2.2.3 defers number formatting to ECMAScript Number::toString. The exponent boundary for switching to exponential form on the high side is 1e21.",
+        "The exponent sign is always present for positive exponents ('e+21'), and the mantissa carries no trailing '.0'.",
+        "Implementations that emit '1e21' (no sign), '1E+21' (uppercase), or '1.0e+21' (trailing zero mantissa) are NON-conformant."
+      ]
+    },
+    {
+      "name": "JCS — exponential notation, small magnitude (RFC 8785 §3.2.2.3)",
+      "description": "Numbers with magnitude <= 1e-7 MUST serialize in exponential form with a '-' exponent (e.g. 1e-7). Just above the boundary (1e-6) stays in plain decimal form; see the decimal-band vector.",
+      "input": {
+        "values": [
+          1e-07,
+          1e-10,
+          5e-09,
+          1e-20
+        ]
+      },
+      "expected": {
+        "canonical_form": "{\"values\":[1e-7,1e-10,5e-9,1e-20]}",
+        "sha256_hex": "f0e09d362698146665218833beb09f3713b0d07263a1200a4c4ef2505c657aa9",
+        "content_hash_field_value": "sha256:f0e09d362698146665218833beb09f3713b0d07263a1200a4c4ef2505c657aa9"
+      },
+      "implementer_notes": [
+        "The ECMAScript algorithm switches to exponential form on the low side at 1e-7: 0.000001 (1e-6) renders as decimal, 0.0000001 (1e-7) renders as '1e-7'.",
+        "Negative exponents carry the '-' sign with no leading zeros: 'e-7', not 'e-07'."
+      ]
+    },
+    {
+      "name": "JCS — decimal band, no exponent (RFC 8785 §3.2.2.3)",
+      "description": "Numbers whose magnitude is in [1e-6, 1e21) serialize in plain decimal notation with no exponent. Trailing fractional zeros are dropped and integers carry no decimal point.",
+      "input": {
+        "values": [
+          1e-06,
+          0.1,
+          100,
+          1000000.5,
+          12345.6789
+        ]
+      },
+      "expected": {
+        "canonical_form": "{\"values\":[0.000001,0.1,100,1000000.5,12345.6789]}",
+        "sha256_hex": "0eeda601dd06670a598ef66014dabf2495f917e962413ca9526b59b136457469",
+        "content_hash_field_value": "sha256:0eeda601dd06670a598ef66014dabf2495f917e962413ca9526b59b136457469"
+      },
+      "implementer_notes": [
+        "0.000001 (1e-6) is the smallest magnitude that still renders in decimal form; anything smaller crosses into exponential notation.",
+        "Integral values inside the band render with no decimal point (100, not 100.0)."
+      ]
+    },
+    {
+      "name": "JCS — integer exactness through 2^53 (RFC 8785 §3.2.2.3)",
+      "description": "Integers that are exactly representable as IEEE 754 doubles (|n| <= 2^53) serialize with their full integer digits and no decimal point or exponent. 2^53 = 9007199254740992.",
+      "input": {
+        "values": [
+          9007199254740992,
+          1000000000000000,
+          0,
+          42,
+          -7
+        ]
+      },
+      "expected": {
+        "canonical_form": "{\"values\":[9007199254740992,1000000000000000,0,42,-7]}",
+        "sha256_hex": "0b0cb037d8a08b7c2a99e5e57237fc2ea72431cf8006542102a71c30d9fb0e85",
+        "content_hash_field_value": "sha256:0b0cb037d8a08b7c2a99e5e57237fc2ea72431cf8006542102a71c30d9fb0e85"
+      },
+      "implementer_notes": [
+        "2^53 (9007199254740992) is the largest consecutive integer exactly representable as a double; it must render in full, not as '9.007199254740992e15'.",
+        "Producers MUST NOT rely on exact JSON-number round-tripping for integer magnitudes above 2^53 — those values are not exactly representable as doubles and JCS canonicalization reflects the rounded double."
+      ]
+    },
+    {
+      "name": "JCS — negative zero and trailing-zero normalization (RFC 8785 §3.2.2.3)",
+      "description": "Negative zero (-0.0) canonicalizes to '0'; trailing fractional zeros are dropped (1.10 -> 1.1, 1.50 -> 1.5); positive zero stays '0'. This duplicates the can-001 number-formatting vector deliberately, as the most common conformance failure (stdlib json.dumps preserves -0.0).",
+      "input": {
+        "values": [
+          -0.0,
+          1.1,
+          1.5,
+          0.0
+        ]
+      },
+      "expected": {
+        "canonical_form": "{\"values\":[0,1.1,1.5,0]}",
+        "sha256_hex": "bf5a988fe80cd62911c9609646535415e9cd392fa724d74eb587510e90bf8865",
+        "content_hash_field_value": "sha256:bf5a988fe80cd62911c9609646535415e9cd392fa724d74eb587510e90bf8865"
+      },
+      "implementer_notes": [
+        "Python's stdlib json.dumps preserves '-0.0' and is therefore NON-conformant here; use the `jcs` PyPI library or pre-normalize negative zero.",
+        "Both -0.0 and 0.0 MUST produce the identical canonical token '0', so they hash identically."
+      ]
+    },
+    {
+      "name": "JCS — IEEE 754 magnitude extremes (RFC 8785 §3.2.2.3)",
+      "description": "The largest finite double (~1.7976931348623157e308) and the smallest positive subnormal double (5e-324) serialize via the same shortest-round-trip ECMAScript algorithm.",
+      "input": {
+        "values": [
+          1.7976931348623157e+308,
+          5e-324
+        ]
+      },
+      "expected": {
+        "canonical_form": "{\"values\":[1.7976931348623157e+308,5e-324]}",
+        "sha256_hex": "41e99ffc170922788df5c6f64528212004aa0024936895933c21d9c5487e2a41",
+        "content_hash_field_value": "sha256:41e99ffc170922788df5c6f64528212004aa0024936895933c21d9c5487e2a41"
+      },
+      "implementer_notes": [
+        "These are boundary values of the IEEE 754 binary64 range; conformant JCS emits the shortest decimal string that round-trips to the same double.",
+        "NaN and +/-Infinity are NOT valid JSON numbers and MUST be rejected before canonicalization, not emitted in any form."
+      ]
+    }
+  ]
+}
