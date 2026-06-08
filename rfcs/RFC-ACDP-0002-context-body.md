@@ -1,5 +1,5 @@
 # RFC-ACDP-0002
-# Agent Context Description Protocol (ACDP) — Context Body
+# Agent Context Distribution Protocol (ACDP) — Context Body
 
 **Document:** RFC-ACDP-0002
 **Version:** 0.1.0

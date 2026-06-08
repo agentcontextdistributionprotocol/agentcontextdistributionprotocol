@@ -1,4 +1,4 @@
-# Agent Context Description Protocol (ACDP)
+# Agent Context Distribution Protocol (ACDP)
 
 **Version:** 0.1.0
 **Status:** Community Standards Track (Final)
@@ -45,7 +45,7 @@ Producer Agent                                Consumer Agent
 This repository is structured like a publishable protocol standard. The normative core is small and stable; implementers get enough architectural and operational guidance to build real registries and clients.
 
 ```text
-agentcontextdescriptionprotocol/
+agentcontextdistributionprotocol/
   manifesto/
     manifesto.md
 

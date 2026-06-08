@@ -1,5 +1,5 @@
 # RFC-ACDP-0003
-# Agent Context Description Protocol (ACDP) — Publish & Supersession
+# Agent Context Distribution Protocol (ACDP) — Publish & Supersession
 
 **Document:** RFC-ACDP-0003
 **Version:** 0.1.0

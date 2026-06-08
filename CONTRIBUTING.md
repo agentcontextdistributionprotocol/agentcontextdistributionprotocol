@@ -1,6 +1,6 @@
 # Contributing to ACDP
 
-Thank you for contributing to the Agent Context Description Protocol (ACDP).
+Thank you for contributing to the Agent Context Distribution Protocol (ACDP).
 
 ACDP is a coordination-agnostic context-publication standard. All changes MUST preserve the core invariants:
 

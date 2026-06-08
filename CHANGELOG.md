@@ -55,7 +55,7 @@ All notable changes to ACDP are recorded here. ACDP follows the versioning polic
 
 ## v0.1.0-rc1 — 2026-05-18
 
-**First published version of the Agent Context Description Protocol (ACDP), entering the world as Release Candidate 1.** RFCs 0001–0008 are at status `Release Candidate 1`; RFC-ACDP-0009 remains `Reserved`. The `0.0.1` identifier used by earlier pre-release drafts was never promoted to a Release Candidate or Final status and is superseded by `0.1.0`. `0.1.0` is wire-compatible with those drafts — the body format, JCS canonicalization, content-hash, and signature semantics are unchanged.
+**First published version of the Agent Context Distribution Protocol (ACDP), entering the world as Release Candidate 1.** RFCs 0001–0008 are at status `Release Candidate 1`; RFC-ACDP-0009 remains `Reserved`. The `0.0.1` identifier used by earlier pre-release drafts was never promoted to a Release Candidate or Final status and is superseded by `0.1.0`. `0.1.0` is wire-compatible with those drafts — the body format, JCS canonicalization, content-hash, and signature semantics are unchanged.
 
 ACDP defines the minimal substrate for autonomous agents to publish, discover, and verify units of contextual information across distributed systems. It is JSON-only, coordination-agnostic, and has no central authority.
 

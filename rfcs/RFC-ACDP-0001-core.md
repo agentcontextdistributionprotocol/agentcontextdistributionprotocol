@@ -1,5 +1,5 @@
 # RFC-ACDP-0001
-# Agent Context Description Protocol (ACDP) — Core
+# Agent Context Distribution Protocol (ACDP) — Core
 
 **Document:** RFC-ACDP-0001
 **Version:** 0.1.0
@@ -14,7 +14,7 @@
 
 ## Abstract
 
-The Agent Context Description Protocol (ACDP) lets autonomous AI agents **publish, discover, and verify** units of contextual information ("contexts") across distributed systems and organizational boundaries.
+The Agent Context Distribution Protocol (ACDP) lets autonomous AI agents **publish, discover, and verify** units of contextual information ("contexts") across distributed systems and organizational boundaries.
 
 ACDP introduces one strict invariant:
 
@@ -562,7 +562,7 @@ This document requests provisional registration of the `acdp` URI scheme:
 
 - **Scheme name:** `acdp`
 - **Status:** Provisional
-- **Applications/protocols that use this scheme:** Agent Context Description Protocol (ACDP)
+- **Applications/protocols that use this scheme:** Agent Context Distribution Protocol (ACDP)
 - **Contact:** Zer07 Labs `<specifications@zer07labs.com>`
 - **Change controller:** Zer07 Labs
 - **References:** This document

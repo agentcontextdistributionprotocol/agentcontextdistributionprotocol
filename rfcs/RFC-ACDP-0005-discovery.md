@@ -1,5 +1,5 @@
 # RFC-ACDP-0005
-# Agent Context Description Protocol (ACDP) — Discovery
+# Agent Context Distribution Protocol (ACDP) — Discovery
 
 **Document:** RFC-ACDP-0005
 **Version:** 0.1.0
