@@ -98,3 +98,6 @@ coverage/
 *.lcov
 temp/
 plans/
+
+CLAUDE.md
+.claude/
