@@ -2,6 +2,15 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.1.0 — Clarifications addendum (round 4) — 2026-06-10
+
+**Editorial refresh of the project-governance and contributor documents — no normative or wire change.** The RFCs remain `v0.1.0 Final`. No body field, schema `$id`, JCS rule, content-hash semantic, or signature semantic changed — every existing `v0.1.0` body, signature, and `content_hash` remains valid and wire-compatible. No JSON Schema, RFC prose, registry entry, or conformance fixture changed.
+
+- **Code of Conduct completed to the Contributor Covenant 2.1 it cites (`CODE_OF_CONDUCT.md`).** Added the Pledge, Scope, Enforcement Responsibilities, a private reporting path (consistent with `governance/GOVERNANCE.md`, not a public issue), and the four-tier Enforcement Guidelines consequence ladder. The document previously claimed adaptation from Covenant 2.1 without carrying its enforcement sections.
+- **Contributor guide expanded (`CONTRIBUTING.md`).** Documented the three-file workflow for adding a conformance fixture (fixture JSON + both profile manifests + the README index) and the executed-vs-behavioral fixture distinction; added the missing `data-ref-types.md` registry and the `profiles.json`/`profiles.md` synchronization rule; added a versioning/releases section linking `VERSIONING.md`, `RELEASE.md`, and the changelog convention; added pull-request and security-reporting guidance; noted `make validate` as the CI gate.
+- **README release wiring (`README.md`).** Added `RELEASE.md` to the repository map (it was present in the tree but unlisted), a "Releases and versioning" subsection, a wire-frozen note, and Code-of-Conduct / security-reporting pointers in the Contributing section.
+- **Release-checklist and versioning cross-links (`RELEASE.md`, `VERSIONING.md`).** Broadened the stray-RC-reference grep to cover `docs/` and `manifesto/` prose with an explicit list of the dirs intentionally excluded; cross-linked `CONTRIBUTING.md`; added a `VERSIONING.md` → `RELEASE.md` back-reference to the promotion checklist.
+
 ## v0.1.0 — Clarifications addendum (round 3) — 2026-05-30
 
 **Non-breaking specification clarifications and a new conformance fixture.** The RFCs remain `v0.1.0 Final`; this round records clarification/addendum items raised in an RFC follow-up review. No body field, schema `$id`, JCS rule, content-hash semantic, or signature semantic changed — every existing `v0.1.0` body, signature, and `content_hash` remains valid and wire-compatible. No JSON Schema changed.

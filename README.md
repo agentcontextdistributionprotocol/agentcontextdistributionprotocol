@@ -129,7 +129,8 @@ agentcontextdistributionprotocol/
 
   Makefile
   CHANGELOG.md  CONTRIBUTING.md  CODE_OF_CONDUCT.md
-  LICENSE       VERSIONING.md     README.md
+  LICENSE       VERSIONING.md     RELEASE.md
+  README.md
 ```
 
 ---
@@ -188,6 +189,14 @@ Major mismatches are not compatible. Minor versions are expected to be backward 
 
 ACDP v0.1.0 is **JSON-only**. Binary transport bindings are out of scope for this version.
 
+ACDP `0.1.0` is **wire-frozen**: existing bodies, signatures, and `content_hash` values remain valid across clarification rounds. Subsequent changes are recorded as non-breaking clarifications — see [CHANGELOG.md](CHANGELOG.md).
+
+### Releases and versioning
+
+- **[VERSIONING.md](VERSIONING.md)** — the layered versioning model and status ladder.
+- **[RELEASE.md](RELEASE.md)** — the checklist for promoting a version line to `Final` and cutting tags.
+- **[CHANGELOG.md](CHANGELOG.md)** — dated release notes and clarification addenda.
+
 ---
 
 ## Repository highlights
@@ -212,7 +221,7 @@ make help             # Show all targets
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and the [RFC process](governance/RFC-PROCESS.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) and the [RFC process](governance/RFC-PROCESS.md). All participants are expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md). Security-sensitive findings should be reported privately — see [governance/GOVERNANCE.md § Reporting Issues](governance/GOVERNANCE.md#reporting-issues).
 
 ---
 

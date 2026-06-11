@@ -56,13 +56,48 @@ Breaking changes require:
 
 ## Registry additions
 
-To add an entry to a registry under `registries/` (`auth-methods.md`, `context-types.md`, `error-codes.md`, `locator-schemes.md`, `media-types.md`, `profiles.md`, `signature-algorithms.md`), submit a PR adding a row to the relevant table. Each entry MUST include a `Status` (`Proposed`, `Provisional`, `Stable`, `Deprecated`). New identifiers MUST NOT conflict with existing entries.
+To add an entry to a registry under `registries/` (`auth-methods.md`, `context-types.md`, `data-ref-types.md`, `error-codes.md`, `locator-schemes.md`, `media-types.md`, `profiles.md`, `signature-algorithms.md`), submit a PR adding a row to the relevant table. Each entry MUST include a `Status` (`Proposed`, `Provisional`, `Stable`, `Deprecated`). New identifiers MUST NOT conflict with existing entries.
+
+The profile registry is the one registry kept in two synchronized forms: `profiles.md` (human-readable, authoritative on divergence) and `profiles.json` (machine-readable conformance manifest). A change to one MUST be mirrored in the other.
+
+## Adding a conformance fixture
+
+Conformance fixtures under `schemas/conformance/` come in two kinds, dispatched by `id` prefix in `scripts/conformance-runner.py`:
+
+- `can-*` / `lin-*` (canonicalization, hashing, lineage) and `sig-*` (Ed25519 / ECDSA-P256 golden vectors) are **executed arithmetically** — the runner reproduces the JCS / hash / signature and byte-compares against the pinned `expected`. Compute `canonical_form` and `sha256_hex` with the `jcs` library (RFC 8785); never hand-write them, because the runner byte-compares. Python stdlib `json.dumps` is non-conformant.
+- All other families (`pub-`, `vis-`, `ret-`, `caps-`, `schema-`, `*-ssrf-`, `fed-`, …) are **behavioral scenarios** the runner does not execute; they describe a request → expected outcome that registry implementations verify.
+
+Adding a fixture is a three-file change:
+
+1. The fixture JSON under `schemas/conformance/` (its `id` prefix MUST match a handled family so the runner auto-discovers it).
+2. An entry in the relevant profile(s) in **both** `registries/profiles.json` and `registries/profiles.md`.
+3. A row in the `schemas/conformance/README.md` fixture index.
 
 ## Technical requirements
 
+- `make validate` MUST pass — this is the gate CI enforces on every PR. It runs the three checks below.
 - JSON examples MUST validate against the relevant JSON Schema (`make json-validate`).
 - JSON Schemas MUST themselves be valid (`make json-schema-validate`).
+- The executable conformance vectors MUST pass (`make conformance`).
 - Backward compatibility MUST be addressed explicitly in the PR description.
+
+## Versioning and releases
+
+ACDP `0.1.0` is wire-frozen: existing bodies, signatures, and `content_hash` values MUST remain valid. Changes are almost always non-breaking clarifications, not wire changes. A genuine wire change requires an RFC version bump, migration notes, and an explicit compatibility statement.
+
+- [VERSIONING.md](VERSIONING.md) — the layered versioning policy and the status ladder.
+- [RELEASE.md](RELEASE.md) — the checklist for promoting a version line to `Final` and cutting tags.
+- Record non-breaking spec changes in [CHANGELOG.md](CHANGELOG.md) under a `## v0.1.0 — Clarifications addendum (round N)` heading that opens by asserting that no body field, schema `$id`, JCS rule, content-hash, or signature semantic changed.
+
+## Pull requests
+
+- Use the [pull request template](.github/PULL_REQUEST_TEMPLATE.md) and complete its checklist.
+- Write a clear, present-tense PR summary describing what changed and why.
+- Keep a PR scoped to one logical change; split unrelated edits.
+
+## Reporting security issues
+
+Do **not** open a public issue for a flaw that weakens a protocol security guarantee (signature, hashing, visibility, or SSRF defenses — see [RFC-ACDP-0008](rfcs/RFC-ACDP-0008-security.md)). Report it privately via GitHub's "Report a vulnerability" advisory on this repository, as described in [governance/GOVERNANCE.md § Reporting Issues](governance/GOVERNANCE.md#reporting-issues).
 
 ## Style
 
