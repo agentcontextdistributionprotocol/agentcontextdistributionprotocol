@@ -80,7 +80,7 @@ This document is non-normative. It explains what ACDP intentionally does not add
 
 **Rationale.** Federation requires policy negotiation, conflict resolution, and consistency models — ecosystem-wide problems, not protocol-level. SAML and OIDC federation took years to standardize after their base protocols.
 
-**What ACDP does instead.** Cross-registry resolution via `acdp://` URIs (RFC-ACDP-0006) is the building block for any future federation. Consumers can query each registry separately and merge results client-side.
+**What ACDP does instead.** Cross-registry resolution via `acdp://` URIs (RFC-ACDP-0006) is the building block for any future federation. Consumers can query each registry separately and merge results client-side. In v0.1.0 this resolution is **public-only**: no credential is forwarded to the remote registry, so non-public contexts on another registry are opaque (404) to a cross-registry caller (RFC-ACDP-0006 §4.4). Authenticated remote retrieval — credential forwarding, token exchange, and the authority-trust rules it needs — is reserved for a future version (RFC-ACDP-0009 §2.6).
 
 ## 11. Encrypted bodies / field-level confidentiality
 
