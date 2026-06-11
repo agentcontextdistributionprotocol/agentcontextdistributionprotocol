@@ -65,6 +65,8 @@ For each ci:
 
 Each step is independent. The serving registry is **not** a trust anchor — only availability.
 
+Cross-registry resolution is **public-only** in v0.1.0 (RFC-ACDP-0006 §4.4). The walk carries no caller credentials to the *remote* registry — there is no bearer-token forwarding or token exchange — so a `restricted`/`private` context on another registry resolves to `not_found` (HTTP 404), indistinguishable from a genuinely missing one. A consumer that needs a non-public predecessor MUST authenticate to that registry directly, out of band. Authenticated remote retrieval is reserved for a future version (RFC-ACDP-0009 §2.6).
+
 Every `<authority>` here comes from a producer-controlled `acdp://` reference, so each `GET` is an attacker-influenced outbound request. Cross-registry resolution MUST apply the SSRF protections of [RFC-ACDP-0006 §7](../rfcs/RFC-ACDP-0006-cross-registry.md#7-server-side-request-forgery-ssrf-protections) — the same posture ACDP requires for producer `did:web` resolution (RFC-ACDP-0008 §4.8) and external `data_refs[].location` fetches (RFC-ACDP-0008 §4.9): HTTPS-only, DNS-level IP-range filtering on every resolved address, IP pinning, and same-authority redirect caps.
 
 ### 2.4 Discovery
@@ -74,7 +76,7 @@ Consumer ──GET /contexts/search?... ──▶ Registry
 Consumer ◀── matches[], next_cursor ── Registry
 ```
 
-Cursor pagination is opaque. Consumers loop until `next_cursor` is absent.
+Cursor pagination is opaque. Consumers loop until `next_cursor` is **absent** — not until the first empty page. Because visibility scoping and other per-requester filters are applied *after* a storage page is read, a registry MAY return an empty `matches[]` together with a non-empty `next_cursor` when a storage page held only hidden rows; the consumer follows the cursor to reach still-pending visible results (RFC-ACDP-0005 §2.3). Treating an empty page as the end of results would silently truncate the result set.
 
 ### 2.5 Supersession
 

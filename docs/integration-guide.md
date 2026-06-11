@@ -177,6 +177,8 @@ def walk_derived_from(body, depth=10):
 
 The `depth` parameter is a defense against deep chains. Real `derived_from` chains are typically shallow (1–3 levels); set `depth` accordingly. A production walk also bounds total nodes, fanout, and wall-clock time per RFC-ACDP-0006 §4.1.
 
+> **Cross-registry resolution is public-only in v0.1.0.** The walk above sends no caller credentials to the remote registry — ACDP v0.1.0 defines no bearer-token forwarding or token exchange across registries (RFC-ACDP-0006 §4.4). A `restricted`/`private` predecessor on another registry therefore returns `not_found` (HTTP 404), indistinguishable from a genuinely missing one. Handle a 404 in the walk as "unresolvable predecessor, proceed without it" — not as proof the context never existed. If you actually need a non-public context held on another registry, authenticate to *that* registry directly, out of band, using a read-authentication method from its `/.well-known/acdp.json`. Producers should likewise assume any `acdp://` reference to a non-public context is opaque to third-party consumers.
+
 > **SSRF — cross-registry resolution.** The `authority` in the loop above comes from a producer-signed `acdp://` reference, so every `httpx.get` is an outbound request to a host an upstream producer chose. Cross-registry resolution MUST apply the SSRF protections of RFC-ACDP-0006 §7 — the same posture as DID resolution and DataRef fetches: HTTPS-only, DNS-level IP-range filtering on every resolved address, IP pinning, response-size caps (64 KB for capabilities/DID documents, 1 MB for context retrievals), bounded timeouts, and a same-authority redirect cap. The minimal example above omits these for brevity; a production resolver MUST NOT.
 
 ---
@@ -196,6 +198,19 @@ resp = httpx.get(
 )
 matches = resp.json()["matches"]
 # Each match has ctx_id, agent_id, title, summary, etc. — fetch each one for the full body.
+```
+
+**Paginating correctly.** `next_cursor` is the *only* signal for "there are more results" — loop until it is absent, not until you see an empty page. Because the registry applies visibility scoping and other per-requester filters *after* reading a storage page, a page MAY come back with an empty `matches[]` and a non-empty `next_cursor` (the storage page held only rows you can't see); the next page may still carry visible results. Stopping on the first empty `matches[]` would silently truncate the result set (RFC-ACDP-0005 §2.3).
+
+```python
+def search_all(url, params):
+    cursor = None
+    while True:
+        page = httpx.get(url, params={**params, **({"cursor": cursor} if cursor else {})}).json()
+        yield from page["matches"]          # may be empty for this page
+        cursor = page.get("next_cursor")
+        if cursor is None:                  # absent next_cursor — and only that — ends the loop
+            break
 ```
 
 Semantic similarity is reserved for a future ACDP version (RFC-ACDP-0009 §2.9); v0.1.0 implementations expose keyword search only.
