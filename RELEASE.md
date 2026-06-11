@@ -2,8 +2,8 @@
 
 This checklist governs promoting an ACDP version line from `Release Candidate` to
 `Final` and cutting the release tags. It complements [VERSIONING.md](VERSIONING.md)
-(the versioning policy) and [governance/RFC-PROCESS.md](governance/RFC-PROCESS.md)
-(the per-RFC lifecycle).
+(the versioning policy), [CONTRIBUTING.md](CONTRIBUTING.md) (how changes land), and
+[governance/RFC-PROCESS.md](governance/RFC-PROCESS.md) (the per-RFC lifecycle).
 
 A release is **not** a code change — it is a coordinated state transition across the
 RFC prose, the schemas, the conformance manifest, and the changelog. Run the whole
@@ -28,15 +28,22 @@ a documentation bug.
 - [ ] Each RFC §1 "Status of This Memo" states the document is `Final`.
 - [ ] `rfcs/README.md` status column reads `Final` for every promoted RFC.
 - [ ] No stray `Release Candidate` / `rcN` / `0.1.0-rc1` references remain in RFC
-      prose. The string is permitted **only** where it is historically accurate:
-      the dated `CHANGELOG.md` entry for the RC, the RC row of the VERSIONING.md
-      status ladder, and the generic lifecycle descriptions in
-      `governance/RFC-PROCESS.md` / `governance/GOVERNANCE.md`.
+      prose. The string is permitted **only** where it is historically or
+      structurally accurate: the dated `CHANGELOG.md` entry for the RC, the RC row
+      of the `VERSIONING.md` status ladder, the generic lifecycle descriptions in
+      `governance/RFC-PROCESS.md` / `governance/GOVERNANCE.md`, and the generic
+      lifecycle-ladder mentions in `rfcs/RFC-ACDP-0001-core.md` §1 and
+      `rfcs/README.md` (which describe the `Draft → … → Release Candidate N →
+      Final` ladder, not the current version's status).
 
-      Verify with:
+      The grep below surfaces *candidates for review*, not a clean-must-be-empty
+      check — eyeball each hit and confirm it is one of the permitted lifecycle
+      descriptions above and not a stale status line for the version being
+      promoted. `CHANGELOG.md`, `VERSIONING.md`, and `governance/` are excluded
+      from the scan because every occurrence there is permitted:
 
       ```sh
-      grep -rn 'rc1\|Release Candidate\|0.1.0-rc' rfcs/ README.md VERSIONING.md
+      grep -rn 'rc1\|Release Candidate\|0.1.0-rc' rfcs/ docs/ manifesto/ README.md
       ```
 
 ## 3. Schemas and conformance

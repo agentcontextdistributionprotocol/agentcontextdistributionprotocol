@@ -40,6 +40,8 @@ Schema artifacts are tagged independently of the spec:
 
 Downstream consumers pin to a specific tag and upgrade on their own schedule.
 
+The end-to-end checklist for promoting a version line to `Final` and cutting these tags is in [RELEASE.md](RELEASE.md).
+
 ## Status ladder
 
 | Status | Meaning |
