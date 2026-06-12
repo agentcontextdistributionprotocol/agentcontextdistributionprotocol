@@ -24,7 +24,7 @@
     "headers": {
       "Location": "/contexts/{percent-encoded-ctx_id}"
     },
-    "response_shape": "Standard publish response (RFC-ACDP-0003 §4): exactly the five fields ctx_id, lineage_id, version, created_at, status.",
+    "response_shape": "Standard publish response (RFC-ACDP-0003 §4): exactly the five fields ctx_id, lineage_id, version, created_at, status (plus registry_receipt when the registry advertises the acdp-registry-receipts profile under acdp/0.2.0).",
     "post_publish_invariants": [
       "GET /contexts/{ctx_id} returns the body byte-identically to what was signed.",
       "An idempotency record exists for (agent_id, idem-key-AAAA, sha256:H1, <stored_response>) and survives a registry restart."

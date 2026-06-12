@@ -17,6 +17,6 @@
   "expected": {
     "consumer_outcome": "reject",
     "consumer_error": "schema_violation",
-    "rationale": "The publish response is exactly five fields. Echoing content_hash adds nothing — the producer already submitted and signed it — and accepting the echo would make consumers tolerant of registries that drift away from the spec shape. pub-007 lists every forbidden field; this fixture pins the most common drift in particular."
+    "rationale": "The publish response is exactly five fields (plus, under acdp/0.2.0, the optional registry_receipt member from receipts-profile registries — RFC-ACDP-0003 §4). Echoing content_hash adds nothing — the producer already submitted and signed it — and accepting the echo would make consumers tolerant of registries that drift away from the spec shape; content_hash stays forbidden for every registry, receipts profile or not. pub-007 lists every forbidden field; this fixture pins the most common drift in particular."
   }
 }
