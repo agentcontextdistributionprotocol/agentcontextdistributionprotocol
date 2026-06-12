@@ -96,7 +96,7 @@ The runner interface is implementation-defined.
 | `pub-004` | First-version publish illegally includes `lineage_id` | failure: `schema_violation` |
 | `pub-005` | `visibility: restricted` with no `audience` | failure: `schema_violation` |
 | `pub-006` | `signature.key_id` DID portion ≠ `body.agent_id` | failure: `key_not_authorized` |
-| `pub-007` | Publish response shape — exactly five fields, no `content_hash` or other body fields echoed back | success: HTTP 201; response object pinned to `{ctx_id, lineage_id, version, created_at, status}` |
+| `pub-007` | Publish response shape — exactly five fields, no `content_hash` or other body fields echoed back (0.2.0: receipts-profile registries additionally return `registry_receipt`, and nothing else) | success: HTTP 201; response object pinned to `{ctx_id, lineage_id, version, created_at, status}` (+ `registry_receipt` under the receipts profile) |
 | `pub-008` | `body.agent_id` is not `did:web` (v0.1.0 §5.4 mandate) | failure: `schema_violation` (preferred) or `key_not_authorized` |
 | `pub-009` | `signature.key_id` DID is not `did:web` while `agent_id` is `did:web` | failure: `key_not_authorized` |
 | `pub-010` | Non-`did:web` entry in `contributors[]` (attribution-only — registry MUST accept) | success |
@@ -243,7 +243,7 @@ The `sig-*` fixtures are checked by `scripts/conformance-runner.py` (CI). A fail
 
 | ID | Description | Outcome |
 |---|---|---|
-| `dk-001` | did:key with a multicodec prefix that is neither `0xed01` (Ed25519) nor `0x1200` (P-256) — e.g. secp256k1 `0xe701` | failure: `key_resolution_failed` |
+| `dk-001` | did:key with a multicodec prefix that is neither `0xed01` (varint of `ed25519-pub` code `0xed`) nor `0x8024` (varint of `p256-pub` code `0x1200`) — e.g. secp256k1 `0xe701` | failure: `key_resolution_failed` |
 | `dk-002` | Malformed multibase: non-`z` prefix, characters outside the base58-btc alphabet, or payload too short | failure: `key_resolution_failed` |
 | `dk-003` | Cryptographically valid did:key publish against a registry that does NOT advertise `"did:key"` in `supported_did_methods` | failure: `key_resolution_failed` (permanent — pinned code choice, RFC-ACDP-0007 §3.1) |
 | `dk-004` | `signature.key_id` fragment ≠ the DID's method-specific identifier (`did:key:z<mb>#z<mb>` convention) | failure: `key_resolution_failed` |

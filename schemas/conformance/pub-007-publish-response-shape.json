@@ -1,6 +1,7 @@
 {
   "id": "pub-007",
-  "description": "Successful publish response MUST contain exactly the five registry-assigned fields (ctx_id, lineage_id, version, created_at, status) and MUST NOT echo content_hash, signature, or any body field. status MUST be 'active' on a fresh publication. The response schema is additionalProperties: false; consumer deserializers MUST NOT rely on additional fields appearing.",
+  "description": "Successful publish response MUST contain exactly the five registry-assigned fields (ctx_id, lineage_id, version, created_at, status) and MUST NOT echo content_hash, signature, or any body field. status MUST be 'active' on a fresh publication. The response schema is additionalProperties: false; consumer deserializers MUST NOT rely on additional fields appearing. (0.2.0) One scoped exception: a registry advertising the acdp-registry-receipts profile additionally returns the registry_receipt member — and nothing else (RFC-ACDP-0003 §4, RFC-ACDP-0010 §7); registries not advertising that profile MUST NOT include it, and every forbidden_fields entry below stays forbidden for all registries.",
+  "version_note_0_2_0": "Under acdp/0.2.0, run this fixture against a non-receipts registry as written. Against an acdp-registry-receipts registry, the expected shape is the five fields plus a registry_receipt member that itself verifies per rcpt-001/RFC-ACDP-0010 §8; its absence from such a registry is the failure pinned by fed-009's missing-receipt case.",
   "tags": ["happy-path", "publish", "response-shape"],
   "input": {
     "endpoint": "POST /contexts",
