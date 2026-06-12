@@ -1,0 +1,61 @@
+{
+  "id": "rcpt-001",
+  "description": "Registry receipt golden vector (RFC-ACDP-0010 §5). A receipt over the sig-001 golden context, signed by a real Ed25519 registry test keypair: pins the receipt preimage canonical bytes, the receipt hash, the signature, and the producer key_fingerprint. This is the sig-001-equivalent for the receipt layer — every receipt-capable SDK pins it. Executed arithmetically by scripts/conformance-runner.py. Test keypairs MUST NOT be used in production.",
+  "tags": ["receipt", "signature", "happy-path", "golden"],
+  "registry_test_keypair": {
+    "warning": "TEST ONLY. The private seed is publicly known. Never use this keypair for real receipts.",
+    "algorithm": "ed25519",
+    "private_seed_hex": "1111111111111111111111111111111111111111111111111111111111111111",
+    "public_key_hex": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737",
+    "public_key_base64": "0EqyMnQrtKs6E2i9RhXk5tAiSrcaAWuvhSCjMsl3hzc=",
+    "key_id": "did:web:registry.example.com#receipt-key-1"
+  },
+  "producer_key": {
+    "note": "The sig-001 test producer key. key_fingerprint below is the RFC-ACDP-0010 §6 fingerprint of these raw bytes.",
+    "algorithm": "ed25519",
+    "public_key_hex": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29"
+  },
+  "vectors": [
+    {
+      "name": "Receipt over the sig-001 golden context, Ed25519-signed",
+      "receipt_unsigned": {
+        "registry_did": "did:web:registry.example.com",
+        "ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234",
+        "lineage_id": "lin:sha256:c7fef01c000f8edaa9cb46122ceb5d7bca38328f002fb0f40e362e3b289bbb2a",
+        "origin_registry": "registry.example.com",
+        "created_at": "2026-04-16T10:30:15.123Z",
+        "content_hash": "sha256:f170150ddbf59d99794e7797824591b374d459782084597b644ecc57a41031b5",
+        "key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070"
+      },
+      "expected": {
+        "canonical_form": "{\"content_hash\":\"sha256:f170150ddbf59d99794e7797824591b374d459782084597b644ecc57a41031b5\",\"created_at\":\"2026-04-16T10:30:15.123Z\",\"ctx_id\":\"acdp://registry.example.com/12345678-1234-4321-8123-123456781234\",\"key_fingerprint\":\"sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070\",\"lineage_id\":\"lin:sha256:c7fef01c000f8edaa9cb46122ceb5d7bca38328f002fb0f40e362e3b289bbb2a\",\"origin_registry\":\"registry.example.com\",\"registry_did\":\"did:web:registry.example.com\"}",
+        "receipt_hash": "sha256:9deaa52778ad3b6be27a96d607c3017e9e11442905891a8972f34d8c2dbca9cf",
+        "signature_input": "sha256:9deaa52778ad3b6be27a96d607c3017e9e11442905891a8972f34d8c2dbca9cf",
+        "signature_value_hex": "bc18102a69f5ee91d75d8f790b4ec105e7289e68c321d608bf137907e617ad0eed23316c0cdb21d53825ce0c4ec8f529f25c13cfbcf030d88af929f9c21bde0e",
+        "signature_value_base64": "vBgQKmn17pHXXY95C07BBeconmjDIdYIvxN5B+YXrQ7tIzFsDNsh1TglzgxOyPUp8lwTz7zwMNiK+Sn5whveDg==",
+        "registry_receipt": {
+          "registry_did": "did:web:registry.example.com",
+          "ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234",
+          "lineage_id": "lin:sha256:c7fef01c000f8edaa9cb46122ceb5d7bca38328f002fb0f40e362e3b289bbb2a",
+          "origin_registry": "registry.example.com",
+          "created_at": "2026-04-16T10:30:15.123Z",
+          "content_hash": "sha256:f170150ddbf59d99794e7797824591b374d459782084597b644ecc57a41031b5",
+          "key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:web:registry.example.com#receipt-key-1",
+            "value": "vBgQKmn17pHXXY95C07BBeconmjDIdYIvxN5B+YXrQ7tIzFsDNsh1TglzgxOyPUp8lwTz7zwMNiK+Sn5whveDg=="
+          }
+        }
+      },
+      "verification_steps": [
+        "1. JCS-canonicalize receipt_unsigned (the receipt minus 'signature'); result MUST equal expected.canonical_form.",
+        "2. SHA-256 of the canonical bytes; 'sha256:' + hex MUST equal expected.receipt_hash.",
+        "3. Sign the ASCII bytes of expected.receipt_hash with the registry test private key; base64 MUST equal expected.signature_value_base64.",
+        "4. Verify the signature with the registry test public key; verification MUST succeed.",
+        "5. SHA-256 of producer_key.public_key_hex raw bytes, prefixed 'sha256:', MUST equal receipt_unsigned.key_fingerprint (RFC-ACDP-0010 §6).",
+        "6. Cross-checks (RFC-ACDP-0010 §8): receipt fields MUST equal the sig-001 registry_assigned values and the sig-001 content_hash byte-for-byte; registry_did authority MUST equal the ctx_id/origin_registry authority."
+      ]
+    }
+  ]
+}

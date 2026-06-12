@@ -1,0 +1,32 @@
+{
+  "id": "dk-002",
+  "description": "did:key resolution MUST reject malformed multibase with key_resolution_failed (RFC-ACDP-0001 §5.11.1 step 2): a method-specific identifier that does not start with the 'z' (base58-btc) multibase prefix, or whose payload contains characters outside the base58-btc alphabet (which excludes 0, O, I, l), or whose decoded payload is too short to carry a multicodec prefix plus key.",
+  "tags": ["did-key", "failure", "key-resolution"],
+  "applies_to_profiles": ["acdp-registry-core", "acdp-consumer"],
+  "input": {
+    "scenario": "Publish requests whose agent_id is a syntactically did-shaped but undecodable did:key",
+    "cases": [
+      {
+        "case": "non-base58btc characters in payload",
+        "agent_id": "did:key:z0OIl0OIl0OIl0OIl0OIl0OIl0OIl0OIl0OIl0OIl0OIl",
+        "reason": "0, O, I, l are not in the base58-btc alphabet"
+      },
+      {
+        "case": "wrong multibase prefix",
+        "agent_id": "did:key:f6d6b6579206e6f74206d756c746962617365",
+        "reason": "'f' (base16) is not the 'z' base58-btc prefix; only 'z' is valid for did:key in ACDP"
+      },
+      {
+        "case": "payload too short",
+        "agent_id": "did:key:z6Mk",
+        "reason": "decodes to fewer bytes than multicodec prefix + 32-byte key"
+      }
+    ]
+  },
+  "expected": {
+    "outcome": "failure",
+    "error_code": "key_resolution_failed",
+    "http_status": 400,
+    "behavior": "Every case MUST be rejected with key_resolution_failed (permanent, producer-caused). Registries MAY reject case-by-case at schema validation with schema_violation if their did pattern catches it first, but the pinned code for a decode failure inside the resolver is key_resolution_failed — mirroring the did:web rule that a malformed DID document is a permanent resolution failure (RFC-ACDP-0001 §5.11 step 3)."
+  }
+}

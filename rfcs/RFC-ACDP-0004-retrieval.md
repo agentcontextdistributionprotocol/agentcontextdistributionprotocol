@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Retrieval & Lineage
 
 **Document:** RFC-ACDP-0004
-**Version:** 0.1.0
-**Status:** Community Standards Track (Final)
+**Version:** 0.2.0-draft
+**Status:** Community Standards Track (Final for acdp/0.1.0; sections marked *(0.2.0)* are Draft)
 
 This RFC specifies how consumers retrieve contexts and lineages from ACDP registries, and how registries derive `status`. It depends on RFC-ACDP-0001 (Core) and RFC-ACDP-0002 (Context Body).
 
@@ -39,6 +39,18 @@ Content-Type: application/acdp+json
 }
 ```
 
+***(0.2.0)* `registry_receipt` member.** The full-retrieval envelope formally gains the OPTIONAL top-level `registry_receipt` member — outside `body` and `registry_state`, in the position reserved since v0.1.0 (RFC-ACDP-0009 §2.7):
+
+```json
+{
+  "body": { ... },
+  "registry_state": { "status": "active" },
+  "registry_receipt": { ... }
+}
+```
+
+A registry advertising the `acdp-registry-receipts` profile MUST include it; other registries MUST NOT emit it (RFC-ACDP-0010 §7). The receipt is never part of the body and never an input to `content_hash`. Receipt-aware consumers verify it per RFC-ACDP-0010 §8 and report its verdict separately from the body verdict; v0.1.0 consumers preserve it verbatim without parsing it (RFC-ACDP-0009 §2.7).
+
 The `{ctx_id}` path parameter is the URL-encoded `acdp://...` URI. Implementations MAY also accept a path-style alternate (`/contexts/<authority>/<uuid>`) for ergonomics; if both forms are supported, they MUST resolve to the same context.
 
 ### 2.2 Body-only retrieval
@@ -49,7 +61,7 @@ GET /contexts/{ctx_id}/body
 
 Returns only the body — useful for consumers wishing to verify the signed artifact without registry state. The body alone conforms to [`schemas/json/acdp-context-body.schema.json`](../schemas/json/acdp-context-body.schema.json).
 
-Error responses, visibility rules, path-encoding, and cache-header obligations are identical to §2.1 (full retrieval) except that the response body is the bare context body (no `registry_state` envelope). The body-only endpoint is the recommended cache-friendly retrieval form because it is not affected by `status` mutability (RFC-ACDP-0004 §6.3).
+Error responses, visibility rules, path-encoding, and cache-header obligations are identical to §2.1 (full retrieval) except that the response body is the bare context body (no `registry_state` envelope). The body-only endpoint is the recommended cache-friendly retrieval form because it is not affected by `status` mutability (RFC-ACDP-0004 §6.3). *(0.2.0)* The body-only endpoint stays **receipt-free** — `registry_receipt` is never attached here, even by receipts-profile registries — so its immutable-cache story is unchanged (RFC-ACDP-0010 §7).
 
 ### 2.3 Visibility-aware response
 
@@ -195,6 +207,8 @@ Registries MUST NOT serve a `Cache-Control: public` directive on a non-public bo
 
 Registry state (the `registry_state` object containing `status`) is mutable. Registries SHOULD use a short `Cache-Control: max-age` (e.g. 60–300 seconds) on full retrieval responses (`GET /contexts/{ctx_id}`), or use the body-only endpoint (`GET /contexts/{ctx_id}/body`) when long-lived caching is desired.
 
+***(0.2.0)* Receipt caching.** The receipt is **immutable once minted** (RFC-ACDP-0010 §4) and is therefore as cacheable as the body itself. On the full-retrieval response, the mutable `registry_state` still bounds the envelope's cache lifetime (the short `max-age` above); within that envelope, consumers MAY cache the receipt alongside the body indefinitely and SHOULD persist it as durable evidence (RFC-ACDP-0010 §15). A registry MUST serve a byte-identical receipt (after JCS canonicalization) for the same `ctx_id` on every response; the only sanctioned re-mint is the post-compromise case of RFC-ACDP-0010 §9.
+
 ### 6.4 ETag value
 
 The ETag value is the body's `content_hash` (the full `sha256:<hex>` string), wrapped in quotes per RFC 9110. Example:
@@ -233,3 +247,4 @@ See [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md). Specific to retrieval:
 - [RFC-ACDP-0006 Cross-Registry References](RFC-ACDP-0006-cross-registry.md)
 - [RFC-ACDP-0007 Capabilities & Errors](RFC-ACDP-0007-capabilities.md)
 - [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md)
+- [RFC-ACDP-0010 Registry Receipts](RFC-ACDP-0010-registry-receipts.md) *(0.2.0)*

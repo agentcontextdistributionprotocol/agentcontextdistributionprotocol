@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "_note": "Machine-readable form of the conformance manifest in registries/profiles.md. This file is normative: when it conflicts with profiles.md the table in profiles.md wins; conformance runners SHOULD treat any divergence as a documentation bug and report it. Generated/edited by hand alongside profiles.md.",
-  "spec_version": "0.1.0",
+  "spec_version": "0.2.0",
   "profiles": [
     {
       "id": "acdp-registry-core",
@@ -26,6 +26,7 @@
         "can-009-body-with-unknown-excluded-field",
         "can-010-data-ref-with-unknown-field",
         "can-011-jcs-numeric-vectors",
+        "can-012-divergence-corpus",
         "lin-001-lineage-derivation-golden",
         "sig-001-ed25519-golden",
         "pub-001-invalid-signature",
@@ -95,6 +96,23 @@
         },
         {
           "fixtures": [
+            "sig-003-did-key-golden",
+            "dk-001-wrong-multicodec-prefix",
+            "dk-002-malformed-multibase",
+            "dk-004-fragment-mismatch"
+          ],
+          "required_when": "supported_did_methods includes \"did:key\" (0.2.0)",
+          "capability_key": "supported_did_methods",
+          "capability_match": "did:key"
+        },
+        {
+          "fixtures": ["dk-003-did-key-not-advertised"],
+          "required_when": "acdp_version >= 0.2.0 AND supported_did_methods does NOT include \"did:key\" — pins the key_resolution_failed rejection of did:key publishes on non-advertising registries (RFC-ACDP-0007 §3.1)",
+          "capability_key": "supported_did_methods",
+          "capability_match": "!did:key"
+        },
+        {
+          "fixtures": [
             "idem-001-first-publish",
             "idem-002-retry-same-hash",
             "idem-003-different-hash",
@@ -113,7 +131,7 @@
       "self_test_only": [
         "rate-001-rate-limited-response-shape (per profiles.md note — black-box conformance cannot deterministically trigger per-agent rate limit)"
       ],
-      "notes": "All pub-001..014 fixtures are required. sig-002 is conditionally required only when the registry advertises ecdsa-p256 in supported_signature_algorithms. idem-001..005 are conditionally required when supports_idempotency_key is true; idem-006 documents a tolerated race outcome and is not a strict requirement. can-010 extends the canonicalization golden vectors to DataRef-level openness; lin-001 is the dedicated lineage_id derivation golden vector; schema-008..010 pin the closed nested schemas (signature, data_period, capabilities.limits); schema-011/012 pin absent-vs-null rejection for the DataRef fields format and location (RFC-ACDP-0002 §6.8) and schema-014 for capabilities.limits.idempotency_key_ttl_seconds (RFC-ACDP-0005 §2.2.1); did-ssrf-001..003 pin producer-DID-resolution SSRF refusal at publish-time signature verification (RFC-ACDP-0008 §4.8); did-ssrf-004 pins mixed-answer rejection (RFC-ACDP-0006 §7.1) and did-ssrf-005 same-host-different-port redirect rejection (RFC-ACDP-0006 §7.5). can-011 pins the RFC 8785 §3.2.2.3 numeric-serialization vectors (exponential-notation boundaries, the plain-decimal band, integer exactness through 2^53, and negative-zero normalization) — a registry whose JCS pipeline diverges on these will mint content_hash values that consumers reject."
+      "notes": "All pub-001..014 fixtures are required. sig-002 is conditionally required only when the registry advertises ecdsa-p256 in supported_signature_algorithms. idem-001..005 are conditionally required when supports_idempotency_key is true; idem-006 documents a tolerated race outcome and is not a strict requirement. can-010 extends the canonicalization golden vectors to DataRef-level openness; lin-001 is the dedicated lineage_id derivation golden vector; schema-008..010 pin the closed nested schemas (signature, data_period, capabilities.limits); schema-011/012 pin absent-vs-null rejection for the DataRef fields format and location (RFC-ACDP-0002 §6.8) and schema-014 for capabilities.limits.idempotency_key_ttl_seconds (RFC-ACDP-0005 §2.2.1); did-ssrf-001..003 pin producer-DID-resolution SSRF refusal at publish-time signature verification (RFC-ACDP-0008 §4.8); did-ssrf-004 pins mixed-answer rejection (RFC-ACDP-0006 §7.1) and did-ssrf-005 same-host-different-port redirect rejection (RFC-ACDP-0006 §7.5). can-011 pins the RFC 8785 §3.2.2.3 numeric-serialization vectors (exponential-notation boundaries, the plain-decimal band, integer exactness through 2^53, and negative-zero normalization) — a registry whose JCS pipeline diverges on these will mint content_hash values that consumers reject. 0.2.0 additions: can-012 extends the divergence corpus (acdp_version omitted vs explicit '0.1.0' vs explicit '0.2.0', microsecond timestamps, null-vs-absent-vs-empty metadata — RFC-ACDP-0001 Appendix A); sig-003 + dk-001/002/004 are conditionally required when the registry advertises did:key in supported_did_methods, and dk-003 conversely pins the key_resolution_failed rejection on 0.2.0 registries that do NOT advertise it."
     },
     {
       "id": "acdp-registry-discovery",
@@ -158,14 +176,47 @@
         "DNS-rebinding pinning (RFC-ACDP-0006 §7.6)"
       ],
       "not_implemented_permitted_on": [],
-      "notes": "fed-007 pins mixed-answer rejection — a DNS answer set mixing a public and a forbidden address MUST be rejected entirely; filter-and-proceed is non-conformant (RFC-ACDP-0006 §7.1). fed-008 pins the same-authority redirect definition — authority is scheme + host + effective port, so a redirect to the same host on a different port MUST be rejected (RFC-ACDP-0006 §7.5). Response-size caps, timeouts, and DNS-rebinding pinning are operational requirements that registry implementers MUST self-test; they are not exposed as standalone fixtures because the protocol surface alone does not allow a black-box assertion."
+      "conditional_fixtures": [
+        {
+          "fixtures": ["fed-009-cross-registry-receipt"],
+          "required_when": "the registry also advertises \"acdp-registry-receipts\" or resolves contexts from receipts-advertising upstreams (0.2.0)",
+          "capability_key": "profiles",
+          "capability_match": "acdp-registry-receipts"
+        }
+      ],
+      "notes": "fed-007 pins mixed-answer rejection — a DNS answer set mixing a public and a forbidden address MUST be rejected entirely; filter-and-proceed is non-conformant (RFC-ACDP-0006 §7.1). fed-008 pins the same-authority redirect definition — authority is scheme + host + effective port, so a redirect to the same host on a different port MUST be rejected (RFC-ACDP-0006 §7.5). fed-009 (0.2.0) pins upstream-receipt verification against the remote authority with invalid_receipt surfaced on failure (RFC-ACDP-0010 §11). Response-size caps, timeouts, and DNS-rebinding pinning are operational requirements that registry implementers MUST self-test; they are not exposed as standalone fixtures because the protocol surface alone does not allow a black-box assertion."
+    },
+    {
+      "id": "acdp-registry-receipts",
+      "inherits": "acdp-registry-core",
+      "spec_reference": "RFC-ACDP-0010 (0.2.0, Draft)",
+      "required_endpoints_added": [],
+      "required_fixtures_added": [
+        "rcpt-001-receipt-golden",
+        "rcpt-002-tampered-created-at",
+        "rcpt-003-key-fingerprint-mismatch",
+        "rcpt-004-registry-did-mismatch",
+        "fp-001-key-fingerprint-vectors",
+        "rot-001-historical-key-receipt"
+      ],
+      "conditional_fixtures": [
+        {
+          "fixtures": ["fed-009-cross-registry-receipt"],
+          "required_when": "the registry also advertises \"acdp-registry-federated\"",
+          "capability_key": "profiles",
+          "capability_match": "acdp-registry-federated"
+        }
+      ],
+      "not_implemented_permitted_on": [],
+      "notes": "Advertising this profile is the RFC-ACDP-0010 §7 commitment: mint atomically with persistence, return the receipt on every publish response and full retrieval, never on the body-only endpoint, no degraded mode and no receipt_unavailable. Requires acdp_version >= 0.2.0. rcpt-001 and fp-001 are executed arithmetically by scripts/conformance-runner.py; rcpt-002..004 and rot-001 are behavioral. Receipt-key lifecycle (retired keys stay in verificationMethod indefinitely; rotation removes from assertionMethod only) per RFC-ACDP-0010 §9 is self-tested — the protocol surface does not allow a black-box assertion over time."
     },
     {
       "id": "acdp-consumer",
       "inherits": null,
       "behavioral_requirements": [
-        "End-to-end signature verification (RFC-ACDP-0001 §5.11) on every retrieved context",
-        "acdp:// cross-registry resolution per RFC-ACDP-0006 if followed (with SSRF protections of §7 if performed server-side)",
+        "End-to-end signature verification (RFC-ACDP-0001 §5.11) on every retrieved context — including pure did:key resolution (§5.11.1) for did:key producers (0.2.0)",
+        "Registry-receipt verification per RFC-ACDP-0010 §8 whenever a registry_receipt is present, with the receipt verdict reported separately from the body verdict (0.2.0)",
+        "acdp:// cross-registry resolution per RFC-ACDP-0006 if followed (with SSRF protections of §7 if performed server-side; upstream receipts verified against the upstream authority per fed-009)",
         "SSRF protections on every producer-controlled outbound fetch: producer did:web resolution (RFC-ACDP-0008 §4.8) and external data_refs[].location fetches (RFC-ACDP-0008 §4.9)",
         "Local visibility re-verification per RFC-ACDP-0008 §4.5",
         "Tolerance of unknown body / registry-state fields (RFC-ACDP-0001 §6, RFC-ACDP-0004 §4.1, RFC-ACDP-0007 §3.3)"
@@ -182,8 +233,19 @@
         "can-009-body-with-unknown-excluded-field",
         "can-010-data-ref-with-unknown-field",
         "can-011-jcs-numeric-vectors",
+        "can-012-divergence-corpus",
         "lin-001-lineage-derivation-golden",
         "sig-001-ed25519-golden",
+        "sig-003-did-key-golden",
+        "dk-001-wrong-multicodec-prefix",
+        "dk-002-malformed-multibase",
+        "dk-004-fragment-mismatch",
+        "fp-001-key-fingerprint-vectors",
+        "rcpt-001-receipt-golden",
+        "rcpt-002-tampered-created-at",
+        "rcpt-003-key-fingerprint-mismatch",
+        "rcpt-004-registry-did-mismatch",
+        "rot-001-historical-key-receipt",
         "caps-001-valid-minimal",
         "caps-002-missing-ed25519",
         "caps-003-missing-did-web",
@@ -225,7 +287,7 @@
         "pub-007-publish-response-shape",
         "pub-010-non-did-web-contributor"
       ],
-      "notes": "can-008, can-009, and can-010 are especially important: they exercise forward-compatible hash verification (RFC-ACDP-0001 §5.7, RFC-ACDP-0002 §6.7) — a consumer that deserializes into a typed model that drops unknown body or DataRef fields will fail these and produce false hash_mismatch under future-version producers. lin-001 pins lineage_id derivation. schema-005..007 pin the absent-vs-null wire convention; schema-008..010 pin the closed nested schemas; schema-011..014 extend the absent-vs-null convention to the DataRef fields format and location (RFC-ACDP-0002 §6.8), the error envelope (error.details), and the capabilities document (limits.idempotency_key_ttl_seconds). data-ref-008 pins the consumer-side external-DataRef hash-mismatch semantic (data_ref_hash_mismatch, body still valid — RFC-ACDP-0007 §5.3). data-ref-ssrf-001..005 pin consumer-side DataRef-location SSRF refusal at fetch time (RFC-ACDP-0008 §4.9): IP-literal, DNS-rebinding, cross-authority-redirect, mixed-answer, and same-host-different-port-redirect refusal — they are consumer-only because a registry does not fetch external data_refs and MUST NOT reject a publish on these grounds. did-ssrf-001..005 pin producer-DID-resolution SSRF refusal (RFC-ACDP-0008 §4.8), which every consumer performs when verifying signatures end-to-end, including mixed-answer rejection (did-ssrf-004) and same-host-different-port redirect rejection (did-ssrf-005). A consumer that follows derived_from across registries additionally MUST pass the fed-* fixtures if it performs server-side resolution. can-011 pins the RFC 8785 §3.2.2.3 numeric-serialization vectors — a consumer whose JCS pipeline diverges on these (exponential-notation boundaries, the plain-decimal band, integer exactness through 2^53, negative-zero normalization) will recompute the wrong content_hash and emit false hash_mismatch on numerically-rich bodies."
+      "notes": "can-008, can-009, and can-010 are especially important: they exercise forward-compatible hash verification (RFC-ACDP-0001 §5.7, RFC-ACDP-0002 §6.7) — a consumer that deserializes into a typed model that drops unknown body or DataRef fields will fail these and produce false hash_mismatch under future-version producers. lin-001 pins lineage_id derivation. schema-005..007 pin the absent-vs-null wire convention; schema-008..010 pin the closed nested schemas; schema-011..014 extend the absent-vs-null convention to the DataRef fields format and location (RFC-ACDP-0002 §6.8), the error envelope (error.details), and the capabilities document (limits.idempotency_key_ttl_seconds). data-ref-008 pins the consumer-side external-DataRef hash-mismatch semantic (data_ref_hash_mismatch, body still valid — RFC-ACDP-0007 §5.3). data-ref-ssrf-001..005 pin consumer-side DataRef-location SSRF refusal at fetch time (RFC-ACDP-0008 §4.9): IP-literal, DNS-rebinding, cross-authority-redirect, mixed-answer, and same-host-different-port-redirect refusal — they are consumer-only because a registry does not fetch external data_refs and MUST NOT reject a publish on these grounds. did-ssrf-001..005 pin producer-DID-resolution SSRF refusal (RFC-ACDP-0008 §4.8), which every consumer performs when verifying signatures end-to-end, including mixed-answer rejection (did-ssrf-004) and same-host-different-port redirect rejection (did-ssrf-005). A consumer that follows derived_from across registries additionally MUST pass the fed-* fixtures if it performs server-side resolution. can-011 pins the RFC 8785 §3.2.2.3 numeric-serialization vectors — a consumer whose JCS pipeline diverges on these (exponential-notation boundaries, the plain-decimal band, integer exactness through 2^53, negative-zero normalization) will recompute the wrong content_hash and emit false hash_mismatch on numerically-rich bodies. 0.2.0 additions: can-012 extends the divergence corpus (acdp_version omitted/explicit, microsecond timestamps, null-vs-absent-vs-empty — RFC-ACDP-0001 Appendix A); sig-003 + dk-001/002/004 pin pure did:key verification, which every 0.2.0 consumer MUST support (resolution is offline and a consumer cannot choose which DID methods the bodies it encounters use; 0.1.0-pinned consumers are unaffected); rcpt-001..004, fp-001, and rot-001 pin receipt verification (RFC-ACDP-0010 §8), the §6 fingerprint encoding, and the historically-authorized-with-receipt vs fail-closed-without-receipt rule (§10)."
     }
   ],
   "fixture_families": {
@@ -245,8 +307,12 @@
     "schema": "Closed-schema rejection / openness map (RFC-ACDP-0007 §3.3.1) and the absent-vs-null wire convention (RFC-ACDP-0005 §2.2.1)",
     "cur": "Pagination cursor expiry and validity (RFC-ACDP-0005 §2.5.4)",
     "rate": "Rate-limit response shape (RFC-ACDP-0007 §5)",
-    "fed": "Federation / cross-registry SSRF protections (RFC-ACDP-0006 §7)",
+    "fed": "Federation / cross-registry SSRF protections (RFC-ACDP-0006 §7) and upstream-receipt verification (RFC-ACDP-0010 §11)",
     "did-ssrf": "Producer DID resolution SSRF protections (RFC-ACDP-0008 §4.8)",
-    "idem": "Idempotency-key behavior (RFC-ACDP-0003 §6)"
+    "idem": "Idempotency-key behavior (RFC-ACDP-0003 §6)",
+    "rcpt": "Registry receipts — golden vector and verification failures (RFC-ACDP-0010, 0.2.0)",
+    "fp": "Key-fingerprint encoding vectors (RFC-ACDP-0010 §6, 0.2.0)",
+    "rot": "Historical producer-key verification with receipts (RFC-ACDP-0010 §10, 0.2.0)",
+    "dk": "did:key resolution — golden and rejection scenarios (RFC-ACDP-0001 §5.4 / §5.11.1, 0.2.0)"
   }
 }
