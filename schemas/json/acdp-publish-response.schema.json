@@ -14,7 +14,12 @@
       "minimum": 1
     },
     "created_at": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/rfc3339_timestamp" },
-    "status": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/status" }
+    "status": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/status" },
+    "registry_receipt": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-registry-receipt.schema.json",
+      "description": "OPTIONAL (0.2.0, RFC-ACDP-0010 §7): the registry's signed receipt, minted atomically with persistence. MUST be present when the registry advertises the acdp-registry-receipts profile; MUST be absent otherwise. The one 0.2.0 addition to this previously five-field closed shape — see the migration note in RFC-ACDP-0010 §12."
+    }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$comment": "Closed schema. v0.1.0 responses carry exactly the five required fields (fixture pub-007); 0.2.0 receipts-profile registries add registry_receipt and nothing else."
 }

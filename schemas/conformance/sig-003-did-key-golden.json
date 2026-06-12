@@ -1,0 +1,71 @@
+{
+  "id": "sig-003",
+  "description": "did:key signing/verification golden vector (RFC-ACDP-0001 §5.4 / §5.11.1, acdp/0.2.0). Real Ed25519 keypair; the agent_id IS the key: did:key:z<base58btc(0xed01 + raw_public_key)>, and signature.key_id carries the same identifier as its fragment. Resolution is pure — no network, no DID document, no assertionMethod check. The body carries acdp_version '0.2.0' explicitly, as 0.2.0 producers MUST (RFC-ACDP-0001 §6). Test keypair MUST NOT be used in production. (The plan name 'sig-002-did-key-golden' was already taken by the ECDSA-P256 golden; this is the did:key golden.)",
+  "tags": ["signature", "did-key", "happy-path", "golden"],
+  "test_keypair": {
+    "warning": "TEST ONLY. The private seed is publicly known. Never use this keypair for real publications.",
+    "algorithm": "ed25519",
+    "private_seed_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+    "public_key_hex": "2152f8d19b791d24453242e15f2eab6cb7cffa7b6a5ed30097960e069881db12",
+    "public_key_base64": "IVL40Zt5HSRFMkLhXy6rbLfP+ntqXtMAl5YOBpiB2xI=",
+    "did_key": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
+    "multicodec_prefix_hex": "ed01"
+  },
+  "vectors": [
+    {
+      "name": "Minimal first-version 0.2.0 publish request, did:key producer, signed",
+      "producer_content": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
+        "contributors": [],
+        "title": "Golden test vector — did:key first version",
+        "type": "data_snapshot",
+        "data_refs": [],
+        "derived_from": [],
+        "visibility": "public",
+        "acdp_version": "0.2.0"
+      },
+      "expected": {
+        "canonical_form": "{\"acdp_version\":\"0.2.0\",\"agent_id\":\"did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3\",\"contributors\":[],\"data_refs\":[],\"derived_from\":[],\"supersedes\":null,\"title\":\"Golden test vector — did:key first version\",\"type\":\"data_snapshot\",\"version\":1,\"visibility\":\"public\"}",
+        "content_hash": "sha256:937448afc35bf79590bcf96f96da328d363d3ef6f2b87d274e2c1b242a09974f",
+        "signature_input": "sha256:937448afc35bf79590bcf96f96da328d363d3ef6f2b87d274e2c1b242a09974f",
+        "signature_value_hex": "dee0dd15eca8534908e77834b50e826c83c3681c4cb27668483efb6c4ff705bd07bfc1beea20116e766fee981acb26379a4b0b8e3a8f9e8fc320f96b81e55508",
+        "signature_value_base64": "3uDdFeyoU0kI53g0tQ6CbIPDaBxMsnZoSD77bE/3Bb0Hv8G+6iARbnZv7pgayyY3mksLjjqPno/DIPlrgeVVCA==",
+        "publish_request_body": {
+          "version": 1,
+          "supersedes": null,
+          "agent_id": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
+          "contributors": [],
+          "title": "Golden test vector — did:key first version",
+          "type": "data_snapshot",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public",
+          "acdp_version": "0.2.0",
+          "content_hash": "sha256:937448afc35bf79590bcf96f96da328d363d3ef6f2b87d274e2c1b242a09974f",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3#z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
+            "value": "3uDdFeyoU0kI53g0tQ6CbIPDaBxMsnZoSD77bE/3Bb0Hv8G+6iARbnZv7pgayyY3mksLjjqPno/DIPlrgeVVCA=="
+          }
+        }
+      },
+      "registry_assigned": {
+        "note": "Identifier assignment is method-independent; any registry advertising did:key mints exactly as for did:web.",
+        "ctx_id": "acdp://registry.example.com/9f1d4f10-7b2a-4c3e-8d5b-2a6f81c4e9b7",
+        "lineage_id": "lin:sha256:db78d2d5f329619cf9e1f243900a11f11c6f8447bf9333137f76c76efff7da40",
+        "origin_registry": "registry.example.com",
+        "created_at": "2026-06-12T09:00:00.000Z"
+      },
+      "verification_steps": [
+        "1. Derive the did:key identity: 'did:key:z' + base58btc(0xed01 || public_key_raw_32_bytes); MUST equal test_keypair.did_key.",
+        "2. did:key resolution is PURE (RFC-ACDP-0001 §5.11.1): decode the multibase 'z' payload, require multicodec prefix 0xed01, extract the 32 key bytes — no network, no DID document, no assertionMethod check.",
+        "3. The key_id fragment MUST byte-equal the DID's method-specific identifier (W3C did:key convention).",
+        "4. JCS-canonicalize producer_content; MUST equal expected.canonical_form (note acdp_version is inside the signed bytes).",
+        "5. SHA-256 → expected.content_hash; sign the ASCII bytes of the full content_hash string; MUST equal expected.signature_value_base64; verify with the public key.",
+        "6. Compute 'lin:sha256:' + lowercase_hex(SHA-256(registry_assigned.ctx_id)); MUST equal registry_assigned.lineage_id."
+      ]
+    }
+  ]
+}

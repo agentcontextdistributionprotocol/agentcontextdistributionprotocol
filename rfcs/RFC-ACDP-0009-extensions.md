@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Extensions
 
 **Document:** RFC-ACDP-0009
-**Version:** 0.1.0-reserved
-**Status:** **Reserved** — number pinned, no normative text yet
+**Version:** 0.2.0-reserved
+**Status:** **Reserved** — number pinned, no normative text yet (§2.7 promoted to [RFC-ACDP-0010](RFC-ACDP-0010-registry-receipts.md) in acdp/0.2.0)
 
 This RFC is a placeholder. It reserves the numbering and the field namespaces under which post-v0.1.0 capabilities will be specified. **It contains no normative requirements.**
 
@@ -57,7 +57,9 @@ Single-call traversal of `derived_from` chains to avoid round-trip amplification
 
 Mechanisms for one registry to query another, or for registries to peer for replication. Out of scope for the protocol — these are likely operational concerns built on top of `acdp://` resolution.
 
-### 2.7 Registry receipts
+### 2.7 Registry receipts — **PROMOTED to RFC-ACDP-0010 (acdp/0.2.0)**
+
+> **Status of this section:** the reservation below was promoted to a full normative specification, [RFC-ACDP-0010 Registry Receipts](RFC-ACDP-0010-registry-receipts.md), as part of the acdp/0.2.0 Trust & Hardening program. The reserved JSON shape was adopted unchanged. The text below is retained verbatim for 0.1.0-pinned libraries: **everything in this section — in particular the "Minimum structural guidance for v0.1.0 libraries" (preserve verbatim, do not parse or verify, hash exclusion) — remains the governing guidance for any library that declares `acdp_version` `0.1.0`.** Receipt-aware behavior (minting, verification, the `acdp-registry-receipts` profile, `invalid_receipt`) is specified exclusively by RFC-ACDP-0010 and applies to 0.2.0 implementations.
 
 A future ACDP version will introduce **registry receipts**: registry-signed attestations binding registry-assigned identifiers to producer content_hash, providing cryptographic proof of publication beyond producer signature alone.
 
@@ -173,6 +175,16 @@ A future version will define a registry-event object carrying at least:
 
 **Why deferred:** the same reasoning as §2.4 — push delivery requires operational machinery (delivery guarantees, retry, backpressure, idempotency, signing-key management) that does not belong in the substrate's first release. v0.1.0 control planes poll the discovery/search endpoints (RFC-ACDP-0005) instead.
 
+### 2.11 Transparency log
+
+An **append-only, registry-signed publication log** in the Certificate-Transparency / Merkle-tree-checkpoint style: every minted receipt (RFC-ACDP-0010) is appended as a leaf; the registry periodically signs a checkpoint (tree head) over the log; consumers and independent auditors verify inclusion proofs for individual receipts and consistency proofs between checkpoints. This is the layer above registry receipts: receipts make registry claims *attributable and non-repudiable* (RFC-ACDP-0010 §13); the log makes mint-time backdating and per-consumer equivocation *detectable by any auditor*, because a backdated receipt must be inserted into an already-checkpointed history and conflicting receipts cannot both carry valid inclusion proofs against the same checkpoint chain.
+
+#### Reserved field and endpoint names
+
+The following names are RESERVED and MUST NOT be used by extensions: `log_inclusion` (a member of `registry_receipt` carrying an inclusion proof), `log_checkpoint` (a signed tree-head object: `tree_size`, `root_hash`, `checkpoint_signature`), `log_id`, `leaf_index`, `inclusion_path`, the capabilities field `supports_transparency_log`, the profile name `acdp-registry-transparency-log`, and the endpoint paths `/log/checkpoint`, `/log/proof`, and `/log/entries`.
+
+**Why deferred:** receipts had to ship first — the log's leaves *are* receipts, and the receipt construction (preimage, fingerprint, key lifecycle) needed to stabilize before an append-only history could be built over it. The log also brings real operational machinery (checkpoint cadence, proof serving, auditor ecosystem, gossip for split-view detection) that should not gate the 0.2.0 trust improvements. Named future work per RFC-ACDP-0010 §13; no normative content in the 0.2.0 program.
+
 ---
 
 ## 3. Forward Compatibility
@@ -200,5 +212,6 @@ This document will be replaced by concrete RFCs when each capability is specifie
 - [RFC-ACDP-0002 Context Body](RFC-ACDP-0002-context-body.md)
 - [RFC-ACDP-0004 Retrieval](RFC-ACDP-0004-retrieval.md)
 - [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md)
+- [RFC-ACDP-0010 Registry Receipts](RFC-ACDP-0010-registry-receipts.md) — promotion of §2.7
 - [VERSIONING.md](../VERSIONING.md)
 - [CHANGELOG.md](../CHANGELOG.md)

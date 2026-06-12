@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Capabilities & Errors
 
 **Document:** RFC-ACDP-0007
-**Version:** 0.1.0
-**Status:** Community Standards Track (Final)
+**Version:** 0.2.0-draft
+**Status:** Community Standards Track (Final for acdp/0.1.0; sections marked *(0.2.0)* are Draft)
 
 This RFC specifies the registry capability declaration document and the standard error envelope used by all ACDP endpoints.
 
@@ -41,8 +41,8 @@ Returns the registry's capability declaration. Conforms to [`schemas/json/acdp-c
 | `acdp_version` | string | The ACDP specification version this registry implements. Form: `<major>.<minor>.<patch>`. |
 | `registry_did` | string | The registry's own DID, typically `did:web:<hostname>`. |
 | `supported_signature_algorithms` | array of string | Signature algorithms accepted on publish. MUST contain at least `"ed25519"`. |
-| `supported_did_methods` | array of string | DID methods this registry can resolve. MUST be non-empty and MUST include `"did:web"` (RFC-ACDP-0001 §5.4 mandates `did:web` for v0.1.0 producers; RFC-ACDP-0001 §5.11 specifies the resolution algorithm). |
-| `profiles` | array of string | Profile(s) this implementation claims conformance to. Any registry MUST declare at least `"acdp-registry-core"`. See RFC-ACDP-0001 §9. |
+| `supported_did_methods` | array of string | DID methods this registry can resolve. MUST be non-empty and MUST include `"did:web"` (RFC-ACDP-0001 §5.4 mandates `did:web` for v0.1.0 producers; RFC-ACDP-0001 §5.11 specifies the resolution algorithm). *(0.2.0)* MAY additionally include `"did:key"` (pure resolution per RFC-ACDP-0001 §5.11.1). A registry that does **not** advertise `"did:key"` MUST reject a `did:key` publish with `key_resolution_failed` (permanent, HTTP 400) — this code choice is pinned here and by fixture `dk-003`: the condition is producer-caused and not retryable against this registry, so `key_resolution_unreachable` (transient, 502) and `unsupported_algorithm` (the *algorithm* may well be supported) are both wrong. |
+| `profiles` | array of string | Profile(s) this implementation claims conformance to. Any registry MUST declare at least `"acdp-registry-core"`. See RFC-ACDP-0001 §9. *(0.2.0)* The profile `"acdp-registry-receipts"` (RFC-ACDP-0010 §11) declares that the registry mints and serves registry receipts on every publish response and full retrieval — advertising it is a hard commitment: there is no degraded "receipts sometimes" mode and no `receipt_unavailable` error. Registries advertising it MUST also advertise `acdp_version` ≥ `0.2.0`. |
 | `limits.max_payload_bytes` | integer | Maximum size of a publish request body in bytes. |
 | `limits.max_embedded_bytes` | integer | Maximum decoded size of any embedded data reference. **Fixed at 65536 by the spec.** |
 
@@ -91,6 +91,7 @@ ACDP uses a mix of CLOSED schemas (`additionalProperties: false`, used for tight
 | `match_summary` (in `acdp-common.schema.json`) | **Closed** | `false` |
 | `signature` (in `acdp-common.schema.json`) | **Closed** | `false` |
 | `data_period` (in `acdp-common.schema.json`) | **Closed** | `false` |
+| `acdp-registry-receipt.schema.json` *(0.2.0)* | **Closed** | `false` |
 
 Conformant consumers MUST reject deserializing a closed-schema object that contains fields not defined in the schema (`schema_violation`). Conformant consumers MUST NOT reject deserializing an open-schema object that contains unknown fields. The fixtures pin specific instances of both rules:
 
@@ -224,9 +225,10 @@ The full registry is maintained in [`registries/error-codes.md`](../registries/e
 | `invalid_cursor` | 400 | A pagination cursor is malformed or unrecognized. | RFC-ACDP-0005 §2.5.4 |
 | `duplicate_publish` | 409 | An idempotent publish was retried with conflicting content (same `Idempotency-Key`, different `content_hash`). | RFC-ACDP-0003 §6.2 |
 | `cross_registry_resolution_failed` | 502 | A cross-registry resolution failed (DNS resolution refused, response oversize, timeout, redirect-policy violation, or upstream registry unavailable). | RFC-ACDP-0006 §7 |
+| `invalid_receipt` *(0.2.0)* | 502 | A registry receipt failed the RFC-ACDP-0010 §8 verification procedure (signature, registry/authority binding, context binding, content binding, key binding, or timestamp form). Emitted on the wire by a federated resolver (or any registry validating an upstream receipt on a caller's behalf) about a receipt obtained from an upstream registry — hence 502, the upstream is at fault. It is also the verification-failure **category** consumer SDKs MUST use in their own diagnostics when a locally verified receipt fails; in that consumer-side use it does not invalidate the body, whose producer signature is judged independently (RFC-ACDP-0010 §8). There is deliberately no `receipt_unavailable`: registries advertising `acdp-registry-receipts` MUST always mint (RFC-ACDP-0010 §7), so a missing receipt from such a registry is a registry fault, not an error category. | RFC-ACDP-0010 §8, §11 |
 | `internal_error` | 500 | The registry encountered an unexpected internal condition. The standard error envelope MUST be used; `error.message` MUST NOT leak stack traces or sensitive context. Retryable. | RFC-ACDP-0007 §4 |
 
-> **Reserved codes (not in this table or the v0.1.0 wire enum):** `immutable_field` is reserved for a future version's mutation endpoints (retraction, attestation updates — see RFC-ACDP-0009 §2.1). `unsupported_embedding_model` is reserved for a future version's similarity endpoints (see RFC-ACDP-0009 §2.9). Implementations MUST NOT emit either in v0.1.0 responses.
+> **Reserved codes (not in this table or the v0.1.0 wire enum):** `immutable_field` is reserved for a future version's mutation endpoints (retraction, attestation updates — see RFC-ACDP-0009 §2.1). `unsupported_embedding_model` is reserved for a future version's similarity endpoints (see RFC-ACDP-0009 §2.9). Implementations MUST NOT emit either in v0.1.0 responses. *(0.2.0)* `invalid_receipt` graduates from reserved space into the table above and the wire enum; implementations declaring `acdp_version` `0.1.0` MUST NOT emit it.
 
 **Distinguishing hash failures.** Three failure codes can arise from integrity checks; implementations MUST keep them distinct so consumers can react correctly:
 
@@ -280,3 +282,4 @@ See [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md). Specific to capabilitie
 - [RFC-ACDP-0004 Retrieval](RFC-ACDP-0004-retrieval.md)
 - [RFC-ACDP-0005 Discovery](RFC-ACDP-0005-discovery.md)
 - [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md)
+- [RFC-ACDP-0010 Registry Receipts](RFC-ACDP-0010-registry-receipts.md) *(0.2.0)*

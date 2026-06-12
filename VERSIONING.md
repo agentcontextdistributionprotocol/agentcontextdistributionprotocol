@@ -6,6 +6,8 @@ ACDP uses a layered versioning model so that the wire format, the canonical sche
 
 The `0.1.0` line is published as **`Final`** (`acdp/0.1.0`): RFCs 0001–0008 carry the `Final` status; RFC-ACDP-0009 remains `Reserved`. The line passed through a `Release Candidate` window (`acdp/0.1.0-rc1`) before this promotion; the status ladder below records both states.
 
+The `0.2.0` line (**Trust & Hardening**) is in **`Draft`**: RFC-ACDP-0010 (Registry Receipts) is a new Draft RFC, and RFCs 0001/0003/0004/0007/0008 carry Draft amendments marked *(0.2.0)* in-prose (their `Version:` headers read `0.2.0-draft`). The 0.1.0 surface of every amended RFC remains Final and wire-frozen — no 0.2.0 change touches any v0.1.0 body field, JCS rule, content-hash, or signature semantic. 0.2.0 is a backward-compatible minor (new optional `registry_receipt` retrieval/publish-response member, second signing identity, `did:key` producers, explicit-`acdp_version` producer rule); per the namespace rule below the canonical schemas stay in the `v0.1.0` namespace with additive edits. The line is promoted to Final once the 0.2.0 conformance pack (`rcpt-*`, `fp-001`, `rot-001`, `sig-003`, `dk-*`, `can-012`, `fed-009`) passes against at least two independent interoperating implementations (the same promotion discipline as 0.1.0).
+
 ## Layers
 
 | Layer | Identifier | Example | Compat rules |
@@ -13,7 +15,7 @@ The `0.1.0` line is published as **`Final`** (`acdp/0.1.0`): RFCs 0001–0008 ca
 | Protocol version | `acdp_version` field on the capabilities document | `0.1.0` | Bare `<major>.<minor>.<patch>` (no `-rcN` suffix — the `acdp_version` wire field carries only released semver). Major mismatch ⇒ consumer SHOULD treat as a higher unknown version and degrade gracefully. |
 | Body version | `body.acdp_version` (optional); absent ⇒ `0.1.0` | `0.1.0` | Body fields are stable; future versions add fields only. |
 | Registry-state extensibility | Open object | n/a | Future versions add fields (lifecycle, relationships, attestations). Consumers MUST tolerate unknown fields. |
-| RFC version | RFC document `Version:` header | `0.1.0` | Final RFCs carry the bare semver string (e.g. `0.1.0`); pre-final candidates use `-rcN` during the Release Candidate window (e.g. `0.1.0-rc1`); reserved-numbering RFCs without normative text use `-reserved` (e.g. `0.1.0-reserved` for RFC-ACDP-0009). |
+| RFC version | RFC document `Version:` header | `0.1.0` | Final RFCs carry the bare semver string (e.g. `0.1.0`); Draft-stage documents (new RFCs or Final RFCs carrying Draft amendments for an in-progress line) use `-draft` (e.g. `0.2.0-draft`); pre-final candidates use `-rcN` during the Release Candidate window (e.g. `0.1.0-rc1`); reserved-numbering RFCs without normative text use `-reserved` (e.g. `0.2.0-reserved` for RFC-ACDP-0009). |
 | Schema namespace | `$id` URL path segment | `v0.1.0` | The canonical JSON Schemas live under `schemas.acdp.io/v<major>.<minor>.<patch>/`. The namespace carries the target release version (no `-rcN`); a breaking change opens a new namespace. |
 
 ## Change classes

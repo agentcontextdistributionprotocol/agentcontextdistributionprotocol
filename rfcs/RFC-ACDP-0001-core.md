@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Core
 
 **Document:** RFC-ACDP-0001
-**Version:** 0.1.0
-**Status:** Community Standards Track (Final)
+**Version:** 0.2.0-draft
+**Status:** Community Standards Track (Final for acdp/0.1.0; sections marked *(0.2.0)* are Draft)
 **Canonical wire format:** JSON over HTTP
 **Required JSON canonicalization:** [RFC 8785 — JSON Canonicalization Scheme (JCS)](https://datatracker.ietf.org/doc/html/rfc8785)
 **Intended status:** Stable Core
@@ -29,6 +29,8 @@ ACDP Core does not define discovery semantics, registry policy, retraction rules
 ## 1. Status of This Memo
 
 This document is a Final ACDP specification (acdp/0.1.0). It is stable for the 0.1.0 release; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
+
+This revision additionally carries the **acdp/0.2.0 Trust & Hardening amendments** (registry receipts — RFC-ACDP-0010; `did:key` producers; explicit `acdp_version`; lineage anchoring; historical key retention). Amended or added passages are marked *(0.2.0)* and have **Draft** status until the 0.2.0 conformance pack passes against two independent implementations; everything else remains Final and wire-frozen. No 0.2.0 amendment changes any v0.1.0 body field, JCS rule, content-hash semantic, or signature semantic — every existing v0.1.0 body, signature, and `content_hash` remains valid.
 
 ACDP `0.1.0` is the **first published Final version** of the protocol; the numbering scheme treats `acdp/0.1.0` as the inaugural release. The `0.0.1` identifier was used only for internal pre-release drafts and was never promoted to a Release Candidate or Final status. `0.1.0` is wire-compatible with those drafts — the body format, JCS canonicalization, content-hash, and signature semantics are unchanged.
 
@@ -160,7 +162,7 @@ Implementations:
 |---|---|---|
 | **`ctx_id`** (context identifier) | `acdp://<authority>/<uuid>` where `<authority>` is a DNS hostname identifying the origin registry and `<uuid>` is a UUID v4 [RFC 9562]. | §5.5 |
 | **`lineage_id`** | `lin:<algorithm>:<digest>`. v0.1.0 form: `lin:sha256:<64-lowercase-hex>`. | §5.6 |
-| **`agent_id`** | A Decentralized Identifier [DID-CORE]. v0.1.0 producers MUST use `did:web` so that any conformant registry can resolve their keys via §5.11. | RFC-ACDP-0002 |
+| **`agent_id`** | A Decentralized Identifier [DID-CORE]. v0.1.0 producers MUST use `did:web` so that any conformant registry can resolve their keys via §5.11. *(0.2.0)* `agent_id` MAY additionally be `did:key` (grammar `did:key:z<base58btc>`) when the registry advertises `"did:key"` in `supported_did_methods` (RFC-ACDP-0007 §3.1); resolution is pure per §5.11.1. | RFC-ACDP-0002 |
 
 The `ctx_id` is assigned by the registry at publish time; producers MUST NOT supply a `ctx_id` in publish requests. The corresponding URI scheme `acdp` is registered in §11.
 
@@ -177,6 +179,18 @@ The `did:web` requirement of v0.1.0 applies to fields the registry must resolve 
 | `body.agent_id` of an ancestor in `derived_from` | Same rule as the ancestor's own `agent_id` (i.e. for v0.1.0 ancestors, `did:web`). | A consumer following the ancestor link verifies the ancestor's signature, which requires resolving its key via §5.11. |
 
 Registries MUST reject a publish whose `agent_id` is not `did:web` with `schema_violation` (preferred — caught at request validation) or with `key_not_authorized` if discovered later in the §5.11 pipeline. Registries MUST NOT reject a publish solely because `contributors[]` includes a non-`did:web` entry. Conformance fixtures `pub-008`, `pub-009`, and `pub-010` pin these behaviors.
+
+#### `did:key` producers *(0.2.0, NORMATIVE)*
+
+ACDP 0.2.0 adds `did:key` as a second supported producer DID method:
+
+- **Grammar.** `did:key:z<base58btc>`, where `z<base58btc>` is the multibase base58-btc encoding of a multicodec-prefixed public key (§5.11.1). Only the `z` (base58-btc) multibase prefix is valid.
+- **`signature.key_id` form.** `did:key:z<mb>#z<mb>` — per the W3C `did:key` convention, the fragment equals the key identifier, which equals the DID's method-specific identifier. A `did:key` `key_id` whose fragment does not byte-equal the DID's key part MUST be rejected with `key_resolution_failed`.
+- **Gating.** A registry accepts `did:key` publishes only when it advertises `"did:key"` in `supported_did_methods`. A registry that does not advertise it MUST reject a `did:key` publish with `key_resolution_failed` (permanent, HTTP 400 — RFC-ACDP-0007 §3.1). Fixture `dk-003` pins this code choice.
+- **`registry_did` stays `did:web`-only.** Registries are DNS-bound servers; the registry-identity binding of RFC-ACDP-0006 §4.1 and RFC-ACDP-0010 §8 step 2 depends on the DID ↔ authority equality that only `did:web` provides. This does not change in 0.2.0.
+- The same rule extends to the §5.4 scope table: the `agent_id` and `signature.key_id` rows read "`did:web`, or *(0.2.0)* `did:key` where advertised"; the `contributors[]`, `audience[]`, and ancestor rows are unchanged.
+
+**Tradeoff (NORMATIVE note).** `did:key` has no rotation: a new key is a new identity, and `supersedes` requires the same `agent_id` (RFC-ACDP-0003 §3.1 step 3), so lineage continuity ends with the key. Conversely, `did:key` contexts are immune to the historical-key problem (RFC-ACDP-0008 §9.3) and to domain-lapse hijacking — verification outlives the producer's infrastructure, because the DID *is* the key. Producers choose per identity; Appendix B describes the recommended two-tier pattern.
 
 ### 5.5 Context-ID assignment
 
@@ -218,6 +232,12 @@ If, while walking back through `supersedes` references to compute `lineage_id` f
 ```
 
 This reason is reserved for the lineage-walk path; it does NOT cover the immediate-target case (RFC-ACDP-0003 §3.1 step 1 returns `details.reason = "not_found"` for that) and it does NOT cover the cross-registry case (§3.1 step 2 returns `cross_registry_supersession_unsupported`).
+
+#### 5.6.2 Lineage anchoring *(0.2.0, NORMATIVE)*
+
+A registry MAY validate a version-(N+1) publish against the **persisted** `lineage_id` and `version` of the immediate predecessor (the `supersedes` target) instead of re-walking the full `supersedes` chain to version 1 on every publish. The registry's own storage is trusted for this purpose: it computed and persisted the predecessor's `lineage_id` under the same §5.6 derivation when the predecessor was published, so `lineage_id(new) = lineage_id(predecessor)` and `version(new) = version(predecessor) + 1` are sufficient publish-time checks. Anchoring is exactly equivalent to the full walk by induction over §5.6 and RFC-ACDP-0003 §3.1, and it removes the `lineage_walk_failed` liveness failure mode in which a deep intermediate is unretrievable while the immediate predecessor exists.
+
+Registries using anchoring SHOULD run the full walk-back as a periodic or on-demand **integrity audit** (detecting storage corruption or out-of-band mutation), not as a publish-path dependency. A registry that does walk the full chain at publish time remains conformant; `lineage_walk_failed` (§5.6.1) then remains its rejection signal for an unretrievable intermediate. The derivation formula and the end-to-end verifiability of `lineage_id` are unchanged — consumers can always audit a lineage by walking it themselves.
 
 ### 5.7 Content Hash
 
@@ -321,7 +341,7 @@ ACDP's protections decompose by what the producer signature does and does not bi
 
 A malicious or compromised registry could republish a producer's signed content under a different `ctx_id` or `origin_registry` (the signature would still verify), or backdate `created_at`. See RFC-ACDP-0008 §9.1 for the full discussion and §9.2 for mitigations.
 
-A future ACDP version will introduce **registry receipts** (RFC-ACDP-0009 §2.7) that bind registry-assigned identifiers to the registry's DID, closing this gap cryptographically.
+*(0.2.0)* ACDP 0.2.0 introduces **registry receipts** ([RFC-ACDP-0010](RFC-ACDP-0010-registry-receipts.md), promoted from the RFC-ACDP-0009 §2.7 reservation): registry-signed attestations binding `ctx_id`, `lineage_id`, `origin_registry`, `created_at`, the body's `content_hash`, and the resolved producer-key fingerprint to the registry's DID. Where a verified receipt accompanies a response, the registry-honesty facts above become attributable and non-repudiable registry commitments (with the mint-time limitations documented in RFC-ACDP-0010 §13). Receipt-less responses retain the v0.1.0 trust model unchanged.
 
 **Replay** at the wire level is mitigated by HTTPS transport security. ACDP itself does not specify per-request nonces — the body's content hash makes "the same body twice" content-level idempotent. Registries SHOULD implement `Idempotency-Key` (RFC-ACDP-0003 §6) for true publication-level idempotency.
 
@@ -381,7 +401,22 @@ These testing surfaces MUST be guarded so they do not weaken production:
 
 Without these surfaces, conformance testing for `pub-001` and `pub-006` requires a live network and a public DID-document host, which discourages running the fixtures at all and silently lowers ecosystem-wide assurance.
 
-**Future DID methods.** A future ACDP version may add `did:key`, `did:jwk`, and other methods. The resolution algorithm above is `did:web`-specific; other methods will be specified separately.
+#### 5.11.1 `did:key` resolution *(0.2.0, NORMATIVE)*
+
+`did:key` resolution is **pure**: it is a deterministic computation over the DID string itself. No network request is made, no DID document is fetched, no caching rules apply, and there is no `assertionMethod` check — the DID *is* the key, so the key is authorized by construction. The algorithm:
+
+1. **Parse.** Split `signature.key_id` into the DID portion and the fragment. The fragment is REQUIRED and MUST byte-equal the DID's method-specific identifier (`did:key:z<mb>#z<mb>`); mismatch or absence MUST be rejected with `key_resolution_failed`. The DID portion MUST equal `body.agent_id` (`key_not_authorized` on mismatch — same as step 2 of the `did:web` algorithm).
+2. **Decode multibase.** The method-specific identifier MUST begin with `z` (base58-btc). Decode the remainder with the base58-btc alphabet (`123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz`). Any other multibase prefix, or a string that does not decode, MUST be rejected with `key_resolution_failed`.
+3. **Check the multicodec prefix.** The decoded bytes MUST begin with the unsigned-varint encoding of the multicodec code: `0xed 0x01` for `ed25519-pub` (code `0xed`) or `0x80 0x24` for `p256-pub` (code `0x1200` — its varint encoding is `0x80 0x24`, NOT the big-endian literal `0x12 0x00`; using the literal would reject every W3C-conformant `zDn…` P-256 did:key). Any other prefix MUST be rejected with `key_resolution_failed`.
+4. **Extract the key bytes.** The bytes after the multicodec prefix are the public key: exactly 32 raw bytes for Ed25519, or exactly 33 bytes (SEC1 compressed point) for P-256, which the verifier decompresses before use. A length mismatch MUST be rejected with `key_resolution_failed`.
+5. **Check algorithm consistency.** `signature.algorithm` MUST match the multicodec-implied algorithm (`ed25519` for multicodec code `0xed`, `ecdsa-p256` for multicodec code `0x1200`); mismatch MUST be rejected with `invalid_signature` (the same algorithm-binding rule as step 6 of the `did:web` algorithm).
+6. **Verify the signature** over the ASCII bytes of `body.content_hash`, exactly as §5.8.
+
+Because resolution is pure, every SSRF consideration of RFC-ACDP-0008 §4.8 is vacuous for `did:key`, verification works offline and outlives the producer's infrastructure, and the §5.11 caching guidance does not apply. The golden vector `sig-003-did-key-golden.json` pins the identity derivation, hash, and signature end-to-end; `dk-001`/`dk-002`/`dk-004` pin the multicodec, multibase, and fragment rejection rules.
+
+**Producer key retention *(0.2.0, NORMATIVE)*.** `did:web` producers SHOULD retain rotated signing keys in their DID document's `verificationMethod` array indefinitely, removing them from `assertionMethod` only. `assertionMethod` membership is checked at **publish time** by the registry (step 5 above — unchanged); retaining the retired key in `verificationMethod` is what lets receipt-aware verifiers later verify historical contexts with the distinguishable *historically authorized (receipt-attested)* status of RFC-ACDP-0010 §10. Removing a key from `verificationMethod` entirely is the producer's compromise-revocation signal: verifiers then fail closed for bodies signed by that key, receipt or no receipt.
+
+**Future DID methods.** A future ACDP version may add `did:jwk` and other methods. The `did:web` resolution algorithm above and the `did:key` algorithm of §5.11.1 are method-specific; other methods will be specified separately.
 
 **v0.1.0 strict verification profile (NORMATIVE).** A verification implementation conformant with the `acdp-consumer` profile (§9.1) MUST, when verifying a v0.1.0 context (`body.acdp_version` absent or `"0.1.0"`):
 
@@ -405,9 +440,9 @@ Library authors MAY expose configuration to relax these requirements (e.g. for t
 | `signature` | The Ed25519 or ECDSA-P256 signature verifies against the resolved public key. |
 | `embedded_data_refs` | Per-DataRef embedded-hash verification (an array of per-ref outcomes). |
 | `external_data_refs` | Per-DataRef external fetch + hash verification (an array of per-ref outcomes). |
-| `registry_receipt` | Registry receipt verification — reserved for a future version (RFC-ACDP-0009 §2.7); absent in v0.1.0 reports. |
+| `registry_receipt` | Registry receipt verification (RFC-ACDP-0010 §8). Absent in v0.1.0 reports; *(0.2.0)* active when a receipt accompanies the response. |
 
-The stage vocabulary is advisory: it does not change the verification algorithm, only the names implementations SHOULD use when surfacing intermediate results. A v0.1.0 report covers `schema` through `external_data_refs`; `registry_receipt` is listed so the vocabulary is stable when receipts ship.
+The stage vocabulary is advisory: it does not change the verification algorithm, only the names implementations SHOULD use when surfacing intermediate results. A v0.1.0 report covers `schema` through `external_data_refs`; *(0.2.0)* a receipt-aware report additionally carries `registry_receipt`, reported independently of the body verdict (RFC-ACDP-0010 §8).
 
 ---
 
@@ -422,11 +457,13 @@ ACDP uses a layered compatibility model:
 
 **`acdp_version` and the content hash (NORMATIVE).** Producers SHOULD include `acdp_version: "0.1.0"` explicitly in every published body, even though the protocol treats its absence as equivalent to `0.1.0`. Explicit inclusion aids debugging, log analysis, and future version negotiation, and removes any ambiguity about which exclusion set (§5.7) and algorithm vocabulary a verifier should apply.
 
+***(0.2.0)* Explicit `acdp_version` is mandatory for 0.2.0 producers (NORMATIVE).** A publish request authored under acdp/0.2.0 MUST include `acdp_version` explicitly (e.g. `"acdp_version": "0.2.0"`). Registries continue accepting the omitted form from 0.1.0 producers indefinitely — there is no retroactive hash change, and both forms remain valid on the wire (an omitted field is still *interpreted* as `0.1.0`). The MUST removes the omitted-vs-explicit hash ambiguity for everything minted going forward: a 0.2.0 verifier always knows which version's exclusion set and vocabulary the producer committed to, because the commitment is inside the signed bytes. The fixture `can-012-divergence-corpus.json` pins the omitted, explicit-`"0.1.0"`, and explicit-`"0.2.0"` hashes as three distinct preimages, and 0.2.0 SDK builders MUST default to emitting the field (the §6 omission default below is no longer available to 0.2.0 builders).
+
 Consumers, verifiers, and registries MUST NOT inject a default `acdp_version` value into a body before recomputing `content_hash`. The hash is computed over the body exactly as received (§5.7, "Hash verification over raw JSON"); adding a synthetic `acdp_version` field — or any other field — before hashing produces a different hash from the one the producer signed and raises a false `hash_mismatch`. A body that omits `acdp_version` MUST be hashed without it; a body that includes it MUST be hashed with it. The default-to-`0.1.0` rule above governs the *interpretation* of an absent field, never a *mutation* of the body: absence is read as `0.1.0`, but the absent field is never materialized.
 
 **SDK default behavior guidance.** For SDKs that auto-construct `PublishRequest` objects via a builder, the RECOMMENDED default is to **emit `acdp_version: "0.1.0"` explicitly**. This makes the protocol version visible in every produced request without the producer having to call an explicit setter, and aligns the builder's default with the producer SHOULD above.
 
-An SDK MAY instead ship with the omission default — emitting no `acdp_version` field — for golden-vector compatibility or other reasons (an absent field and `"0.1.0"` are wire-equivalent for consumers: the default-to-`0.1.0` interpretation rule makes them semantically identical, though they produce different `content_hash` values because the bytes differ). An SDK that takes the omission default MUST:
+A 0.1.0-targeting SDK MAY instead ship with the omission default — emitting no `acdp_version` field — for golden-vector compatibility or other reasons *(0.2.0: this option is closed for 0.2.0 builders, which MUST emit the field — see the NORMATIVE paragraph above)* (an absent field and `"0.1.0"` are wire-equivalent for consumers: the default-to-`0.1.0` interpretation rule makes them semantically identical, though they produce different `content_hash` values because the bytes differ). An SDK that takes the omission default MUST:
 
 1. Document the choice prominently — in the builder's API documentation and in the SDK README.
 2. Provide a one-line override that emits the version explicitly (e.g. `.acdp_version(ACDP_VERSION)`).
@@ -534,6 +571,17 @@ A consumer of contexts (not a registry). Implementations MUST:
 
 There is no producer-only profile: producers MUST be able to verify their own publications, which requires the same cryptographic core as a consumer.
 
+#### `acdp-registry-receipts` *(0.2.0)*
+
+Adds registry receipts. Implementations MUST:
+
+- Be `acdp-registry-core` conformant and advertise `acdp_version` ≥ `0.2.0`.
+- Mint, persist, and serve receipts per RFC-ACDP-0010 §4–§7 (publish response and full retrieval; never on the body-only endpoint; always — there is no degraded mode).
+- Apply the receipt-key lifecycle of RFC-ACDP-0010 §9.
+- Pass the receipt conformance fixtures (`rcpt-001..004`, `fp-001`, `rot-001`; plus `fed-009` when `acdp-registry-federated` is also advertised).
+
+Receipt-aware consumers (the `acdp-consumer` profile under 0.2.0) verify receipts per RFC-ACDP-0010 §8 whenever one is present, and report the receipt verdict separately from the body verdict.
+
 ### 9.2 Verification profile names (RECOMMENDED)
 
 v0.1.0 verification is always strict for any conformance claim — §5.11 ("v0.1.0 strict verification profile") defines the strict pipeline and requires that it be the non-loosenable default. SDKs MAY additionally expose relaxed or diagnostic verification modes for debugging and test harnesses. When they do, they SHOULD use the following identifiers so documentation, logs, and error messages are consistent across language implementations:
@@ -615,3 +663,42 @@ This document requests provisional registration of the `acdp` URI scheme:
 - [RFC-ACDP-0006 Cross-Registry References](RFC-ACDP-0006-cross-registry.md)
 - [RFC-ACDP-0007 Capabilities & Errors](RFC-ACDP-0007-capabilities.md)
 - [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md)
+- [RFC-ACDP-0010 Registry Receipts](RFC-ACDP-0010-registry-receipts.md) *(0.2.0)*
+
+---
+
+## Appendix A. SDK implementers' hash-divergence checklist *(0.2.0, NON-NORMATIVE)*
+
+Cross-implementation `content_hash` divergence is the most common ACDP implementation bug class: two conformant-looking implementations silently compute different hashes for the same logical content, and every downstream signature check fails with a false `hash_mismatch`. This appendix enumerates every known divergence source with the conformance fixture that pins it. Together these fixtures form the **divergence corpus**; an SDK MUST pass all of them before claiming conformance, and SHOULD wire them into CI as a single suite.
+
+| # | Divergence source | What goes wrong | Fixture |
+|---|---|---|---|
+| 1 | **Timestamp precision** — microsecond/nanosecond timestamps from default clock APIs | The hash binds the serialized bytes, not the logical instant; `…15.123456789Z` ≠ `…15.123Z`. Producers MUST truncate to milliseconds (§5.3) or reject higher precision; both the divergent and post-truncation hashes are pinned. | `can-006` (nanosecond), `can-012` (microsecond) |
+| 2 | **Registry `created_at` emission** — registry-side clock precision | Same rule on the registry path; floor-truncate to milliseconds. | `can-007` |
+| 3 | **Negative zero** — `-0.0` preserved by the serializer | RFC 8785 §3.2.2.3 normalizes `-0.0` to `0`; Python stdlib `json.dumps` does not (§5.2). | `can-001`, `can-011` |
+| 4 | **Numeric boundaries** — `1e21` exponent switch, `1e-7`, 2^53 integer exactness, IEEE 754 extremes | A non-ECMAScript number formatter diverges at the exponential-notation boundaries. | `can-011` |
+| 5 | **Empty vs absent** — `"tags": []` vs no `tags` key | Distinct bytes, distinct hashes; an SDK that "helpfully" materializes empty collections changes the hash. | `can-005` |
+| 6 | **Null vs absent vs empty object** — `"metadata": {"note": null}` vs `"metadata": {}` vs absent | Three distinct preimages. Serializers that strip null-valued members, or builders that inject empty objects, diverge. | `can-012` |
+| 7 | **Non-ASCII UTF-8** — precomposed vs escaped Unicode | JCS emits raw UTF-8 (no `\uXXXX` escaping of non-ASCII); `ensure_ascii`-style defaults diverge. | `can-002` |
+| 8 | **Unknown producer fields dropped** — typed deserialization without a catch-all | The §5.7 raw-JSON rule: unknown body fields are part of the preimage and MUST be retained. | `can-008` (body root), `can-010` (DataRef) |
+| 9 | **Exclusion set applied by type, not by name** | The §5.7 exclusion set is stripped by field name from the raw object, even for irregular values. | `can-009` |
+| 10 | **`acdp_version` omitted vs explicit** | Absent and explicit `"0.1.0"` are semantically identical but byte-distinct preimages; injecting or stripping the field on either side breaks the hash. 0.2.0 producers MUST emit it (§6). | `can-012` |
+| 11 | **DataRef open root / closed `embedded`** — unknown fields inside `data_refs[]` | The DataRef root is open (retain unknowns in the hash); the `embedded` sub-object is closed (reject unknowns). | `can-010`, `schema-003` |
+| 12 | **Signing-input framing** — signing raw digest bytes or unprefixed hex | The signature input is the ASCII bytes of the full `sha256:<hex>` string (§5.8); receipt signing reuses the identical framing (RFC-ACDP-0010 §5). | `sig-001`, `sig-002`, `sig-003`, `rcpt-001` |
+| 13 | **Key-fingerprint encoding** — fingerprinting SPKI/multibase/JWK instead of raw key bytes | `key_fingerprint` is SHA-256 over the 32-byte raw Ed25519 key or 33-byte SEC1-compressed P-256 point, nothing else (RFC-ACDP-0010 §6). | `fp-001` |
+
+Rows 1–11 are hash-preimage divergences; rows 12–13 are signing-layer divergences with the same blast radius. When adding a new `can-*`/`sig-*`/`rcpt-*` vector, compute `canonical_form` and the digests with the reference `jcs` library — never by hand (the runner byte-compares against them).
+
+---
+
+## Appendix B. Two-tier producer identity pattern *(0.2.0, NON-NORMATIVE)*
+
+`did:web` and `did:key` producers make opposite tradeoffs (§5.4): `did:web` supports rotation and human-meaningful, organization-anchored identity but makes every verification — forever — depend on the producer's domain resolving; `did:key` verification is pure and outlives the producer's infrastructure, but the key *is* the identity, so there is no rotation and lineage continuity ends with the key.
+
+The recommended deployment pattern is **two-tier**:
+
+- **Organization anchors on `did:web`.** Long-lived organizational producer identities (`did:web:agents.example.com:research-bot`) use `did:web`: they need rotation, are operationally tied to the org's domain anyway, and benefit from the receipt-attested historical-key path (RFC-ACDP-0010 §10) when keys rotate.
+- **Ephemeral and archival producers on `did:key`.** Short-lived workers (one pipeline run, one experiment) and archival publications meant to be verifiable decades out use `did:key`: no DID-document hosting, no domain-lapse hijacking risk, no historical-key problem — anyone holding the body can verify it offline forever.
+- **Link the tiers with `derived_from`.** An ephemeral `did:key` worker's outputs reference the org anchor's contexts via `derived_from` (and the org credits the worker in `contributors`, which permits any DID method). The org's `did:web` signature on the anchoring context is the organizational endorsement; the `did:key` signature on the leaf is the imperishable integrity seal.
+
+Anti-patterns: using `did:key` for an identity that will need rotation (rotation = new identity, broken lineage); using `did:web` for archival content whose domain may lapse before the content stops mattering; sharing one `did:key` across workers (the DID is the key — sharing the key is sharing the identity).

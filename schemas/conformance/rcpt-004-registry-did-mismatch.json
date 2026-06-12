@@ -1,0 +1,31 @@
+{
+  "id": "rcpt-004",
+  "description": "Receipt verification MUST fail when receipt.registry_did does not bind to the authority the context was fetched from (RFC-ACDP-0010 §8 step 2). A receipt is only evidence about the registry that served it; accepting a receipt naming a different authority would let a hostile registry replay another registry's receipts (or mint receipts impersonating one). Same authority-binding principle as fed-006.",
+  "tags": ["receipt", "failure", "security", "registry-identity"],
+  "applies_to_profiles": ["acdp-registry-receipts", "acdp-consumer"],
+  "input": {
+    "scenario": "Consumer fetches GET https://hostile.example/contexts/acdp%3A%2F%2Fhostile.example%2F… and the envelope carries a receipt whose registry_did names registry.example.com",
+    "serving_authority": "hostile.example",
+    "receipt_excerpt": {
+      "registry_did": "did:web:registry.example.com",
+      "ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234",
+      "origin_registry": "registry.example.com"
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "failure_category": "invalid_receipt",
+    "behavior": "§8 step 2: registry_did MUST be did:web:<authority> where <authority> equals the authority the response was fetched from. did:web:registry.example.com ≠ hostile.example → the receipt MUST be reported as failed regardless of whether its signature verifies under registry.example.com's key. The same check rejects the inverse case (receipt.registry_did = did:web:hostile.example but ctx_id/origin_registry authority = registry.example.com — the intra-receipt consistency rule of RFC-ACDP-0010 §4).",
+    "additional_failure_cases": [
+      {
+        "case": "registry_did uses a method other than did:web (e.g. did:key)",
+        "expected_outcome": "failure — registry_did is did:web-only in 0.2.0 (RFC-ACDP-0010 §4); registries are DNS-bound servers."
+      },
+      {
+        "case": "signature.key_id DID portion ≠ registry_did",
+        "expected_outcome": "failure — the receipt key must belong to the minting registry's DID document (§8 step 1/2)."
+      }
+    ],
+    "body_verdict": "Body verdict independent, as always (RFC-ACDP-0010 §8)."
+  }
+}

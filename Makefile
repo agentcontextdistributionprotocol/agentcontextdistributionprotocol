@@ -57,8 +57,9 @@ docs:
 	@echo "  9. rfcs/RFC-ACDP-0007-capabilities.md"
 	@echo " 10. rfcs/RFC-ACDP-0008-security.md"
 	@echo " 11. rfcs/RFC-ACDP-0009-extensions.md (Reserved)"
-	@echo " 12. docs/overview.md"
-	@echo " 13. docs/integration-guide.md"
+	@echo " 12. rfcs/RFC-ACDP-0010-registry-receipts.md (0.2.0, Draft)"
+	@echo " 13. docs/overview.md"
+	@echo " 14. docs/integration-guide.md"
 
 # ── Clean ────────────────────────────────────────────────────────────────────
 
