@@ -1,0 +1,21 @@
+{
+  "id": "dk-003",
+  "description": "A registry that does NOT advertise \"did:key\" in supported_did_methods MUST reject a did:key publish with key_resolution_failed (permanent, HTTP 400) — the code choice pinned by RFC-ACDP-0007 §3.1 and RFC-ACDP-0001 §5.4. Not key_resolution_unreachable (nothing transient — retrying against this registry can never succeed without a capability change), and not unsupported_algorithm (ed25519 itself is supported; the DID method is what is not).",
+  "tags": ["did-key", "failure", "capabilities", "key-resolution"],
+  "applies_to_profiles": ["acdp-registry-core"],
+  "input": {
+    "scenario": "The sig-003 golden publish request (valid did:key identity, valid signature) submitted to a registry whose capabilities document advertises only did:web",
+    "registry_capabilities_excerpt": {
+      "acdp_version": "0.2.0",
+      "supported_did_methods": ["did:web"],
+      "supported_signature_algorithms": ["ed25519"]
+    },
+    "publish_request": "schemas/conformance/sig-003-did-key-golden.json → vectors[0].expected.publish_request_body"
+  },
+  "expected": {
+    "outcome": "failure",
+    "error_code": "key_resolution_failed",
+    "http_status": 400,
+    "behavior": "The request is cryptographically flawless — rejection is purely capability-driven and permanent for this registry. The registry SHOULD include details naming the unsupported method (e.g. details.did_method = \"did:key\") so the producer can route to a did:key-capable registry. A 0.1.0 registry (which by definition does not advertise did:key) behaves identically under its existing rules: agent_id is not did:web → rejected (pub-008 semantics)."
+  }
+}

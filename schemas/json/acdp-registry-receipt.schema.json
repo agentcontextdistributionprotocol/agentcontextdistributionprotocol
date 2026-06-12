@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.1.0/acdp-registry-receipt.schema.json",
+  "title": "ACDP Registry Receipt (0.2.0)",
+  "description": "A registry-signed attestation binding the registry-assigned identity fields of one context, the producer's content_hash, and the fingerprint of the producer key resolved at publish time, to the registry's DID. Specified by RFC-ACDP-0010 (acdp/0.2.0); the wire shape is the one reserved by RFC-ACDP-0009 §2.7 since v0.1.0, which is why this schema lives in the v0.1.0 namespace (additive minor version — see VERSIONING.md). The receipt preimage is the JCS canonicalization of this object minus 'signature'; the registry signs the ASCII bytes of 'sha256:<hex(SHA-256(preimage))>' exactly as RFC-ACDP-0001 §5.8.",
+
+  "type": "object",
+  "required": [
+    "registry_did",
+    "ctx_id",
+    "lineage_id",
+    "origin_registry",
+    "created_at",
+    "content_hash",
+    "key_fingerprint",
+    "signature"
+  ],
+  "properties": {
+    "registry_did": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did",
+      "description": "The minting registry's DID. MUST be did:web:<authority> where <authority> equals the serving authority (RFC-ACDP-0010 §4, §8 step 2). did:web-only even in 0.2.0."
+    },
+    "ctx_id": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
+    "lineage_id": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/lineage_id" },
+    "origin_registry": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/hostname",
+      "description": "Bare DNS hostname; MUST equal the ctx_id authority and the registry_did method-specific identifier (RFC-ACDP-0010 §4)."
+    },
+    "created_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+      "description": "Registry-assigned creation timestamp. Unlike the accept-any-precision rfc3339_timestamp type, the receipt pins the canonical millisecond form exactly (RFC-ACDP-0010 §8 step 6); it MUST be byte-identical to body.created_at."
+    },
+    "content_hash": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/content_hash",
+      "description": "The body's ProducerContent hash as verified by the registry at publish time. Consumers compare against their independently recomputed value, never the echoed body field (RFC-ACDP-0010 §8 step 4)."
+    },
+    "key_fingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "sha256:<lowercase hex SHA-256> over the raw public-key bytes of the producer key resolved at publish time: the 32-byte raw Ed25519 key or the 33-byte SEC1-compressed P-256 point (RFC-ACDP-0010 §6). Test vectors: fp-001-key-fingerprint-vectors.json."
+    },
+    "signature": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/signature",
+      "description": "The registry's signature over the receipt hash (RFC-ACDP-0010 §5). signature.key_id MUST be a DID URL under registry_did; retired receipt keys remain resolvable via the registry DID document's verificationMethod per RFC-ACDP-0010 §9."
+    }
+  },
+  "additionalProperties": false,
+  "$comment": "Closed schema (RFC-ACDP-0007 §3.3.1 openness map): every receipt field is signed, so an unknown member would change the preimage; receipt extensions (e.g. the reserved log_inclusion member, RFC-ACDP-0009 §2.11) require an explicit schema bump."
+}

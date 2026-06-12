@@ -1,0 +1,42 @@
+{
+  "id": "fp-001",
+  "description": "Key-fingerprint encoding test vectors (RFC-ACDP-0010 §6): key_fingerprint = 'sha256:' + lowercase_hex(SHA-256(raw_public_key_bytes)), where raw bytes are the 32-byte raw Ed25519 public key or the 33-byte SEC1-compressed P-256 point (0x02/0x03 parity prefix + 32-byte big-endian x). The input is the key bytes alone — no multicodec prefix, no DER/SPKI framing, no base64/multibase, no JWK serialization. Divergence here is the receipt-layer equivalent of the timestamp-precision bug. Executed arithmetically by scripts/conformance-runner.py.",
+  "tags": ["receipt", "fingerprint", "golden"],
+  "vectors": [
+    {
+      "name": "Ed25519 — sig-001 test producer key (raw 32 bytes)",
+      "algorithm": "ed25519",
+      "input": {
+        "public_key_hex": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29"
+      },
+      "expected": {
+        "key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070"
+      }
+    },
+    {
+      "name": "Ed25519 — rcpt-001 registry receipt key (raw 32 bytes)",
+      "algorithm": "ed25519",
+      "input": {
+        "public_key_hex": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737"
+      },
+      "expected": {
+        "key_fingerprint": "sha256:10ba682c8ad13513971e8b56881aab8bd702bb807796eca81932c735a94d6e6d"
+      }
+    },
+    {
+      "name": "ECDSA-P256 — sig-002 test key (private scalar = 1; SEC1 compressed point, 33 bytes)",
+      "algorithm": "ecdsa-p256",
+      "uncompressed_point": {
+        "note": "The DID document publishes the uncompressed (x, y) JWK pair (registries/signature-algorithms.md); the verifier MUST compress before fingerprinting: prefix 0x03 because y is odd.",
+        "x_hex": "6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296",
+        "y_hex": "4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5"
+      },
+      "input": {
+        "public_key_hex": "036b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296"
+      },
+      "expected": {
+        "key_fingerprint": "sha256:5baff89de7de5c1d7b6193a1567ceeeb397cbda88f03f725c8de328591bfc194"
+      }
+    }
+  ]
+}

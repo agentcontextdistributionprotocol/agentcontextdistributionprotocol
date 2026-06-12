@@ -1,0 +1,155 @@
+{
+  "id": "can-012",
+  "description": "Divergence-corpus vectors added by acdp/0.2.0 (RFC-ACDP-0001 Appendix A). Pins the hash-divergence sources not already covered by can-001..011: (a) acdp_version omitted vs explicit '0.1.0' vs explicit '0.2.0' — three distinct preimages, all valid on the wire; 0.2.0 producers MUST emit the field explicitly (RFC-ACDP-0001 §6); (b) microsecond-precision timestamps (can-006 covers nanoseconds) — producers MUST truncate to milliseconds or reject; (c) null-vs-absent-vs-empty: a null-valued metadata member, an empty metadata object, and an absent metadata field are three distinct preimages. Together with can-001..011 these form the divergence corpus every SDK must pass (see the fixture-ID table in RFC-ACDP-0001 Appendix A). Executed arithmetically by scripts/conformance-runner.py.",
+  "tags": ["canonicalization", "hashing", "divergence-corpus", "acdp-version", "timestamps"],
+  "vectors": [
+    {
+      "name": "acdp_version omitted — valid 0.1.0 wire form (baseline preimage)",
+      "input": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:agent:test",
+        "contributors": [],
+        "title": "Divergence corpus vector",
+        "type": "data_snapshot",
+        "data_refs": [],
+        "derived_from": [],
+        "visibility": "public"
+      },
+      "expected": {
+        "canonical_form": "{\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_refs\":[],\"derived_from\":[],\"supersedes\":null,\"title\":\"Divergence corpus vector\",\"type\":\"data_snapshot\",\"version\":1,\"visibility\":\"public\"}",
+        "sha256_hex": "64a1606d45e95e4de3234710f50300de596f4c667d0f54ca9271fa5bdb8e165d",
+        "content_hash_field_value": "sha256:64a1606d45e95e4de3234710f50300de596f4c667d0f54ca9271fa5bdb8e165d"
+      },
+      "rationale": "Interpretation rule: absence is read as '0.1.0' but the absent field is never materialized — a verifier that injects a default acdp_version before hashing produces the explicit-form hash below and raises a false hash_mismatch (RFC-ACDP-0001 §6)."
+    },
+    {
+      "name": "acdp_version '0.1.0' explicit — semantically identical to omitted, byte-distinct preimage",
+      "input": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:agent:test",
+        "contributors": [],
+        "title": "Divergence corpus vector",
+        "type": "data_snapshot",
+        "data_refs": [],
+        "derived_from": [],
+        "visibility": "public",
+        "acdp_version": "0.1.0"
+      },
+      "expected": {
+        "canonical_form": "{\"acdp_version\":\"0.1.0\",\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_refs\":[],\"derived_from\":[],\"supersedes\":null,\"title\":\"Divergence corpus vector\",\"type\":\"data_snapshot\",\"version\":1,\"visibility\":\"public\"}",
+        "sha256_hex": "683ec82618cae32e6ad90e477d51a95ed41a13826c174ab71bce6b5c9d343c43",
+        "content_hash_field_value": "sha256:683ec82618cae32e6ad90e477d51a95ed41a13826c174ab71bce6b5c9d343c43"
+      },
+      "rationale": "Conversely, a verifier that strips acdp_version before hashing produces the omitted-form hash above. The hash binds the bytes: a producer picks one form and signs exactly what it emits."
+    },
+    {
+      "name": "acdp_version '0.2.0' explicit — the form 0.2.0 producers MUST emit",
+      "input": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:agent:test",
+        "contributors": [],
+        "title": "Divergence corpus vector",
+        "type": "data_snapshot",
+        "data_refs": [],
+        "derived_from": [],
+        "visibility": "public",
+        "acdp_version": "0.2.0"
+      },
+      "expected": {
+        "canonical_form": "{\"acdp_version\":\"0.2.0\",\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_refs\":[],\"derived_from\":[],\"supersedes\":null,\"title\":\"Divergence corpus vector\",\"type\":\"data_snapshot\",\"version\":1,\"visibility\":\"public\"}",
+        "sha256_hex": "a5d64e0e9ba4606f76751eb2e5d5bd2a9bf18d4bb37ce84150b74d828e59c5c6",
+        "content_hash_field_value": "sha256:a5d64e0e9ba4606f76751eb2e5d5bd2a9bf18d4bb37ce84150b74d828e59c5c6"
+      },
+      "producer_compliance": "0.2.0-conformant",
+      "rationale": "0.2.0 builder conformance check: a builder targeting 0.2.0 MUST default to emitting the field; the omission default of RFC-ACDP-0001 §6 is closed for 0.2.0 builders."
+    },
+    {
+      "name": "Microsecond-precision expires_at — DIVERGENT (producers MUST truncate to milliseconds)",
+      "input": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:agent:test",
+        "contributors": [],
+        "title": "Divergence corpus vector",
+        "type": "data_snapshot",
+        "data_refs": [],
+        "derived_from": [],
+        "visibility": "public",
+        "expires_at": "2026-04-16T10:30:15.123456Z"
+      },
+      "expected": {
+        "canonical_form": "{\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_refs\":[],\"derived_from\":[],\"expires_at\":\"2026-04-16T10:30:15.123456Z\",\"supersedes\":null,\"title\":\"Divergence corpus vector\",\"type\":\"data_snapshot\",\"version\":1,\"visibility\":\"public\"}",
+        "sha256_hex": "3588ad4a3fb34ac75674aa9e268833c7fc6720d349d0dc7867172c54b8809cc6",
+        "content_hash_field_value": "sha256:3588ad4a3fb34ac75674aa9e268833c7fc6720d349d0dc7867172c54b8809cc6"
+      },
+      "producer_compliance": "non-conformant",
+      "rationale": "Python datetime defaults land exactly here (microseconds), where Go/Rust/Java clocks land on can-006's nanosecond case. A conformant producer pipeline either pre-truncates (producing the millisecond hash below) or rejects the input."
+    },
+    {
+      "name": "Millisecond-truncated expires_at — CANONICAL (the expected post-truncation hash)",
+      "input": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:agent:test",
+        "contributors": [],
+        "title": "Divergence corpus vector",
+        "type": "data_snapshot",
+        "data_refs": [],
+        "derived_from": [],
+        "visibility": "public",
+        "expires_at": "2026-04-16T10:30:15.123Z"
+      },
+      "expected": {
+        "canonical_form": "{\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_refs\":[],\"derived_from\":[],\"expires_at\":\"2026-04-16T10:30:15.123Z\",\"supersedes\":null,\"title\":\"Divergence corpus vector\",\"type\":\"data_snapshot\",\"version\":1,\"visibility\":\"public\"}",
+        "sha256_hex": "ef1e212cd944e3920aa25e7602ee0fff25deebdab0fc760f5de9d857ed857c90",
+        "content_hash_field_value": "sha256:ef1e212cd944e3920aa25e7602ee0fff25deebdab0fc760f5de9d857ed857c90"
+      },
+      "producer_compliance": "conformant"
+    },
+    {
+      "name": "metadata: {} — empty object is a distinct preimage from absent metadata",
+      "input": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:agent:test",
+        "contributors": [],
+        "title": "Divergence corpus vector",
+        "type": "data_snapshot",
+        "data_refs": [],
+        "derived_from": [],
+        "visibility": "public",
+        "metadata": {}
+      },
+      "expected": {
+        "canonical_form": "{\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_refs\":[],\"derived_from\":[],\"metadata\":{},\"supersedes\":null,\"title\":\"Divergence corpus vector\",\"type\":\"data_snapshot\",\"version\":1,\"visibility\":\"public\"}",
+        "sha256_hex": "729d497d3a1b382cccabbba81c3db3d4da38154a8e2cd64072fb9febcdffb2ac",
+        "content_hash_field_value": "sha256:729d497d3a1b382cccabbba81c3db3d4da38154a8e2cd64072fb9febcdffb2ac"
+      },
+      "rationale": "An SDK builder that materializes an empty metadata object 'for convenience' changes the hash relative to vector 1 (absent metadata). Same rule as can-005's tags case, pinned here for objects."
+    },
+    {
+      "name": "metadata: {\"note\": null} — a null-valued member is a third distinct preimage",
+      "input": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:agent:test",
+        "contributors": [],
+        "title": "Divergence corpus vector",
+        "type": "data_snapshot",
+        "data_refs": [],
+        "derived_from": [],
+        "visibility": "public",
+        "metadata": { "note": null }
+      },
+      "expected": {
+        "canonical_form": "{\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_refs\":[],\"derived_from\":[],\"metadata\":{\"note\":null},\"supersedes\":null,\"title\":\"Divergence corpus vector\",\"type\":\"data_snapshot\",\"version\":1,\"visibility\":\"public\"}",
+        "sha256_hex": "3a9a5d86fd7e9980d77dcd64d42078f47ff7a0cbc66fd4856eeb095836dfe217",
+        "content_hash_field_value": "sha256:3a9a5d86fd7e9980d77dcd64d42078f47ff7a0cbc66fd4856eeb095836dfe217"
+      },
+      "rationale": "JCS preserves null members inside producer data; serializers that strip null-valued members (e.g. 'omitempty'-style defaults) silently change the hash. Note this concerns null INSIDE producer-controlled data — top-level optional wire fields still follow the absent-vs-null convention (omitted, never null; RFC-ACDP-0005 §2.2.1, schema-011..014)."
+    }
+  ]
+}

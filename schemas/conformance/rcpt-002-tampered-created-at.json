@@ -1,0 +1,32 @@
+{
+  "id": "rcpt-002",
+  "description": "Receipt verification MUST fail when any signed receipt field is tampered (RFC-ACDP-0010 §8 step 1). This fixture takes the rcpt-001 golden receipt and backdates created_at by one day while keeping the original signature: the recomputed receipt preimage diverges, so the signature no longer verifies. Backdating-after-mint is exactly the registry dishonesty receipts exist to make detectable (RFC-ACDP-0008 §9.1).",
+  "tags": ["receipt", "failure", "security", "tamper"],
+  "applies_to_profiles": ["acdp-registry-receipts", "acdp-consumer"],
+  "input": {
+    "scenario": "Consumer verifies a receipt whose created_at was altered after minting (original: 2026-04-16T10:30:15.123Z)",
+    "registry_receipt": {
+      "registry_did": "did:web:registry.example.com",
+      "ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234",
+      "lineage_id": "lin:sha256:c7fef01c000f8edaa9cb46122ceb5d7bca38328f002fb0f40e362e3b289bbb2a",
+      "origin_registry": "registry.example.com",
+      "created_at": "2026-04-15T10:30:15.123Z",
+      "content_hash": "sha256:f170150ddbf59d99794e7797824591b374d459782084597b644ecc57a41031b5",
+      "key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+      "signature": {
+        "algorithm": "ed25519",
+        "key_id": "did:web:registry.example.com#receipt-key-1",
+        "value": "vBgQKmn17pHXXY95C07BBeconmjDIdYIvxN5B+YXrQ7tIzFsDNsh1TglzgxOyPUp8lwTz7zwMNiK+Sn5whveDg=="
+      }
+    },
+    "registry_public_key_hex": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737"
+  },
+  "expected": {
+    "outcome": "failure",
+    "failure_category": "invalid_receipt",
+    "tampered_preimage_hash": "sha256:b301b9768d0760262e6e876fe8210e7bf6b5d8e4b766b331d4ba3a57c00d1555",
+    "original_preimage_hash": "sha256:9deaa52778ad3b6be27a96d607c3017e9e11442905891a8972f34d8c2dbca9cf",
+    "behavior": "The verifier JCS-recomputes the receipt preimage and obtains tampered_preimage_hash, not the original_preimage_hash the signature was produced over; Ed25519 verification of signature.value against the ASCII bytes of tampered_preimage_hash MUST fail. The verifier MUST report the receipt as failed (invalid_receipt category). Additionally, §8 step 3 independently catches the tamper: receipt.created_at no longer equals body.created_at.",
+    "body_verdict": "The accompanying body's producer signature and content_hash are unaffected — the body remains producer-authentic; only the registry's identifier/time binding is lost (RFC-ACDP-0010 §8)."
+  }
+}
