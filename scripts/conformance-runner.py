@@ -9,10 +9,14 @@ Reads every fixture under schemas/conformance/ and verifies arithmetic claims:
     computation, and (for did:key fixtures) pure did:key identity derivation
   - rcpt-* fixtures carrying a registry_test_keypair: full receipt golden cycle
     (preimage, receipt hash, signature, producer key_fingerprint) per RFC-ACDP-0010
+  - lhr-* fixtures carrying a registry_test_keypair: full lineage-head-receipt
+    golden cycle (preimage, receipt hash, signature, binding consistency) per
+    RFC-ACDP-0011
   - fp-* fixtures: key-fingerprint encoding vectors (RFC-ACDP-0010 §6)
 
-Behavioral fixtures (pub-*, vis-*, dk-*, rcpt-002..004, rot-*, fed-*, …) are not
-executed; they describe request/response scenarios for live implementations.
+Behavioral fixtures (pub-*, vis-*, dk-*, rcpt-002..004, lhr-002..004, rot-*,
+fed-*, …) are not executed; they describe request/response scenarios for live
+implementations.
 
 Exits 0 if all vectors pass, 1 otherwise.
 
@@ -466,6 +470,110 @@ def check_receipt_vector(fixture, fixture_data, vector):
     return True
 
 
+def check_lineage_head_receipt_vector(fixture, fixture_data, vector):
+    """lhr-* golden vectors: full RFC-ACDP-0011 §5 head-receipt cycle with the registry test keypair.
+
+    The signing construction is RFC-ACDP-0010 §5 verbatim (JCS preimage minus
+    'signature' → SHA-256 → sign the ASCII "sha256:<hex>" string) under the same
+    registry receipt signing key; the object shape and binding rules are
+    RFC-ACDP-0011 §4/§7.
+    """
+    import re
+
+    name = vector.get("name", "?")
+    keypair = fixture_data.get("registry_test_keypair", {})
+    seed_hex = keypair.get("private_seed_hex", "")
+    if not seed_hex:
+        fail(fixture, name, "missing registry_test_keypair.private_seed_hex")
+        return False
+
+    try:
+        priv = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(seed_hex))
+        pub = priv.public_key()
+        pub_raw = pub.public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+    except Exception as e:
+        fail(fixture, name, f"registry keypair load failed: {e}")
+        return False
+
+    declared_pub_hex = keypair.get("public_key_hex", "")
+    if declared_pub_hex and pub_raw.hex() != declared_pub_hex:
+        fail(fixture, name, f"registry public_key_hex mismatch. declared={declared_pub_hex} derived={pub_raw.hex()}")
+        return False
+
+    receipt_unsigned = vector.get("receipt_unsigned", {})
+    exp = vector.get("expected", {})
+
+    canonical_bytes = jcs.canonicalize(receipt_unsigned)
+    canonical = canonical_bytes.decode("utf-8")
+    if "canonical_form" in exp and canonical != exp["canonical_form"]:
+        fail(fixture, name, f"head-receipt canonical_form mismatch.\n    expected: {exp['canonical_form']}\n    actual:   {canonical}")
+        return False
+
+    receipt_hash = "sha256:" + hashlib.sha256(canonical_bytes).hexdigest()
+    if "receipt_hash" in exp and receipt_hash != exp["receipt_hash"]:
+        fail(fixture, name, f"head-receipt receipt_hash mismatch. expected={exp['receipt_hash']} actual={receipt_hash}")
+        return False
+
+    sig_bytes = priv.sign(receipt_hash.encode("ascii"))
+    if "signature_value_hex" in exp and sig_bytes.hex() != exp["signature_value_hex"]:
+        fail(fixture, name, "head-receipt signature_value_hex mismatch")
+        return False
+    sig_b64 = base64.b64encode(sig_bytes).decode("ascii")
+    if "signature_value_base64" in exp and sig_b64 != exp["signature_value_base64"]:
+        fail(fixture, name, "head-receipt signature_value_base64 mismatch")
+        return False
+
+    try:
+        pub.verify(sig_bytes, receipt_hash.encode("ascii"))
+    except Exception as e:
+        fail(fixture, name, f"head-receipt signature verification failed: {e}")
+        return False
+
+    # The assembled lineage_head_receipt object must be receipt_unsigned + the signature.
+    assembled = exp.get("lineage_head_receipt")
+    if assembled:
+        stripped = {k: v for k, v in assembled.items() if k != "signature"}
+        if stripped != receipt_unsigned:
+            fail(fixture, name, "expected.lineage_head_receipt minus signature != receipt_unsigned")
+            return False
+        if assembled.get("signature", {}).get("value") != sig_b64:
+            fail(fixture, name, "expected.lineage_head_receipt.signature.value != computed signature")
+            return False
+
+    # Intra-receipt consistency (RFC-ACDP-0011 §4, §7).
+    if receipt_unsigned.get("receipt_version") != "acdp-lhr/1":
+        fail(fixture, name, f"receipt_version MUST be 'acdp-lhr/1', got {receipt_unsigned.get('receipt_version')!r}")
+        return False
+    rd = receipt_unsigned.get("registry_did", "")
+    authority = rd[len("did:web:"):] if rd.startswith("did:web:") else ""
+    head_authority = receipt_unsigned.get("head_ctx_id", "").removeprefix("acdp://").split("/", 1)[0]
+    if not authority or authority != head_authority:
+        fail(fixture, name, f"registry_did/head_ctx_id authority inconsistency: {rd} / {receipt_unsigned.get('head_ctx_id')}")
+        return False
+    head_status = receipt_unsigned.get("head_status", "")
+    if head_status == "superseded" or not re.fullmatch(r"[a-z][a-z0-9_]*", head_status) or len(head_status) > 64:
+        fail(fixture, name, f"head_status invalid for a head: {head_status!r} (never 'superseded'; RFC-ACDP-0004 §4.1 pattern)")
+        return False
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z", receipt_unsigned.get("as_of", "")):
+        fail(fixture, name, f"as_of is not canonical millisecond RFC 3339 UTC: {receipt_unsigned.get('as_of')!r}")
+        return False
+    hv = receipt_unsigned.get("head_version")
+    if not isinstance(hv, int) or hv < 1:
+        fail(fixture, name, f"head_version MUST be an integer >= 1, got {hv!r}")
+        return False
+    if hv == 1:
+        # A version-1 head's lineage_id is derivable from its own ctx_id (RFC-ACDP-0001 §5.6).
+        derived = "lin:sha256:" + hashlib.sha256(receipt_unsigned.get("head_ctx_id", "").encode("utf-8")).hexdigest()
+        if derived != receipt_unsigned.get("lineage_id"):
+            fail(fixture, name, f"lineage_id mismatch for a version-1 head. expected={receipt_unsigned.get('lineage_id')} derived={derived}")
+            return False
+
+    return True
+
+
 for path in sorted(CONFORMANCE.glob("*.json")):
     with open(path) as f:
         data = json.load(f)
@@ -494,9 +602,15 @@ for path in sorted(CONFORMANCE.glob("*.json")):
         for v in data.get("vectors", []):
             if check_receipt_vector(fixture_id, data, v):
                 passes += 1
-    # pub-, vis-, ret-, dk-, rot-, fed- (and keypair-less rcpt-) fixtures describe scenarios
-    # (request → expected error code), not arithmetic vectors. Their conformance is checked
-    # by registry/consumer implementations, not by this static runner.
+    elif fixture_id.startswith("lhr-") and "registry_test_keypair" in data:
+        # lhr golden vectors (lhr-001) are executed; lhr-002..004 are behavioral
+        # scenarios without a registry_test_keypair and are skipped here.
+        for v in data.get("vectors", []):
+            if check_lineage_head_receipt_vector(fixture_id, data, v):
+                passes += 1
+    # pub-, vis-, ret-, dk-, rot-, fed- (and keypair-less rcpt-/lhr-) fixtures describe
+    # scenarios (request → expected error code), not arithmetic vectors. Their conformance
+    # is checked by registry/consumer implementations, not by this static runner.
 
 
 def check_golden_retrieval_example():
