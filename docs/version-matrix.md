@@ -7,13 +7,13 @@ This document is non-normative. It maps specification versions to the reference 
 | Spec version | Status / where it lives | [`acdp-rs`](https://github.com/agentcontextdistributionprotocol/acdp-rs) (SDK) | [`acdp-registry-rs`](https://github.com/agentcontextdistributionprotocol/acdp-registry-rs) (registry) | Profiles defined |
 |---|---|---|---|---|
 | **v0.1.0** | **Final**, on `main` of this repo (wire-frozen; clarification addenda recorded in [CHANGELOG.md](../CHANGELOG.md)) | `0.1.x` | `0.1.x` (core surface) | `acdp-registry-core`, `acdp-registry-discovery`, `acdp-registry-federated`, `acdp-consumer` ([registries/profiles.md](../registries/profiles.md)) |
-| **v0.2.0 Trust & Hardening** | **Draft**, on the `spec/0.2.0-trust-hardening` branch — RFC-ACDP-0010 (registry receipts) plus RFC-ACDP-0001 amendments (`did:key` producers, hash-divergence corpus, explicit `acdp_version`) | `0.2.x` / `0.3.x` | `0.1.x` with a `[receipt]` signing key configured | v0.1.0 profiles + `acdp-registry-receipts` |
+| **v0.2.0 Trust & Hardening** | **Draft**, merged on `main` (2026-07-04) — RFC-ACDP-0010 (registry receipts) plus RFC-ACDP-0001 amendments (`did:key` producers, hash-divergence corpus, explicit `acdp_version`) | `0.2.x` / `0.3.x` | `0.1.x` with a `[receipt]` signing key configured | v0.1.0 profiles + `acdp-registry-receipts` |
 
 ## Reading the rows
 
 **Spec v0.1.0 (Final).** The contents of this repository's `main` branch: RFCs 0001–0008 at status Final, RFC-ACDP-0009 reserved, the JSON Schemas under `schemas/json/`, and the conformance fixtures under `schemas/conformance/`. v0.1.0 is wire-frozen — clarification rounds add prose and fixtures, never wire changes.
 
-**Spec v0.2.0 (Draft).** Lives on the `spec/0.2.0-trust-hardening` branch until its conformance pack passes against two independent implementations. It is a backward-compatible minor version: every v0.1.0 body, signature, and `content_hash` remains valid. Headline additions: RFC-ACDP-0010 registry receipts (registry-signed binding of `ctx_id` / `lineage_id` / `origin_registry` / `created_at` / `content_hash` / producer-key fingerprint, closing the RFC-ACDP-0008 §9.1 registry-honesty gap for receipt-bearing responses), `did:key` producers, the hash-divergence corpus (`can-012`), and the `acdp-registry-receipts` profile. One parse-surface caveat: the previously closed publish response gains the OPTIONAL `registry_receipt` member.
+**Spec v0.2.0 (Draft).** Merged on `main` (2026-07-04); the amendments retain **Draft** status until the conformance pack passes against two independent implementations, at which point the line is promoted to Final per RELEASE.md. It is a backward-compatible minor version: every v0.1.0 body, signature, and `content_hash` remains valid. Headline additions: RFC-ACDP-0010 registry receipts (registry-signed binding of `ctx_id` / `lineage_id` / `origin_registry` / `created_at` / `content_hash` / producer-key fingerprint, closing the RFC-ACDP-0008 §9.1 registry-honesty gap for receipt-bearing responses), `did:key` producers, the hash-divergence corpus (`can-012`), and the `acdp-registry-receipts` profile. One parse-surface caveat: the previously closed publish response gains the OPTIONAL `registry_receipt` member.
 
 **`acdp-rs` (reference SDK — producer, consumer, verification core).**
 
@@ -31,4 +31,4 @@ This document is non-normative. It maps specification versions to the reference 
 
 - Pinning a library? `acdp = "0.1"` gives you frozen v0.1.0 semantics; `0.2`/`0.3` track the v0.2.0 draft and may still move until that line goes Final.
 - Talking to a registry? Read its `/.well-known/acdp.json`: `acdp_version` and `profiles` are the authoritative statement of what it implements — not this table.
-- Writing a new implementation? Target v0.1.0 on `main`; adopt the 0.2.0 branch only if you need receipts or `did:key`, and expect Draft-status churn there.
+- Writing a new implementation? Target v0.1.0 (Final); adopt the 0.2.0 Draft surface (receipts, `did:key`) only if you need it, and expect Draft-status churn until the two-implementation gate passes.
