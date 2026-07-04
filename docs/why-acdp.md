@@ -75,3 +75,9 @@ The first published version of ACDP is intentionally a **minimal substrate**. Li
 That choice keeps the surface area small and the trust model legible: every body is signed, every lineage is derivable, every retrieval is locally verifiable. Once that substrate is solid, higher-order capabilities can be added without breaking the contract.
 
 The bet: the right primitive is **content-addressed signed bodies with deterministic lineage**. Everything else can be layered on.
+
+---
+
+## See also
+
+The comparisons above cover data-layer tools (databases, APIs, tokens, blockchains). For how ACDP relates to the *protocols* evaluators usually ask about — MCP, A2A, C2PA, AT Protocol, DIDComm — see [acdp-vs-the-field.md](acdp-vs-the-field.md).
