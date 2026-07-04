@@ -1,0 +1,25 @@
+{
+  "id": "dk-001",
+  "description": "did:key resolution MUST reject a key whose multicodec prefix is neither 0xed01 (Ed25519, varint of code 0xed) nor 0x8024 (P-256, varint of code 0x1200) with key_resolution_failed (RFC-ACDP-0001 §5.11.1 step 3). The DID below decodes successfully from base58-btc but carries the secp256k1 multicodec prefix 0xe701 over the sig-003 test key bytes — a well-formed did:key for a curve ACDP does not support.",
+  "tags": [
+    "did-key",
+    "failure",
+    "key-resolution"
+  ],
+  "applies_to_profiles": [
+    "acdp-registry-core",
+    "acdp-consumer"
+  ],
+  "input": {
+    "scenario": "Publish (or consumer-side verification) where agent_id / signature.key_id carry a did:key with multicodec prefix 0xe701 (secp256k1)",
+    "agent_id": "did:key:z6DtQ2qbc1VKZB8pGCqhP67iRAKPHyNJRBeFei2ZrBoe2KZK",
+    "signature_key_id": "did:key:z6DtQ2qbc1VKZB8pGCqhP67iRAKPHyNJRBeFei2ZrBoe2KZK#z6DtQ2qbc1VKZB8pGCqhP67iRAKPHyNJRBeFei2ZrBoe2KZK",
+    "decoded_multicodec_prefix_hex": "e701"
+  },
+  "expected": {
+    "outcome": "failure",
+    "error_code": "key_resolution_failed",
+    "http_status": 400,
+    "behavior": "Step 3 of the pure resolution algorithm: after multibase decoding, the prefix bytes MUST be 0xed01 or 0x8024 (the unsigned-varint encodings of multicodec codes 0xed and 0x1200); 0xe701 MUST be rejected with key_resolution_failed (permanent — the producer must re-key, not retry). The registry MUST NOT fall back to treating the remaining bytes as a raw key, and MUST NOT report unsupported_algorithm (signature.algorithm may be perfectly supported; the identity encoding is what is invalid)."
+  }
+}

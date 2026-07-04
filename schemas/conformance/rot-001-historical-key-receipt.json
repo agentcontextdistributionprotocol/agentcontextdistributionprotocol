@@ -1,0 +1,55 @@
+{
+  "id": "rot-001",
+  "description": "Historical producer-key verification (RFC-ACDP-0010 §10, RFC-ACDP-0001 §5.11 key retention). A context signed with K1; the producer has since rotated to K2, so the current DID document carries K1 in verificationMethod ONLY (removed from assertionMethod) and K2 in both. Scenario A: a valid receipt attests K1's fingerprint → the body verifies with the distinguishable status 'historically authorized (receipt-attested)'. Scenario B: the identical retrieval without a receipt → strict verification fails closed (the v0.1.0 behavior of RFC-ACDP-0008 §7.3 is unchanged).",
+  "tags": ["receipt", "key-rotation", "security", "mixed"],
+  "applies_to_profiles": ["acdp-registry-receipts", "acdp-consumer"],
+  "input": {
+    "body": "The sig-001 golden context (signed by K1 = 3b6a27bc…, key_id did:web:agents.example.com:test-producer#key-1)",
+    "producer_did_document": {
+      "@context": ["https://www.w3.org/ns/did/v1", "https://w3id.org/security/suites/jws-2020/v1"],
+      "id": "did:web:agents.example.com:test-producer",
+      "verificationMethod": [
+        {
+          "id": "did:web:agents.example.com:test-producer#key-1",
+          "type": "Ed25519VerificationKey2020",
+          "controller": "did:web:agents.example.com:test-producer",
+          "publicKeyMultibase": "z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
+          "_note": "K1 — RETIRED: present in verificationMethod, absent from assertionMethod. Raw key bytes 3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29 (the sig-001 test key); fingerprint sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070."
+        },
+        {
+          "id": "did:web:agents.example.com:test-producer#key-2",
+          "type": "Ed25519VerificationKey2020",
+          "controller": "did:web:agents.example.com:test-producer",
+          "publicKeyMultibase": "z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
+          "_note": "K2 — CURRENT: in verificationMethod AND assertionMethod. Raw key bytes 2152f8d19b791d24453242e15f2eab6cb7cffa7b6a5ed30097960e069881db12 (the sig-003 test key, reused as illustrative K2 material)."
+        }
+      ],
+      "assertionMethod": ["did:web:agents.example.com:test-producer#key-2"]
+    },
+    "registry_receipt": "The rcpt-001 golden receipt — its key_fingerprint (sha256:139e3940…) is K1's fingerprint, attesting that K1 verified this body at publish time."
+  },
+  "scenarios": [
+    {
+      "name": "A — with verified receipt",
+      "expected": {
+        "outcome": "success",
+        "verification_status": "historically_authorized_receipt_attested",
+        "behavior": "Receipt verifies per RFC-ACDP-0010 §8 (steps 1–4, 6). receipt.key_fingerprint matches K1, and K1 is present in the producer's current verificationMethod (though absent from assertionMethod). The body signature is verified against K1 and succeeds. The result MUST be distinguishable from a fully-current verification — SDKs MUST NOT report it as the same status as an assertionMethod-authorized key."
+      }
+    },
+    {
+      "name": "B — same retrieval, no receipt",
+      "expected": {
+        "outcome": "failure",
+        "behavior": "Without a receipt there is no attestation of which key was authorized at publish time. Under the strict profile (RFC-ACDP-0001 §5.11 / §9.2 StrictV010 and its 0.2.0 successor), the K1 signature fails the assertionMethod check (key_not_authorized semantics) and verification fails closed. A deployment MAY adopt the documented 'pragmatic' posture of RFC-ACDP-0008 §7.3 with its residual risk, but that is a non-default, explicitly-configured choice — never the strict default."
+      }
+    },
+    {
+      "name": "C — receipt present but K1 removed from verificationMethod entirely",
+      "expected": {
+        "outcome": "failure",
+        "behavior": "Removal from verificationMethod is the producer's compromise-revocation signal (RFC-ACDP-0001 §5.11). Verifiers MUST fail closed regardless of the receipt: the receipt proves the registry resolved K1 at publish time, not that K1 is still trustworthy."
+      }
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "id": "dk-004",
+  "description": "For did:key, signature.key_id MUST have the form did:key:z<mb>#z<mb> with the fragment byte-equal to the DID's method-specific identifier (W3C did:key convention; RFC-ACDP-0001 §5.11.1 step 1). A key_id whose fragment names a DIFFERENT key than the DID part MUST be rejected with key_resolution_failed — there is no DID document in which a second key could live, so a foreign fragment is structurally meaningless and suggests a copy-paste of did:web key-management habits or an attempted confusion attack.",
+  "tags": ["did-key", "failure", "key-resolution"],
+  "applies_to_profiles": ["acdp-registry-core", "acdp-consumer"],
+  "input": {
+    "scenario": "Publish where the key_id fragment is a valid-looking multibase key that differs from the DID's key part",
+    "agent_id": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
+    "signature_key_id": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3#z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
+    "note": "DID part is the sig-003 test key; fragment is the sig-001 test key's multibase — both individually valid encodings."
+  },
+  "expected": {
+    "outcome": "failure",
+    "error_code": "key_resolution_failed",
+    "http_status": 400,
+    "behavior": "Step 1 of §5.11.1: fragment ≠ method-specific identifier → key_resolution_failed (permanent). The resolver MUST compare byte-for-byte and MUST NOT resolve 'whichever of the two keys verifies'. A missing fragment fails the same step with the same code (mirroring the did:web missing-fragment rule, RFC-ACDP-0001 §5.11 step 1). Note the agent_id ↔ key_id DID-portion binding is a separate, earlier check that returns key_not_authorized on mismatch — unchanged from did:web."
+  }
+}

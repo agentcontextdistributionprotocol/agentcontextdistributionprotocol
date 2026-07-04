@@ -4,15 +4,16 @@ This directory contains the normative RFCs that define the Agent Context Distrib
 
 | RFC | Title | Status |
 |---|---|---|
-| [RFC-ACDP-0001](RFC-ACDP-0001-core.md) | Core — identifiers, JCS, hashing, signatures | Final |
+| [RFC-ACDP-0001](RFC-ACDP-0001-core.md) | Core — identifiers, JCS, hashing, signatures | Final (0.1.0); 0.2.0 amendments Draft |
 | [RFC-ACDP-0002](RFC-ACDP-0002-context-body.md) | Context Body | Final |
-| [RFC-ACDP-0003](RFC-ACDP-0003-publish.md) | Publish & Supersession | Final |
-| [RFC-ACDP-0004](RFC-ACDP-0004-retrieval.md) | Retrieval & Lineage | Final |
+| [RFC-ACDP-0003](RFC-ACDP-0003-publish.md) | Publish & Supersession | Final (0.1.0); 0.2.0 amendments Draft |
+| [RFC-ACDP-0004](RFC-ACDP-0004-retrieval.md) | Retrieval & Lineage | Final (0.1.0); 0.2.0 amendments Draft |
 | [RFC-ACDP-0005](RFC-ACDP-0005-discovery.md) | Discovery (keyword search) | Final |
 | [RFC-ACDP-0006](RFC-ACDP-0006-cross-registry.md) | Cross-Registry References | Final |
-| [RFC-ACDP-0007](RFC-ACDP-0007-capabilities.md) | Capabilities & Errors | Final |
-| [RFC-ACDP-0008](RFC-ACDP-0008-security.md) | Security & Threat Model | Final |
-| [RFC-ACDP-0009](RFC-ACDP-0009-extensions.md) | Extensions (lifecycle, attestations, walks) | Reserved |
+| [RFC-ACDP-0007](RFC-ACDP-0007-capabilities.md) | Capabilities & Errors | Final (0.1.0); 0.2.0 amendments Draft |
+| [RFC-ACDP-0008](RFC-ACDP-0008-security.md) | Security & Threat Model | Final (0.1.0); 0.2.0 amendments Draft |
+| [RFC-ACDP-0009](RFC-ACDP-0009-extensions.md) | Extensions (lifecycle, attestations, walks) | Reserved (§2.7 promoted to RFC-ACDP-0010) |
+| [RFC-ACDP-0010](RFC-ACDP-0010-registry-receipts.md) | Registry Receipts | Draft (acdp/0.2.0) |
 
 ## Reading order
 
@@ -26,6 +27,7 @@ The numbering matches dependency order. Read top-to-bottom:
 6. **[RFC-ACDP-0006 Cross-Registry](RFC-ACDP-0006-cross-registry.md)** — `acdp://` URI scheme and resolution flow.
 7. **[RFC-ACDP-0007 Capabilities](RFC-ACDP-0007-capabilities.md)** — `/.well-known/acdp.json` and the error envelope.
 8. **[RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md)** — threat model and required defenses.
+9. **[RFC-ACDP-0010 Registry Receipts](RFC-ACDP-0010-registry-receipts.md)** *(0.2.0, Draft)* — registry-signed attestations binding the registry-assigned identifiers, content hash, and producer-key fingerprint to the registry's DID.
 
 Reserved (no normative text, numbering pinned for future work):
 
