@@ -116,7 +116,7 @@ These fixtures exercise the §6.2 contract and the §6.2.1 ordering/atomicity gu
 
 | ID | Description | Outcome |
 |---|---|---|
-| `rate-001` | Wire shape of `rate_limited` response: HTTP 429, standard error envelope, `Retry-After` SHOULD be present when retry window is bounded | failure: `rate_limited` |
+| `rate-001` | Wire shape of `rate_limited` response: HTTP 429, standard error envelope, `Retry-After` MUST be present (integer seconds or HTTP-date; a limiter without an exact refill horizon emits a conservative estimate — RFC-ACDP-0008 §4.3) | failure: `rate_limited` |
 
 Rate-limit triggering depends on registry policy (window, bucket, threshold), so this fixture pins only the wire shape. Implementers MUST self-test the trigger by configuring a known per-agent rate per the recipe in `rate-001-rate-limited-response-shape.json`.
 
@@ -230,8 +230,9 @@ The `sig-*` fixtures are checked by `scripts/conformance-runner.py` (CI). A fail
 | `fed-006` | Capabilities document declares `registry_did` ≠ `did:web:<authority>` — MUST reject | failure: `cross_registry_resolution_failed` |
 | `fed-007` | DNS answer set mixing a public and a forbidden address — MUST reject the entire resolution (filter-and-proceed is non-conformant) | failure: `cross_registry_resolution_failed` |
 | `fed-008` | Redirect to the same host but a different port — MUST reject (same host ≠ same authority; authority = scheme + host + effective port) | failure: `cross_registry_resolution_failed` |
+| `fed-010` | A `derived_from` walk truncated by a §4.1 traversal control (depth / total nodes / fanout / timeout) — a surfaced partial result MUST carry an explicit truncation marker (e.g. `complete: false`) and MUST NOT be presented as exhaustive; aborting with `cross_registry_resolution_failed` remains conformant | success: partial result with truncation flag |
 
-These fixtures are required for `acdp-registry-federated` profile conformance (registries/profiles.md). The bundled conformance runner does not execute them; they describe black-box scenarios that registry integration tests MUST verify against a live deployment. `fed-007` pins the mixed-answer rejection rule (RFC-ACDP-0006 §7.1) and `fed-008` the same-authority redirect definition (RFC-ACDP-0006 §7.5).
+These fixtures are required for `acdp-registry-federated` profile conformance (registries/profiles.md). The bundled conformance runner does not execute them; they describe black-box scenarios that registry integration tests MUST verify against a live deployment. `fed-007` pins the mixed-answer rejection rule (RFC-ACDP-0006 §7.1), `fed-008` the same-authority redirect definition (RFC-ACDP-0006 §7.5), and `fed-010` the partial-walk reporting rule (RFC-ACDP-0006 §4.1 — truncation is not completeness). `fed-010` is additionally required for `acdp-consumer` implementations that walk `derived_from`, whether or not they resolve cross-registry.
 
 ### Error envelope (RFC-ACDP-0007)
 

@@ -1,6 +1,6 @@
 {
   "id": "rate-001",
-  "description": "When per-agent rate limit is exceeded, the registry MUST return rate_limited (HTTP 429) with the standard error envelope (RFC-ACDP-0007 §4). A Retry-After header SHOULD be present when the retry window is bounded (RFC-ACDP-0008 §4.3 / RFC-ACDP-0007 §6). This fixture pins the wire shape; black-box conformance testing cannot deterministically trigger a rate limit on an arbitrary registry, so this fixture is informative for cross-impl wire compatibility — implementers MUST self-test by submitting publishes faster than their advertised limit.",
+  "description": "When per-agent rate limit is exceeded, the registry MUST return rate_limited (HTTP 429) with the standard error envelope (RFC-ACDP-0007 §4) and MUST include a Retry-After header (RFC-ACDP-0008 §4.3 / RFC-ACDP-0007 §6); a limiter that cannot compute an exact refill horizon emits a conservative estimate rather than omitting the header. This fixture pins the wire shape; black-box conformance testing cannot deterministically trigger a rate limit on an arbitrary registry, so this fixture is informative for cross-impl wire compatibility — implementers MUST self-test by submitting publishes faster than their advertised limit.",
   "tags": ["publish", "rate-limiting", "error-envelope", "wire-shape"],
   "input": {
     "scenario": "Producer submits POST /contexts at a rate exceeding the registry's per-agent limit. The exact rate, window, and bucket are registry-defined.",
@@ -13,7 +13,7 @@
     "http_status": 429,
     "headers": {
       "Content-Type": "application/acdp+json",
-      "Retry-After": "SHOULD be present. Either an integer seconds value (e.g. '30') or an HTTP-date (per RFC 7231 §7.1.3). MAY be absent when the registry cannot bound the retry window (e.g. concurrency-based limiter without a clear refill horizon)."
+      "Retry-After": "MUST be present. Either an integer seconds value (e.g. '30') or an HTTP-date (per RFC 7231 §7.1.3). A registry that cannot bound the retry window exactly (e.g. a concurrency-based limiter without a clear refill horizon) MUST emit a conservative estimate rather than omit the header — it is the only machine-readable backoff signal the protocol defines (RFC-ACDP-0008 §4.3, upgraded from SHOULD in the round-5 clarifications)."
     },
     "response_body": {
       "error": {
@@ -35,7 +35,10 @@
       "Return a non-application/acdp+json body (RFC-ACDP-0007 §4 mandates the envelope on every failure response).",
       "Include any other registered error code (no overloading of existing codes for rate-limit semantics)."
     ],
-    "consumer_behavior": "On HTTP 429, consumers MUST back off; if Retry-After is present and parseable, consumers SHOULD wait at least that long before retrying. Retry without backoff is a producer bug and MAY trigger registry-level escalation (longer windows, broader buckets).",
+    "registry_must": [
+      "Include a Retry-After header on every 429 rate_limited response (integer seconds or HTTP-date). No omission case: an unbounded/approximate limiter emits a conservative estimate."
+    ],
+    "consumer_behavior": "On HTTP 429, consumers MUST back off; Retry-After is now guaranteed present on conformant registries, and consumers SHOULD wait at least that long before retrying (consumers still MUST tolerate its absence from non-conformant or pre-round-5 registries and fall back to their own backoff). Retry without backoff is a producer bug and MAY trigger registry-level escalation (longer windows, broader buckets).",
     "rationale": "Rate-limit responses are a load-shedding signal, not an error in the producer's request content. Honoring the wire shape and Retry-After lets producers behave well under load; ignoring them either fails their work (no retry) or amplifies the load (retry-storm)."
   },
   "implementer_self_test_recipe": [

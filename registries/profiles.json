@@ -150,7 +150,8 @@
         "fed-005-cross-authority-redirect",
         "fed-006-registry-did-mismatch",
         "fed-007-mixed-answer-rejection",
-        "fed-008-same-host-different-port-redirect"
+        "fed-008-same-host-different-port-redirect",
+        "fed-010-truncated-walk-reported"
       ],
       "self_test_only_added": [
         "Response-size caps (RFC-ACDP-0006 §7.3)",
@@ -158,7 +159,7 @@
         "DNS-rebinding pinning (RFC-ACDP-0006 §7.6)"
       ],
       "not_implemented_permitted_on": [],
-      "notes": "fed-007 pins mixed-answer rejection — a DNS answer set mixing a public and a forbidden address MUST be rejected entirely; filter-and-proceed is non-conformant (RFC-ACDP-0006 §7.1). fed-008 pins the same-authority redirect definition — authority is scheme + host + effective port, so a redirect to the same host on a different port MUST be rejected (RFC-ACDP-0006 §7.5). Response-size caps, timeouts, and DNS-rebinding pinning are operational requirements that registry implementers MUST self-test; they are not exposed as standalone fixtures because the protocol surface alone does not allow a black-box assertion."
+      "notes": "fed-007 pins mixed-answer rejection — a DNS answer set mixing a public and a forbidden address MUST be rejected entirely; filter-and-proceed is non-conformant (RFC-ACDP-0006 §7.1). fed-008 pins the same-authority redirect definition — authority is scheme + host + effective port, so a redirect to the same host on a different port MUST be rejected (RFC-ACDP-0006 §7.5). fed-010 pins partial-walk reporting — when a §4.1 traversal control (depth / total nodes / fanout / timeout) truncates a derived_from walk, a surfaced partial result MUST carry an explicit truncation marker (e.g. complete: false) and MUST NOT be presented as exhaustive; aborting with cross_registry_resolution_failed remains conformant (RFC-ACDP-0006 §4.1). Response-size caps, timeouts, and DNS-rebinding pinning are operational requirements that registry implementers MUST self-test; they are not exposed as standalone fixtures because the protocol surface alone does not allow a black-box assertion."
     },
     {
       "id": "acdp-consumer",
@@ -223,9 +224,10 @@
         "body-002-origin-registry-did",
         "vis-003-search-response-key",
         "pub-007-publish-response-shape",
-        "pub-010-non-did-web-contributor"
+        "pub-010-non-did-web-contributor",
+        "fed-010-truncated-walk-reported"
       ],
-      "notes": "can-008, can-009, and can-010 are especially important: they exercise forward-compatible hash verification (RFC-ACDP-0001 §5.7, RFC-ACDP-0002 §6.7) — a consumer that deserializes into a typed model that drops unknown body or DataRef fields will fail these and produce false hash_mismatch under future-version producers. lin-001 pins lineage_id derivation. schema-005..007 pin the absent-vs-null wire convention; schema-008..010 pin the closed nested schemas; schema-011..014 extend the absent-vs-null convention to the DataRef fields format and location (RFC-ACDP-0002 §6.8), the error envelope (error.details), and the capabilities document (limits.idempotency_key_ttl_seconds). data-ref-008 pins the consumer-side external-DataRef hash-mismatch semantic (data_ref_hash_mismatch, body still valid — RFC-ACDP-0007 §5.3). data-ref-ssrf-001..005 pin consumer-side DataRef-location SSRF refusal at fetch time (RFC-ACDP-0008 §4.9): IP-literal, DNS-rebinding, cross-authority-redirect, mixed-answer, and same-host-different-port-redirect refusal — they are consumer-only because a registry does not fetch external data_refs and MUST NOT reject a publish on these grounds. did-ssrf-001..005 pin producer-DID-resolution SSRF refusal (RFC-ACDP-0008 §4.8), which every consumer performs when verifying signatures end-to-end, including mixed-answer rejection (did-ssrf-004) and same-host-different-port redirect rejection (did-ssrf-005). A consumer that follows derived_from across registries additionally MUST pass the fed-* fixtures if it performs server-side resolution. can-011 pins the RFC 8785 §3.2.2.3 numeric-serialization vectors — a consumer whose JCS pipeline diverges on these (exponential-notation boundaries, the plain-decimal band, integer exactness through 2^53, negative-zero normalization) will recompute the wrong content_hash and emit false hash_mismatch on numerically-rich bodies."
+      "notes": "can-008, can-009, and can-010 are especially important: they exercise forward-compatible hash verification (RFC-ACDP-0001 §5.7, RFC-ACDP-0002 §6.7) — a consumer that deserializes into a typed model that drops unknown body or DataRef fields will fail these and produce false hash_mismatch under future-version producers. lin-001 pins lineage_id derivation. schema-005..007 pin the absent-vs-null wire convention; schema-008..010 pin the closed nested schemas; schema-011..014 extend the absent-vs-null convention to the DataRef fields format and location (RFC-ACDP-0002 §6.8), the error envelope (error.details), and the capabilities document (limits.idempotency_key_ttl_seconds). data-ref-008 pins the consumer-side external-DataRef hash-mismatch semantic (data_ref_hash_mismatch, body still valid — RFC-ACDP-0007 §5.3). data-ref-ssrf-001..005 pin consumer-side DataRef-location SSRF refusal at fetch time (RFC-ACDP-0008 §4.9): IP-literal, DNS-rebinding, cross-authority-redirect, mixed-answer, and same-host-different-port-redirect refusal — they are consumer-only because a registry does not fetch external data_refs and MUST NOT reject a publish on these grounds. did-ssrf-001..005 pin producer-DID-resolution SSRF refusal (RFC-ACDP-0008 §4.8), which every consumer performs when verifying signatures end-to-end, including mixed-answer rejection (did-ssrf-004) and same-host-different-port redirect rejection (did-ssrf-005). A consumer that follows derived_from across registries additionally MUST pass the fed-* fixtures if it performs server-side resolution. fed-010 is required unconditionally for any consumer that walks derived_from (RFC-ACDP-0006 §4.1 partial-walk reporting): a walk truncated by a traversal cap MUST be distinguishable from a complete one (e.g. complete: false) — silent truncation misleads evidence assembly. can-011 pins the RFC 8785 §3.2.2.3 numeric-serialization vectors — a consumer whose JCS pipeline diverges on these (exponential-notation boundaries, the plain-decimal band, integer exactness through 2^53, negative-zero normalization) will recompute the wrong content_hash and emit false hash_mismatch on numerically-rich bodies."
     }
   ],
   "fixture_families": {
@@ -245,7 +247,7 @@
     "schema": "Closed-schema rejection / openness map (RFC-ACDP-0007 §3.3.1) and the absent-vs-null wire convention (RFC-ACDP-0005 §2.2.1)",
     "cur": "Pagination cursor expiry and validity (RFC-ACDP-0005 §2.5.4)",
     "rate": "Rate-limit response shape (RFC-ACDP-0007 §5)",
-    "fed": "Federation / cross-registry SSRF protections (RFC-ACDP-0006 §7)",
+    "fed": "Federation / cross-registry resolution: SSRF protections (RFC-ACDP-0006 §7) and traversal-control behavior (RFC-ACDP-0006 §4.1)",
     "did-ssrf": "Producer DID resolution SSRF protections (RFC-ACDP-0008 §4.8)",
     "idem": "Idempotency-key behavior (RFC-ACDP-0003 §6)"
   }

@@ -269,7 +269,7 @@ See [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md). Specific to capabilitie
 - The capabilities document MUST be served over TLS.
 - Registries SHOULD include the same `registry_did` value across all responses to avoid identity confusion.
 - Error messages MUST NOT echo unsanitized request content (defends against XSS in registry-served clients and injection into log pipelines).
-- Rate-limit responses (`rate_limited`) SHOULD include `Retry-After` headers when bounded.
+- Rate-limit responses (`rate_limited`) MUST include a `Retry-After` header (integer seconds or HTTP-date); a limiter without an exact refill horizon emits a conservative estimate rather than omitting the header (RFC-ACDP-0008 §4.3).
 
 ---
 
