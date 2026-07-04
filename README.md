@@ -68,6 +68,8 @@ agentcontextdistributionprotocol/
     threat-model.md
     why-acdp.md
     non-goals.md
+    acdp-vs-the-field.md              # ACDP vs MCP / A2A / C2PA / ATProto / DIDComm
+    version-matrix.md                 # Spec versions ↔ implementations ↔ profiles
 
   registries/
     README.md
@@ -151,6 +153,8 @@ If you are new to ACDP, read in this order:
 10. **[RFC-ACDP-0008 Security](rfcs/RFC-ACDP-0008-security.md)** — threat model.
 11. **[docs/architecture.md](docs/architecture.md)** and **[docs/integration-guide.md](docs/integration-guide.md)** — operational guidance.
 
+Evaluating ACDP against MCP, A2A, C2PA, AT Protocol, or DIDComm? Read **[docs/acdp-vs-the-field.md](docs/acdp-vs-the-field.md)**.
+
 ---
 
 ## Conformance profiles
@@ -196,6 +200,7 @@ ACDP `0.1.0` is **wire-frozen**: existing bodies, signatures, and `content_hash`
 - **[VERSIONING.md](VERSIONING.md)** — the layered versioning model and status ladder.
 - **[RELEASE.md](RELEASE.md)** — the checklist for promoting a version line to `Final` and cutting tags.
 - **[CHANGELOG.md](CHANGELOG.md)** — dated release notes and clarification addenda.
+- **[docs/version-matrix.md](docs/version-matrix.md)** — which spec version each reference implementation (`acdp-rs`, `acdp-registry-rs`) tracks, which profiles it claims, and where each claim is verified.
 
 ---
 
