@@ -97,9 +97,15 @@
           "minimum": 86400,
           "maximum": 604800,
           "description": "How long this registry retains (agent_id, Idempotency-Key) → response mappings. MUST be advertised when supports_idempotency_key is true. Range: 24h to 7d (RFC-ACDP-0003 §6.2)."
+        },
+        "max_publish_per_minute": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "OPTIONAL (0.3.0, RFC-ACDP-0007 §3.2, RFC-ACDP-0008 §4.3): the nominal per-agent publish ceiling this registry enforces on POST /contexts, in requests per minute. Advisory for producer pacing; its presence does NOT relax the RFC-ACDP-0008 §4.3 requirements (per-agent rate limiting is REQUIRED regardless, and 429 responses MUST carry Retry-After). The one 0.3.0 addition to this closed sub-object — strict pre-0.3.0 validators of `limits` will reject documents carrying it."
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "$comment": "Closed sub-object (RFC-ACDP-0007 §3.3.1, fixture schema-010). v0.1.0 defines max_payload_bytes, max_embedded_bytes, idempotency_key_ttl_seconds; 0.3.0 adds the optional max_publish_per_minute and nothing else."
     }
   },
   "additionalProperties": true,

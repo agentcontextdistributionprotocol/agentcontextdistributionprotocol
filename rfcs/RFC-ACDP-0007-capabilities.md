@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Capabilities & Errors
 
 **Document:** RFC-ACDP-0007
-**Version:** 0.2.0-draft
-**Status:** Community Standards Track (Final for acdp/0.1.0; sections marked *(0.2.0)* are Draft)
+**Version:** 0.3.0-draft
+**Status:** Community Standards Track (Final for acdp/0.1.0; sections marked *(0.2.0)* or *(0.3.0)* are Draft)
 
 This RFC specifies the registry capability declaration document and the standard error envelope used by all ACDP endpoints.
 
@@ -12,6 +12,8 @@ This RFC specifies the registry capability declaration document and the standard
 ## 1. Status of This Memo
 
 This document is a Final ACDP specification (acdp/0.1.0). It is stable for the 0.1.0 release; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
+
+Passages marked *(0.2.0)* are Draft amendments from the acdp/0.2.0 Trust & Hardening program. Passages marked *(0.3.0)* are Draft amendments from the acdp/0.3.0 core-profile revision (mandatory Idempotency-Key support per RFC-ACDP-0003 §6.4, and the OPTIONAL `limits.max_publish_per_minute` capabilities field). Neither set changes any v0.1.0 body field, hash, or signature semantic; everything not so marked remains Final and wire-frozen for acdp/0.1.0.
 
 ---
 
@@ -52,8 +54,9 @@ Returns the registry's capability declaration. Conforms to [`schemas/json/acdp-c
 |---|---|---|
 | `read_authentication_methods` | array of string | Read-authentication methods supported by this registry. At least one MUST be declared if the registry serves any non-public contexts. Defined values: `http_signatures`, `mtls`, `oauth`. See RFC-ACDP-0008 §6.2. |
 | `anonymous_public_reads` | boolean | Whether anonymous (unauthenticated) reads are permitted for public contexts. Default `false`. See RFC-ACDP-0008 §6.3. |
-| `supports_idempotency_key` | boolean | Whether this registry honors the `Idempotency-Key` header on `POST /contexts`. Default `false`. See RFC-ACDP-0003 §6. |
+| `supports_idempotency_key` | boolean | Whether this registry honors the `Idempotency-Key` header on `POST /contexts`. Default `false`. See RFC-ACDP-0003 §6. *(0.3.0)* A registry advertising `acdp_version` ≥ 0.3.0 MUST support the header and MUST advertise this field as `true` — the field stays in the document for introspection even though its value is no longer free (RFC-ACDP-0003 §6.4; §3.5 item 10; fixture `idem-007`). |
 | `limits.idempotency_key_ttl_seconds` | integer | How long this registry retains idempotency-key mappings, in seconds. MUST be present when `supports_idempotency_key` is true. Range 86400 (24h) to 604800 (7d). |
+| `limits.max_publish_per_minute` | integer | *(0.3.0)* OPTIONAL. The nominal per-agent publish ceiling this registry enforces on `POST /contexts`, in requests per minute. Integer ≥ 1. Advisory: producers SHOULD use it to pace publishes below the limiter's threshold. Its presence does NOT change the RFC-ACDP-0008 §4.3 requirements — per-agent rate limiting is REQUIRED whether or not the ceiling is advertised, and 429 responses MUST still carry `Retry-After`. The `limits` sub-object is a closed schema (§3.3.1), so this field is a 0.3.0 schema addition: strict pre-0.3.0 validators of `limits` will reject documents carrying it (same compatibility posture as `registry_receipt` on the closed publish response — validators must track the additive schema edit). Fixture `caps-007`. |
 
 ### 3.3 Forward-compatible additions
 
@@ -100,6 +103,8 @@ Conformant consumers MUST reject deserializing a closed-schema object that conta
 
 The table above governs every shape across the schema set; the fixtures are representative, not exhaustive.
 
+*(0.3.0)* Closed does not mean frozen: a closed schema can still gain a field through an additive schema edit in a minor version — the closure means only that fields *not in the schema* are rejected. The `limits` sub-object remains **Closed** (`additionalProperties: false`) and gains the OPTIONAL `max_publish_per_minute` field in 0.3.0 (§3.2), exactly as the closed publish response gained `registry_receipt` in 0.2.0. Validators MUST track the current schema text; a `limits` object carrying any field beyond `max_payload_bytes`, `max_embedded_bytes`, `idempotency_key_ttl_seconds`, and *(0.3.0)* `max_publish_per_minute` remains a `schema_violation` (fixture `schema-010`).
+
 ### 3.4 Example
 
 ```json
@@ -133,8 +138,10 @@ After fetching `/.well-known/acdp.json`, consumers and cross-registry resolvers 
 7. `limits.max_payload_bytes` MUST be `>= 1024`.
 8. If `supports_idempotency_key` is `true`, `limits.idempotency_key_ttl_seconds` MUST be present and in the inclusive range `86400..604800` (24h to 7d).
 9. If the registry serves any non-public contexts, `read_authentication_methods` MUST be non-empty (RFC-ACDP-0008 §6.2). **(value, cross-field)**
+10. *(0.3.0)* If `acdp_version` ≥ `0.3.0`, `supports_idempotency_key` MUST be present and `true` (RFC-ACDP-0003 §6.4) — and check 8 therefore always applies. A 0.3.0-advertising registry without idempotency support is self-contradictory and NON-CONFORMANT. **(value, cross-field)** Fixture `idem-007`.
+11. *(0.3.0)* If `limits.max_publish_per_minute` is present, it MUST be an integer ≥ 1 (schema-enforced: zero, negative, or non-integer values are a `schema_violation`). Fixture `caps-007`.
 
-A consumer encountering a capabilities document that fails any of the checks above MUST NOT proceed with the operation that required fetching capabilities (publish, retrieval, cross-registry resolution). Implementations SHOULD surface the failing check to operators so the registry can be corrected. The conformance fixtures `caps-001..006` (`schemas/conformance/caps-001-valid-minimal.json` through `caps-006-extra-top-level-field.json`) pin representative positive and negative payloads for the checklist.
+A consumer encountering a capabilities document that fails any of the checks above MUST NOT proceed with the operation that required fetching capabilities (publish, retrieval, cross-registry resolution). Implementations SHOULD surface the failing check to operators so the registry can be corrected. The conformance fixtures `caps-001..007` (`schemas/conformance/caps-001-valid-minimal.json` through `caps-007-max-publish-per-minute.json`) plus *(0.3.0)* `idem-007` pin representative positive and negative payloads for the checklist.
 
 #### 3.5.1 Implementer note: validate capabilities at server construction time
 
@@ -152,6 +159,9 @@ server = RegistryServer.try_new(store, caps, authority)
   # - caps.supports_idempotency_key == true AND
   #     (caps.limits.idempotency_key_ttl_seconds is None
   #      or not 86400 <= caps.limits.idempotency_key_ttl_seconds <= 604800)
+  # - caps.acdp_version >= 0.3.0 AND caps.supports_idempotency_key != true   (0.3.0)
+  # - caps.limits.max_publish_per_minute is not None
+  #     AND caps.limits.max_publish_per_minute < 1                           (0.3.0)
   # - caps serves any non-public visibility AND caps.read_authentication_methods is empty
 ```
 

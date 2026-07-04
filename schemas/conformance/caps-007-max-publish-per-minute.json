@@ -1,0 +1,49 @@
+{
+  "id": "caps-007",
+  "description": "Capabilities document carrying the OPTIONAL limits.max_publish_per_minute field (0.3.0, RFC-ACDP-0007 §3.2; RFC-ACDP-0008 §4.3). The field is the nominal per-agent publish ceiling on POST /contexts, integer >= 1, advisory for producer pacing. A schema-valid document carrying it MUST be accepted; zero, negative, or non-integer values MUST be rejected as schema_violation (the schema pins `type: integer, minimum: 1`). The limits sub-object stays closed (additionalProperties: false) — this is a 0.3.0 additive schema edit, the same posture as registry_receipt on the closed publish response in 0.2.0.",
+  "tags": ["capabilities", "happy-path", "negative", "validation", "limits", "0.3.0"],
+  "input": {
+    "endpoint": "GET /.well-known/acdp.json",
+    "response_body": {
+      "acdp_version": "0.3.0",
+      "registry_did": "did:web:registry.example.com",
+      "supported_signature_algorithms": ["ed25519"],
+      "supported_did_methods": ["did:web"],
+      "supports_idempotency_key": true,
+      "profiles": ["acdp-registry-core"],
+      "limits": {
+        "max_payload_bytes": 1048576,
+        "max_embedded_bytes": 65536,
+        "idempotency_key_ttl_seconds": 86400,
+        "max_publish_per_minute": 60
+      }
+    }
+  },
+  "expected": {
+    "outcome": "accept",
+    "checks": [
+      "limits.max_publish_per_minute, when present, is an integer >= 1",
+      "presence of the field does NOT change RFC-ACDP-0008 §4.3 obligations: per-agent rate limiting is REQUIRED regardless, and 429 responses MUST carry Retry-After",
+      "producers SHOULD use the value to pace publishes below the limiter's threshold; Retry-After on an actual 429 remains the authoritative backoff signal",
+      "the limits sub-object remains closed: any field beyond max_payload_bytes / max_embedded_bytes / idempotency_key_ttl_seconds / max_publish_per_minute is still a schema_violation (schema-010)"
+    ]
+  },
+  "reject_variants": [
+    {
+      "name": "zero",
+      "response_body_override": { "limits.max_publish_per_minute": 0 },
+      "expected": { "outcome": "reject", "error_code": "schema_violation", "reason": "violates minimum: 1 — a registry advertising a ceiling of zero publishes per minute is advertising an unusable endpoint" }
+    },
+    {
+      "name": "negative",
+      "response_body_override": { "limits.max_publish_per_minute": -5 },
+      "expected": { "outcome": "reject", "error_code": "schema_violation", "reason": "violates minimum: 1" }
+    },
+    {
+      "name": "non-integer",
+      "response_body_override": { "limits.max_publish_per_minute": 60.5 },
+      "expected": { "outcome": "reject", "error_code": "schema_violation", "reason": "violates type: integer — fractional ceilings are not expressible; registries round their internal limiter to a whole nominal value" }
+    }
+  ],
+  "rationale": "Round 5 deliberately deferred advertising rate limits to 0.3.0 because the limits sub-object is a closed schema. 0.3.0 adds exactly one optional field for it. The accept case pins that consumers tracking the 0.3.0 schema accept the field; the reject variants pin the value constraints so implementations do not silently coerce a nonsense ceiling into pacing logic. Each reject variant is the accept-case document with the single named value substituted."
+}

@@ -1,0 +1,47 @@
+{
+  "id": "idem-007",
+  "description": "Idempotency-Key support is REQUIRED for acdp-registry-core at acdp_version >= 0.3.0 (RFC-ACDP-0003 §6.4; RFC-ACDP-0007 §3.5 item 10). A capabilities document advertising acdp_version >= 0.3.0 with supports_idempotency_key absent or false is self-contradictory and the registry is NON-CONFORMANT: consumers MUST reject the document and MUST NOT proceed against the registry. Registries advertising 0.1.0 or 0.2.0 are unchanged (support stays optional and capability-gated — idem-005).",
+  "tags": ["capabilities", "idempotency", "negative", "validation", "0.3.0"],
+  "input": [
+    {
+      "name": "0.3.0 registry with supports_idempotency_key absent",
+      "endpoint": "GET /.well-known/acdp.json",
+      "response_body": {
+        "acdp_version": "0.3.0",
+        "registry_did": "did:web:registry.example.com",
+        "supported_signature_algorithms": ["ed25519"],
+        "supported_did_methods": ["did:web"],
+        "profiles": ["acdp-registry-core"],
+        "limits": {
+          "max_payload_bytes": 1048576,
+          "max_embedded_bytes": 65536
+        }
+      }
+    },
+    {
+      "name": "0.3.0 registry with supports_idempotency_key explicitly false",
+      "endpoint": "GET /.well-known/acdp.json",
+      "response_body": {
+        "acdp_version": "0.3.0",
+        "registry_did": "did:web:registry.example.com",
+        "supported_signature_algorithms": ["ed25519"],
+        "supported_did_methods": ["did:web"],
+        "supports_idempotency_key": false,
+        "profiles": ["acdp-registry-core"],
+        "limits": {
+          "max_payload_bytes": 1048576,
+          "max_embedded_bytes": 65536
+        }
+      }
+    }
+  ],
+  "expected": {
+    "outcome": "reject",
+    "error_code": "schema_violation",
+    "applies_to": "both input documents identically; the check is version-conditional and cross-field, enforced in code per RFC-ACDP-0007 §3.5 (JSON Schema cannot compare semver), like §3.5 items 2 and 9",
+    "consumer_action": "MUST NOT proceed with the operation that required fetching capabilities (publish, retrieval, cross-registry resolution) — per the §3.5 failure rule. MUST surface the failing check so operators can either implement RFC-ACDP-0003 §6 (including the §6.2.2 atomic storage contract and TTL bounds) or roll acdp_version back to 0.2.0.",
+    "conformant_contrast": "The same two documents with acdp_version 0.1.0 or 0.2.0 are fully conformant (caps-001 baseline; idem-005 pins the header-ignored behavior). A 0.3.0 document with supports_idempotency_key true AND limits.idempotency_key_ttl_seconds in [86400, 604800] is conformant.",
+    "registry_upgrade_path": "A 0.2.0-conformant registry implements RFC-ACDP-0003 §6 — supports_idempotency_key: true, the UNIQUE(agent_id, idempotency_key) atomic storage contract (§6.2.2), and the advertised TTL within the §6 bounds — BEFORE advertising acdp_version >= 0.3.0. Conformance tightening, not a wire change (VERSIONING.md)."
+  },
+  "rationale": "Without mandatory idempotency, duplicate publication under retry is the protocol's DEFAULT behavior (RFC-ACDP-0008 §3.6): a producer whose POST times out after persistence has no safe move, and every producer must maintain client-side dedup forever because no registry can be assumed to support the header. The registry-side cost is one uniqueness constraint. 0.3.0 closes the option for the core profile; this fixture pins the capabilities-level detection. It lives in the idem- family (not caps-) because the requirement it pins is RFC-ACDP-0003 §6 idempotency conformance — the caps- family pins the version-independent §3.5 checklist, whereas this check exists only at acdp_version >= 0.3.0 and its remediation is implementing §6, not fixing the document. Both families are behavioral (the bundled runner executes neither), so the family choice affects indexing only."
+}
