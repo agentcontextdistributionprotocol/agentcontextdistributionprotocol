@@ -69,6 +69,7 @@ agentcontextdistributionprotocol/
     threat-model.md
     why-acdp.md
     non-goals.md
+    data-protection.md               # Erasure/GDPR posture (non-normative)
 
   registries/
     README.md

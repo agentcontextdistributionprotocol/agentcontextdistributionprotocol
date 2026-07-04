@@ -67,7 +67,8 @@ The threat surface is therefore: **the entire path from producer's signing key, 
 
 - Registries MUST rate-limit `POST /contexts` per `agent_id` (the signing producer).
 - Registries SHOULD rate-limit retrieval and search endpoints per requesting principal.
-- Rate-limit responses MUST use `rate_limited` (HTTP 429) and SHOULD include a `Retry-After` header when bounded.
+- Rate-limit responses MUST use `rate_limited` (HTTP 429) with the standard error envelope (RFC-ACDP-0007 §4) and MUST include a `Retry-After` header — either an integer seconds value or an HTTP-date (RFC 7231 §7.1.3). A limiter that cannot compute an exact refill horizon (e.g. a concurrency-based limiter) MUST emit a conservative estimate rather than omit the header: the header is the only machine-readable backoff signal the protocol defines, and its absence forces every well-behaved producer into guesswork while leaving retry-storm clients no worse off. *(This upgrades the pre-round-5 SHOULD; the error code and envelope were already MUST.)*
+- The trigger remains black-box-untestable: conformance testing cannot deterministically provoke a per-agent rate limit on an arbitrary registry, so the wire shape (429 + envelope + `Retry-After`) is pinned by the `rate-001` fixture and implementers MUST self-test the trigger per its recipe.
 
 ### 4.4 Signature verification
 

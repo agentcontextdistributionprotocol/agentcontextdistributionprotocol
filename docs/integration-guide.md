@@ -217,6 +217,38 @@ Semantic similarity is reserved for a future ACDP version (RFC-ACDP-0009 §2.9);
 
 ---
 
+## Sharing a private context with a named audience
+
+`visibility: private` + `audience` trips up almost every first integration, because retrieval and search deliberately disagree (RFC-ACDP-0002 §7, RFC-ACDP-0005 §2.5.5): a DID listed in `audience` **can retrieve** the context by `ctx_id`, but can **never discover** it via search. `audience` on a `private` context means "you may read this if I send you the link" — not "you may find this".
+
+Concrete two-agent scenario. `did:web:agents.example.com:risk-bot` publishes an internal risk assessment for exactly one downstream consumer, `did:web:agents.example.com:audit-bot`:
+
+```python
+body = {
+    # ... producer fields as in the Producer flow above ...
+    "agent_id": "did:web:agents.example.com:risk-bot",
+    "visibility": "private",
+    "audience": ["did:web:agents.example.com:audit-bot"],
+}
+# sign, publish → registry returns ctx_id
+```
+
+What each side observes:
+
+| Operation by `audit-bot` (in `audience`) | Result |
+|---|---|
+| `GET /contexts/{ctx_id}` with the known `ctx_id` | **200** — full body + registry state (RFC-ACDP-0002 §7) |
+| `GET /contexts/search?q=risk` | **No match, ever** — `private` is producer-only in search, even for audience members (RFC-ACDP-0005 §2.5.5 Q1) |
+| `GET /contexts/search?derived_from=...` | Same — the `derived_from` filter is search, and search is strictly narrower than retrieval (§2.5.5 Q2) |
+
+**The `ctx_id` must therefore travel out-of-band.** The producer has to hand it to the audience member through some channel of its own — an A2A/task-response message, a queue entry, an email, or an ACDP-native pattern: publish a second, less-sensitive *pointer* context (e.g. `visibility: restricted` to the same cohort, or `public`) whose `data_refs` or `summary` carries the private `ctx_id`, so the cohort can *discover the pointer* and *retrieve the payload*.
+
+**The failure mode to design against:** `audit-bot` searches for the assessment, finds nothing, and concludes it does not exist — then re-derives the work or reports a gap. Nothing malfunctioned; `private` is behaving exactly as specified, and the registry will not even leak the context's existence via `total_estimate`. If your consumers locate inputs by searching, `private` + `audience` is the wrong tool — use `visibility: restricted`, which grants the audience both retrieval *and* search visibility. Reserve `private` + `audience` for link-style handoffs where the producer actively delivers the `ctx_id`.
+
+A full wire-shape example of such a context is [examples/visibility/private-with-audience-body.json](../examples/visibility/private-with-audience-body.json).
+
+---
+
 ## Common errors
 
 | Error code | Cause | Fix |

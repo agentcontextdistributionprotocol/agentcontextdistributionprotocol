@@ -257,6 +257,8 @@ Producers requiring true end-to-end visibility on data MUST ensure the reference
 
 For embedded `data_refs` (where `content` is in the body itself), visibility applies fully because the content is part of the registry record.
 
+See also: [docs/data-protection.md](../docs/data-protection.md) (non-normative) for the erasure-rights consequence of this split — bodies are permanent, so personal or sensitive data belongs behind an erasable `data_refs[].location`, never embedded.
+
 ### 6.5 Transport security for data_refs
 
 For `data_refs[].location` values that are URIs (URL form per §6.2):
