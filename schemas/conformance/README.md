@@ -18,6 +18,7 @@ conformance/
 ├── lin-*.json      Lineage-id derivation golden vectors (RFC-ACDP-0001 §5.6)
 ├── sig-*.json      Cryptographic golden vectors (signing & verification, RFC-ACDP-0001)
 ├── rcpt-*.json     Registry receipts — golden vector + verification failures (RFC-ACDP-0010, 0.2.0)
+├── lhr-*.json      Lineage-head receipts — golden vector + verification failures (RFC-ACDP-0011, 0.3.0)
 ├── fp-*.json       Key-fingerprint encoding vectors (RFC-ACDP-0010 §6, 0.2.0)
 ├── rot-*.json      Historical producer-key verification with receipts (RFC-ACDP-0010 §10, 0.2.0)
 ├── dk-*.json       did:key resolution rejection scenarios (RFC-ACDP-0001 §5.11.1, 0.2.0)
@@ -44,13 +45,14 @@ conformance/
 - `lin-*.json` — lineage_id derivation golden vectors
 - `sig-*.json` — Ed25519 / ECDSA-P256 sign/verify golden vectors, plus pure did:key identity derivation for `sig-003` (0.2.0)
 - `rcpt-*.json` carrying a `registry_test_keypair` (i.e. `rcpt-001`) — full registry-receipt golden cycle: preimage, receipt hash, signature, producer key fingerprint (RFC-ACDP-0010 §5–§6)
+- `lhr-*.json` carrying a `registry_test_keypair` (i.e. `lhr-001`) — full lineage-head-receipt golden cycle: preimage, receipt hash, signature, binding consistency (RFC-ACDP-0011 §5, §7)
 - `fp-*.json` — key-fingerprint encoding vectors (RFC-ACDP-0010 §6)
 
-**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `schema-*`, `dk-*`, `rot-*`, `rcpt-002`..`rcpt-004`, …). Those fixtures define request/response scenarios that require a running registry or consumer to execute. They are machine-readable specifications for implementers to validate against their implementation.
+**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `schema-*`, `dk-*`, `rot-*`, `rcpt-002`..`rcpt-004`, `lhr-002`..`lhr-004`, …). Those fixtures define request/response scenarios that require a running registry or consumer to execute. They are machine-readable specifications for implementers to validate against their implementation.
 
 To claim full conformance a registry MUST:
 1. Pass `python3 scripts/conformance-runner.py` (arithmetic/cryptographic)
-2. Separately execute all behavioral fixture scenarios (`pub-*`, `vis-*`, `ret-*`, `err-*`, `schema-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `dk-*`, `rcpt-*`, `rot-*`, …) against a live registry instance
+2. Separately execute all behavioral fixture scenarios (`pub-*`, `vis-*`, `ret-*`, `err-*`, `schema-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `dk-*`, `rcpt-*`, `lhr-*`, `rot-*`, …) against a live registry instance
 
 ---
 
@@ -238,6 +240,17 @@ The `sig-*` fixtures are checked by `scripts/conformance-runner.py` (CI). A fail
 | `rot-001` | Historical key verification (RFC-ACDP-0010 §10): K1 retired to verificationMethod-only, K2 current; valid receipt attesting K1's fingerprint → *historically authorized (receipt-attested)*; same retrieval without receipt → fails closed; K1 removed from verificationMethod entirely → fails closed regardless | mixed (per-scenario) |
 
 `rcpt-001` and `fp-001` are executed arithmetically by `scripts/conformance-runner.py`; the runner also verifies `examples/retrieval/golden-context-with-receipt.json` end-to-end against the `rcpt-001` registry keypair. `rcpt-002`..`rcpt-004` and `rot-001` are behavioral. Required for `acdp-registry-receipts` and `acdp-consumer`.
+
+### Lineage-head receipts (RFC-ACDP-0011, 0.3.0)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `lhr-001` | Head-receipt golden vector: same registry test keypair as `rcpt-001` (RFC-ACDP-0011 §5 reuses the RFC-ACDP-0010 receipt signing key and construction), head-receipt preimage canonical bytes over the sig-001 golden lineage (v1 head, `active`), receipt hash, Ed25519 signature, version-1 lineage-derivation cross-check. Executed by the runner — the `rcpt-001`-equivalent for the serve-time layer. | success: byte-exact reproduction end-to-end |
+| `lhr-002` | `/current` serves a v2 head but the attached receipt attests v1 — RFC-ACDP-0011 §7 step 5 head binding MUST fail; the receipt's signature itself verifies (stale-head-serving detection is the point) | failure: `invalid_receipt` category |
+| `lhr-003` | `receipt.registry_did` does not bind to the serving authority / `capabilities.registry_did` (RFC-ACDP-0011 §7 step 3; same principle as `rcpt-004` / `fed-006`) | failure: `invalid_receipt` category |
+| `lhr-004` | Validly signed receipt whose `as_of` is in the future beyond the clock-skew allowance (RECOMMENDED 120 s) — a forged freshness claim (RFC-ACDP-0011 §7 step 6). Past-dated `as_of` is instead a consumer max-age freshness-policy matter (§6), reported distinctly. | failure: `invalid_receipt` category |
+
+`lhr-001` is executed arithmetically by `scripts/conformance-runner.py`; `lhr-002`..`lhr-004` are behavioral. Required for `acdp-registry-head-receipts`; conditionally required for `acdp-consumer` implementations that rely on `lineage_head_receipt` members (a consumer ignoring the member under the RFC-ACDP-0001 §6 unknown-field rule is unaffected). No new wire error code: head-receipt failures reuse `invalid_receipt` (RFC-ACDP-0011 §9).
 
 ### did:key resolution (RFC-ACDP-0001 §5.4 / §5.11.1, 0.2.0)
 

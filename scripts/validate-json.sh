@@ -13,6 +13,7 @@ DATA_REF_SCHEMA="${SCHEMA_DIR}/acdp-data-ref.schema.json"
 CONTEXT_BODY_SCHEMA="${SCHEMA_DIR}/acdp-context-body.schema.json"
 REGISTRY_STATE_SCHEMA="${SCHEMA_DIR}/acdp-registry-state.schema.json"
 REGISTRY_RECEIPT_SCHEMA="${SCHEMA_DIR}/acdp-registry-receipt.schema.json"
+LINEAGE_HEAD_RECEIPT_SCHEMA="${SCHEMA_DIR}/acdp-lineage-head-receipt.schema.json"
 CONTEXT_SCHEMA="${SCHEMA_DIR}/acdp-context.schema.json"
 PUBLISH_REQUEST_SCHEMA="${SCHEMA_DIR}/acdp-publish-request.schema.json"
 PUBLISH_RESPONSE_SCHEMA="${SCHEMA_DIR}/acdp-publish-response.schema.json"
@@ -26,6 +27,7 @@ REFS=(
     -r "${CONTEXT_BODY_SCHEMA}"
     -r "${REGISTRY_STATE_SCHEMA}"
     -r "${REGISTRY_RECEIPT_SCHEMA}"
+    -r "${LINEAGE_HEAD_RECEIPT_SCHEMA}"
 )
 
 CONFORMANCE_DIR="${PROJECT_ROOT}/schemas/conformance"

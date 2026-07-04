@@ -157,7 +157,7 @@ Returns the current non-superseded version of a lineage. The current version is 
 - If **every** version in the lineage is `status: superseded` — an abnormal registry state reachable only through admin correction or data corruption — the endpoint MUST return `not_found` (HTTP 404). Registries SHOULD prevent this state via the supersession constraints of RFC-ACDP-0003 §3.1 (every supersession adds exactly one new non-superseded head).
 - Visibility filtering applies: see §5.4. If the current head exists but the requester is not authorized to retrieve it, the endpoint MUST behave as specified in §5.4 (return the newest authorized non-superseded version, or `not_found`).
 
-In short: **current = newest non-superseded version; `expired` counts as non-superseded, `superseded` never does.** This endpoint is exercised by the `ret-002` conformance fixture (all-superseded, expired-head, and active-head scenarios).
+In short: **current = newest non-superseded version; `expired` counts as non-superseded, `superseded` never does.** This endpoint is exercised by the `ret-002` conformance fixture (all-superseded, expired-head, and active-head scenarios). *(0.3.0)* On registries advertising the `acdp-registry-head-receipts` profile, this endpoint's response additionally carries the registry-signed `lineage_head_receipt` member attesting the served head as of response time (RFC-ACDP-0011).
 
 ### 5.3 Lineage scoping
 
@@ -248,3 +248,4 @@ See [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md). Specific to retrieval:
 - [RFC-ACDP-0007 Capabilities & Errors](RFC-ACDP-0007-capabilities.md)
 - [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md)
 - [RFC-ACDP-0010 Registry Receipts](RFC-ACDP-0010-registry-receipts.md) *(0.2.0)*
+- [RFC-ACDP-0011 Lineage-Head Receipts](RFC-ACDP-0011-lineage-head-receipts.md) *(0.3.0)*

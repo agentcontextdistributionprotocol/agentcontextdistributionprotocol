@@ -1,0 +1,37 @@
+{
+  "id": "lhr-003",
+  "description": "Head-receipt verification MUST fail when receipt.registry_did does not bind to the authority the response was fetched from AND to capabilities.registry_did (RFC-ACDP-0011 §7 step 3). A head receipt is only evidence about the registry that served it; accepting one naming a different authority would let a hostile registry replay another registry's (perfectly signed) head attestations as its own. Same authority-binding principle as rcpt-004 and fed-006.",
+  "tags": ["lineage-head-receipt", "receipt", "failure", "security", "registry-identity"],
+  "applies_to_profiles": ["acdp-registry-head-receipts", "acdp-consumer"],
+  "input": {
+    "scenario": "Consumer calls GET https://hostile.example/lineages/lin:sha256:c7fef01c…/current and the response carries a lineage_head_receipt whose registry_did names registry.example.com (the lhr-001 golden receipt, replayed verbatim).",
+    "serving_authority": "hostile.example",
+    "capabilities_registry_did": "did:web:hostile.example",
+    "receipt_excerpt": {
+      "receipt_version": "acdp-lhr/1",
+      "registry_did": "did:web:registry.example.com",
+      "head_ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234",
+      "signature_key_id": "did:web:registry.example.com#receipt-key-1"
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "failure_category": "invalid_receipt",
+    "behavior": "§7 step 3: registry_did MUST be did:web:<authority> where <authority> equals the authority the response was fetched from and equals capabilities.registry_did. did:web:registry.example.com ≠ hostile.example → the head receipt MUST be reported as failed regardless of whether its signature verifies under registry.example.com's key.",
+    "additional_failure_cases": [
+      {
+        "case": "registry_did uses a method other than did:web (e.g. did:key)",
+        "expected_outcome": "failure — registry_did is did:web-only (RFC-ACDP-0011 §4, following RFC-ACDP-0010 §4)."
+      },
+      {
+        "case": "signature.key_id DID portion ≠ registry_did",
+        "expected_outcome": "failure — the receipt key must belong to the attesting registry's DID document (§7 steps 2–3)."
+      },
+      {
+        "case": "head_ctx_id authority ≠ registry_did method-specific identifier",
+        "expected_outcome": "failure — lineages are single-registry; a registry cannot attest heads for another authority's contexts (§7 step 3)."
+      }
+    ],
+    "verdict_independence": "Body and RFC-ACDP-0010 receipt verdicts independent, as always (RFC-ACDP-0011 §7)."
+  }
+}
