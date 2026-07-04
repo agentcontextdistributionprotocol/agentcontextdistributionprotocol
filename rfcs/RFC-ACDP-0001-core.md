@@ -582,6 +582,17 @@ Adds registry receipts. Implementations MUST:
 
 Receipt-aware consumers (the `acdp-consumer` profile under 0.2.0) verify receipts per RFC-ACDP-0010 §8 whenever one is present, and report the receipt verdict separately from the body verdict.
 
+#### `acdp-registry-head-receipts` *(0.3.0)*
+
+Adds lineage-head receipts. Implementations MUST:
+
+- Be `acdp-registry-receipts` conformant and advertise `acdp_version` ≥ `0.3.0`.
+- Mint and serve lineage-head receipts per RFC-ACDP-0011 §4–§6: a fresh receipt (registry response-time `as_of`, millisecond-truncated) on every `GET /lineages/{lineage_id}/current` response; optionally on full retrieval; never on the body-only endpoint; always — there is no degraded mode.
+- Sign head receipts with the RFC-ACDP-0010 receipt signing key and construction (RFC-ACDP-0011 §5), under the RFC-ACDP-0010 §9 key lifecycle — no new key role.
+- Pass the head-receipt conformance fixtures (`lhr-001..004`).
+
+Head-receipt-aware consumers verify lineage-head receipts per RFC-ACDP-0011 §7 whenever they rely on one, and report the head-receipt verdict (and `as_of` freshness policy) separately from the body and context-receipt verdicts.
+
 ### 9.2 Verification profile names (RECOMMENDED)
 
 v0.1.0 verification is always strict for any conformance claim — §5.11 ("v0.1.0 strict verification profile") defines the strict pipeline and requires that it be the non-loosenable default. SDKs MAY additionally expose relaxed or diagnostic verification modes for debugging and test harnesses. When they do, they SHOULD use the following identifiers so documentation, logs, and error messages are consistent across language implementations:
