@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Security & Threat Model
 
 **Document:** RFC-ACDP-0008
-**Version:** 0.2.0-draft
-**Status:** Community Standards Track (Final for acdp/0.1.0; sections marked *(0.2.0)* are Draft)
+**Version:** 0.3.0-draft
+**Status:** Community Standards Track (Final for acdp/0.1.0; sections marked *(0.2.0)* or *(0.3.0)* are Draft)
 
 This RFC specifies the threat model for ACDP v0.1.0 and the defenses every implementation MUST provide. It depends on the entire core RFC stack (0001–0007).
 
@@ -12,6 +12,8 @@ This RFC specifies the threat model for ACDP v0.1.0 and the defenses every imple
 ## 1. Status of This Memo
 
 This document is a Final ACDP specification (acdp/0.1.0). It is stable for the 0.1.0 release; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
+
+Passages marked *(0.2.0)* are Draft amendments from the acdp/0.2.0 Trust & Hardening program. Passages marked *(0.3.0)* are Draft amendments from the acdp/0.3.0 core-profile revision (advertising the rate-limit ceiling via `limits.max_publish_per_minute` — §4.3). Neither set changes any v0.1.0 body field, hash, or signature semantic; everything not so marked remains Final and wire-frozen for acdp/0.1.0.
 
 ---
 
@@ -69,6 +71,7 @@ The threat surface is therefore: **the entire path from producer's signing key, 
 - Registries SHOULD rate-limit retrieval and search endpoints per requesting principal.
 - Rate-limit responses MUST use `rate_limited` (HTTP 429) with the standard error envelope (RFC-ACDP-0007 §4) and MUST include a `Retry-After` header — either an integer seconds value or an HTTP-date (RFC 7231 §7.1.3). A limiter that cannot compute an exact refill horizon (e.g. a concurrency-based limiter) MUST emit a conservative estimate rather than omit the header: the header is the only machine-readable backoff signal the protocol defines, and its absence forces every well-behaved producer into guesswork while leaving retry-storm clients no worse off. *(This upgrades the pre-round-5 SHOULD; the error code and envelope were already MUST.)*
 - The trigger remains black-box-untestable: conformance testing cannot deterministically provoke a per-agent rate limit on an arbitrary registry, so the wire shape (429 + envelope + `Retry-After`) is pinned by the `rate-001` fixture and implementers MUST self-test the trigger per its recipe.
+- *(0.3.0)* Registries SHOULD advertise the nominal per-agent publish ceiling via `limits.max_publish_per_minute` in the capabilities document (RFC-ACDP-0007 §3.2, integer ≥ 1) so producers can pace below the limiter instead of discovering it via 429s. The field is advisory and its presence changes nothing above: per-agent rate limiting remains REQUIRED whether or not the ceiling is advertised, `Retry-After` remains mandatory on every 429, and a registry MAY enforce tighter dynamic limits than the advertised nominal ceiling (in which case `Retry-After` remains the authoritative backoff signal).
 
 ### 4.4 Signature verification
 

@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Publish & Supersession
 
 **Document:** RFC-ACDP-0003
-**Version:** 0.2.0-draft
-**Status:** Community Standards Track (Final for acdp/0.1.0; sections marked *(0.2.0)* are Draft)
+**Version:** 0.3.0-draft
+**Status:** Community Standards Track (Final for acdp/0.1.0; sections marked *(0.2.0)* or *(0.3.0)* are Draft)
 
 This RFC specifies how producers publish contexts to ACDP registries and how registries handle supersession. It depends on RFC-ACDP-0001 (Core) and RFC-ACDP-0002 (Context Body).
 
@@ -14,6 +14,8 @@ This RFC specifies how producers publish contexts to ACDP registries and how reg
 This document is a Final ACDP specification (acdp/0.1.0). It is stable for the 0.1.0 release; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
 
 Passages marked *(0.2.0)* are Draft amendments from the acdp/0.2.0 Trust & Hardening program (registry receipts per [RFC-ACDP-0010](RFC-ACDP-0010-registry-receipts.md), lineage anchoring, idempotency-scope clarification). They change no v0.1.0 body field, hash, or signature semantic.
+
+Passages marked *(0.3.0)* are Draft amendments from the acdp/0.3.0 core-profile revision (Idempotency-Key support REQUIRED for `acdp-registry-core` under `acdp_version` ≥ 0.3.0 — §6.4). They change no wire shape: no body field, hash, signature semantic, header syntax, or error code is touched — the 0.3.0 change is a conformance tightening on registries that choose to advertise `acdp_version` ≥ 0.3.0. Everything not so marked remains Final and wire-frozen for acdp/0.1.0.
 
 ---
 
@@ -198,7 +200,7 @@ All errors use the envelope defined in RFC-ACDP-0007 §4 with codes from the reg
 
 ## 6. Idempotency
 
-Identical publish requests create distinct `ctx_id`s by default. Producers retrying after network errors can inadvertently create duplicate publications. Registries SHOULD support the `Idempotency-Key` HTTP header for safe retries.
+Identical publish requests create distinct `ctx_id`s by default. Producers retrying after network errors can inadvertently create duplicate publications. Registries SHOULD support the `Idempotency-Key` HTTP header for safe retries. *(0.3.0)* For registries advertising `acdp_version` ≥ 0.3.0, this SHOULD is upgraded to a MUST — see §6.4; registries advertising `acdp_version` 0.1.0 or 0.2.0 are unchanged (support remains optional and capability-gated).
 
 ### 6.1 Producer behavior
 
@@ -235,7 +237,7 @@ The atomicity requirement in step 4 is normative: it is the difference between i
 
 The ordering choice in steps 1–2 is a SHOULD, not a MUST: a registry MAY perform schema validation, payload-size validation, or any other cheap check before idempotency lookup. It MUST NOT perform DID resolution or signature verification before idempotency lookup, because doing so defeats the cost-amortization purpose of the header. Registries that treat the `Idempotency-Key` header as a post-hoc dedup mechanism (after signature verification has already run) are conformant only if their measured cost on retries matches an implementation that performed the lookup first — i.e., the test is observable behavior, not internal sequencing.
 
-The conformance fixtures `idem-001` through `idem-006` exercise this surface.
+The conformance fixtures `idem-001` through `idem-006` exercise this surface. *(0.3.0)* `idem-007` additionally pins the §6.4 capabilities-level requirement.
 
 #### 6.2.2 Distributed idempotency (NORMATIVE)
 
@@ -263,6 +265,22 @@ Producers relying on idempotency for retry safety SHOULD verify the advertised c
 ### 6.3 Content-deterministic deduplication
 
 Independent of `Idempotency-Key`, the body's `content_hash` is content-deterministic. Producers MAY use it as a local deduplication key (e.g. record `content_hash` after a successful publish; on retry, look up by hash before re-submitting). This is a producer-side optimization and does not require registry cooperation.
+
+### 6.4 *(0.3.0)* Idempotency-Key support is REQUIRED at `acdp_version` ≥ 0.3.0
+
+Under acdp/0.1.0 and acdp/0.2.0, Idempotency-Key support is OPTIONAL and capability-gated (§6.2); nothing in this section changes that. Starting with acdp/0.3.0, the option closes for the core profile:
+
+A registry advertising `acdp_version` ≥ 0.3.0 in its capabilities document MUST support the `Idempotency-Key` header on `POST /contexts` per this section (§6). Specifically, such a registry:
+
+1. MUST advertise `"supports_idempotency_key": true` in its capabilities document (RFC-ACDP-0007 §3.2). The flag is no longer optional-to-support, but it MUST still be advertised — consumers and conformance tooling introspect it, and its absence (or `false`) alongside `acdp_version` ≥ 0.3.0 makes the capabilities document self-contradictory and the registry NON-CONFORMANT (fixture `idem-007`; RFC-ACDP-0007 §3.5 item 10).
+2. MUST implement the §6.2.2 atomic storage contract — the `(agent_id, idempotency_key, content_hash, response)` record and the body persistence MUST commit together. The reference pattern is a storage-level **unique constraint on `(agent_id, idempotency_key)`** with a transactional insert (or an equivalent compare-and-swap pre-reservation), per the §6.2.2 *(0.2.0)* implementation guidance. The §6.2.2 escape hatch of "do not advertise `supports_idempotency_key`" is not available at 0.3.0: a registry whose storage cannot provide single-writer or CAS atomicity MUST NOT advertise `acdp_version` ≥ 0.3.0.
+3. MUST enforce the §6 TTL bounds: track `(agent_id, idempotency_key)` pairs for at least 86400 seconds (24h) and at most 604800 seconds (7d), and advertise the actual TTL as `limits.idempotency_key_ttl_seconds` (§6.2).
+
+**Rationale.** Without idempotency, the DEFAULT behavior of the protocol under retry is duplication: a producer whose `POST /contexts` times out after the registry persisted the body has no safe move — retrying mints a second `ctx_id` for the same content (RFC-ACDP-0008 §3.6), and not retrying risks the publish never having happened. Capability-gated idempotency pushes the mitigation onto every producer as permanent client-side dedup machinery (§6.3) that must be maintained against every registry forever, because no producer can assume the capability is present. The registry-side cost is one uniqueness constraint and a TTL sweep (§6.2.2). At 0.3.0 the trade is settled in favor of the producer: safe retry becomes a floor guarantee of `acdp-registry-core`, and §6.3 client-side dedup is demoted from a necessity to the defense-in-depth it was always meant to be.
+
+**Migration (per [VERSIONING.md](../VERSIONING.md)).** This is a conformance tightening, not a wire change: the header syntax, the §6.2 response semantics (200-replay / `duplicate_publish`), the capabilities field, and the TTL bounds are all unchanged from 0.1.0. No schema `$id`, body field, hash, or signature semantic changes. A 0.2.0-conformant registry upgrades by implementing §6 (including §6.2.2 atomic storage) *before* advertising `acdp_version` ≥ 0.3.0; until it does, it simply continues to advertise `0.2.0` (or `0.1.0`) and remains fully conformant. Producers need no change: they already probe `supports_idempotency_key` per §6.1, and against a 0.3.0 registry the probe simply always succeeds.
+
+Conformance fixture `idem-007` pins the capabilities-level rejection: a capabilities document with `acdp_version` ≥ 0.3.0 and `supports_idempotency_key` absent or `false` MUST be rejected by consumers per RFC-ACDP-0007 §3.5.
 
 ---
 

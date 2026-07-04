@@ -117,8 +117,9 @@ The runner interface is implementation-defined.
 | `idem-004` | Same content under a NEW idempotency key — fresh publish, NEW `ctx_id` | success: HTTP 201 |
 | `idem-005` | Registry not advertising `supports_idempotency_key` MUST ignore the header (treat as absent) | success: each request mints fresh `ctx_id` |
 | `idem-006` | Concurrent publish with same `(agent_id, key)` and same hash — pinned tolerated/non-conformant outcomes | success: cardinality-1 mapping is normative, two outcomes tolerated |
+| `idem-007` | *(0.3.0)* Capabilities document advertises `acdp_version` ≥ 0.3.0 with `supports_idempotency_key` absent or `false` — idempotency is REQUIRED for `acdp-registry-core` at 0.3.0 (RFC-ACDP-0003 §6.4; RFC-ACDP-0007 §3.5 item 10) | reject: `schema_violation` (capabilities validation; consumer MUST NOT proceed) |
 
-These fixtures exercise the §6.2 contract and the §6.2.1 ordering/atomicity guidance. `idem-001..005` are REQUIRED for `acdp-registry-core` when the registry advertises `supports_idempotency_key: true`. `idem-006` is informative — the wire contract is "exactly one stored `ctx_id` per `(agent_id, key)` pair regardless of concurrency"; integration tests SHOULD verify with stress harnesses.
+These fixtures exercise the §6.2 contract and the §6.2.1 ordering/atomicity guidance. `idem-001..005` are REQUIRED for `acdp-registry-core` when the registry advertises `supports_idempotency_key: true`. `idem-006` is informative — the wire contract is "exactly one stored `ctx_id` per `(agent_id, key)` pair regardless of concurrency"; integration tests SHOULD verify with stress harnesses. *(0.3.0)* `idem-007` pins the RFC-ACDP-0003 §6.4 tightening: a registry advertising `acdp_version` ≥ 0.3.0 MUST advertise `supports_idempotency_key: true` (making `idem-001..005` unconditionally required for it) and MUST implement the §6.2.2 atomic storage contract and §6 TTL bounds. It is a capabilities-validation outcome like the `caps-*` family, but lives in the `idem-` family because the requirement it pins is RFC-ACDP-0003 §6 conformance — version-conditional, with implementation of §6 (not document repair) as the remediation; both families are behavioral, so the runner is unaffected.
 
 ### Rate limiting (RFC-ACDP-0008 §4.3)
 
@@ -296,6 +297,7 @@ These fixtures are required for `acdp-registry-federated` profile conformance (r
 | `caps-004` | `supports_idempotency_key: true` but `limits.idempotency_key_ttl_seconds` missing | reject: `schema_violation` |
 | `caps-005` | `limits.max_embedded_bytes != 65536` | reject: `schema_violation` |
 | `caps-006` | Unknown top-level field — consumer MUST tolerate (open schema) | accept |
+| `caps-007` | *(0.3.0)* `limits.max_publish_per_minute` present and ≥ 1 — OPTIONAL advisory per-agent publish ceiling (RFC-ACDP-0007 §3.2, RFC-ACDP-0008 §4.3); reject variants pin zero / negative / non-integer values | accept (valid doc); reject variants: `schema_violation` |
 
 ### Registry-state `status` pattern (RFC-ACDP-0004 §4.1)
 
