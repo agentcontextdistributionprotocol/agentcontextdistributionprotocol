@@ -203,7 +203,7 @@
     {
       "id": "acdp-registry-receipts",
       "inherits": "acdp-registry-core",
-      "spec_reference": "RFC-ACDP-0010 (0.2.0, Draft)",
+      "spec_reference": "RFC-ACDP-0010 (0.2.0, Final)",
       "required_endpoints_added": [],
       "required_fixtures_added": [
         "rcpt-001-receipt-golden",
@@ -227,7 +227,7 @@
     {
       "id": "acdp-registry-head-receipts",
       "inherits": "acdp-registry-receipts",
-      "spec_reference": "RFC-ACDP-0011 (0.3.0, Draft)",
+      "spec_reference": "RFC-ACDP-0011 (0.3.0, Final)",
       "required_endpoints_added": [],
       "required_fixtures_added": [
         "lhr-001-lineage-head-receipt-golden",
@@ -241,7 +241,7 @@
     {
       "id": "acdp-registry-transparency-log",
       "inherits": "acdp-registry-receipts",
-      "spec_reference": "RFC-ACDP-0012 (0.3.0, Draft)",
+      "spec_reference": "RFC-ACDP-0012 (0.3.0, Final)",
       "required_endpoints_added": [
         "GET /log/checkpoint",
         "GET /log/proof",
@@ -259,7 +259,7 @@
     {
       "id": "acdp-registry-lifecycle",
       "inherits": "acdp-registry-core",
-      "spec_reference": "RFC-ACDP-0013 (0.3.0, Draft)",
+      "spec_reference": "RFC-ACDP-0013 (0.3.0, Final)",
       "required_endpoints_added": [
         "POST /contexts/{ctx_id}/retract",
         "POST /contexts/{ctx_id}/republish"
