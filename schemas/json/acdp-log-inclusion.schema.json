@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.1.0/acdp-log-inclusion.schema.json",
+  "title": "ACDP Transparency-Log Inclusion Proof (0.3.0)",
+  "description": "An inclusion proof that one leaf is committed by a checkpointed transparency-log tree (RFC-ACDP-0012 §8.2, §9.1): the RFC 6962 §2.1.1 audit path for leaf_index at tree_size, together with the signed checkpoint it verifies against. Returned by GET /log/proof (inclusion mode) and OPTIONALLY carried as the top-level 'log_inclusion' member of the full-retrieval envelope (RFC-ACDP-0012 §10 — a sibling of registry_receipt, never a member of it). Specified by RFC-ACDP-0012 (acdp/0.3.0), promoting the RFC-ACDP-0009 §2.11 reservation; additive minor, so this schema lives in the v0.1.0 namespace (VERSIONING.md).",
+
+  "type": "object",
+  "required": [
+    "log_id",
+    "leaf_index",
+    "tree_size",
+    "inclusion_path",
+    "log_checkpoint"
+  ],
+  "properties": {
+    "log_id": {
+      "type": "string",
+      "pattern": "^did:web:[a-zA-Z0-9.%:-]+/log/[a-z0-9-]{1,32}$",
+      "description": "The log instantiation this proof belongs to. MUST equal log_checkpoint.log_id (RFC-ACDP-0012 §9.1 step 4)."
+    },
+    "leaf_index": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "The 0-based append-order position of the leaf. MUST be < tree_size."
+    },
+    "tree_size": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The tree size the proof is computed against. MUST equal log_checkpoint.tree_size (RFC-ACDP-0012 §9.1 step 4)."
+    },
+    "inclusion_path": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+      },
+      "description": "The RFC 6962 §2.1.1 audit path PATH(leaf_index, D[tree_size]), ordered from the lowest tree level upward; each element is 'sha256:' + lowercase hex of a raw 32-byte node digest. May be empty (tree_size 1). Verified by the RFC-ACDP-0012 §9.1 folding algorithm against the checkpoint's root_hash."
+    },
+    "log_checkpoint": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-log-checkpoint.schema.json",
+      "description": "The signed checkpoint (RFC-ACDP-0012 §6) this proof verifies against, verified per RFC-ACDP-0012 §9.3."
+    },
+    "leaf": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-log-leaf.schema.json",
+      "description": "OPTIONAL convenience echo of the leaf object, present on GET /log/proof inclusion-mode responses only when the requester is authorized to retrieve the context (RFC-ACDP-0012 §8.2), and absent from the retrieval-envelope log_inclusion member (§10). Verifiers MUST NOT trust it — the leaf is independently reconstructed from verified body and receipt material (§9.1 step 1)."
+    }
+  },
+  "additionalProperties": false,
+  "$comment": "Closed schema (RFC-ACDP-0007 §3.3.1 openness posture for proof objects): a proof is arithmetic evidence with no extension surface; unknown members would be unverifiable. Consistency-mode GET /log/proof responses use a distinct shape (first_tree_size / second_tree_size / consistency_path — RFC-ACDP-0012 §8.2) and are not instances of this schema."
+}
