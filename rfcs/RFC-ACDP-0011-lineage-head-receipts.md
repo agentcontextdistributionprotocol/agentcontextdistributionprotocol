@@ -37,7 +37,7 @@ RFC-ACDP-0010 receipts bind **publish-time** facts: identifiers, `created_at`, t
 
 A lineage-head receipt closes the *attributability* half of this gap. It is the registry's signed, timestamped commitment: **"as of `as_of`, the head of `lineage_id` is `head_ctx_id` at `head_version` with `head_status`."** A registry that serves a stale head under a head receipt has produced signed evidence of the stale claim; a registry that shows different heads to different consumers has produced conflicting signed evidence (the same non-repudiation property as RFC-ACDP-0010 §13). The claim itself can still be false — see §11 — but it is no longer deniable, and it is timestamped, so replaying it later is bounded by `as_of`.
 
-This is deliberately the **cheap complement** to the transparency log reserved by RFC-ACDP-0009 §2.11, not a replacement: the log makes stale-head serving and equivocation *detectable by any auditor*; the head receipt makes each serve-time claim *attributable and non-repudiable* today, with nothing but the RFC-ACDP-0010 key plumbing that receipts-profile registries already operate.
+This is deliberately the **cheap complement** to the transparency log reserved by RFC-ACDP-0009 §2.11 (since specified as RFC-ACDP-0012), not a replacement: the log makes stale-head serving and equivocation *detectable by any auditor*; the head receipt makes each serve-time claim *attributable and non-repudiable* today, with nothing but the RFC-ACDP-0010 key plumbing that receipts-profile registries already operate.
 
 ---
 
@@ -142,7 +142,7 @@ Head receipts are additive; they motivate the `acdp_version: 0.3.0` minor:
 
 A head receipt makes the registry's serve-time head claim **attributable, timestamped, and non-repudiable** — it does not make it **true**:
 
-- **Stale-head serving is detected only comparatively.** A consumer holding a single receipt learns nothing about staleness beyond `as_of`; detection requires a *fresher* receipt for the same lineage, a cross-check against another consumer's receipt, or out-of-band knowledge of a newer version. A registry that serves the same stale head **to everyone, consistently**, produces no conflicting evidence — making that detectable by any auditor is precisely the job of the transparency log reserved as RFC-ACDP-0009 §2.11, of which this RFC is the cheap complement, not the replacement.
+- **Stale-head serving is detected only comparatively.** A consumer holding a single receipt learns nothing about staleness beyond `as_of`; detection requires a *fresher* receipt for the same lineage, a cross-check against another consumer's receipt, or out-of-band knowledge of a newer version. A registry that serves the same stale head **to everyone, consistently**, produces no conflicting evidence — making that detectable by any auditor is precisely the job of the transparency log reserved as RFC-ACDP-0009 §2.11 — since specified as [RFC-ACDP-0012](RFC-ACDP-0012-transparency-log.md) — of which this RFC is the cheap complement, not the replacement.
 - **Split-view becomes evidence.** A registry showing different heads to *equally authorized* consumers at overlapping `as_of` instants has signed conflicting claims — non-repudiable when the receipts are compared, the same property (and the same "ACDP specifies no comparison infrastructure" caveat) as RFC-ACDP-0010 §13. The visibility qualifier matters: under RFC-ACDP-0004 §5.4 two *differently* authorized consumers can legitimately receive different heads, so conflicting receipts indict the registry only for public lineages or between requesters of equal authorization.
 - **`as_of` is the registry's unanchored clock.** Nothing external attests it (the same limitation as RFC-ACDP-0010 §13 for `created_at`); the skew check of §7 step 6 bounds forward-dating against the consumer's clock, and backdating an `as_of` only makes the receipt *less* useful to the registry, but a consistent clock lie is not detectable from receipts alone.
 - **Absence proves nothing.** A head receipt attests what the head *is claimed to be*; it cannot prove that no newer version was hidden from the supersession index — that, again, is log territory.
@@ -180,7 +180,7 @@ Deployments needing stronger serve-time guarantees today SHOULD combine head rec
 - [RFC-ACDP-0006 Cross-Registry References](RFC-ACDP-0006-cross-registry.md)
 - [RFC-ACDP-0007 Capabilities & Errors](RFC-ACDP-0007-capabilities.md)
 - [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md)
-- [RFC-ACDP-0009 Extensions](RFC-ACDP-0009-extensions.md) — §2.11 (transparency-log reservation; this RFC's stronger sibling).
+- [RFC-ACDP-0009 Extensions](RFC-ACDP-0009-extensions.md) — §2.11 (transparency-log reservation, promoted to RFC-ACDP-0012; this RFC's stronger sibling).
 - [RFC-ACDP-0010 Registry Receipts](RFC-ACDP-0010-registry-receipts.md) — §5 (signing construction, reused), §6 (fingerprint encoding), §9 (key lifecycle, reused), §11 (`invalid_receipt`), §13 (honest scope of receipts).
 - [RFC 8032] Josefsson, S. and I. Liusvaara, "Edwards-Curve Digital Signature Algorithm (EdDSA)", RFC 8032, January 2017.
 - [RFC 8785] Rundgren, A., Jordan, B., and S. Erdtman, "JSON Canonicalization Scheme (JCS)", RFC 8785, June 2020.

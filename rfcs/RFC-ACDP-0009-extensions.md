@@ -175,7 +175,9 @@ A future version will define a registry-event object carrying at least:
 
 **Why deferred:** the same reasoning as §2.4 — push delivery requires operational machinery (delivery guarantees, retry, backpressure, idempotency, signing-key management) that does not belong in the substrate's first release. v0.1.0 control planes poll the discovery/search endpoints (RFC-ACDP-0005) instead.
 
-### 2.11 Transparency log
+### 2.11 Transparency log — **PROMOTED to RFC-ACDP-0012 (acdp/0.3.0)**
+
+> **Status of this section:** the reservation below was promoted to a full normative specification, [RFC-ACDP-0012 Registry Transparency Log](RFC-ACDP-0012-transparency-log.md), as part of the acdp/0.3.0 program. The reserved names — `log_inclusion`, `log_checkpoint`, `log_id`, `leaf_index`, `inclusion_path`, the profile `acdp-registry-transparency-log`, and the endpoint paths `/log/checkpoint`, `/log/proof`, `/log/entries` — were all adopted with their reserved meanings, with three refinements of the sketch recorded in RFC-ACDP-0012 §12: (1) `log_inclusion` is a **top-level** retrieval-envelope member, a sibling of `registry_receipt` rather than a member of it (the receipt is closed, fully signed, and byte-immutable per RFC-ACDP-0010 §4, so a mutable proof cannot live inside it); (2) the sketch's informal `checkpoint_signature` member is realized as the standard `signature` envelope of RFC-ACDP-0001 §5.8; (3) the capabilities field `supports_transparency_log` is retired unused in favor of profile advertisement — the name remains reserved and MUST NOT be emitted. The leaf binds each minted receipt by its RFC-ACDP-0010 §2 receipt hash (plus the identity fields), rather than embedding the receipt verbatim. The text below is retained verbatim as the historical reservation; transparency-log behavior is specified exclusively by RFC-ACDP-0012 and applies to 0.3.0 implementations. Gossip/witness machinery remains reserved — see §2.12.
 
 An **append-only, registry-signed publication log** in the Certificate-Transparency / Merkle-tree-checkpoint style: every minted receipt (RFC-ACDP-0010) is appended as a leaf; the registry periodically signs a checkpoint (tree head) over the log; consumers and independent auditors verify inclusion proofs for individual receipts and consistency proofs between checkpoints. This is the layer above registry receipts: receipts make registry claims *attributable and non-repudiable* (RFC-ACDP-0010 §13); the log makes mint-time backdating and per-consumer equivocation *detectable by any auditor*, because a backdated receipt must be inserted into an already-checkpointed history and conflicting receipts cannot both carry valid inclusion proofs against the same checkpoint chain.
 
@@ -184,6 +186,18 @@ An **append-only, registry-signed publication log** in the Certificate-Transpare
 The following names are RESERVED and MUST NOT be used by extensions: `log_inclusion` (a member of `registry_receipt` carrying an inclusion proof), `log_checkpoint` (a signed tree-head object: `tree_size`, `root_hash`, `checkpoint_signature`), `log_id`, `leaf_index`, `inclusion_path`, the capabilities field `supports_transparency_log`, the profile name `acdp-registry-transparency-log`, and the endpoint paths `/log/checkpoint`, `/log/proof`, and `/log/entries`.
 
 **Why deferred:** receipts had to ship first — the log's leaves *are* receipts, and the receipt construction (preimage, fingerprint, key lifecycle) needed to stabilize before an append-only history could be built over it. The log also brings real operational machinery (checkpoint cadence, proof serving, auditor ecosystem, gossip for split-view detection) that should not gate the 0.2.0 trust improvements. Named future work per RFC-ACDP-0010 §13; no normative content in the 0.2.0 program.
+
+---
+
+### 2.12 Checkpoint witnessing & cosigning
+
+A future ACDP version may introduce **external witnesses** for the RFC-ACDP-0012 transparency log: independent parties that observe a registry's checkpoints over time, verify consistency between them (RFC-ACDP-0012 §9.2), and **cosign** checkpoints they have verified — so that a consumer can require "this checkpoint was also seen, consistency-checked, and signed by N witnesses I trust" instead of trusting the registry's clock and history alone. This closes the two gaps RFC-ACDP-0012 §13 leaves open by design: checkpoint `timestamp` values are registry-asserted (a witness cosignature anchors *when the checkpoint was witnessed* against parties the registry does not control), and split-view detection requires comparing checkpoints across vantages (witnesses *are* the standing vantages, and a gossip protocol among them makes comparison systematic rather than incidental).
+
+#### Reserved field and endpoint names
+
+The following names are RESERVED and MUST NOT be used by extensions: `witness_signatures` (an array member of `log_checkpoint`-bearing responses carrying witness cosignatures over the checkpoint hash), `witnessed_checkpoint`, `witness_id`, `witnessed_at`, the profile name `acdp-log-witness`, and the endpoint path `/log/witness`.
+
+**Why deferred:** witnessing is an *ecosystem*, not an endpoint — it needs a witness identity and discovery story, a cosignature format, witness-policy expression on the consumer side ("which witnesses, how many"), and a gossip protocol with its own anti-partition and privacy analysis. None of that should gate the 0.3.0 log itself, which is already independently useful (any party that retains checkpoints is an ad-hoc witness). Named future work per RFC-ACDP-0012 §13; no normative content in the 0.3.0 program.
 
 ---
 
