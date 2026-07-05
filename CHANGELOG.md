@@ -2,6 +2,14 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.3.0 — Errata from the second implementation — 2026-07-05
+
+**Three defects found by `acdp-verifier-py` (the independent Python implementation built for the two-implementation Final gate) — no wire change for conformant producers/registries; all three were internal inconsistencies.**
+
+- **`embedded.content_hash` schema/prose contradiction (RFC-ACDP-0002 §6.6/§6.7, `acdp-data-ref.schema.json`).** The RFC prose (check 8) and fixture `data-ref-007` require an optional `content_hash` INSIDE the closed `embedded` object, but the JSON schema closed `embedded` over `{encoding, content}` only — a byte-faithful schema validator rejected `data-ref-007` with `schema_violation` instead of `data_ref_hash_mismatch`. The schema now carries the optional member; `additionalProperties: false` retained.
+- **Impossible example output (RFC-ACDP-0003 §4, `pub-007`).** The v1 publish-response example pinned `lineage_id lin:sha256:b14ccd2a…` for `ctx_id …/550e8400-…`, whose §5.6 derivation is `lin:sha256:ca770dc5d7c41109753bd3d045c2b7bd4cf687ab9cd2552ff17a37bcecbd0810` — no conformant registry could emit the documented pair. Corrected in both files.
+- **`status-001` illustrative body omitted the REQUIRED `contributors` field (RFC-ACDP-0002 §3.1).** Added `"contributors": []`; the fixture's executable expectation (status-pattern tolerance) is unchanged.
+
 ## v0.3.0 — (Draft) — 2026-07-04
 
 **Backward-compatible minor version.** Every existing `v0.1.0`/`v0.2.0` body, signature, `content_hash`, and RFC-ACDP-0010 receipt remains valid and wire-compatible: no body field, JCS rule, content-hash semantic, signature semantic, or receipt semantic changed, and no schema `$id` changed (additive edits in the `v0.1.0` namespace per VERSIONING.md — one additive field on the closed `capabilities.limits` object, four new closed schemas (`lineage_head_receipt`, log leaf, log checkpoint, log inclusion proof), two optional members on the open retrieval envelope, and one wire-enum addition). The 0.3.0 surface is **Draft** — RFC-ACDP-0011's and RFC-ACDP-0012's `Version:` headers read `0.3.0-draft`, amended passages in RFC-0003/0004/0007/0008 are marked *(0.3.0)*, and the line goes Final once the 0.3.0 conformance fixtures pass against two independent implementations. Unlike 0.2.0's publish-response caveat, 0.3.0 changes **no existing parse surface**: the new retrieval member rides the envelope's top-level openness (RFC-ACDP-0001 §6), and the capabilities field is optional inside a closed object that 0.3.0 verifiers know.
