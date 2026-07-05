@@ -3,13 +3,19 @@
   "$id": "https://schemas.acdp.io/v0.1.0/acdp-data-ref.schema.json",
   "title": "ACDP Data Reference",
   "description": "A reference to a piece of data the context describes. Each data reference contains exactly one of 'location' (URI string or structured locator) or 'embedded' (inline content).",
-
   "type": "object",
-  "required": ["type"],
+  "required": [
+    "type"
+  ],
   "properties": {
     "type": {
       "type": "string",
-      "enum": ["primary_result", "raw_data", "supporting_info", "derived_data"],
+      "enum": [
+        "primary_result",
+        "raw_data",
+        "supporting_info",
+        "derived_data"
+      ],
       "description": "The role of this data within the context."
     },
     "description": {
@@ -24,7 +30,14 @@
     },
     "format": {
       "type": "string",
-      "examples": ["json", "csv", "parquet", "binary", "yaml", "xml"],
+      "examples": [
+        "json",
+        "csv",
+        "parquet",
+        "binary",
+        "yaml",
+        "xml"
+      ],
       "description": "Producer-defined format identifier."
     },
     "schema_version": {
@@ -42,7 +55,9 @@
           "title": "URI String Form",
           "type": "string",
           "pattern": "^[a-z][a-z0-9+.-]*:",
-          "not": { "pattern": "^[a-z][a-z0-9+.-]*://[^/?#@]+@" },
+          "not": {
+            "pattern": "^[a-z][a-z0-9+.-]*://[^/?#@]+@"
+          },
           "minLength": 3,
           "maxLength": 4096,
           "examples": [
@@ -55,7 +70,9 @@
         {
           "title": "Structured Locator Form",
           "type": "object",
-          "required": ["scheme"],
+          "required": [
+            "scheme"
+          ],
           "properties": {
             "scheme": {
               "type": "string",
@@ -71,22 +88,49 @@
       "title": "Embedded Content",
       "description": "Inline content for small data. Decoded size MUST NOT exceed 64 KB.",
       "type": "object",
-      "required": ["encoding", "content"],
+      "required": [
+        "encoding",
+        "content"
+      ],
       "properties": {
         "encoding": {
           "type": "string",
-          "enum": ["json", "utf8", "base64"],
+          "enum": [
+            "json",
+            "utf8",
+            "base64"
+          ],
           "description": "Encoding of the content. Determines how the content_hash is computed."
         },
         "content": {
           "description": "The embedded data. Type depends on encoding: any JSON value for 'json'; string for 'utf8' and 'base64'."
+        },
+        "content_hash": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "description": "OPTIONAL SHA-256 of the decoded embedded bytes (RFC-ACDP-0002 §6.6 check 8, §6.7; fixture data-ref-007). Mismatch → data_ref_hash_mismatch."
         }
       },
       "additionalProperties": false,
       "allOf": [
         {
-          "if": { "properties": { "encoding": { "enum": ["utf8", "base64"] } } },
-          "then": { "properties": { "content": { "type": "string" } } }
+          "if": {
+            "properties": {
+              "encoding": {
+                "enum": [
+                  "utf8",
+                  "base64"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "content": {
+                "type": "string"
+              }
+            }
+          }
         }
       ]
     }
@@ -94,13 +138,25 @@
   "oneOf": [
     {
       "title": "Has location",
-      "required": ["location"],
-      "not": { "required": ["embedded"] }
+      "required": [
+        "location"
+      ],
+      "not": {
+        "required": [
+          "embedded"
+        ]
+      }
     },
     {
       "title": "Has embedded",
-      "required": ["embedded"],
-      "not": { "required": ["location"] }
+      "required": [
+        "embedded"
+      ],
+      "not": {
+        "required": [
+          "location"
+        ]
+      }
     }
   ],
   "additionalProperties": true,
