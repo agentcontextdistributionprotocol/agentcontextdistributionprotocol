@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Core
 
 **Document:** RFC-ACDP-0001
-**Version:** 0.2.0-draft
-**Status:** Community Standards Track (Final for acdp/0.1.0; sections marked *(0.2.0)* are Draft)
+**Version:** 0.3.0
+**Status:** Community Standards Track (Final)
 **Canonical wire format:** JSON over HTTP
 **Required JSON canonicalization:** [RFC 8785 — JSON Canonicalization Scheme (JCS)](https://datatracker.ietf.org/doc/html/rfc8785)
 **Intended status:** Stable Core
@@ -28,9 +28,9 @@ ACDP Core does not define discovery semantics, registry policy, retraction rules
 
 ## 1. Status of This Memo
 
-This document is a Final ACDP specification (acdp/0.1.0). It is stable for the 0.1.0 release; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
+This document is a **Final** ACDP specification (first published Final for acdp/0.1.0, with Final amendments through acdp/0.3.0). It is stable for the released lines; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
 
-This revision additionally carries the **acdp/0.2.0 Trust & Hardening amendments** (registry receipts — RFC-ACDP-0010; `did:key` producers; explicit `acdp_version`; lineage anchoring; historical key retention). Amended or added passages are marked *(0.2.0)* and have **Draft** status until the 0.2.0 conformance pack passes against two independent implementations; everything else remains Final and wire-frozen. No 0.2.0 amendment changes any v0.1.0 body field, JCS rule, content-hash semantic, or signature semantic — every existing v0.1.0 body, signature, and `content_hash` remains valid.
+This revision additionally carries the **acdp/0.2.0 Trust & Hardening amendments** (registry receipts — RFC-ACDP-0010; `did:key` producers; explicit `acdp_version`; lineage anchoring; historical key retention) and the **acdp/0.3.0 profile additions** (the §9.1 profile definitions for RFC-ACDP-0011/0012/0013). Amended or added passages are marked *(0.2.0)* or *(0.3.0)* to record the release line that introduced them; both lines are **Final** as of 2026-07-05, promoted after their conformance packs passed against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md)). No amendment changes any v0.1.0 body field, JCS rule, content-hash semantic, or signature semantic — every existing v0.1.0 body, signature, and `content_hash` remains valid.
 
 ACDP `0.1.0` is the **first published Final version** of the protocol; the numbering scheme treats `acdp/0.1.0` as the inaugural release. The `0.0.1` identifier was used only for internal pre-release drafts and was never promoted to a Release Candidate or Final status. `0.1.0` is wire-compatible with those drafts — the body format, JCS canonicalization, content-hash, and signature semantics are unchanged.
 

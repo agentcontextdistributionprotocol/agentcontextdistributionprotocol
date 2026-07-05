@@ -3,7 +3,7 @@
 
 **Document:** RFC-ACDP-0009
 **Version:** 0.3.0-reserved
-**Status:** **Reserved** — number pinned, no normative text yet (§2.7 promoted to [RFC-ACDP-0010](RFC-ACDP-0010-registry-receipts.md) in acdp/0.2.0; §2.1 promoted to [RFC-ACDP-0013](RFC-ACDP-0013-lifecycle-events.md) in acdp/0.3.0)
+**Status:** **Reserved** — number pinned, no normative text yet (§2.7 promoted to [RFC-ACDP-0010](RFC-ACDP-0010-registry-receipts.md) in acdp/0.2.0; §2.1 promoted to [RFC-ACDP-0013](RFC-ACDP-0013-lifecycle-events.md) and §2.11 promoted to [RFC-ACDP-0012](RFC-ACDP-0012-transparency-log.md) in acdp/0.3.0)
 
 This RFC is a placeholder. It reserves the numbering and the field namespaces under which post-v0.1.0 capabilities will be specified. **It contains no normative requirements.**
 

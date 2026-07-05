@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Registry Receipts
 
 **Document:** RFC-ACDP-0010
-**Version:** 0.2.0-draft
-**Status:** Community Standards Track (Draft)
+**Version:** 0.2.0
+**Status:** Community Standards Track (Final)
 
 This RFC specifies **registry receipts**: registry-signed attestations that bind the registry-assigned identifiers of a context (`ctx_id`, `lineage_id`, `origin_registry`, `created_at`) and the producer's `content_hash` and signing-key fingerprint to the registry's DID. It promotes the RFC-ACDP-0009 §2.7 reservation to a full normative specification and is the anchor of the ACDP 0.2.0 Trust & Hardening program. It depends on RFC-ACDP-0001 (Core), RFC-ACDP-0003 (Publish), RFC-ACDP-0004 (Retrieval), and RFC-ACDP-0007 (Capabilities & Errors).
 
@@ -11,7 +11,7 @@ This RFC specifies **registry receipts**: registry-signed attestations that bind
 
 ## 1. Status of This Memo
 
-This document is a **Draft** ACDP specification targeting acdp/0.2.0. It follows the governance lifecycle in [governance/RFC-PROCESS.md](../governance/RFC-PROCESS.md) (Draft → Review → Final); per [VERSIONING.md](../VERSIONING.md) it is promoted to Final once the conformance fixtures it defines (`rcpt-001..004`, `fp-001`, `rot-001`, `fed-009`) pass against at least two independent interoperating implementations.
+This document is a **Final** ACDP specification (acdp/0.2.0). It is stable for the 0.2.0 line; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md). It was promoted from Draft to Final on 2026-07-05, the VERSIONING.md gate having been met: the conformance fixtures it defines (`rcpt-001..004`, `fp-001`, `rot-001`, `fed-009`) pass against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md) for the promotion record).
 
 The wire shape specified here is byte-identical to the shape reserved by RFC-ACDP-0009 §2.7 since v0.1.0. v0.1.0 libraries already carry the preserve-verbatim obligation for `registry_receipt` (RFC-ACDP-0009 §2.7); nothing in this document invalidates any v0.1.0 body, signature, or `content_hash`.
 

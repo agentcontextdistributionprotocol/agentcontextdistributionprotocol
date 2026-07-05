@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Publish & Supersession
 
 **Document:** RFC-ACDP-0003
-**Version:** 0.3.0-draft
-**Status:** Community Standards Track (Final for acdp/0.1.0; sections marked *(0.2.0)* or *(0.3.0)* are Draft)
+**Version:** 0.3.0
+**Status:** Community Standards Track (Final)
 
 This RFC specifies how producers publish contexts to ACDP registries and how registries handle supersession. It depends on RFC-ACDP-0001 (Core) and RFC-ACDP-0002 (Context Body).
 
@@ -11,11 +11,13 @@ This RFC specifies how producers publish contexts to ACDP registries and how reg
 
 ## 1. Status of This Memo
 
-This document is a Final ACDP specification (acdp/0.1.0). It is stable for the 0.1.0 release; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
+This document is a Final ACDP specification (acdp/0.1.0, with Final amendments through acdp/0.3.0). It is stable for the released lines; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
 
-Passages marked *(0.2.0)* are Draft amendments from the acdp/0.2.0 Trust & Hardening program (registry receipts per [RFC-ACDP-0010](RFC-ACDP-0010-registry-receipts.md), lineage anchoring, idempotency-scope clarification). They change no v0.1.0 body field, hash, or signature semantic.
+Passages marked *(0.2.0)* are amendments from the acdp/0.2.0 Trust & Hardening program (registry receipts per [RFC-ACDP-0010](RFC-ACDP-0010-registry-receipts.md), lineage anchoring, idempotency-scope clarification). They change no v0.1.0 body field, hash, or signature semantic.
 
-Passages marked *(0.3.0)* are Draft amendments from the acdp/0.3.0 core-profile revision (Idempotency-Key support REQUIRED for `acdp-registry-core` under `acdp_version` ≥ 0.3.0 — §6.4). They change no wire shape: no body field, hash, signature semantic, header syntax, or error code is touched — the 0.3.0 change is a conformance tightening on registries that choose to advertise `acdp_version` ≥ 0.3.0. Everything not so marked remains Final and wire-frozen for acdp/0.1.0.
+Passages marked *(0.3.0)* are amendments from the acdp/0.3.0 core-profile revision (Idempotency-Key support REQUIRED for `acdp-registry-core` under `acdp_version` ≥ 0.3.0 — §6.4). They change no wire shape: no body field, hash, signature semantic, header syntax, or error code is touched — the 0.3.0 change is a conformance tightening on registries that choose to advertise `acdp_version` ≥ 0.3.0.
+
+Both amendment lines are **Final** as of 2026-07-05, promoted after their conformance packs passed against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md)); the markers record provenance, not status. Everything not so marked remains Final and wire-frozen for acdp/0.1.0.
 
 ---
 

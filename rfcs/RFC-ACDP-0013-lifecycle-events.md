@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Lifecycle Events & Retraction
 
 **Document:** RFC-ACDP-0013
-**Version:** 0.3.0-draft
-**Status:** Community Standards Track (Draft)
+**Version:** 0.3.0
+**Status:** Community Standards Track (Final)
 
 This RFC specifies **lifecycle events**: a signed, append-only event mechanism in registry state through which a producer (or, in the policy/legal case, a registry) formally **retracts** a published context — and, if warranted, later reverses the retraction. It promotes the RFC-ACDP-0009 §2.1 reservation to a full normative specification, activating the reserved `lifecycle_events` registry-state field, the reserved `retracted` status value (RFC-ACDP-0004 §4.1), and the reserved `immutable_field` error code (RFC-ACDP-0007 §5). It depends on RFC-ACDP-0001 (Core), RFC-ACDP-0003 (Publish & Supersession), RFC-ACDP-0004 (Retrieval & Lineage), RFC-ACDP-0005 (Discovery), and RFC-ACDP-0007 (Capabilities & Errors); it integrates with RFC-ACDP-0010/0011 (receipts) where those profiles are deployed.
 
@@ -13,7 +13,7 @@ Retraction is **mark-not-delete**: the body of a retracted context remains perma
 
 ## 1. Status of This Memo
 
-This document is a **Draft** ACDP specification targeting acdp/0.3.0. It follows the governance lifecycle in [governance/RFC-PROCESS.md](../governance/RFC-PROCESS.md) (Draft → Review → Final); per [VERSIONING.md](../VERSIONING.md) it is promoted to Final once the conformance fixtures it defines (`lc-001..003`) pass against at least two independent interoperating implementations.
+This document is a **Final** ACDP specification (acdp/0.3.0). It is stable for the 0.3.0 line; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md). It was promoted from Draft to Final on 2026-07-05, the VERSIONING.md gate having been met: the conformance fixtures it defines (`lc-001..003`) pass against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md) for the promotion record).
 
 This RFC promotes the RFC-ACDP-0009 §2.1 reservation. The reserved names — the `lifecycle_events` registry-state field, the `retracted` status, and the `immutable_field` error code — are adopted exactly as reserved. Nothing in this document invalidates any v0.1.0/0.2.0 body, signature, `content_hash`, or receipt; retraction never touches a body.
 

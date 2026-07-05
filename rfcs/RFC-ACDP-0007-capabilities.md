@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Capabilities & Errors
 
 **Document:** RFC-ACDP-0007
-**Version:** 0.3.0-draft
-**Status:** Community Standards Track (Final for acdp/0.1.0; sections marked *(0.2.0)* or *(0.3.0)* are Draft)
+**Version:** 0.3.0
+**Status:** Community Standards Track (Final)
 
 This RFC specifies the registry capability declaration document and the standard error envelope used by all ACDP endpoints.
 
@@ -11,9 +11,9 @@ This RFC specifies the registry capability declaration document and the standard
 
 ## 1. Status of This Memo
 
-This document is a Final ACDP specification (acdp/0.1.0). It is stable for the 0.1.0 release; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
+This document is a Final ACDP specification (acdp/0.1.0, with Final amendments through acdp/0.3.0). It is stable for the released lines; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
 
-Passages marked *(0.2.0)* are Draft amendments from the acdp/0.2.0 Trust & Hardening program. Passages marked *(0.3.0)* are Draft amendments from the acdp/0.3.0 core-profile revision (mandatory Idempotency-Key support per RFC-ACDP-0003 §6.4, and the OPTIONAL `limits.max_publish_per_minute` capabilities field). Neither set changes any v0.1.0 body field, hash, or signature semantic; everything not so marked remains Final and wire-frozen for acdp/0.1.0.
+Passages marked *(0.2.0)* are amendments from the acdp/0.2.0 Trust & Hardening program. Passages marked *(0.3.0)* are amendments from the acdp/0.3.0 program (mandatory Idempotency-Key support per RFC-ACDP-0003 §6.4, the OPTIONAL `limits.max_publish_per_minute` capabilities field, and the RFC-ACDP-0011/0012/0013 surfaces). Both lines are **Final** as of 2026-07-05, promoted after their conformance packs passed against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md)); the markers record provenance, not status. Neither set changes any v0.1.0 body field, hash, or signature semantic; everything not so marked remains Final and wire-frozen for acdp/0.1.0.
 
 ---
 

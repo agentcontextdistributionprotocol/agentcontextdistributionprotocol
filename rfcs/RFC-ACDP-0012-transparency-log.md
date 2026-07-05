@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Registry Transparency Log
 
 **Document:** RFC-ACDP-0012
-**Version:** 0.3.0-draft
-**Status:** Community Standards Track (Draft)
+**Version:** 0.3.0
+**Status:** Community Standards Track (Final)
 
 This RFC specifies the **registry transparency log**: a per-registry, append-only Merkle tree (RFC 6962-style) over publish events, with registry-signed checkpoints (tree heads), inclusion proofs, and consistency proofs. It promotes the RFC-ACDP-0009 §2.11 reservation to a full normative specification and is the capstone of the trust-hardening arc begun by RFC-ACDP-0010 (Registry Receipts) and continued by RFC-ACDP-0011 (Lineage-Head Receipts): receipts made registry claims *attributable and non-repudiable*; the log makes mint-time backdating, omission-after-the-fact, and per-consumer equivocation *detectable by any auditor holding checkpoints*. It depends on RFC-ACDP-0001 (Core), RFC-ACDP-0003 (Publish), RFC-ACDP-0004 (Retrieval), RFC-ACDP-0007 (Capabilities & Errors), RFC-ACDP-0008 (Security), and RFC-ACDP-0010 (Registry Receipts).
 
@@ -11,7 +11,7 @@ This RFC specifies the **registry transparency log**: a per-registry, append-onl
 
 ## 1. Status of This Memo
 
-This document is a **Draft** ACDP specification targeting acdp/0.3.0. It follows the governance lifecycle in [governance/RFC-PROCESS.md](../governance/RFC-PROCESS.md) (Draft → Review → Final); per [VERSIONING.md](../VERSIONING.md) it is promoted to Final once the conformance fixtures it defines (`log-001..004`) pass against at least two independent interoperating implementations.
+This document is a **Final** ACDP specification (acdp/0.3.0). It is stable for the 0.3.0 line; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md). It was promoted from Draft to Final on 2026-07-05, the VERSIONING.md gate having been met: the conformance fixtures it defines (`log-001..004`) pass against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md) for the promotion record).
 
 This RFC promotes the RFC-ACDP-0009 §2.11 reservation. The reserved names — `log_inclusion`, `log_checkpoint`, `log_id`, `leaf_index`, `inclusion_path`, the profile `acdp-registry-transparency-log`, and the endpoint paths `/log/checkpoint`, `/log/proof`, `/log/entries` — are all adopted with the reserved meanings; §12 records the two places where this document refines the §2.11 *sketch* (the position of `log_inclusion` and the realization of the checkpoint signature member). Nothing in this document invalidates any v0.1.0/0.2.0/0.3.0 body, signature, `content_hash`, RFC-ACDP-0010 receipt, or RFC-ACDP-0011 head receipt.
 

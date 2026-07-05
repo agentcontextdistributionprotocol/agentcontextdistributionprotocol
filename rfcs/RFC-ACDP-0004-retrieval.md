@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Retrieval & Lineage
 
 **Document:** RFC-ACDP-0004
-**Version:** 0.3.0-draft
-**Status:** Community Standards Track (Final for acdp/0.1.0; sections marked *(0.2.0)* / *(0.3.0)* are Draft)
+**Version:** 0.3.0
+**Status:** Community Standards Track (Final)
 
 This RFC specifies how consumers retrieve contexts and lineages from ACDP registries, and how registries derive `status`. It depends on RFC-ACDP-0001 (Core) and RFC-ACDP-0002 (Context Body).
 
@@ -11,7 +11,9 @@ This RFC specifies how consumers retrieve contexts and lineages from ACDP regist
 
 ## 1. Status of This Memo
 
-This document is a Final ACDP specification (acdp/0.1.0). It is stable for the 0.1.0 release; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
+This document is a Final ACDP specification (acdp/0.1.0, with Final amendments through acdp/0.3.0). It is stable for the released lines; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
+
+Passages marked *(0.2.0)* or *(0.3.0)* record the release line that added them (acdp/0.2.0 Trust & Hardening; the acdp/0.3.0 program). Both lines are **Final** as of 2026-07-05, promoted after their conformance packs passed against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md)). No amendment changes any v0.1.0 body field, hash, or signature semantic.
 
 ---
 
