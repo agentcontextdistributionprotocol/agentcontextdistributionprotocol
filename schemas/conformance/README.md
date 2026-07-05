@@ -20,7 +20,8 @@ conformance/
 ├── rcpt-*.json     Registry receipts — golden vector + verification failures (RFC-ACDP-0010, 0.2.0)
 ├── lhr-*.json      Lineage-head receipts — golden vector + verification failures (RFC-ACDP-0011, 0.3.0)
 ├── log-*.json      Registry transparency log — Merkle golden vectors + verification failures (RFC-ACDP-0012, 0.3.0)
-├── fp-*.json       Key-fingerprint encoding vectors (RFC-ACDP-0010 §6, 0.2.0)
+├── lc-*.json       Lifecycle events & retraction scenarios (RFC-ACDP-0013, 0.3.0)
+├── rev-*.json      Producer key revocation — golden vector + boundary semantics (RFC-ACDP-0014, 0.3.0)├── fp-*.json       Key-fingerprint encoding vectors (RFC-ACDP-0010 §6, 0.2.0)
 ├── rot-*.json      Historical producer-key verification with receipts (RFC-ACDP-0010 §10, 0.2.0)
 ├── dk-*.json       did:key resolution rejection scenarios (RFC-ACDP-0001 §5.11.1, 0.2.0)
 ├── fed-*.json      Cross-registry / SSRF protection scenarios (RFC-ACDP-0006 §7; fed-009 receipts, RFC-ACDP-0010 §11)
@@ -55,7 +56,14 @@ conformance/
 To claim full conformance a registry MUST:
 1. Pass `python3 scripts/conformance-runner.py` (arithmetic/cryptographic)
 2. Separately execute all behavioral fixture scenarios (`pub-*`, `vis-*`, `ret-*`, `err-*`, `schema-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `dk-*`, `rcpt-*`, `lhr-*`, `log-*`, `rot-*`, …) against a live registry instance
+- `rev-*.json` carrying a `test_keypair` (i.e. `rev-001`) — key-revocation context golden cycle: same arithmetic as `sig-*`, plus the RFC-ACDP-0014 §4 shape and §5 not-self-signed checks
+- `fp-*.json` — key-fingerprint encoding vectors (RFC-ACDP-0010 §6)
 
+**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `schema-*`, `dk-*`, `rot-*`, `lc-*`, `rcpt-002`..`rcpt-004`, `lhr-002`..`lhr-004`, `rev-002`, …). Those fixtures define request/response scenarios that require a running registry or consumer to execute. They are machine-readable specifications for implementers to validate against their implementation.
+
+To claim full conformance a registry MUST:
+1. Pass `python3 scripts/conformance-runner.py` (arithmetic/cryptographic)
+2. Separately execute all behavioral fixture scenarios (`pub-*`, `vis-*`, `ret-*`, `err-*`, `schema-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `dk-*`, `rcpt-*`, `lhr-*`, `rot-*`, `lc-*`, `rev-*`, …) against a live registry instance
 ---
 
 ## Fixture Format
@@ -265,7 +273,24 @@ The `sig-*` fixtures are checked by `scripts/conformance-runner.py` (CI). A fail
 | `log-004` | A checkpoint whose `root_hash` was altered after signing (original signature bytes kept) — JCS-recomputing the preimage yields a different checkpoint hash, so the signature MUST fail to verify (RFC-ACDP-0012 §9.3 step 2; the `rcpt-002` analogue one layer up) | failure: `invalid_log_proof` category |
 
 `log-001` and `log-003` are executed arithmetically by `scripts/conformance-runner.py` (including negative self-checks that tampered paths and swapped roots are rejected by the verification algorithms); `log-002` and `log-004` are behavioral. Required for `acdp-registry-transparency-log`; conditionally required for `acdp-consumer` implementations that rely on `log_inclusion` members or the `/log/*` endpoints. New wire error code: proof/checkpoint failures surface as `invalid_log_proof`, deliberately distinct from `invalid_receipt` (RFC-ACDP-0012 §11).
+### Lifecycle events & retraction (RFC-ACDP-0013, 0.3.0)
 
+| ID | Description | Outcome |
+|---|---|---|
+| `lc-001` | End-to-end retraction flow: authenticated `POST /contexts/{ctx_id}/retract` with a producer-signed event → `status: retracted`, event appended (append-only); body remains retrievable byte-identical (mark-not-delete) and the body-only endpoint is untouched; excluded from default search, returned under `status=retracted`; double retract → `invalid_lifecycle_transition` (409); `/republish` reverses with both events retained | mixed (per-scenario) |
+| `lc-002` | Lifecycle request attempting to supply/alter body content (a `body` member or body-field-named member) → `immutable_field` (400), distinct from `schema_violation`; actor ≠ `agent_id` → `not_authorized` (403, after visibility); unsigned producer event → rejected | failure (per-scenario codes) |
+| `lc-003` | `/current` with retraction (RFC-ACDP-0013 §8.3): a retracted version is never a head; all-superseded-or-retracted lineage → `not_found`; recovery via supersession of the retracted head or republication; head receipts (where advertised) never name a retracted head | mixed (per-scenario) |
+
+All `lc-*` fixtures are behavioral. Required for `acdp-registry-lifecycle`; `lc-001`/`lc-003` are conditionally required (consumer-observable aspects) for `acdp-consumer` implementations retrieving from lifecycle-advertising registries. The event vocabulary is the open registry `registries/lifecycle-event-types.md` (v1: `retracted`, `republished`); the event object schema (`acdp-lifecycle-event.schema.json`) is closed.
+
+### Producer key revocation (RFC-ACDP-0014, 0.3.0)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `rev-001` | Key-revocation context golden vector: producer-signed `key-revocation` body revoking K1 (the `sig-001` key; fingerprint as in `fp-001`/`rot-001`), signed by current key K2 (the `sig-003` seed — `rot-001`'s K2). Canonical form, `content_hash`, Ed25519 signature over the ASCII `content_hash` string; §4 shape (public visibility, §6-encoded fingerprint, canonical-ms `compromised_since`); §5 not-self-signed rule. Executed by the runner. | success: byte-exact reproduction end-to-end |
+| `rev-002` | Compromise-boundary semantics (RFC-ACDP-0014 §7), completing `rot-001`: receipt-attested publish time strictly before `compromised_since` → *historically authorized (pre-compromise, receipt-attested)*; at/after → fail closed despite a valid receipt; no receipt (publish time unverifiable) → fail closed under the strict profile; producer-signed vs registry-attested trust classes distinguishable | mixed (per-scenario) |
+
+`rev-001` is executed arithmetically by `scripts/conformance-runner.py`; `rev-002` is behavioral. Both are required for 0.3.0 `acdp-consumer` implementations; `rev-001`'s registry-side rejections (shape → `schema_violation`; self-signed-by-revoked-key → `key_not_authorized`) bind to `acdp-registry-core` at `acdp_version` ≥ 0.3.0. No new wire error code and no profile: revocation rides existing surfaces (RFC-ACDP-0014 §10).
 ### did:key resolution (RFC-ACDP-0001 §5.4 / §5.11.1, 0.2.0)
 
 | ID | Description | Outcome |

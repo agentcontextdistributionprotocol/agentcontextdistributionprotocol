@@ -1,0 +1,78 @@
+{
+  "id": "lc-002",
+  "description": "Lifecycle endpoints never mutate bodies (RFC-ACDP-0013 §6 step 2). A retract request that attempts to supply or alter body content MUST be rejected with the immutable_field error code (HTTP 400) — activated in 0.3.0 from the reservation held since v0.1.0 (RFC-ACDP-0007 §5, RFC-ACDP-0009 §2.1) — distinct from generic schema_violation so producers learn the category error. Also pins the endpoint authentication failures.",
+  "tags": ["lifecycle", "failure", "security"],
+  "applies_to_profiles": ["acdp-registry-lifecycle"],
+  "input": {
+    "precondition": "The sig-001 golden context, active, on a registry advertising acdp-registry-lifecycle."
+  },
+  "scenarios": [
+    {
+      "name": "A — request carries a body member",
+      "request": {
+        "method": "POST",
+        "path": "/contexts/{ctx_id}/retract",
+        "body": {
+          "event": { "event_id": "018f6d0a-1111-4c4d-9e1f-3a5b7c9d1e2f", "ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234", "event_type": "retracted", "occurred_at": "2026-07-04T09:20:00.000Z", "actor": "did:web:agents.example.com:test-producer", "signature": { "algorithm": "ed25519", "key_id": "did:web:agents.example.com:test-producer#key-1", "value": "<valid event signature>" } },
+          "body": { "title": "Corrected title" }
+        }
+      },
+      "expected": {
+        "outcome": "failure",
+        "http_status": 400,
+        "error_code": "immutable_field",
+        "behavior": "The 'body' member is an attempt to modify immutable body content through a lifecycle endpoint. The registry MUST reject with immutable_field (NOT schema_violation) and MUST NOT append any event or change any state."
+      }
+    },
+    {
+      "name": "B — request carries a body-field-named member",
+      "request": {
+        "method": "POST",
+        "path": "/contexts/{ctx_id}/retract",
+        "body": {
+          "event": { "event_id": "018f6d0a-2222-4c4d-9e1f-3a5b7c9d1e2f", "ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234", "event_type": "retracted", "occurred_at": "2026-07-04T09:21:00.000Z", "actor": "did:web:agents.example.com:test-producer", "signature": { "algorithm": "ed25519", "key_id": "did:web:agents.example.com:test-producer#key-1", "value": "<valid event signature>" } },
+          "summary": "please update the summary too"
+        }
+      },
+      "expected": {
+        "outcome": "failure",
+        "http_status": 400,
+        "error_code": "immutable_field",
+        "behavior": "An envelope member named after a body field (title, summary, metadata, data_refs, ...) is the same category error as scenario A: immutable_field, no state change. (An unknown member NOT naming body content — e.g. 'note' — is a plain schema_violation against the closed request envelope; the distinction is what this fixture pins.)"
+      }
+    },
+    {
+      "name": "C — actor is not the producer",
+      "request": {
+        "method": "POST",
+        "path": "/contexts/{ctx_id}/retract",
+        "body": {
+          "event": { "event_id": "018f6d0a-3333-4c4d-9e1f-3a5b7c9d1e2f", "ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234", "event_type": "retracted", "occurred_at": "2026-07-04T09:22:00.000Z", "actor": "did:web:agents.example.com:other-agent", "signature": { "algorithm": "ed25519", "key_id": "did:web:agents.example.com:other-agent#key-1", "value": "<signature valid for other-agent>" } }
+        }
+      },
+      "expected": {
+        "outcome": "failure",
+        "http_status": 403,
+        "error_code": "not_authorized",
+        "behavior": "event.actor != body.agent_id: rejected with not_authorized — the same authorization rule as supersession by a different agent_id (RFC-ACDP-0003 §3.1 step 3, RFC-ACDP-0013 §6 step 3). Visibility is checked FIRST (§6 step 1): a requester who could not retrieve the context gets not_found (404), never a distinguishable 403."
+      }
+    },
+    {
+      "name": "D — unsigned producer event",
+      "request": {
+        "method": "POST",
+        "path": "/contexts/{ctx_id}/retract",
+        "body": {
+          "event": { "event_id": "018f6d0a-4444-4c4d-9e1f-3a5b7c9d1e2f", "ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234", "event_type": "retracted", "occurred_at": "2026-07-04T09:23:00.000Z", "actor": "did:web:agents.example.com:test-producer" }
+        }
+      },
+      "expected": {
+        "outcome": "failure",
+        "http_status": 400,
+        "error_code": "schema_violation",
+        "behavior": "Producer-initiated events MUST be signed (RFC-ACDP-0013 §5); a missing signature fails the §6 step 2/3 validation. A present-but-unverifiable signature is invalid_signature instead; key-resolution failures map exactly as at publish time."
+      }
+    }
+  ],
+  "notes": "immutable_field and invalid_lifecycle_transition (see lc-001 scenario C) are 0.3.0 wire codes: implementations declaring acdp_version < 0.3.0 MUST NOT emit them (registries/error-codes.md; acdp-error.schema.json enum)."
+}

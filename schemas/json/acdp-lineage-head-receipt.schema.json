@@ -40,9 +40,9 @@
     "head_status": {
       "allOf": [
         { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/status" },
-        { "not": { "const": "superseded" } }
+        { "not": { "enum": ["superseded", "retracted"] } }
       ],
-      "description": "The head's registry-derived status at as_of (RFC-ACDP-0004 §4). Never 'superseded' — a superseded version is never the current head (RFC-ACDP-0004 §5.2); in practice 'active' or 'expired'. Open pattern for future status values, as RFC-ACDP-0004 §4.1."
+      "description": "The head's registry-derived status at as_of (RFC-ACDP-0004 §4). Never 'superseded' — a superseded version is never the current head (RFC-ACDP-0004 §5.2) — and (0.3.0) never 'retracted' — a retracted version is never served as head (RFC-ACDP-0013 §8.3). In practice 'active' or 'expired'. Open pattern for future status values, as RFC-ACDP-0004 §4.1."
     },
     "as_of": {
       "type": "string",

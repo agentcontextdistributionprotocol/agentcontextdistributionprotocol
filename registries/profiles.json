@@ -90,9 +90,7 @@
       ],
       "conditional_fixtures": [
         {
-          "fixtures": [
-            "sig-002-ecdsa-p256-golden"
-          ],
+          "fixtures": ["sig-002-ecdsa-p256-golden"],
           "required_when": "supported_signature_algorithms includes \"ecdsa-p256\"",
           "capability_key": "supported_signature_algorithms",
           "capability_match": "ecdsa-p256"
@@ -109,9 +107,7 @@
           "capability_match": "did:key"
         },
         {
-          "fixtures": [
-            "dk-003-did-key-not-advertised"
-          ],
+          "fixtures": ["dk-003-did-key-not-advertised"],
           "required_when": "acdp_version >= 0.2.0 AND supported_did_methods does NOT include \"did:key\" — pins the key_resolution_failed rejection of did:key publishes on non-advertising registries (RFC-ACDP-0007 §3.1)",
           "capability_key": "supported_did_methods",
           "capability_match": "!did:key"
@@ -129,17 +125,19 @@
           "capability_match": true
         },
         {
-          "fixtures": [
-            "idem-007-required-at-0-3-0"
-          ],
+          "fixtures": ["idem-007-required-at-0-3-0"],
           "required_when": "acdp_version >= 0.3.0 (0.3.0) — pins the schema_violation rejection of a capabilities document advertising acdp_version >= 0.3.0 with supports_idempotency_key absent or false (RFC-ACDP-0003 §6.4; RFC-ACDP-0007 §3.5 item 10)",
+          "capability_key": "acdp_version",
+          "capability_match": ">=0.3.0"
+        },
+        {
+          "fixtures": ["rev-001-revocation-context-golden"],
+          "required_when": "acdp_version >= 0.3.0 (0.3.0) — the registry side of RFC-ACDP-0014 §4/§5: accept a well-formed key-revocation publish; reject shape violations (missing/malformed revoked_key_fingerprint or compromised_since, non-public visibility) with schema_violation; reject a revocation self-signed by the revoked key with key_not_authorized",
           "capability_key": "acdp_version",
           "capability_match": ">=0.3.0"
         }
       ],
-      "tolerated_outcomes": [
-        "idem-006-race-concurrent"
-      ],
+      "tolerated_outcomes": ["idem-006-race-concurrent"],
       "not_implemented_permitted_on": [
         "GET /contexts/search (registry MAY return 501 if acdp-registry-discovery is not advertised)"
       ],
@@ -194,9 +192,7 @@
       "not_implemented_permitted_on": [],
       "conditional_fixtures": [
         {
-          "fixtures": [
-            "fed-009-cross-registry-receipt"
-          ],
+          "fixtures": ["fed-009-cross-registry-receipt"],
           "required_when": "the registry also advertises \"acdp-registry-receipts\" or resolves contexts from receipts-advertising upstreams (0.2.0)",
           "capability_key": "profiles",
           "capability_match": "acdp-registry-receipts"
@@ -219,9 +215,7 @@
       ],
       "conditional_fixtures": [
         {
-          "fixtures": [
-            "fed-009-cross-registry-receipt"
-          ],
+          "fixtures": ["fed-009-cross-registry-receipt"],
           "required_when": "the registry also advertises \"acdp-registry-federated\"",
           "capability_key": "profiles",
           "capability_match": "acdp-registry-federated"
@@ -242,7 +236,7 @@
         "lhr-004-future-as-of"
       ],
       "not_implemented_permitted_on": [],
-      "notes": "Advertising this profile is the RFC-ACDP-0011 §6 commitment: mint a fresh lineage-head receipt (registry response-time as_of, millisecond-truncated RFC 3339 UTC) on every GET /lineages/{lineage_id}/current response, MAY attach one to full retrieval, never on the body-only endpoint, no degraded mode and no receipt_unavailable. Uses the SAME signing key, DID plumbing, and RFC-ACDP-0010 §9 key lifecycle as acdp-registry-receipts (the prerequisite is load-bearing — no new key role). No new wire error code: a failing head receipt reuses invalid_receipt (RFC-ACDP-0011 §9). Requires acdp_version >= 0.3.0. lhr-001 is executed arithmetically by scripts/conformance-runner.py; lhr-002..004 are behavioral. The requester-relative visibility rule (the attested head is the newest non-superseded version the requester may retrieve — RFC-ACDP-0011 §4, RFC-ACDP-0004 §5.4) is self-tested alongside vis-008."
+      "notes": "Advertising this profile is the RFC-ACDP-0011 §6 commitment: mint a fresh lineage-head receipt (registry response-time as_of, millisecond-truncated RFC 3339 UTC) on every GET /lineages/{lineage_id}/current response, MAY attach one to full retrieval, never on the body-only endpoint, no degraded mode and no receipt_unavailable. Uses the SAME signing key, DID plumbing, and RFC-ACDP-0010 §9 key lifecycle as acdp-registry-receipts (the prerequisite is load-bearing — no new key role). No new wire error code: a failing head receipt reuses invalid_receipt (RFC-ACDP-0011 §9). Requires acdp_version >= 0.3.0. lhr-001 is executed arithmetically by scripts/conformance-runner.py; lhr-002..004 are behavioral. The requester-relative visibility rule (the attested head is the newest non-superseded version the requester may retrieve — RFC-ACDP-0011 §4, RFC-ACDP-0004 §5.4) is self-tested alongside vis-008. 0.3.0 lifecycle interaction: on registries also advertising acdp-registry-lifecycle, head_status can never be 'retracted' (a retracted version is never a head — RFC-ACDP-0013 §8.3; the merged head_status schema constraint excludes it alongside 'superseded'), and the §7 step 5b non-head consistency rule accepts 'retracted' alongside 'superseded' (see lc-003 scenario D)."
     },
     {
       "id": "acdp-registry-transparency-log",
@@ -263,12 +257,30 @@
       "notes": "Advertising this profile is the RFC-ACDP-0012 §7 commitment: append a leaf for every accepted publish atomically with persistence (body + receipt + leaf commit together), serve GET /log/checkpoint, GET /log/proof (inclusion mode by ctx_id or leaf_index AND consistency mode by first+second — both REQUIRED on the one reserved path), and GET /log/entries (leaf hashes always; leaf bodies only where the requester is retrieval-authorized), no degraded mode and no log_unavailable. Checkpoints sign with the SAME registry receipt signing key, RFC-ACDP-0010 §5 construction, and §9 key lifecycle as acdp-registry-receipts (the prerequisite is load-bearing twice: leaves bind receipt hashes, checkpoints reuse the receipt key). Merkle hashing uses the RFC 6962 domain-separation prefixes (0x00 leaf / 0x01 node) — RFC-ACDP-0012 §5. New wire error code invalid_log_proof for failing proofs/checkpoints (RFC-ACDP-0012 §11; deliberately distinct from invalid_receipt). Full retrieval MAY carry the top-level log_inclusion member; the body-only endpoint and the publish response stay untouched (RFC-ACDP-0012 §10). Requires acdp_version >= 0.3.0. log-001 and log-003 are executed arithmetically by scripts/conformance-runner.py; log-002 and log-004 are behavioral. Append-only discipline over time and the log-instantiation reset rule (log_id change on catastrophic loss — RFC-ACDP-0012 §7.4) are self-tested: the protocol surface does not allow a black-box assertion over time. Promotes the profile name reserved by RFC-ACDP-0009 §2.11."
     },
     {
+      "id": "acdp-registry-lifecycle",
+      "inherits": "acdp-registry-core",
+      "spec_reference": "RFC-ACDP-0013 (0.3.0, Draft)",
+      "required_endpoints_added": [
+        "POST /contexts/{ctx_id}/retract",
+        "POST /contexts/{ctx_id}/republish"
+      ],
+      "required_fixtures_added": [
+        "lc-001-retraction-flow",
+        "lc-002-immutable-field",
+        "lc-003-retracted-head"
+      ],
+      "not_implemented_permitted_on": [],
+      "notes": "Advertising this profile is the RFC-ACDP-0013 contract: authenticated retract/republish endpoints (§6 — visibility-first resolution, producer-signed event verified through the full RFC-ACDP-0001 §5.11 pipeline, same agent_id rule as supersession, immutable_field on body-mutation attempts, invalid_lifecycle_transition on state conflicts, strict retracted/republished alternation); append-only lifecycle_events (closed event objects per acdp-lifecycle-event.schema.json; never removed, reordered, or mutated — a self-test obligation, as the protocol surface allows no black-box assertion over time); status precedence retracted > superseded > expired (§7.2); mark-not-delete (retracted bodies retrievable forever; the body-only endpoint and its cache story untouched); default-search exclusion of retracted contexts when acdp-registry-discovery is also advertised (§8.2); a retracted version is never a lineage head (§8.3 — all-superseded-or-retracted lineages return not_found from /current; with acdp-registry-head-receipts, no head receipt naming a retracted head is ever minted). Registry-initiated (policy/legal) events are recorded directly with actor = the registry DID; registries advertising acdp-registry-receipts MUST sign them and SHOULD use the receipt signing key (no new key role). Requires acdp_version >= 0.3.0. Registries NOT advertising the profile MUST return not_implemented (501) on both endpoints and MUST NOT emit lifecycle_events, the 'retracted' status, or the 0.3.0 lifecycle error codes. All lc-* fixtures are behavioral. Note: RFC-ACDP-0014 (producer key revocation) deliberately defines NO profile — a revocation is an ordinary key-revocation context on existing surfaces; its registry-side publish validation binds to acdp_version >= 0.3.0 within acdp-registry-core, and its consumer semantics to acdp-consumer (RFC-ACDP-0014 §10)."
+    },
+    {
       "id": "acdp-consumer",
       "inherits": null,
       "behavioral_requirements": [
         "End-to-end signature verification (RFC-ACDP-0001 §5.11) on every retrieved context — including pure did:key resolution (§5.11.1) for did:key producers (0.2.0)",
         "Registry-receipt verification per RFC-ACDP-0010 §8 whenever a registry_receipt is present, with the receipt verdict reported separately from the body verdict (0.2.0)",
         "Lineage-head-receipt verification per RFC-ACDP-0011 §7 whenever a lineage_head_receipt is relied upon, with the head-receipt verdict and the as_of freshness policy reported separately from the body and context-receipt verdicts (0.3.0)",
+        "Key-revocation semantics per RFC-ACDP-0014 §7 whenever a verified key-revocation context is encountered: receipt-attested publish time strictly before compromised_since verifies as 'historically authorized (pre-compromise, receipt-attested)'; at/after the boundary, or with no verifiable publish time, verification MUST fail closed under the strict profile; producer-signed and registry-attested revocations are distinct trust classes and MUST be reported distinguishably (0.3.0)",
+        "Treatment of status 'retracted' as a formal-withdrawal non-reliance signal, with lifecycle_events tolerated, preserved verbatim, and unknown event_type values given no status effect (RFC-ACDP-0013 §7, §9; RFC-ACDP-0001 §9) (0.3.0)",
         "acdp:// cross-registry resolution per RFC-ACDP-0006 if followed (with SSRF protections of §7 if performed server-side; upstream receipts verified against the upstream authority per fed-009)",
         "SSRF protections on every producer-controlled outbound fetch: producer did:web resolution (RFC-ACDP-0008 §4.8) and external data_refs[].location fetches (RFC-ACDP-0008 §4.9)",
         "Local visibility re-verification per RFC-ACDP-0008 §4.5",
@@ -299,6 +311,8 @@
         "rcpt-003-key-fingerprint-mismatch",
         "rcpt-004-registry-did-mismatch",
         "rot-001-historical-key-receipt",
+        "rev-001-revocation-context-golden",
+        "rev-002-before-after-boundary",
         "caps-001-valid-minimal",
         "caps-002-missing-ed25519",
         "caps-003-missing-did-web",
@@ -365,11 +379,18 @@
           "required_when": "the consumer relies on log_inclusion members or the /log/* endpoints — i.e. verifies transparency-log evidence from registries advertising \"acdp-registry-transparency-log\" (0.3.0). A consumer that ignores the member and endpoints entirely (unknown-field tolerance, RFC-ACDP-0001 §6) is unaffected.",
           "capability_key": "profiles",
           "capability_match": "acdp-registry-transparency-log"
+        },
+        {
+          "fixtures": [
+            "lc-001-retraction-flow",
+            "lc-003-retracted-head"
+          ],
+          "required_when": "the consumer retrieves from registries advertising \"acdp-registry-lifecycle\" (0.3.0) — the consumer-observable aspects only: 'retracted' handled as a formal-withdrawal non-reliance signal, lifecycle_events tolerated and preserved verbatim (unknown event_type values have no status effect), /current not_found on all-superseded-or-retracted lineages handled per RFC-ACDP-0013 §8.3. lc-002 is registry-side only.",
+          "capability_key": "profiles",
+          "capability_match": "acdp-registry-lifecycle"
         }
       ],
-      "notes": "can-008, can-009, and can-010 are especially important: they exercise forward-compatible hash verification (RFC-ACDP-0001 §5.7, RFC-ACDP-0002 §6.7) — a consumer that deserializes into a typed model that drops unknown body or DataRef fields will fail these and produce false hash_mismatch under future-version producers. lin-001 pins lineage_id derivation. schema-005..007 pin the absent-vs-null wire convention; schema-008..010 pin the closed nested schemas; schema-011..014 extend the absent-vs-null convention to the DataRef fields format and location (RFC-ACDP-0002 §6.8), the error envelope (error.details), and the capabilities document (limits.idempotency_key_ttl_seconds). data-ref-008 pins the consumer-side external-DataRef hash-mismatch semantic (data_ref_hash_mismatch, body still valid — RFC-ACDP-0007 §5.3). data-ref-ssrf-001..005 pin consumer-side DataRef-location SSRF refusal at fetch time (RFC-ACDP-0008 §4.9): IP-literal, DNS-rebinding, cross-authority-redirect, mixed-answer, and same-host-different-port-redirect refusal — they are consumer-only because a registry does not fetch external data_refs and MUST NOT reject a publish on these grounds. did-ssrf-001..005 pin producer-DID-resolution SSRF refusal (RFC-ACDP-0008 §4.8), which every consumer performs when verifying signatures end-to-end, including mixed-answer rejection (did-ssrf-004) and same-host-different-port redirect rejection (did-ssrf-005). A consumer that follows derived_from across registries additionally MUST pass the fed-* fixtures if it performs server-side resolution. fed-010 is required unconditionally for any consumer that walks derived_from (RFC-ACDP-0006 §4.1 partial-walk reporting): a walk truncated by a traversal cap MUST be distinguishable from a complete one (e.g. complete: false) — silent truncation misleads evidence assembly. can-011 pins the RFC 8785 §3.2.2.3 numeric-serialization vectors — a consumer whose JCS pipeline diverges on these (exponential-notation boundaries, the plain-decimal band, integer exactness through 2^53, negative-zero normalization) will recompute the wrong content_hash and emit false hash_mismatch on numerically-rich bodies. 0.2.0 additions: can-012 extends the divergence corpus (acdp_version omitted/explicit, microsecond timestamps, null-vs-absent-vs-empty — RFC-ACDP-0001 Appendix A); sig-003 + dk-001/002/004 pin pure did:key verification, which every 0.2.0 consumer MUST support (resolution is offline and a consumer cannot choose which DID methods the bodies it encounters use; 0.1.0-pinned consumers are unaffected); rcpt-001..004, fp-001, and rot-001 pin receipt verification (RFC-ACDP-0010 §8), the §6 fingerprint encoding, and the historically-authorized-with-receipt vs fail-closed-without-receipt rule (§10). 0.3.0 additions: caps-007 pins acceptance of the OPTIONAL limits.max_publish_per_minute field and schema_violation rejection of zero/negative/non-integer values (RFC-ACDP-0007 §3.2, §3.5 item 11); idem-007 pins the version-conditional cross-field check of §3.5 item 10 — a capabilities document with acdp_version >= 0.3.0 and supports_idempotency_key absent or false MUST be rejected and the consumer MUST NOT proceed against the registry (RFC-ACDP-0003 §6.4). lhr-001..004 pin lineage-head-receipt verification (RFC-ACDP-0011 §7 — closed parse, signature under the registry receipt key, registry/lineage/head bindings, and the future-as_of skew rejection); they are conditional (see conditional_fixtures) because a consumer may conformantly ignore the lineage_head_receipt member under the unknown-field rule. log-001..004 pin transparency-log verification (RFC-ACDP-0012 §9 — independent leaf reconstruction and 0x00/0x01 domain-separated hashing, checkpoint signature under the registry receipt key, inclusion-proof folding, and consistency-proof verification between checkpoints); they are conditional (see conditional_fixtures) because a consumer may conformantly ignore log_inclusion and never call the /log/* endpoints."
-    }
-  ],
+      "notes": "can-008, can-009, and can-010 are especially important: they exercise forward-compatible hash verification (RFC-ACDP-0001 §5.7, RFC-ACDP-0002 §6.7) — a consumer that deserializes into a typed model that drops unknown body or DataRef fields will fail these and produce false hash_mismatch under future-version producers. lin-001 pins lineage_id derivation. schema-005..007 pin the absent-vs-null wire convention; schema-008..010 pin the closed nested schemas; schema-011..014 extend the absent-vs-null convention to the DataRef fields format and location (RFC-ACDP-0002 §6.8), the error envelope (error.details), and the capabilities document (limits.idempotency_key_ttl_seconds). data-ref-008 pins the consumer-side external-DataRef hash-mismatch semantic (data_ref_hash_mismatch, body still valid — RFC-ACDP-0007 §5.3). data-ref-ssrf-001..005 pin consumer-side DataRef-location SSRF refusal at fetch time (RFC-ACDP-0008 §4.9): IP-literal, DNS-rebinding, cross-authority-redirect, mixed-answer, and same-host-different-port-redirect refusal — they are consumer-only because a registry does not fetch external data_refs and MUST NOT reject a publish on these grounds. did-ssrf-001..005 pin producer-DID-resolution SSRF refusal (RFC-ACDP-0008 §4.8), which every consumer performs when verifying signatures end-to-end, including mixed-answer rejection (did-ssrf-004) and same-host-different-port redirect rejection (did-ssrf-005). A consumer that follows derived_from across registries additionally MUST pass the fed-* fixtures if it performs server-side resolution. fed-010 is required unconditionally for any consumer that walks derived_from (RFC-ACDP-0006 \u00a74.1 partial-walk reporting): a walk truncated by a traversal cap MUST be distinguishable from a complete one (e.g. complete: false) \u2014 silent truncation misleads evidence assembly. can-011 pins the RFC 8785 §3.2.2.3 numeric-serialization vectors — a consumer whose JCS pipeline diverges on these (exponential-notation boundaries, the plain-decimal band, integer exactness through 2^53, negative-zero normalization) will recompute the wrong content_hash and emit false hash_mismatch on numerically-rich bodies. 0.2.0 additions: can-012 extends the divergence corpus (acdp_version omitted/explicit, microsecond timestamps, null-vs-absent-vs-empty — RFC-ACDP-0001 Appendix A); sig-003 + dk-001/002/004 pin pure did:key verification, which every 0.2.0 consumer MUST support (resolution is offline and a consumer cannot choose which DID methods the bodies it encounters use; 0.1.0-pinned consumers are unaffected); rcpt-001..004, fp-001, and rot-001 pin receipt verification (RFC-ACDP-0010 §8), the §6 fingerprint encoding, and the historically-authorized-with-receipt vs fail-closed-without-receipt rule (§10). 0.3.0 additions: caps-007 pins acceptance of the OPTIONAL limits.max_publish_per_minute field and schema_violation rejection of zero/negative/non-integer values (RFC-ACDP-0007 §3.2, §3.5 item 11); idem-007 pins the version-conditional cross-field check of §3.5 item 10 — a capabilities document with acdp_version >= 0.3.0 and supports_idempotency_key absent or false MUST be rejected and the consumer MUST NOT proceed against the registry (RFC-ACDP-0003 §6.4). lhr-001..004 pin lineage-head-receipt verification (RFC-ACDP-0011 §7 — closed parse, signature under the registry receipt key, registry/lineage/head bindings, and the future-as_of skew rejection); they are conditional (see conditional_fixtures) because a consumer may conformantly ignore the lineage_head_receipt member under the unknown-field rule. log-001..004 pin transparency-log verification (RFC-ACDP-0012 §9 — independent leaf reconstruction and 0x00/0x01 domain-separated hashing, checkpoint signature under the registry receipt key, inclusion-proof folding, and consistency-proof verification between checkpoints); they are conditional (see conditional_fixtures) because a consumer may conformantly ignore log_inclusion and never call the /log/* endpoints. rev-001 (executed arithmetically — the key-revocation golden vector, signed by the rot-001 K2 key, revoking the sig-001 K1 fingerprint) and rev-002 (behavioral — the RFC-ACDP-0014 §7 compromise boundary: pre-T receipt-attested → historically authorized (pre-compromise); at/after-T or receipt-less → fail closed under strict; trust classes distinguishable) are unconditional for 0.3.0 consumers because a consumer cannot choose whether it encounters revocations; 0.1.0/0.2.0-pinned consumers are unaffected. lc-001/lc-003 are conditional on consuming from lifecycle-advertising registries (consumer-observable aspects only)."    }  ],
   "fixture_families": {
     "body": "Body identity-field validation (RFC-ACDP-0002 §3)",
     "can": "Canonicalization and hash recomputation (RFC-ACDP-0001 §5.2, §5.7; DataRef openness RFC-ACDP-0002 §6.7)",
@@ -387,13 +408,14 @@
     "schema": "Closed-schema rejection / openness map (RFC-ACDP-0007 §3.3.1) and the absent-vs-null wire convention (RFC-ACDP-0005 §2.2.1)",
     "cur": "Pagination cursor expiry and validity (RFC-ACDP-0005 §2.5.4)",
     "rate": "Rate-limit response shape (RFC-ACDP-0007 §5)",
-    "fed": "Federation / cross-registry resolution: SSRF protections (RFC-ACDP-0006 §7) and traversal-control behavior (RFC-ACDP-0006 §4.1)",
-    "did-ssrf": "Producer DID resolution SSRF protections (RFC-ACDP-0008 §4.8)",
+    "fed": "Federation / cross-registry resolution: SSRF protections (RFC-ACDP-0006 §7) and traversal-control behavior (RFC-ACDP-0006 §4.1)",    "did-ssrf": "Producer DID resolution SSRF protections (RFC-ACDP-0008 §4.8)",
     "idem": "Idempotency-key behavior (RFC-ACDP-0003 §6)",
     "rcpt": "Registry receipts — golden vector and verification failures (RFC-ACDP-0010, 0.2.0)",
     "lhr": "Lineage-head receipts — serve-time head attestation golden vector and verification failures (RFC-ACDP-0011, 0.3.0)",
     "fp": "Key-fingerprint encoding vectors (RFC-ACDP-0010 §6, 0.2.0)",
     "rot": "Historical producer-key verification with receipts (RFC-ACDP-0010 §10, 0.2.0)",
-    "dk": "did:key resolution — golden and rejection scenarios (RFC-ACDP-0001 §5.4 / §5.11.1, 0.2.0)"
+    "dk": "did:key resolution — golden and rejection scenarios (RFC-ACDP-0001 §5.4 / §5.11.1, 0.2.0)",
+    "lc": "Lifecycle events & retraction — retraction flow, immutable_field, retracted-head /current semantics (RFC-ACDP-0013, 0.3.0)",
+    "rev": "Producer key revocation — key-revocation context golden vector and compromise-boundary verification semantics (RFC-ACDP-0014, 0.3.0)"
   }
 }

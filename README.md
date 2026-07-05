@@ -15,7 +15,7 @@ The "producer-controlled portion" — the **ProducerContent** — comprises the 
 
 There is no central authority. Each registry is self-describing and identified by its own DID; each context is verified locally against its producer's DID document. ACDP is **coordination-agnostic** — it does not specify session, voting, consensus, marketplace, or reputation semantics.
 
-The **first published version** of ACDP was released as **`Final`** (`acdp/0.1.0`) and remains wire-frozen. The **`acdp/0.2.0` Trust & Hardening line is in Draft**: registry receipts ([RFC-ACDP-0010](rfcs/RFC-ACDP-0010-registry-receipts.md)) close the registry-honesty gap for receipt-bearing responses, `did:key` producers gain infrastructure-independent verification, and the hash-divergence corpus hardens cross-implementation interop. Lifecycle events, post-publication relationships, attestations, push subscriptions, server-side traversal, and the transparency log remain deferred to future versions.
+The **first published version** of ACDP was released as **`Final`** (`acdp/0.1.0`) and remains wire-frozen. The **`acdp/0.2.0` Trust & Hardening line is in Draft**: registry receipts ([RFC-ACDP-0010](rfcs/RFC-ACDP-0010-registry-receipts.md)) close the registry-honesty gap for receipt-bearing responses, `did:key` producers gain infrastructure-independent verification, and the hash-divergence corpus hardens cross-implementation interop. The **`acdp/0.3.0` line (Draft)** adds lineage-head receipts ([RFC-ACDP-0011](rfcs/RFC-ACDP-0011-lineage-head-receipts.md)), lifecycle events & retraction ([RFC-ACDP-0013](rfcs/RFC-ACDP-0013-lifecycle-events.md) — mark-not-delete, promoting the RFC-ACDP-0009 §2.1 reservation), and the producer key-revocation signal ([RFC-ACDP-0014](rfcs/RFC-ACDP-0014-key-revocation.md)). Post-publication relationships, attestations, push subscriptions, server-side traversal, and the transparency log remain deferred to future versions.
 
 ---
 
@@ -58,8 +58,11 @@ agentcontextdistributionprotocol/
     RFC-ACDP-0006-cross-registry.md  # acdp:// cross-registry reference resolution
     RFC-ACDP-0007-capabilities.md    # /.well-known/acdp.json + errors
     RFC-ACDP-0008-security.md        # Threat model and required defenses
-    RFC-ACDP-0009-extensions.md      # Reserved — retraction, attestations…
+    RFC-ACDP-0009-extensions.md      # Reserved — attestations, walks, push…
     RFC-ACDP-0010-registry-receipts.md # Registry receipts (0.2.0, Draft)
+    RFC-ACDP-0011-lineage-head-receipts.md # Lineage-head receipts (0.3.0, Draft)
+    RFC-ACDP-0013-lifecycle-events.md # Lifecycle events & retraction (0.3.0, Draft)
+    RFC-ACDP-0014-key-revocation.md  # Producer key-revocation signal (0.3.0, Draft)
 
   docs/
     overview.md
@@ -79,6 +82,7 @@ agentcontextdistributionprotocol/
     context-types.md
     data-ref-types.md
     error-codes.md
+    lifecycle-event-types.md         # Lifecycle event vocabulary (0.3.0)
     locator-schemes.md
     media-types.md
     profiles.md                      # Profile registry (human-readable)
@@ -186,8 +190,11 @@ There is no producer-only profile: producers MUST be able to verify any context 
 - **RFC-ACDP-0006 Cross-Registry** — `acdp://` URI scheme, resolution flow, federation non-goals.
 - **RFC-ACDP-0007 Capabilities** — `/.well-known/acdp.json`, error envelope, error code registry.
 - **RFC-ACDP-0008 Security** — threat model and required defenses for v0.1.0 (re-baselined for receipts under 0.2.0).
-- **RFC-ACDP-0009 Extensions** *(reserved)* — retraction/lifecycle events, attestations, push subscriptions, walks, transparency log.
+- **RFC-ACDP-0009 Extensions** *(reserved)* — attestations, push subscriptions, walks, transparency log (§2.7 promoted to RFC-ACDP-0010; §2.1 promoted to RFC-ACDP-0013).
 - **RFC-ACDP-0010 Registry Receipts** *(0.2.0, Draft)* — registry-signed attestations binding registry-assigned identifiers, the body hash, and the producer-key fingerprint to the registry's DID.
+- **RFC-ACDP-0011 Lineage-Head Receipts** *(0.3.0, Draft)* — registry-signed serve-time attestations of the current lineage head.
+- **RFC-ACDP-0013 Lifecycle Events & Retraction** *(0.3.0, Draft)* — signed, append-only retraction/republication events; `status: retracted`; mark-not-delete.
+- **RFC-ACDP-0014 Producer Key-Revocation Signal** *(0.3.0, Draft)* — the `key-revocation` context type; time-scoped fail-closed verification against receipt-attested publish times.
 
 ---
 

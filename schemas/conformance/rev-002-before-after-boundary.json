@@ -1,0 +1,44 @@
+{
+  "id": "rev-002",
+  "description": "Compromise-boundary verification semantics (RFC-ACDP-0014 §7), completing the rot-001 scenario set. Given the verified rev-001 revocation for K1 (fingerprint sha256:139e3940…, compromised_since T = 2026-05-01T00:00:00.000Z) and a context whose body signature resolves to K1: a receipt-attested publish time strictly before T verifies as historically authorized (pre-compromise, receipt-attested); at-or-after T, or with no verifiable publish time, verification MUST fail closed under the strict profile.",
+  "tags": ["revocation", "key-rotation", "security", "mixed"],
+  "applies_to_profiles": ["acdp-consumer"],
+  "input": {
+    "revocation": "The rev-001 golden key-revocation context, verified per RFC-ACDP-0014 §5 (producer-signed by K2; signer fingerprint != revoked fingerprint; visibility public). Boundary T = metadata.compromised_since = 2026-05-01T00:00:00.000Z.",
+    "body_under_test": "The sig-001 golden context, signed by K1 (fingerprint sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070).",
+    "producer_did_document": "The rot-001 DID document: K1 retained in verificationMethod only (NOT removed — RFC-ACDP-0014 §9: revocation does not require removal; the pre-T record needs the key material); K2 in verificationMethod and assertionMethod.",
+    "registry_receipt": "The rcpt-001 golden receipt shape for the body under test: key_fingerprint attests K1; created_at is the receipt-attested publish time compared against T (RFC-ACDP-0010 §8 verification is a precondition — an unverified receipt provides no publish time)."
+  },
+  "scenarios": [
+    {
+      "name": "A — receipt-attested publish time before T",
+      "expected": {
+        "outcome": "success",
+        "verification_status": "historically_authorized_pre_compromise_receipt_attested",
+        "behavior": "Receipt verifies per RFC-ACDP-0010 §8 with created_at = 2026-04-16T10:30:15.123Z < T. The context was published while K1 was still the producer's: verification proceeds under the RFC-ACDP-0010 §10 historical rule against K1 (verificationMethod-retained) and succeeds with the distinguishable status 'historically authorized (pre-compromise, receipt-attested)'. SDKs MUST NOT report it as fully current, and MUST NOT report it identically to the no-revocation rot-001 scenario A status — the revocation and its boundary MUST be visible in the verdict (suggested stage: key_revocation)."
+      }
+    },
+    {
+      "name": "B — receipt-attested publish time at or after T",
+      "expected": {
+        "outcome": "failure",
+        "behavior": "Identical retrieval except the (valid, verified) receipt carries created_at = 2026-05-03T09:00:00.000Z >= T. The signature is inside the compromise window and is not attributable to the producer. Verification MUST fail closed regardless of DID-document state and regardless of the receipt's validity — the receipt proves exactly when the registry accepted it, which is what places it after the boundary (RFC-ACDP-0014 §7 step 3)."
+      }
+    },
+    {
+      "name": "C — no receipt: publish time unverifiable",
+      "expected": {
+        "outcome": "failure",
+        "behavior": "The same body served without a registry_receipt (or with one failing RFC-ACDP-0010 §8). The bare body created_at MUST NOT be used as the boundary input (registry-assigned, unverifiable — RFC-ACDP-0008 §9.1); the context cannot be placed relative to T, and an unplaceable revoked-key signature is exactly the artifact an attacker mints freely. The strict profile (RFC-ACDP-0001 §5.11 / §9.2) MUST fail closed. Any pragmatic mode accepting other time evidence MUST be a non-default, explicitly-named opt-in, non-conformant with the strict profile (RFC-ACDP-0014 §7 step 4)."
+      }
+    },
+    {
+      "name": "D — trust classes are distinguishable",
+      "expected": {
+        "outcome": "success",
+        "behavior": "The same revocation statement arriving as a registry-attested context (agent_id = the registry's DID, metadata.revoked_key_controller = the producer DID — RFC-ACDP-0014 §6) MUST be classified 'registry-attested', distinguishable from 'producer-signed', and MUST NOT be silently collapsed into it: strict-profile default applies §7 for contexts served/receipted by that same registry and seeks corroboration before global application. A 'revocation' signed by K1 itself MUST be treated as unverified (§5 step 2) and triggers none of the §7 semantics."
+      }
+    }
+  ],
+  "notes": "Alignment with rot-001: scenario A here refines rot-001 A (revocation present, boundary respected → pre-compromise variant of historically-authorized); rot-001 B (no receipt, no revocation → fail closed strict) and rot-001 C (K1 removed from verificationMethod → total kill, fail closed regardless of receipts or boundaries) are UNCHANGED by RFC-ACDP-0014. The earliest compromised_since across a superseding revocation lineage is effective (RFC-ACDP-0014 §4) — a supersession can widen but never quietly shrink the window."
+}

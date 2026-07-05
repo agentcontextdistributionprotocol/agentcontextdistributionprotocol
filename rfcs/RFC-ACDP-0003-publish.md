@@ -119,7 +119,7 @@ For a publish request with `supersedes = <prev_ctx_id>`, the registry MUST:
 
 The previous version's body is unchanged. The previous version's derived `status` becomes `superseded` (RFC-ACDP-0004 §4) — automatically, on the next status query. Registries MAY cache `status` but MUST recompute on supersession events.
 
-### 3.3 No retraction
+### 3.3 No retraction *(v0.1.0; succeeded by RFC-ACDP-0013 in 0.3.0)*
 
 This version of ACDP does not provide a retraction mechanism. Once a context is published, its body is permanent. A producer that discovers an error has two options:
 
@@ -127,6 +127,8 @@ This version of ACDP does not provide a retraction mechanism. Once a context is 
 2. **Publish a context describing the issue,** with the buggy context in `derived_from` and a `description` explaining the problem. This is a soft signal.
 
 In neither case does the original context disappear. A formal retraction mechanism is reserved in RFC-ACDP-0009.
+
+***(0.3.0)*** The RFC-ACDP-0009 §2.1 reservation is promoted: [RFC-ACDP-0013](RFC-ACDP-0013-lifecycle-events.md) specifies retraction as a signed lifecycle event on registries advertising the OPTIONAL `acdp-registry-lifecycle` profile — **mark-not-delete**: the body stays permanently retrievable with `status: retracted`; nothing above changes for registries that do not advertise the profile. Two supersession interactions are defined there: a retracted context MAY be superseded (same §3.1 constraints — the recovery path for a retracted head, RFC-ACDP-0013 §8.3), and retraction dominates the §3.2 `superseded` status for the derived field only (RFC-ACDP-0013 §7.2).
 
 ---
 

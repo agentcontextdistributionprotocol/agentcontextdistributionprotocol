@@ -13,7 +13,7 @@ This RFC specifies the threat model for ACDP v0.1.0 and the defenses every imple
 
 This document is a Final ACDP specification (acdp/0.1.0). It is stable for the 0.1.0 release; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
 
-Passages marked *(0.2.0)* are Draft amendments from the acdp/0.2.0 Trust & Hardening program. Passages marked *(0.3.0)* are Draft amendments from the acdp/0.3.0 core-profile revision (advertising the rate-limit ceiling via `limits.max_publish_per_minute` — §4.3). Neither set changes any v0.1.0 body field, hash, or signature semantic; everything not so marked remains Final and wire-frozen for acdp/0.1.0.
+Passages marked *(0.2.0)* are Draft amendments from the acdp/0.2.0 Trust & Hardening program. Passages marked *(0.3.0)* are Draft amendments from the acdp/0.3.0 program (advertising the rate-limit ceiling via `limits.max_publish_per_minute` — §4.3; lifecycle events & retraction — RFC-ACDP-0013, §5; the producer key-revocation signal — RFC-ACDP-0014, §5/§9.3). Neither set changes any v0.1.0 body field, hash, or signature semantic; everything not so marked remains Final and wire-frozen for acdp/0.1.0.
 
 ---
 
@@ -179,8 +179,8 @@ Implementations exposing a `DataRefFetcher` (or equivalent) abstraction MUST app
 
 | Gap | Reason | Mitigation in v0.1.0 |
 |---|---|---|
-| **No retraction** | Permanent publication is the v0.1.0 invariant. | Use supersession to publish corrections. RFC-ACDP-0009 reserves a formal lifecycle-events mechanism. |
-| **No real-time key revocation push** | Out of scope for the substrate. | Pull-based; consumers consult DID documents. Producers can publish a "this key is compromised" context as a soft signal. |
+| **No retraction** | Permanent publication is the v0.1.0 invariant. | Use supersession to publish corrections. RFC-ACDP-0009 reserves a formal lifecycle-events mechanism. ***(0.3.0)* Closed** on registries advertising `acdp-registry-lifecycle`: [RFC-ACDP-0013](RFC-ACDP-0013-lifecycle-events.md) promotes the reservation — signed retraction/republication events, `status: retracted`, mark-not-delete (the body remains retrievable). The gap stands for non-advertising registries. |
+| **No real-time key revocation push** | Out of scope for the substrate. | Pull-based; consumers consult DID documents. Producers can publish a "this key is compromised" context as a soft signal. ***(0.3.0)* The signal is now normative:** [RFC-ACDP-0014](RFC-ACDP-0014-key-revocation.md) defines the `key-revocation` context type and time-scoped fail-closed semantics against receipt-attested publish times (§9.3, RFC-ACDP-0010 §10). Revocation remains **pull-based** — no push, and a malicious registry can still hide a revocation from search (mitigation: the RFC-ACDP-0009 §2.11 transparency log; out-of-band delivery is explicitly supported). |
 | **No third-party attestations** | Out of scope for v0.1.0. | RFC-ACDP-0009 reserves `attestations` in registry state. |
 | **No third-party `builds_on` claims** | Out of scope for v0.1.0. | `derived_from` is producer-only; downstream consumers can publish their own `derived_from` context. |
 | **No push subscriptions** | Polling is the v0.1.0 model. | RFC-ACDP-0009 reserves push semantics. |
@@ -321,6 +321,8 @@ Verifying a context whose producer has rotated keys requires knowing which key w
 
 **Receipt-less behavior is unchanged from v0.1.0:** verifiers SHOULD verify against the producer's current DID document, and verifiers requiring historical accuracy MUST employ external mechanisms (DID-document snapshotting at publish time, transparency logs, archival proofs), accepting the documented residual risk of §7.3.
 
+***(0.3.0)*** [RFC-ACDP-0014](RFC-ACDP-0014-key-revocation.md) adds the **time-scoped compromise case**: a verified `key-revocation` context for fingerprint F with boundary T splits F's history — receipt-attested publish times strictly before T remain *historically authorized (pre-compromise, receipt-attested)*; at/after T, or with no verifiable publish time, verification fails closed under the strict profile. Removal from `verificationMethod` remains the total-kill signal (all times fail closed, receipt or none), and clean rotation remains not-a-revocation. Fixtures `rev-001`/`rev-002` pin it, completing the `rot-001` scenario set.
+
 ---
 
 ## 10. References
@@ -334,6 +336,8 @@ Verifying a context whose producer has rotated keys requires knowing which key w
 - [RFC-ACDP-0007 Capabilities & Errors](RFC-ACDP-0007-capabilities.md)
 - [RFC-ACDP-0009 Extensions](RFC-ACDP-0009-extensions.md) — §2.11 reserves the transparency log.
 - [RFC-ACDP-0010 Registry Receipts](RFC-ACDP-0010-registry-receipts.md) *(0.2.0)* — closes §9.1/§9.3 for receipt-bearing responses.
+- [RFC-ACDP-0013 Lifecycle Events & Retraction](RFC-ACDP-0013-lifecycle-events.md) *(0.3.0)* — closes the §5 retraction gap on lifecycle-advertising registries.
+- [RFC-ACDP-0014 Producer Key-Revocation Signal](RFC-ACDP-0014-key-revocation.md) *(0.3.0)* — makes the §5 soft signal normative; time-scopes §9.3.
 - [docs/threat-model.md](../docs/threat-model.md) — non-normative summary.
 - [DID-CORE] W3C, "Decentralized Identifiers (DIDs) v1.0".
 - [RFC 8032] Josefsson, S. and I. Liusvaara, "Edwards-Curve Digital Signature Algorithm (EdDSA)".

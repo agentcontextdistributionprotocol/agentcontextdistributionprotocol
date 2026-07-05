@@ -34,11 +34,12 @@
             "duplicate_publish",
             "cross_registry_resolution_failed",
             "invalid_receipt",
+            "immutable_field",
+            "invalid_lifecycle_transition",
             "invalid_log_proof",
             "internal_error"
           ],
-          "description": "A machine-readable error code from the ACDP standard error vocabulary. invalid_receipt is 0.2.0-only (RFC-ACDP-0010 §8, §11) and MUST NOT be emitted by registries declaring acdp_version 0.1.0. invalid_log_proof is 0.3.0-only (RFC-ACDP-0012 §9, §11) and MUST NOT be emitted by registries declaring acdp_version < 0.3.0. Codes reserved for future versions (not in this enum): immutable_field (a future version's mutation endpoints), unsupported_embedding_model (a future version's similarity endpoints)."
-        },
+          "description": "A machine-readable error code from the ACDP standard error vocabulary. invalid_receipt is 0.2.0+ (RFC-ACDP-0010 §8, §11); immutable_field (activated from the v0.1.0 reservation, RFC-ACDP-0009 §2.1) and invalid_lifecycle_transition are 0.3.0+ lifecycle codes (RFC-ACDP-0013 §6, §10); invalid_log_proof is a 0.3.0+ transparency-log code (RFC-ACDP-0012 §9, §11); none of the four may be emitted by registries declaring an earlier acdp_version. Codes reserved for future versions (not in this enum): unsupported_embedding_model (a future version's similarity endpoints)."        },
         "message": {
           "type": "string",
           "description": "Human-readable error description."

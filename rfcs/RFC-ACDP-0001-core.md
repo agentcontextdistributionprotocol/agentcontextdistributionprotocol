@@ -524,7 +524,7 @@ A conformant ACDP consumer MUST:
 
 1. Verify signatures end-to-end for every context it relies on.
 2. Treat unknown fields in body and registry state as opaque.
-3. Treat `status: superseded` and `status: expired` as signals that a context's conclusions may not be current.
+3. Treat `status: superseded` and `status: expired` as signals that a context's conclusions may not be current. *(0.3.0)* Treat `status: retracted` as a formal withdrawal — a stronger non-reliance signal than either (RFC-ACDP-0013 §7).
 4. Resolve cross-registry `acdp://` references per RFC-ACDP-0006 if it follows them.
 
 ### 9.1 Implementation Profiles
@@ -606,6 +606,19 @@ Adds the registry transparency log (the RFC-ACDP-0009 §2.11 promotion). Impleme
 
 Log-aware consumers verify checkpoints, inclusion proofs, and consistency proofs per RFC-ACDP-0012 §9 whenever they rely on them, reconstruct leaves from independently verified material (never from echoed bytes), and report the log verdict separately from the body, context-receipt, and head-receipt verdicts; failures surface as `invalid_log_proof` (RFC-ACDP-0012 §11).
 
+#### `acdp-registry-lifecycle` *(0.3.0)*
+
+Adds lifecycle events and retraction (RFC-ACDP-0013). OPTIONAL — permanence-only registries remain fully conformant without it. Implementations MUST:
+
+- Be `acdp-registry-core` conformant and advertise `acdp_version` ≥ `0.3.0`.
+- Implement `POST /contexts/{ctx_id}/retract` and `POST /contexts/{ctx_id}/republish` per RFC-ACDP-0013 §6 (visibility-first resolution, producer-signature authentication with the same `agent_id` rule as supersession, `immutable_field` on body-mutation attempts, `invalid_lifecycle_transition` on state conflicts).
+- Maintain `registry_state.lifecycle_events` as a closed-schema, append-only, verbatim-preserved array per RFC-ACDP-0013 §4, and derive `status` with the RFC-ACDP-0013 §7.2 precedence (`retracted` > `superseded` > `expired`).
+- Keep retracted bodies retrievable (mark-not-delete), exclude retracted contexts from default search (with `acdp-registry-discovery`), and never serve a retracted version as a lineage head per RFC-ACDP-0013 §8 (with `acdp-registry-head-receipts`: never mint a head receipt naming one).
+- Pass the lifecycle conformance fixtures (`lc-001..003`).
+
+Registries that do not advertise the profile MUST return `not_implemented` on the lifecycle endpoints and MUST NOT emit `lifecycle_events`, the `retracted` status, or the 0.3.0 lifecycle error codes.
+
+There is no profile for RFC-ACDP-0014 (producer key revocation) — deliberately: a revocation is an ordinary context (type `key-revocation`) carried entirely by existing surfaces, with the registry-side validation bound to `acdp_version` ≥ `0.3.0` and the consumer semantics bound to `acdp-consumer` (RFC-ACDP-0014 §10).
 ### 9.2 Verification profile names (RECOMMENDED)
 
 v0.1.0 verification is always strict for any conformance claim — §5.11 ("v0.1.0 strict verification profile") defines the strict pipeline and requires that it be the non-loosenable default. SDKs MAY additionally expose relaxed or diagnostic verification modes for debugging and test harnesses. When they do, they SHOULD use the following identifiers so documentation, logs, and error messages are consistent across language implementations:

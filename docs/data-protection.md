@@ -1,6 +1,6 @@
 # Data Protection and Erasure
 
-This document is non-normative. It explains ACDP's posture toward data-protection regimes that grant erasure rights (GDPR Art. 17 "right to erasure", CCPA deletion requests, and similar), and what producers and operators should do about it. The underlying design decisions are normative and live elsewhere: bodies are permanent ([non-goals.md §5](non-goals.md), [§13](non-goals.md)), supersession is the only correction mechanism in v0.1.0 (RFC-ACDP-0003 §3), and retraction is reserved (RFC-ACDP-0009 §2.1).
+This document is non-normative. It explains ACDP's posture toward data-protection regimes that grant erasure rights (GDPR Art. 17 "right to erasure", CCPA deletion requests, and similar), and what producers and operators should do about it. The underlying design decisions are normative and live elsewhere: bodies are permanent ([non-goals.md §5](non-goals.md), [§13](non-goals.md)), supersession is the only correction mechanism in v0.1.0 (RFC-ACDP-0003 §3), and retraction — reserved since v0.1.0 (RFC-ACDP-0009 §2.1) — is specified in 0.3.0 as mark-not-delete ([RFC-ACDP-0013](../rfcs/RFC-ACDP-0013-lifecycle-events.md), Draft).
 
 The one-sentence posture: **an ACDP body is a permanent, signed, content-addressed record — so personal and sensitive data belongs *behind* the body, in an erasable system of record, not *inside* it.**
 
@@ -35,9 +35,11 @@ Be precise about what this does **not** do:
 
 So: supersession is the right tool for "I shared this more widely than I should have, stop the bleeding", and the wrong tool for "this must cease to exist". For the latter, the data had to be behind a reference (§2) — or the deployment is into §5 territory.
 
-## 4. Retraction is reserved — and will mark, not delete
+## 4. Retraction marks; it does not delete
 
-RFC-ACDP-0009 §2.1 reserves a lifecycle-events mechanism through which a producer can formally *withdraw* a context. Two things are worth knowing now: it is not specified in v0.1.0 (implementations must not invent it), and its design intent is **mark-not-delete** — a signed retraction event appended to registry state, with the body remaining retrievable as the record of what was withdrawn. Even future retraction is a reputational/epistemic operation, not an erasure mechanism. Do not defer a data-protection problem to it.
+Retraction — reserved for v0.1.0 by RFC-ACDP-0009 §2.1 — is specified in 0.3.0 by [RFC-ACDP-0013](../rfcs/RFC-ACDP-0013-lifecycle-events.md) (Draft), and it is exactly the **mark-not-delete** design this document forecast: a signed retraction event appended to `registry_state.lifecycle_events`, `status: retracted` (excluded from default search, never served as a lineage head), with the body remaining permanently retrievable as the record of what was withdrawn (RFC-ACDP-0013 §8.1 states this normatively). v0.1.0/0.2.0 implementations must still not invent it — it exists only on registries advertising the `acdp-registry-lifecycle` profile at `acdp_version` ≥ 0.3.0.
+
+The data-protection consequence is unchanged: retraction is a reputational/epistemic operation, not an erasure mechanism — RFC-ACDP-0013 §8.1 explicitly forbids marketing it as one. Do not defer a data-protection problem to it; solve it at publication time (§2).
 
 ## 5. Deployment-policy hard deletes (legal holds)
 
@@ -69,4 +71,4 @@ A deployment that expects legal-hold deletions regularly has a design smell: it 
 
 - [non-goals.md](non-goals.md) §5 (retraction), §11 (encrypted bodies), §13 (hard deletion) — the design boundaries this posture rests on.
 - RFC-ACDP-0002 §6.4 (visibility scope vs. external data ACLs) and §7.1 (visibility is permanent for a given body).
-- RFC-ACDP-0003 §3 (supersession), RFC-ACDP-0009 §2.1 (reserved retraction).
+- RFC-ACDP-0003 §3 (supersession), RFC-ACDP-0009 §2.1 (the retraction reservation), [RFC-ACDP-0013](../rfcs/RFC-ACDP-0013-lifecycle-events.md) (retraction as specified, 0.3.0 Draft — §8.1 mark-not-delete, §12 honest scope, §6 registry-initiated events as the protocol-visible form of policy removal).
