@@ -12,9 +12,10 @@ This directory contains the normative RFCs that define the Agent Context Distrib
 | [RFC-ACDP-0006](RFC-ACDP-0006-cross-registry.md) | Cross-Registry References | Final |
 | [RFC-ACDP-0007](RFC-ACDP-0007-capabilities.md) | Capabilities & Errors | Final (0.1.0); 0.2.0/0.3.0 amendments Draft |
 | [RFC-ACDP-0008](RFC-ACDP-0008-security.md) | Security & Threat Model | Final (0.1.0); 0.2.0/0.3.0 amendments Draft |
-| [RFC-ACDP-0009](RFC-ACDP-0009-extensions.md) | Extensions (lifecycle, attestations, walks) | Reserved (§2.7 promoted to RFC-ACDP-0010) |
+| [RFC-ACDP-0009](RFC-ACDP-0009-extensions.md) | Extensions (lifecycle, attestations, walks) | Reserved (§2.7 promoted to RFC-ACDP-0010; §2.11 promoted to RFC-ACDP-0012) |
 | [RFC-ACDP-0010](RFC-ACDP-0010-registry-receipts.md) | Registry Receipts | Draft (acdp/0.2.0) |
 | [RFC-ACDP-0011](RFC-ACDP-0011-lineage-head-receipts.md) | Lineage-Head Receipts | Draft (acdp/0.3.0) |
+| [RFC-ACDP-0012](RFC-ACDP-0012-transparency-log.md) | Registry Transparency Log | Draft (acdp/0.3.0) |
 
 ## Reading order
 
@@ -30,6 +31,7 @@ The numbering matches dependency order. Read top-to-bottom:
 8. **[RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md)** — threat model and required defenses.
 9. **[RFC-ACDP-0010 Registry Receipts](RFC-ACDP-0010-registry-receipts.md)** *(0.2.0, Draft)* — registry-signed attestations binding the registry-assigned identifiers, content hash, and producer-key fingerprint to the registry's DID.
 10. **[RFC-ACDP-0011 Lineage-Head Receipts](RFC-ACDP-0011-lineage-head-receipts.md)** *(0.3.0, Draft)* — registry-signed serve-time attestations of the current lineage head ("as of T, the head of L is X at version N with status S"), extending the RFC-ACDP-0010 receipt layer from publish-time facts to current-ness claims.
+11. **[RFC-ACDP-0012 Registry Transparency Log](RFC-ACDP-0012-transparency-log.md)** *(0.3.0, Draft)* — a per-registry append-only Merkle tree over publish events with signed checkpoints, inclusion proofs, and consistency proofs, making mint-time backdating, omission, and per-consumer equivocation detectable by any auditor holding checkpoints; the capstone of the receipt trust arc (promotes RFC-ACDP-0009 §2.11).
 
 Reserved (no normative text, numbering pinned for future work):
 

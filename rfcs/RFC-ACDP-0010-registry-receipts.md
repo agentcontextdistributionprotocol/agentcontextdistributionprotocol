@@ -187,7 +187,7 @@ Receipts make registry claims **attributable and non-repudiable** — they do no
 - decline to mention contexts it has hidden (a receipt proves what was published, not what wasn't);
 - equivocate between consumers only at the cost of producing conflicting signed receipts — detectable when receipts are compared, but ACDP 0.2.0 specifies no comparison infrastructure.
 
-The next layer — an append-only, registry-signed publication log with Merkle-tree checkpoints, making backdating and equivocation detectable by any auditor — is named future work, reserved as [RFC-ACDP-0009 §2.11](RFC-ACDP-0009-extensions.md#211-transparency-log). It is deliberately out of scope for this document.
+The next layer — an append-only, registry-signed publication log with Merkle-tree checkpoints, making backdating and equivocation detectable by any auditor — is named future work, reserved as [RFC-ACDP-0009 §2.11](RFC-ACDP-0009-extensions.md#211-transparency-log). It is deliberately out of scope for this document. ***(0.3.0)*** That layer has since shipped as [RFC-ACDP-0012 Registry Transparency Log](RFC-ACDP-0012-transparency-log.md), promoting the §2.11 reservation; it remains out of scope for *this* document.
 
 Deployments needing stronger-than-receipt guarantees today SHOULD continue the v0.1.0 mitigations (external transparency logs, multi-registry replication with consumer-side comparison — RFC-ACDP-0008 §9.2).
 
@@ -226,7 +226,7 @@ See RFC-ACDP-0008 §9.1–§9.3 (as amended for 0.2.0) for the threat-model plac
 - [RFC-ACDP-0006 Cross-Registry References](RFC-ACDP-0006-cross-registry.md)
 - [RFC-ACDP-0007 Capabilities & Errors](RFC-ACDP-0007-capabilities.md)
 - [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md)
-- [RFC-ACDP-0009 Extensions](RFC-ACDP-0009-extensions.md) — §2.7 (origin of this RFC), §2.11 (transparency-log reservation).
+- [RFC-ACDP-0009 Extensions](RFC-ACDP-0009-extensions.md) — §2.7 (origin of this RFC), §2.11 (transparency-log reservation, since promoted to RFC-ACDP-0012).
 - [RFC 8032] Josefsson, S. and I. Liusvaara, "Edwards-Curve Digital Signature Algorithm (EdDSA)", RFC 8032, January 2017.
 - [RFC 8785] Rundgren, A., Jordan, B., and S. Erdtman, "JSON Canonicalization Scheme (JCS)", RFC 8785, June 2020.
 - [SEC1] Standards for Efficient Cryptography Group, "SEC 1: Elliptic Curve Cryptography", Version 2.0, May 2009.

@@ -593,6 +593,19 @@ Adds lineage-head receipts. Implementations MUST:
 
 Head-receipt-aware consumers verify lineage-head receipts per RFC-ACDP-0011 §7 whenever they rely on one, and report the head-receipt verdict (and `as_of` freshness policy) separately from the body and context-receipt verdicts.
 
+#### `acdp-registry-transparency-log` *(0.3.0)*
+
+Adds the registry transparency log (the RFC-ACDP-0009 §2.11 promotion). Implementations MUST:
+
+- Be `acdp-registry-receipts` conformant and advertise `acdp_version` ≥ `0.3.0`.
+- Append a leaf for every accepted publish, atomically with persistence (body + receipt + leaf commit together), per RFC-ACDP-0012 §4–§5 and §7 (RFC 6962-style Merkle tree, `0x00` leaf / `0x01` node domain-separation prefixes, JCS leaf encoding).
+- Serve `GET /log/checkpoint`, `GET /log/proof` (inclusion mode by `ctx_id` or `leaf_index` AND consistency mode by `first`+`second`), and `GET /log/entries` per RFC-ACDP-0012 §8 — always; there is no degraded mode.
+- Sign checkpoints with the RFC-ACDP-0010 receipt signing key and construction (RFC-ACDP-0012 §6), under the RFC-ACDP-0010 §9 key lifecycle — no new key role.
+- Apply retrieval visibility to `ctx_id`-keyed proofs and to leaf bodies on `/log/entries` (RFC-ACDP-0012 §8, RFC-ACDP-0008 §4.5).
+- Pass the transparency-log conformance fixtures (`log-001..004`).
+
+Log-aware consumers verify checkpoints, inclusion proofs, and consistency proofs per RFC-ACDP-0012 §9 whenever they rely on them, reconstruct leaves from independently verified material (never from echoed bytes), and report the log verdict separately from the body, context-receipt, and head-receipt verdicts; failures surface as `invalid_log_proof` (RFC-ACDP-0012 §11).
+
 ### 9.2 Verification profile names (RECOMMENDED)
 
 v0.1.0 verification is always strict for any conformance claim — §5.11 ("v0.1.0 strict verification profile") defines the strict pipeline and requires that it be the non-loosenable default. SDKs MAY additionally expose relaxed or diagnostic verification modes for debugging and test harnesses. When they do, they SHOULD use the following identifiers so documentation, logs, and error messages are consistent across language implementations:

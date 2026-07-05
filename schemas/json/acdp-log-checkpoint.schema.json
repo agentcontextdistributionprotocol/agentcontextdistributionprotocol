@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.1.0/acdp-log-checkpoint.schema.json",
+  "title": "ACDP Transparency-Log Checkpoint (Signed Tree Head, 0.3.0)",
+  "description": "A registry-signed commitment to the transparency log's state: 'as of timestamp, the log log_id has tree_size leaves and Merkle root root_hash' (RFC-ACDP-0012 §6). The checkpoint preimage is the JCS canonicalization of this object minus 'signature'; the registry signs the ASCII bytes of 'sha256:<hex(SHA-256(preimage))>' exactly as RFC-ACDP-0001 §5.8 / RFC-ACDP-0010 §5, with the RFC-ACDP-0010 receipt signing key. Specified by RFC-ACDP-0012 (acdp/0.3.0), promoting the RFC-ACDP-0009 §2.11 reservation; additive minor, so this schema lives in the v0.1.0 namespace (VERSIONING.md).",
+
+  "type": "object",
+  "required": [
+    "checkpoint_version",
+    "log_id",
+    "tree_size",
+    "root_hash",
+    "timestamp",
+    "signature"
+  ],
+  "properties": {
+    "checkpoint_version": {
+      "const": "acdp-log/1",
+      "description": "Checkpoint envelope version and in-preimage domain separator (RFC-ACDP-0012 §6): a checkpoint can never be mistaken for — or replayed as — an RFC-ACDP-0010 context receipt or RFC-ACDP-0011 head receipt."
+    },
+    "log_id": {
+      "type": "string",
+      "pattern": "^did:web:[a-zA-Z0-9.%:-]+/log/[a-z0-9-]{1,32}$",
+      "description": "The log instantiation identifier: '<registry_did>/log/<instance>' where <registry_did> is the registry's did:web DID (== capabilities.registry_did) and <instance> matches [a-z0-9-]{1,32}. A new instantiation (new instance component) is an explicit, detectable history reset (RFC-ACDP-0012 §7.4); consistency proofs exist only within one log_id."
+    },
+    "tree_size": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "The number of leaves this checkpoint commits to. 0 is a valid, empty log (root_hash is then the SHA-256 of the empty string)."
+    },
+    "root_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "'sha256:' + lowercase hex of MTH(D[tree_size]) per RFC-ACDP-0012 §5.2 (RFC 6962 §2.1 with 0x00 leaf / 0x01 node domain-separation prefixes)."
+    },
+    "timestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+      "description": "Registry-clock time at which this checkpoint was evaluated and signed; canonical millisecond-precision RFC 3339 UTC (RFC-ACDP-0001 §5.3). Registry-asserted — external anchoring is reserved (RFC-ACDP-0009 §2.12). Consumers reject a future timestamp beyond a small skew allowance and apply their own max-age freshness policy (RFC-ACDP-0012 §7.2, §9.3)."
+    },
+    "signature": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/signature",
+      "description": "The registry's signature over the checkpoint hash (RFC-ACDP-0012 §6 — the RFC-ACDP-0010 §5 construction verbatim, same receipt signing key and RFC-ACDP-0010 §9 lifecycle). signature.key_id MUST be a DID URL under the registry_did embedded in log_id."
+    }
+  },
+  "additionalProperties": false,
+  "$comment": "Closed schema, as acdp-registry-receipt.schema.json and acdp-lineage-head-receipt.schema.json: every field is signed, so an unknown member would change the preimage. Extensions require a checkpoint_version bump. The RFC-ACDP-0009 §2.11 sketch's informal 'checkpoint_signature' member is realized as the standard 'signature' envelope (RFC-ACDP-0012 §12)."
+}
