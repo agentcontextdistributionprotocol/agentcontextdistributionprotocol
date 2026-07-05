@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Producer Key-Revocation Signal
 
 **Document:** RFC-ACDP-0014
-**Version:** 0.3.0-draft
-**Status:** Community Standards Track (Draft)
+**Version:** 0.3.0
+**Status:** Community Standards Track (Final)
 
 This RFC specifies a **producer key-revocation signal**: a normative context type, `key-revocation`, through which a producer declares that one of its signing keys is compromised **as of a stated time** — and the consumer semantics that turn that declaration into a time-scoped verification boundary. It makes normative the "publish a 'this key is compromised' context as a soft signal" mitigation acknowledged as a gap since v0.1.0 (RFC-ACDP-0008 §5, §9.3), and integrates with RFC-ACDP-0010 §10 historical verification: receipt-attested publish times are what let a verifier separate contexts signed *before* the compromise (still historically authorized) from those signed *at or after* it (fail closed). It depends on RFC-ACDP-0001 (Core), RFC-ACDP-0002 (Context Body), RFC-ACDP-0003 (Publish), RFC-ACDP-0005 (Discovery), and RFC-ACDP-0010 (Registry Receipts); RFC-ACDP-0013 (Lifecycle Events) is its sibling — key compromise is a canonical reason to retract affected contexts.
 
@@ -13,7 +13,7 @@ This RFC specifies a **producer key-revocation signal**: a normative context typ
 
 ## 1. Status of This Memo
 
-This document is a **Draft** ACDP specification targeting acdp/0.3.0. It follows the governance lifecycle in [governance/RFC-PROCESS.md](../governance/RFC-PROCESS.md) (Draft → Review → Final); per [VERSIONING.md](../VERSIONING.md) it is promoted to Final once the conformance fixtures it defines (`rev-001..002`) pass against at least two independent interoperating implementations.
+This document is a **Final** ACDP specification (acdp/0.3.0). It is stable for the 0.3.0 line; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md). It was promoted from Draft to Final on 2026-07-05, the VERSIONING.md gate having been met: the conformance fixtures it defines (`rev-001..002`) pass against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md) for the promotion record).
 
 This RFC promotes no RFC-ACDP-0009 reservation; it activates the soft-signal mitigation named in RFC-ACDP-0008 §5 ("No real-time key revocation push") and closes the time-scoping half of §9.3. Nothing in this document invalidates any v0.1.0/0.2.0 body, signature, `content_hash`, or receipt. The signal remains **pull-based**: real-time revocation *push* stays out of scope for the substrate (RFC-ACDP-0008 §5), and §8's discovery semantics are honest about what pull can and cannot guarantee.
 

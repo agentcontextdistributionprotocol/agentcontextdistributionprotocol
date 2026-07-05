@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Context Body
 
 **Document:** RFC-ACDP-0002
-**Version:** 0.3.0-draft
-**Status:** Community Standards Track (Final for acdp/0.1.0; the section marked *(0.3.0)* is Draft)
+**Version:** 0.3.0
+**Status:** Community Standards Track (Final)
 
 This RFC specifies the immutable, signed body of an ACDP context. It depends on RFC-ACDP-0001 Core (identifiers, JCS, content hash, signature).
 
@@ -11,7 +11,9 @@ This RFC specifies the immutable, signed body of an ACDP context. It depends on 
 
 ## 1. Status of This Memo
 
-This document is a Final ACDP specification (acdp/0.1.0). It is stable for the 0.1.0 release; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
+This document is a Final ACDP specification (acdp/0.1.0, with a Final amendment from acdp/0.3.0). It is stable for the released lines; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
+
+The section marked *(0.3.0)* records the release line that added it. The acdp/0.3.0 line is **Final** as of 2026-07-05, promoted after its conformance pack passed against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md)). It changes no v0.1.0 body field, hash, or signature semantic.
 
 ---
 

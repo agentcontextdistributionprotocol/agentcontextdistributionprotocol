@@ -24,8 +24,8 @@ The full normative threat model is [RFC-ACDP-0008 Security](../rfcs/RFC-ACDP-000
 
 | Gap | Mitigation |
 |---|---|
-| No retraction | Use supersession; RFC-ACDP-0009 reserves a formal lifecycle-events mechanism. *(0.3.0, Draft)* Closed on registries advertising `acdp-registry-lifecycle`: RFC-ACDP-0013 specifies signed retraction/republication events, `status: retracted`, mark-not-delete. |
-| No real-time key revocation push | Pull-based; consumers consult DID documents on retrieval. *(0.3.0, Draft)* RFC-ACDP-0014 makes the "this key is compromised" context normative (`key-revocation` type, time-scoped fail-closed semantics against receipt-attested publish times); still pull-based — a hiding registry remains possible until the transparency log (RFC-ACDP-0009 §2.11). |
+| No retraction | Use supersession; RFC-ACDP-0009 reserves a formal lifecycle-events mechanism. *(0.3.0)* Closed on registries advertising `acdp-registry-lifecycle`: RFC-ACDP-0013 specifies signed retraction/republication events, `status: retracted`, mark-not-delete. |
+| No real-time key revocation push | Pull-based; consumers consult DID documents on retrieval. *(0.3.0)* RFC-ACDP-0014 makes the "this key is compromised" context normative (`key-revocation` type, time-scoped fail-closed semantics against receipt-attested publish times); still pull-based — a hiding registry remains detectable only where the RFC-ACDP-0012 transparency log is advertised. |
 | No third-party attestations | RFC-ACDP-0009 reserves `attestations` in registry state. |
 | No third-party `builds_on` claims | `derived_from` is producer-only. |
 | No push subscriptions | Polling only; RFC-ACDP-0009 reserves push semantics. |
@@ -42,7 +42,7 @@ The full normative threat model is [RFC-ACDP-0008 Security](../rfcs/RFC-ACDP-000
 **Result.** TLS validation at the producer's HTTPS endpoint catches the spoof unless the attacker also has a valid TLS cert. Even with a forged DID document, the attacker still needs the real private key to sign anything.
 
 ### 3. Producer rotates keys; old context
-**Result.** The signing key has been removed from the producer's current DID document. The signature won't verify against the producer's *current* keys, and most DID methods don't expose historical key authorization data. v0.1.0 consumers SHOULD verify against the current DID document and either reject the old context (strict) or accept the residual risk (pragmatic). Under acdp/0.2.0 (Draft), registry receipts close this gap where deployed: the receipt's `key_fingerprint` attests which key verified the body at publish time, and a rotated key the producer retained in `verificationMethod` then verifies with the distinguishable *historically authorized (receipt-attested)* status ([RFC-ACDP-0010 §10](../rfcs/RFC-ACDP-0010-registry-receipts.md)); receipt-less deployments still rely on external transparency logs. See RFC-ACDP-0008 §9.3.
+**Result.** The signing key has been removed from the producer's current DID document. The signature won't verify against the producer's *current* keys, and most DID methods don't expose historical key authorization data. v0.1.0 consumers SHOULD verify against the current DID document and either reject the old context (strict) or accept the residual risk (pragmatic). Under acdp/0.2.0, registry receipts close this gap where deployed: the receipt's `key_fingerprint` attests which key verified the body at publish time, and a rotated key the producer retained in `verificationMethod` then verifies with the distinguishable *historically authorized (receipt-attested)* status ([RFC-ACDP-0010 §10](../rfcs/RFC-ACDP-0010-registry-receipts.md)); receipt-less deployments still rely on external transparency logs. See RFC-ACDP-0008 §9.3.
 
 ### 4. Replay of a captured publish request
 **Result.** Idempotent at the content level — the registry assigns a new `ctx_id` but the body is identical. Producers wishing to suppress duplicates deduplicate locally on `content_hash`.

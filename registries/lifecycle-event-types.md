@@ -8,8 +8,8 @@ Values MUST match `^[a-z][a-z0-9_]*$` and be 1–64 characters.
 
 | Value | Status | Status effect (RFC-ACDP-0013 §7) | Initiator | Spec |
 |---|---|---|---|---|
-| `retracted` | Proposed (0.3.0, Draft) | Enters retraction: `status` becomes `retracted` (dominates `superseded` and `expired`). | Producer (`POST /contexts/{ctx_id}/retract`) or registry (policy/legal, recorded directly). | [RFC-ACDP-0013 §6–§7](../rfcs/RFC-ACDP-0013-lifecycle-events.md) |
-| `republished` | Proposed (0.3.0, Draft) | Reverses a retraction: `status` re-derives per RFC-ACDP-0004 §4 as though never retracted; both events remain in history. | Producer (`POST /contexts/{ctx_id}/republish`) or registry. | [RFC-ACDP-0013 §6–§7](../rfcs/RFC-ACDP-0013-lifecycle-events.md) |
+| `retracted` | Proposed (0.3.0, Final) | Enters retraction: `status` becomes `retracted` (dominates `superseded` and `expired`). | Producer (`POST /contexts/{ctx_id}/retract`) or registry (policy/legal, recorded directly). | [RFC-ACDP-0013 §6–§7](../rfcs/RFC-ACDP-0013-lifecycle-events.md) |
+| `republished` | Proposed (0.3.0, Final) | Reverses a retraction: `status` re-derives per RFC-ACDP-0004 §4 as though never retracted; both events remain in history. | Producer (`POST /contexts/{ctx_id}/republish`) or registry. | [RFC-ACDP-0013 §6–§7](../rfcs/RFC-ACDP-0013-lifecycle-events.md) |
 
 Retraction state is derived from the **last** `retracted`/`republished` event in array order; the RFC-ACDP-0013 §6 transition rule enforces strict alternation.
 

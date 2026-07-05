@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Lineage-Head Receipts
 
 **Document:** RFC-ACDP-0011
-**Version:** 0.3.0-draft
-**Status:** Community Standards Track (Draft)
+**Version:** 0.3.0
+**Status:** Community Standards Track (Final)
 
 This RFC specifies **lineage-head receipts**: registry-signed attestations of the *current* state of a lineage — "as of time T, the head of lineage L is context X at version N with status S." It extends the receipt trust layer introduced by RFC-ACDP-0010 (Registry Receipts) from publish-time facts to serve-time claims, and is the anchor of the ACDP 0.3.0 program. It depends on RFC-ACDP-0001 (Core), RFC-ACDP-0004 (Retrieval & Lineage), RFC-ACDP-0007 (Capabilities & Errors), and RFC-ACDP-0010 (Registry Receipts).
 
@@ -11,7 +11,7 @@ This RFC specifies **lineage-head receipts**: registry-signed attestations of th
 
 ## 1. Status of This Memo
 
-This document is a **Draft** ACDP specification targeting acdp/0.3.0. It follows the governance lifecycle in [governance/RFC-PROCESS.md](../governance/RFC-PROCESS.md) (Draft → Review → Final); per [VERSIONING.md](../VERSIONING.md) it is promoted to Final once the conformance fixtures it defines (`lhr-001..004`) pass against at least two independent interoperating implementations.
+This document is a **Final** ACDP specification (acdp/0.3.0). It is stable for the 0.3.0 line; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md). It was promoted from Draft to Final on 2026-07-05, the VERSIONING.md gate having been met: the conformance fixtures it defines (`lhr-001..004`) pass against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md) for the promotion record).
 
 Unlike RFC-ACDP-0010, this RFC **promotes no RFC-ACDP-0009 reservation**: the lineage-head receipt was never reserved in v0.1.0, and no v0.1.0 library carries a preserve-verbatim obligation for it. It is a direct extension of RFC-ACDP-0010 — the same signing key, the same signing construction, the same key lifecycle — applied to a new, ephemeral object. Nothing in this document invalidates any v0.1.0/0.2.0 body, signature, `content_hash`, or RFC-ACDP-0010 receipt.
 
