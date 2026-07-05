@@ -7,6 +7,8 @@ Reads every fixture under schemas/conformance/ and verifies arithmetic claims:
   - lin-* fixtures: lineage_id derivation golden vectors
   - sig-* fixtures: full Ed25519 / ECDSA-P256 sign/verify cycle, full content_hash
     computation, and (for did:key fixtures) pure did:key identity derivation
+  - rev-* fixtures carrying a test_keypair: key-revocation context golden cycle
+    (same arithmetic as sig-*, plus the RFC-ACDP-0014 §4/§5 shape checks)
   - rcpt-* fixtures carrying a registry_test_keypair: full receipt golden cycle
     (preimage, receipt hash, signature, producer key_fingerprint) per RFC-ACDP-0010
   - lhr-* fixtures carrying a registry_test_keypair: full lineage-head-receipt
@@ -15,8 +17,8 @@ Reads every fixture under schemas/conformance/ and verifies arithmetic claims:
   - fp-* fixtures: key-fingerprint encoding vectors (RFC-ACDP-0010 §6)
 
 Behavioral fixtures (pub-*, vis-*, dk-*, rcpt-002..004, lhr-002..004, rot-*,
-fed-*, …) are not executed; they describe request/response scenarios for live
-implementations.
+lc-*, rev-002, fed-*, …) are not executed; they describe request/response
+scenarios for live implementations.
 
 Exits 0 if all vectors pass, 1 otherwise.
 
@@ -349,6 +351,48 @@ def check_signature_vector(fixture, fixture_data, vector):
     return check_ed25519_vector(fixture, fixture_data, vector)
 
 
+def check_revocation_vector(fixture, fixture_data, vector):
+    """rev-* golden vectors: a key-revocation context (RFC-ACDP-0014) is an ordinary
+    signed body, so the arithmetic is check_ed25519_vector verbatim; on top we pin
+    the §4 shape and the §5 not-self-signed constraint."""
+    name = vector.get("name", "?")
+    if not check_ed25519_vector(fixture, fixture_data, vector):
+        return False
+
+    pc = vector.get("producer_content", {})
+    meta = pc.get("metadata", {})
+    if pc.get("type") != "key-revocation":
+        fail(fixture, name, f"type MUST be 'key-revocation', got {pc.get('type')!r}")
+        return False
+    if pc.get("visibility") != "public":
+        fail(fixture, name, f"visibility MUST be 'public' (RFC-ACDP-0014 §4), got {pc.get('visibility')!r}")
+        return False
+    import re
+    fp = meta.get("revoked_key_fingerprint", "")
+    if not re.fullmatch(r"sha256:[0-9a-f]{64}", fp):
+        fail(fixture, name, f"metadata.revoked_key_fingerprint not in RFC-ACDP-0010 §6 form: {fp!r}")
+        return False
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z", meta.get("compromised_since", "")):
+        fail(fixture, name, f"metadata.compromised_since not canonical millisecond RFC 3339 UTC: {meta.get('compromised_since')!r}")
+        return False
+
+    # §5 step 2: the signing key MUST NOT be the revoked key.
+    signer_pub_hex = fixture_data.get("test_keypair", {}).get("public_key_hex", "")
+    if signer_pub_hex and key_fingerprint(bytes.fromhex(signer_pub_hex)) == fp:
+        fail(fixture, name, "revocation is self-signed by the revoked key (RFC-ACDP-0014 §5 step 2)")
+        return False
+
+    # Cross-check the declared revoked-key fingerprint against its raw key bytes.
+    revoked = fixture_data.get("revoked_key", {})
+    if revoked.get("public_key_hex"):
+        derived = key_fingerprint(bytes.fromhex(revoked["public_key_hex"]))
+        if derived != revoked.get("key_fingerprint") or derived != fp:
+            fail(fixture, name, f"revoked_key fingerprint inconsistency: derived={derived}")
+            return False
+
+    return True
+
+
 def check_fingerprint_vector(fixture, vector):
     """fp-* vectors: RFC-ACDP-0010 §6 key_fingerprint encoding."""
     name = vector.get("name", "?")
@@ -592,6 +636,12 @@ for path in sorted(CONFORMANCE.glob("*.json")):
         for v in data.get("vectors", []):
             if check_signature_vector(fixture_id, data, v):
                 passes += 1
+    elif fixture_id.startswith("rev-") and "test_keypair" in data:
+        # rev golden vectors (rev-001) are executed; rev-002 is behavioral
+        # (no test_keypair) and is skipped here.
+        for v in data.get("vectors", []):
+            if check_revocation_vector(fixture_id, data, v):
+                passes += 1
     elif fixture_id.startswith("fp-"):
         for v in data.get("vectors", []):
             if check_fingerprint_vector(fixture_id, v):
@@ -608,9 +658,9 @@ for path in sorted(CONFORMANCE.glob("*.json")):
         for v in data.get("vectors", []):
             if check_lineage_head_receipt_vector(fixture_id, data, v):
                 passes += 1
-    # pub-, vis-, ret-, dk-, rot-, fed- (and keypair-less rcpt-/lhr-) fixtures describe
-    # scenarios (request → expected error code), not arithmetic vectors. Their conformance
-    # is checked by registry/consumer implementations, not by this static runner.
+    # pub-, vis-, ret-, dk-, rot-, lc-, fed- (and keypair-less rcpt-/lhr-/rev-) fixtures
+    # describe scenarios (request → expected error code), not arithmetic vectors. Their
+    # conformance is checked by registry/consumer implementations, not by this static runner.
 
 
 def check_golden_retrieval_example():

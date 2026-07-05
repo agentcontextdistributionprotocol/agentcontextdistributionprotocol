@@ -1,0 +1,77 @@
+{
+  "id": "lc-001",
+  "description": "End-to-end retraction and republication flow (RFC-ACDP-0013 §6–§8). A producer retracts an active public context via POST /contexts/{ctx_id}/retract with a signed lifecycle event; the body remains retrievable (mark-not-delete), status becomes 'retracted' (dominating superseded/expired per §7.2), search excludes it by default, and a later /republish reverses the retraction while the append-only event history retains both events.",
+  "tags": ["lifecycle", "retraction", "happy-path", "mixed"],
+  "applies_to_profiles": ["acdp-registry-lifecycle"],
+  "input": {
+    "precondition": "The sig-001 golden context, published and active on a registry advertising acdp-registry-lifecycle (and, for scenarios D/E, acdp-registry-discovery). ctx_id: acdp://registry.example.com/12345678-1234-4321-8123-123456781234; agent_id: did:web:agents.example.com:test-producer.",
+    "retract_request": {
+      "method": "POST",
+      "path": "/contexts/acdp%3A%2F%2Fregistry.example.com%2F12345678-1234-4321-8123-123456781234/retract",
+      "body": {
+        "event": {
+          "event_id": "018f6d0a-7b2e-4c4d-9e1f-3a5b7c9d1e2f",
+          "ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234",
+          "event_type": "retracted",
+          "occurred_at": "2026-07-04T09:15:42.000Z",
+          "actor": "did:web:agents.example.com:test-producer",
+          "reason": "underlying data source found to be fabricated",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:web:agents.example.com:test-producer#key-1",
+            "value": "<Ed25519 over the ASCII bytes of 'sha256:<hex(SHA-256(JCS(event minus signature)))>' — RFC-ACDP-0013 §5; verified by the registry through the full RFC-ACDP-0001 §5.11 pipeline>"
+          }
+        }
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "name": "A — retract succeeds and appends a signed event",
+      "expected": {
+        "outcome": "success",
+        "http_status": 200,
+        "behavior": "Registry verifies the event signature (§5), checks actor == body.agent_id (§6 step 3), validates the transition (not currently retracted, §6 step 4), appends the event atomically, and returns the full-retrieval envelope: registry_state.status == 'retracted', registry_state.lifecycle_events == [the submitted event, verbatim including its signature]."
+      }
+    },
+    {
+      "name": "B — body remains retrievable (mark-not-delete)",
+      "expected": {
+        "outcome": "success",
+        "behavior": "GET /contexts/{ctx_id} returns HTTP 200 with the byte-identical body, status 'retracted', and the lifecycle_events array. GET /contexts/{ctx_id}/body is entirely unaffected: bare signed body, unchanged bytes, unchanged cache headers (RFC-ACDP-0013 §8.1; docs/non-goals.md §5/§13). The body's content_hash and producer signature still verify — retraction never touches a body byte."
+      }
+    },
+    {
+      "name": "C — double retract is an invalid transition",
+      "expected": {
+        "outcome": "failure",
+        "http_status": 409,
+        "error_code": "invalid_lifecycle_transition",
+        "behavior": "A second POST /retract (fresh event_id, valid signature) while the context is already retracted MUST be rejected with invalid_lifecycle_transition (HTTP 409) and MUST NOT append an event (RFC-ACDP-0013 §6 step 4 — strict retracted/republished alternation)."
+      }
+    },
+    {
+      "name": "D — default search excludes retracted contexts",
+      "expected": {
+        "outcome": "success",
+        "behavior": "GET /contexts/search?q=golden (status filter defaulting to 'active', RFC-ACDP-0005 §2.1) MUST NOT include the retracted context in matches[] nor count it in total_estimate. It also MUST NOT match status=superseded or status=expired even where those facts hold (§7.2 precedence applies to the filter)."
+      }
+    },
+    {
+      "name": "E — explicit status=retracted search returns it",
+      "expected": {
+        "outcome": "success",
+        "behavior": "GET /contexts/search?q=golden&status=retracted returns the context (visibility scoping unchanged, RFC-ACDP-0005 §2.5.5 — retraction never widens an audience)."
+      }
+    },
+    {
+      "name": "F — republish reverses, history is append-only",
+      "expected": {
+        "outcome": "success",
+        "http_status": 200,
+        "behavior": "POST /contexts/{ctx_id}/republish with a signed event (event_type 'republished', fresh event_id) returns 200; status re-derives per RFC-ACDP-0004 §4 (here: 'active'); lifecycle_events now holds BOTH events in order — the retraction is reversed in effect but never erased from history (RFC-ACDP-0013 §4.1, §7.1). The default search match returns."
+      }
+    }
+  ],
+  "notes": "Registries not advertising acdp-registry-lifecycle MUST return not_implemented (501) on both endpoints and never emit lifecycle_events or 'retracted' (RFC-ACDP-0013 §6). Pre-0.3.0 consumers treat 'retracted' as an unknown status per RFC-ACDP-0004 §4.1 (tolerate, treat as active, log) — the search-default exclusion in scenario D is registry-side and protects them on the discovery path regardless."
+}

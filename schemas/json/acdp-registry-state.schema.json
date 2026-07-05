@@ -2,14 +2,20 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.acdp.io/v0.1.0/acdp-registry-state.schema.json",
   "title": "ACDP Registry State (v0.1.0)",
-  "description": "The registry-maintained portion of a context, returned alongside the body on retrieval. In v0.1.0 this contains only the derived 'status' field. Future versions will add lifecycle_events, relationships, and attestations. Consumers MUST tolerate unknown fields for forward compatibility.",
+  "description": "The registry-maintained portion of a context, returned alongside the body on retrieval. In v0.1.0 this contains only the derived 'status' field; 0.3.0 adds the optional 'lifecycle_events' array (RFC-ACDP-0013, promoting the RFC-ACDP-0009 §2.1 reservation). Future versions will add relationships and attestations. Consumers MUST tolerate unknown fields for forward compatibility.",
 
   "type": "object",
   "required": ["status"],
   "properties": {
     "status": {
       "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/status",
-      "description": "Derived from supersession queries and the clock. The registry computes and serves this; consumers can verify independently."
+      "description": "Derived from supersession queries, the clock, and (0.3.0, on lifecycle-advertising registries) the retraction state of RFC-ACDP-0013 §7. Precedence: retracted > superseded > expired > active. The registry computes and serves this; consumers can verify independently."
+    },
+    "lifecycle_events": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-lifecycle-event.schema.json" },
+      "minItems": 1,
+      "description": "(0.3.0) Append-only lifecycle event history (RFC-ACDP-0013 §4.1): events in registry-accepted order; never removed, reordered, or mutated. Omitted entirely (never an empty array) when no events exist, per the absent-vs-null convention (RFC-ACDP-0005 §2.2.1). Emitted only by registries advertising acdp-registry-lifecycle. Pre-0.3.0 libraries preserve it verbatim as an unknown registry-state member (the field name has been reserved since v0.1.0, RFC-ACDP-0009 §2.1)."
     }
   },
   "additionalProperties": true

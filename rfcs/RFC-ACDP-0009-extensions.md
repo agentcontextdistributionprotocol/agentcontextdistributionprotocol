@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Extensions
 
 **Document:** RFC-ACDP-0009
-**Version:** 0.2.0-reserved
-**Status:** **Reserved** — number pinned, no normative text yet (§2.7 promoted to [RFC-ACDP-0010](RFC-ACDP-0010-registry-receipts.md) in acdp/0.2.0)
+**Version:** 0.3.0-reserved
+**Status:** **Reserved** — number pinned, no normative text yet (§2.7 promoted to [RFC-ACDP-0010](RFC-ACDP-0010-registry-receipts.md) in acdp/0.2.0; §2.1 promoted to [RFC-ACDP-0013](RFC-ACDP-0013-lifecycle-events.md) in acdp/0.3.0)
 
 This RFC is a placeholder. It reserves the numbering and the field namespaces under which post-v0.1.0 capabilities will be specified. **It contains no normative requirements.**
 
@@ -23,7 +23,9 @@ This document exists so that:
 
 ## 2. Reserved Capabilities
 
-### 2.1 Retraction & lifecycle events
+### 2.1 Retraction & lifecycle events — **PROMOTED to RFC-ACDP-0013 (acdp/0.3.0)**
+
+> **Status of this section:** the reservation below was promoted to a full normative specification, [RFC-ACDP-0013 Lifecycle Events & Retraction](RFC-ACDP-0013-lifecycle-events.md), as part of the acdp/0.3.0 program. The reserved names were adopted exactly as reserved: the `lifecycle_events` registry-state field (an append-only array of signed event objects), the `retracted` status value (RFC-ACDP-0004 §4.1), and the `immutable_field` error code (RFC-ACDP-0007 §5). The text below is retained verbatim for 0.1.0/0.2.0-pinned libraries: for any library declaring `acdp_version` `0.1.0` or `0.2.0`, `lifecycle_events` remains an unknown registry-state member to be tolerated and preserved verbatim (registry state is open — §3 below, RFC-ACDP-0004 §3), `retracted` remains an unknown-but-valid status handled per RFC-ACDP-0004 §4.1, and `immutable_field` MUST NOT be emitted. Lifecycle-aware behavior (the retract/republish endpoints, status precedence, search exclusion, head exclusion, the `acdp-registry-lifecycle` profile, `immutable_field`, `invalid_lifecycle_transition`) is specified exclusively by RFC-ACDP-0013 and applies to 0.3.0 implementations.
 
 A signed-event mechanism appended to **registry state** that allows producers to formally withdraw or annotate a context. Will use a `lifecycle_events` field in registry state (open-ended array of signed objects).
 
@@ -213,5 +215,6 @@ This document will be replaced by concrete RFCs when each capability is specifie
 - [RFC-ACDP-0004 Retrieval](RFC-ACDP-0004-retrieval.md)
 - [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md)
 - [RFC-ACDP-0010 Registry Receipts](RFC-ACDP-0010-registry-receipts.md) — promotion of §2.7
+- [RFC-ACDP-0013 Lifecycle Events & Retraction](RFC-ACDP-0013-lifecycle-events.md) — promotion of §2.1
 - [VERSIONING.md](../VERSIONING.md)
 - [CHANGELOG.md](../CHANGELOG.md)

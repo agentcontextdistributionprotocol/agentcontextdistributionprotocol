@@ -2,7 +2,7 @@
 
 ACDP error codes returned in error envelopes (`error.code`). The envelope shape and HTTP status mapping are defined in [RFC-ACDP-0007 §4–5](../rfcs/RFC-ACDP-0007-capabilities.md).
 
-## v0.1.0 codes (plus 0.2.0 additions, marked)
+## v0.1.0 codes (plus 0.2.0 / 0.3.0 additions, marked)
 
 | Code | Status | HTTP | Meaning | Source |
 |---|---|---|---|---|
@@ -26,6 +26,8 @@ ACDP error codes returned in error envelopes (`error.code`). The envelope shape 
 | `duplicate_publish` | Stable | 409 | An idempotent publish was retried with conflicting content (same `Idempotency-Key`, different `content_hash`). | [RFC-ACDP-0003 §6.2](../rfcs/RFC-ACDP-0003-publish.md#62-registry-behavior) |
 | `cross_registry_resolution_failed` | Stable | 502 | A cross-registry resolution failed (DNS resolution refused by IP-range filter, response oversize, timeout, redirect-policy violation, or upstream registry unavailable). See RFC-ACDP-0006 §7. | [RFC-ACDP-0006 §7](../rfcs/RFC-ACDP-0006-cross-registry.md#7-server-side-request-forgery-ssrf-protections) |
 | `internal_error` | Stable | 500 | Unexpected registry error. The standard envelope MUST be used; `error.message` MUST NOT leak stack traces or sensitive context. Retryable. | [RFC-ACDP-0007 §4](../rfcs/RFC-ACDP-0007-capabilities.md#4-error-envelope) |
+| `immutable_field` *(0.3.0)* | Proposed | 400 | A lifecycle (or any future mutation) endpoint request attempted to supply or alter immutable body content (e.g. a `body` member or a body-field-named member on `POST /contexts/{ctx_id}/retract`). Bodies are immutable; lifecycle endpoints mutate registry state only. **Activated from the reserved-codes table below** (reserved since v0.1.0 per RFC-ACDP-0009 §2.1); distinct from `schema_violation` so producers learn the category error. MUST NOT be emitted by implementations declaring `acdp_version` < `0.3.0`. Not retryable. Fixture `lc-002`. | [RFC-ACDP-0013 §6, §10](../rfcs/RFC-ACDP-0013-lifecycle-events.md) |
+| `invalid_lifecycle_transition` *(0.3.0)* | Proposed | 409 | The requested lifecycle transition conflicts with the context's current retraction state: `retract` of an already-retracted context, or `republish` of one not retracted (RFC-ACDP-0013 §6 step 4 — strict `retracted`/`republished` alternation). A state conflict, like the 409 arm of `superseded_target`; retryable only after the state changes. MUST NOT be emitted by implementations declaring `acdp_version` < `0.3.0`. Fixture `lc-001` scenario C. | [RFC-ACDP-0013 §6, §10](../rfcs/RFC-ACDP-0013-lifecycle-events.md) |
 | `invalid_receipt` *(0.2.0)* | Proposed | 502 | A registry receipt failed the RFC-ACDP-0010 §8 verification procedure. On the wire it is emitted by a federated resolver (or any registry validating an upstream receipt on a caller's behalf) — the upstream registry is at fault, hence 502. It is also the verification-failure category consumer SDKs use in their own diagnostics for a locally failing receipt; in that use the accompanying body's verdict is independent (the producer signature may still verify). There is deliberately no `receipt_unavailable`: registries advertising `acdp-registry-receipts` MUST always mint (RFC-ACDP-0010 §7). MUST NOT be emitted by implementations declaring `acdp_version` `0.1.0`. *(0.3.0)* Also the failure category for lineage-head receipts failing the RFC-ACDP-0011 §7 procedure — RFC-ACDP-0011 deliberately introduces **no new wire code** (its §9); `as_of` staleness within the past is consumer freshness policy, not a wire error. | [RFC-ACDP-0010 §8, §11](../rfcs/RFC-ACDP-0010-registry-receipts.md), [RFC-ACDP-0011 §7, §9](../rfcs/RFC-ACDP-0011-lineage-head-receipts.md) |
 
 > Note: `visibility_denied` is an internal-only signal (logging/metrics). Visibility denial is always reported externally as `not_found` per RFC-ACDP-0008 §4.5. The wire-visible enum in `acdp-error.schema.json` does NOT include `visibility_denied`.
@@ -36,8 +38,9 @@ These codes are NOT in the v0.1.0 wire schema enum. They are reserved for future
 
 | Code | Reserved for | Reference |
 |---|---|---|
-| `immutable_field` | A future version's mutation endpoints (retraction, attestation updates). No v0.1.0 endpoint mutates a body field. | [RFC-ACDP-0009 §2.1](../rfcs/RFC-ACDP-0009-extensions.md#21-retraction--lifecycle-events) |
 | `unsupported_embedding_model` | A future version's similarity endpoints. ACDP v0.1.0 has no similarity surface. | [RFC-ACDP-0009 §2.9](../rfcs/RFC-ACDP-0009-extensions.md#29-semantic-similarity-and-embeddings) |
+
+*(0.3.0)* `immutable_field` — reserved here since v0.1.0 for "a future version's mutation endpoints (retraction, attestation updates)" — was **activated** by RFC-ACDP-0013 and moved to the main table above, exactly as `invalid_receipt` graduated in 0.2.0.
 
 ## `superseded_target` reason codes
 

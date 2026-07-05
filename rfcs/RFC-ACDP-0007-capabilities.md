@@ -95,6 +95,8 @@ ACDP uses a mix of CLOSED schemas (`additionalProperties: false`, used for tight
 | `signature` (in `acdp-common.schema.json`) | **Closed** | `false` |
 | `data_period` (in `acdp-common.schema.json`) | **Closed** | `false` |
 | `acdp-registry-receipt.schema.json` *(0.2.0)* | **Closed** | `false` |
+| `acdp-lineage-head-receipt.schema.json` *(0.3.0)* | **Closed** | `false` |
+| `acdp-lifecycle-event.schema.json` *(0.3.0)* | **Closed** | `false` — the event *object* is closed (every member is signed where a signature is present, RFC-ACDP-0013 §4); the `event_type` *vocabulary* is open (`registries/lifecycle-event-types.md`) |
 
 Conformant consumers MUST reject deserializing a closed-schema object that contains fields not defined in the schema (`schema_violation`). Conformant consumers MUST NOT reject deserializing an open-schema object that contains unknown fields. The fixtures pin specific instances of both rules:
 
@@ -236,9 +238,11 @@ The full registry is maintained in [`registries/error-codes.md`](../registries/e
 | `duplicate_publish` | 409 | An idempotent publish was retried with conflicting content (same `Idempotency-Key`, different `content_hash`). | RFC-ACDP-0003 §6.2 |
 | `cross_registry_resolution_failed` | 502 | A cross-registry resolution failed (DNS resolution refused, response oversize, timeout, redirect-policy violation, or upstream registry unavailable). | RFC-ACDP-0006 §7 |
 | `invalid_receipt` *(0.2.0)* | 502 | A registry receipt failed the RFC-ACDP-0010 §8 verification procedure (signature, registry/authority binding, context binding, content binding, key binding, or timestamp form). Emitted on the wire by a federated resolver (or any registry validating an upstream receipt on a caller's behalf) about a receipt obtained from an upstream registry — hence 502, the upstream is at fault. It is also the verification-failure **category** consumer SDKs MUST use in their own diagnostics when a locally verified receipt fails; in that consumer-side use it does not invalidate the body, whose producer signature is judged independently (RFC-ACDP-0010 §8). There is deliberately no `receipt_unavailable`: registries advertising `acdp-registry-receipts` MUST always mint (RFC-ACDP-0010 §7), so a missing receipt from such a registry is a registry fault, not an error category. | RFC-ACDP-0010 §8, §11 |
+| `immutable_field` *(0.3.0)* | 400 | A lifecycle (or any future mutation) endpoint request attempted to supply or alter immutable body content — e.g. a `body` member or a body-field-named member on `POST /contexts/{ctx_id}/retract`. Bodies are immutable; lifecycle endpoints mutate registry state only. Activated by RFC-ACDP-0013 §6 from the reservation held since v0.1.0 (RFC-ACDP-0009 §2.1); distinct from `schema_violation` so producers learn the category error. Not retryable. | RFC-ACDP-0013 §6, §10 |
+| `invalid_lifecycle_transition` *(0.3.0)* | 409 | The requested lifecycle transition conflicts with the context's current retraction state (retract of an already-retracted context; republish of a never-retracted one). A state conflict, like the 409 arm of `superseded_target`; retryable only after the state changes. | RFC-ACDP-0013 §6 step 4, §10 |
 | `internal_error` | 500 | The registry encountered an unexpected internal condition. The standard error envelope MUST be used; `error.message` MUST NOT leak stack traces or sensitive context. Retryable. | RFC-ACDP-0007 §4 |
 
-> **Reserved codes (not in this table or the v0.1.0 wire enum):** `immutable_field` is reserved for a future version's mutation endpoints (retraction, attestation updates — see RFC-ACDP-0009 §2.1). `unsupported_embedding_model` is reserved for a future version's similarity endpoints (see RFC-ACDP-0009 §2.9). Implementations MUST NOT emit either in v0.1.0 responses. *(0.2.0)* `invalid_receipt` graduates from reserved space into the table above and the wire enum; implementations declaring `acdp_version` `0.1.0` MUST NOT emit it.
+> **Reserved codes (not in this table or the v0.1.0 wire enum):** `unsupported_embedding_model` is reserved for a future version's similarity endpoints (see RFC-ACDP-0009 §2.9). Implementations MUST NOT emit it. *(0.2.0)* `invalid_receipt` graduated from reserved space into the table above and the wire enum; implementations declaring `acdp_version` `0.1.0` MUST NOT emit it. *(0.3.0)* `immutable_field` — reserved for "a future version's mutation endpoints" since v0.1.0 — is activated by RFC-ACDP-0013 and likewise graduates, together with the new `invalid_lifecycle_transition`; implementations declaring `acdp_version` < `0.3.0` MUST NOT emit either.
 
 **Distinguishing hash failures.** Three failure codes can arise from integrity checks; implementations MUST keep them distinct so consumers can react correctly:
 
@@ -293,3 +297,4 @@ See [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md). Specific to capabilitie
 - [RFC-ACDP-0005 Discovery](RFC-ACDP-0005-discovery.md)
 - [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md)
 - [RFC-ACDP-0010 Registry Receipts](RFC-ACDP-0010-registry-receipts.md) *(0.2.0)*
+- [RFC-ACDP-0013 Lifecycle Events & Retraction](RFC-ACDP-0013-lifecycle-events.md) *(0.3.0)* — activates `immutable_field`; adds `invalid_lifecycle_transition`.

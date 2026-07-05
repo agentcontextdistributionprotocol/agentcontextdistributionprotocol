@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Retrieval & Lineage
 
 **Document:** RFC-ACDP-0004
-**Version:** 0.2.0-draft
-**Status:** Community Standards Track (Final for acdp/0.1.0; sections marked *(0.2.0)* are Draft)
+**Version:** 0.3.0-draft
+**Status:** Community Standards Track (Final for acdp/0.1.0; sections marked *(0.2.0)* / *(0.3.0)* are Draft)
 
 This RFC specifies how consumers retrieve contexts and lineages from ACDP registries, and how registries derive `status`. It depends on RFC-ACDP-0001 (Core) and RFC-ACDP-0002 (Context Body).
 
@@ -81,7 +81,8 @@ In v0.1.0, the registry state contains a single field:
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `status` | string | Yes | One of `active`, `superseded`, `expired`. See §4. |
+| `status` | string | Yes | One of `active`, `superseded`, `expired` — *(0.3.0)* plus `retracted` on lifecycle-advertising registries. See §4. |
+| `lifecycle_events` *(0.3.0)* | array | No | Append-only lifecycle event history (RFC-ACDP-0013 §4). Emitted only by registries advertising `acdp-registry-lifecycle`; omitted entirely (never `[]`) when empty. |
 
 The canonical schema is [`schemas/json/acdp-registry-state.schema.json`](../schemas/json/acdp-registry-state.schema.json). Future versions of ACDP will add fields. Consumers MUST tolerate unknown fields in registry state to remain forward-compatible.
 
@@ -96,8 +97,9 @@ The `status` field is **derived** by the registry from supersession queries and 
 | `active` | No other context exists with `supersedes` equal to this context's `ctx_id`; if `expires_at` is set, the current time is at or before `expires_at`. |
 | `superseded` | At least one other context exists with `supersedes` equal to this context's `ctx_id`. |
 | `expired` | `expires_at` is set and the current time is after `expires_at`. |
+| `retracted` *(0.3.0)* | The context's retraction state is *retracted* per its `lifecycle_events` (RFC-ACDP-0013 §7.1). Only on registries advertising `acdp-registry-lifecycle`. |
 
-When both `superseded` and `expired` could apply, `status` is `superseded` (supersession dominates expiration).
+When both `superseded` and `expired` could apply, `status` is `superseded` (supersession dominates expiration). *(0.3.0)* When retraction also applies, `retracted` dominates both — the full precedence is `retracted` > `superseded` > `expired` > `active` (RFC-ACDP-0013 §7.2); the dominated facts remain independently visible (supersession via the lineage array and the successor's `supersedes`; expiry via the body's signed `expires_at`).
 
 The registry computes `status` from supersession queries against its own data and from the current clock. `status` is **registry-attested**: a consumer cannot independently verify `status` without trusting the registry's supersession index. Consumers wanting independent confirmation MAY query the registry for any context with `supersedes` equal to this context's `ctx_id`; absence (returned over the wire) still relies on registry honesty. See RFC-ACDP-0008 §9.1.
 
@@ -105,9 +107,9 @@ Because `status` is derived, it MUST NOT be persisted into the body. The body's 
 
 ### 4.1 Forward compatibility
 
-Future ACDP versions will add new `status` values (e.g. `retracted` per RFC-ACDP-0009 §2.1). v0.1.0 consumers MUST NOT fail on unknown `status` values. If a registry returns a `status` value not listed in the table above, consumers SHOULD treat it as `active` for functional decision-making and SHOULD log a warning for operator review. v0.1.0 schemas use an open string pattern for `status` (`^[a-z][a-z0-9_]*$`) to enable this forward compatibility (RFC-ACDP-0001 §6).
+Future ACDP versions will add new `status` values — *(0.3.0)* the first, `retracted`, reserved here since v0.1.0 via RFC-ACDP-0009 §2.1, is now **activated** by RFC-ACDP-0013 §7 for registries advertising `acdp-registry-lifecycle`. v0.1.0 consumers MUST NOT fail on unknown `status` values. If a registry returns a `status` value not listed in the table above, consumers SHOULD treat it as `active` for functional decision-making and SHOULD log a warning for operator review. v0.1.0 schemas use an open string pattern for `status` (`^[a-z][a-z0-9_]*$`) to enable this forward compatibility (RFC-ACDP-0001 §6).
 
-**Pattern constraint (NORMATIVE).** Unknown `status` values MUST match the pattern `^[a-z][a-z0-9_]*$` and MUST be 1–64 characters long (lowercase ASCII letters and digits and underscore, starting with a letter). This is the same constraint enforced by `acdp-common.schema.json#/$defs/status`. Consumers MUST reject `status` values that do not match this pattern as malformed registry state — the response is structurally non-conformant and indicates either a registry bug or a man-in-the-middle. A valid-but-unrecognized status (matching the pattern) MUST be tolerated and SHOULD be treated as `active` for functional decisions until the consumer upgrades to a version that defines the new status. This permits future values like `retracted` (RFC-ACDP-0009 §2.1) and `archived` to ship without breaking v0.1.0 consumers, while still rejecting outright-malformed values like `"ACTIVE"`, `"in progress"`, or `""`. The conformance fixtures `status-001..004` pin representative cases.
+**Pattern constraint (NORMATIVE).** Unknown `status` values MUST match the pattern `^[a-z][a-z0-9_]*$` and MUST be 1–64 characters long (lowercase ASCII letters and digits and underscore, starting with a letter). This is the same constraint enforced by `acdp-common.schema.json#/$defs/status`. Consumers MUST reject `status` values that do not match this pattern as malformed registry state — the response is structurally non-conformant and indicates either a registry bug or a man-in-the-middle. A valid-but-unrecognized status (matching the pattern) MUST be tolerated and SHOULD be treated as `active` for functional decisions until the consumer upgrades to a version that defines the new status. This is exactly how `retracted` (reserved by RFC-ACDP-0009 §2.1, activated by RFC-ACDP-0013 in 0.3.0) shipped without breaking v0.1.0 consumers, and how future values like `archived` can, while still rejecting outright-malformed values like `"ACTIVE"`, `"in progress"`, or `""`. The documented consequence is accepted honestly: a pre-0.3.0 consumer treats `retracted` as `active` for functional decisions until it upgrades — the registry-side protections of RFC-ACDP-0013 §8 (default search exclusion, `/current` head exclusion) bound the exposure meanwhile. The conformance fixtures `status-001..004` pin representative cases.
 
 **Library implementation requirement.** Library authors MUST implement `status` as an open string type (or an open enum that gracefully accepts unknown values) — NOT as a closed enum. A closed-enum implementation will deserialize-fail when a registry returns a future status value, breaking every consumer that depends on the library. Concretely:
 
@@ -157,7 +159,7 @@ Returns the current non-superseded version of a lineage. The current version is 
 - If **every** version in the lineage is `status: superseded` — an abnormal registry state reachable only through admin correction or data corruption — the endpoint MUST return `not_found` (HTTP 404). Registries SHOULD prevent this state via the supersession constraints of RFC-ACDP-0003 §3.1 (every supersession adds exactly one new non-superseded head).
 - Visibility filtering applies: see §5.4. If the current head exists but the requester is not authorized to retrieve it, the endpoint MUST behave as specified in §5.4 (return the newest authorized non-superseded version, or `not_found`).
 
-In short: **current = newest non-superseded version; `expired` counts as non-superseded, `superseded` never does.** This endpoint is exercised by the `ret-002` conformance fixture (all-superseded, expired-head, and active-head scenarios). *(0.3.0)* On registries advertising the `acdp-registry-head-receipts` profile, this endpoint's response additionally carries the registry-signed `lineage_head_receipt` member attesting the served head as of response time (RFC-ACDP-0011).
+In short: **current = newest non-superseded version; `expired` counts as non-superseded, `superseded` never does.** This endpoint is exercised by the `ret-002` conformance fixture (all-superseded, expired-head, and active-head scenarios). *(0.3.0)* On registries advertising the `acdp-registry-head-receipts` profile, this endpoint's response additionally carries the registry-signed `lineage_head_receipt` member attesting the served head as of response time (RFC-ACDP-0011). *(0.3.0)* On registries advertising `acdp-registry-lifecycle`, a **retracted** version is likewise never the current head: the head is the newest version that is neither superseded nor retracted, else `not_found` — see RFC-ACDP-0013 §8.3 and fixture `lc-003` (an expired head remains servable; a retracted one never is).
 
 ### 5.3 Lineage scoping
 
@@ -249,3 +251,4 @@ See [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md). Specific to retrieval:
 - [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md)
 - [RFC-ACDP-0010 Registry Receipts](RFC-ACDP-0010-registry-receipts.md) *(0.2.0)*
 - [RFC-ACDP-0011 Lineage-Head Receipts](RFC-ACDP-0011-lineage-head-receipts.md) *(0.3.0)*
+- [RFC-ACDP-0013 Lifecycle Events & Retraction](RFC-ACDP-0013-lifecycle-events.md) *(0.3.0)* — `lifecycle_events`, the `retracted` status, and the amended §4/§5.2 semantics.

@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Discovery
 
 **Document:** RFC-ACDP-0005
-**Version:** 0.1.0
-**Status:** Community Standards Track (Final)
+**Version:** 0.3.0-draft
+**Status:** Community Standards Track (Final for acdp/0.1.0; the section marked *(0.3.0)* is Draft)
 
 This RFC specifies how consumers discover contexts on an ACDP registry. ACDP v0.1.0 defines one discovery modality: keyword search. Semantic similarity and push subscriptions are reserved for a future version (RFC-ACDP-0009 §2.4, §2.9).
 
@@ -45,6 +45,8 @@ This endpoint is part of the `acdp-registry-discovery` profile (RFC-ACDP-0001 §
 | `cursor` | string | Pagination cursor returned by a previous response. |
 
 Filters not listed here MUST be ignored (forward compatibility for future filter additions).
+
+***(0.3.0)* Retracted contexts and the `status` filter.** On registries advertising `acdp-registry-lifecycle` (RFC-ACDP-0013), the `status` filter is evaluated against the RFC-ACDP-0013 §7.2 precedence (`retracted` > `superseded` > `expired` > `active`): a retracted context MUST NOT match the default (`status=active`) search — retraction stops new discovery-path reliance immediately, for consumers of every version — and MUST NOT match `status=superseded` or `status=expired` even where those facts also hold. `status=retracted` returns retracted contexts, under unchanged visibility scoping (§2.5.5). See RFC-ACDP-0013 §8.2 and fixture `lc-001`.
 
 ### 2.2 Response
 

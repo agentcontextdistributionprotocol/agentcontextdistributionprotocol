@@ -19,6 +19,8 @@ conformance/
 ├── sig-*.json      Cryptographic golden vectors (signing & verification, RFC-ACDP-0001)
 ├── rcpt-*.json     Registry receipts — golden vector + verification failures (RFC-ACDP-0010, 0.2.0)
 ├── lhr-*.json      Lineage-head receipts — golden vector + verification failures (RFC-ACDP-0011, 0.3.0)
+├── lc-*.json       Lifecycle events & retraction scenarios (RFC-ACDP-0013, 0.3.0)
+├── rev-*.json      Producer key revocation — golden vector + boundary semantics (RFC-ACDP-0014, 0.3.0)
 ├── fp-*.json       Key-fingerprint encoding vectors (RFC-ACDP-0010 §6, 0.2.0)
 ├── rot-*.json      Historical producer-key verification with receipts (RFC-ACDP-0010 §10, 0.2.0)
 ├── dk-*.json       did:key resolution rejection scenarios (RFC-ACDP-0001 §5.11.1, 0.2.0)
@@ -46,13 +48,14 @@ conformance/
 - `sig-*.json` — Ed25519 / ECDSA-P256 sign/verify golden vectors, plus pure did:key identity derivation for `sig-003` (0.2.0)
 - `rcpt-*.json` carrying a `registry_test_keypair` (i.e. `rcpt-001`) — full registry-receipt golden cycle: preimage, receipt hash, signature, producer key fingerprint (RFC-ACDP-0010 §5–§6)
 - `lhr-*.json` carrying a `registry_test_keypair` (i.e. `lhr-001`) — full lineage-head-receipt golden cycle: preimage, receipt hash, signature, binding consistency (RFC-ACDP-0011 §5, §7)
+- `rev-*.json` carrying a `test_keypair` (i.e. `rev-001`) — key-revocation context golden cycle: same arithmetic as `sig-*`, plus the RFC-ACDP-0014 §4 shape and §5 not-self-signed checks
 - `fp-*.json` — key-fingerprint encoding vectors (RFC-ACDP-0010 §6)
 
-**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `schema-*`, `dk-*`, `rot-*`, `rcpt-002`..`rcpt-004`, `lhr-002`..`lhr-004`, …). Those fixtures define request/response scenarios that require a running registry or consumer to execute. They are machine-readable specifications for implementers to validate against their implementation.
+**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `schema-*`, `dk-*`, `rot-*`, `lc-*`, `rcpt-002`..`rcpt-004`, `lhr-002`..`lhr-004`, `rev-002`, …). Those fixtures define request/response scenarios that require a running registry or consumer to execute. They are machine-readable specifications for implementers to validate against their implementation.
 
 To claim full conformance a registry MUST:
 1. Pass `python3 scripts/conformance-runner.py` (arithmetic/cryptographic)
-2. Separately execute all behavioral fixture scenarios (`pub-*`, `vis-*`, `ret-*`, `err-*`, `schema-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `dk-*`, `rcpt-*`, `lhr-*`, `rot-*`, …) against a live registry instance
+2. Separately execute all behavioral fixture scenarios (`pub-*`, `vis-*`, `ret-*`, `err-*`, `schema-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `dk-*`, `rcpt-*`, `lhr-*`, `rot-*`, `lc-*`, `rev-*`, …) against a live registry instance
 
 ---
 
@@ -252,6 +255,25 @@ The `sig-*` fixtures are checked by `scripts/conformance-runner.py` (CI). A fail
 | `lhr-004` | Validly signed receipt whose `as_of` is in the future beyond the clock-skew allowance (RECOMMENDED 120 s) — a forged freshness claim (RFC-ACDP-0011 §7 step 6). Past-dated `as_of` is instead a consumer max-age freshness-policy matter (§6), reported distinctly. | failure: `invalid_receipt` category |
 
 `lhr-001` is executed arithmetically by `scripts/conformance-runner.py`; `lhr-002`..`lhr-004` are behavioral. Required for `acdp-registry-head-receipts`; conditionally required for `acdp-consumer` implementations that rely on `lineage_head_receipt` members (a consumer ignoring the member under the RFC-ACDP-0001 §6 unknown-field rule is unaffected). No new wire error code: head-receipt failures reuse `invalid_receipt` (RFC-ACDP-0011 §9).
+
+### Lifecycle events & retraction (RFC-ACDP-0013, 0.3.0)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `lc-001` | End-to-end retraction flow: authenticated `POST /contexts/{ctx_id}/retract` with a producer-signed event → `status: retracted`, event appended (append-only); body remains retrievable byte-identical (mark-not-delete) and the body-only endpoint is untouched; excluded from default search, returned under `status=retracted`; double retract → `invalid_lifecycle_transition` (409); `/republish` reverses with both events retained | mixed (per-scenario) |
+| `lc-002` | Lifecycle request attempting to supply/alter body content (a `body` member or body-field-named member) → `immutable_field` (400), distinct from `schema_violation`; actor ≠ `agent_id` → `not_authorized` (403, after visibility); unsigned producer event → rejected | failure (per-scenario codes) |
+| `lc-003` | `/current` with retraction (RFC-ACDP-0013 §8.3): a retracted version is never a head; all-superseded-or-retracted lineage → `not_found`; recovery via supersession of the retracted head or republication; head receipts (where advertised) never name a retracted head | mixed (per-scenario) |
+
+All `lc-*` fixtures are behavioral. Required for `acdp-registry-lifecycle`; `lc-001`/`lc-003` are conditionally required (consumer-observable aspects) for `acdp-consumer` implementations retrieving from lifecycle-advertising registries. The event vocabulary is the open registry `registries/lifecycle-event-types.md` (v1: `retracted`, `republished`); the event object schema (`acdp-lifecycle-event.schema.json`) is closed.
+
+### Producer key revocation (RFC-ACDP-0014, 0.3.0)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `rev-001` | Key-revocation context golden vector: producer-signed `key-revocation` body revoking K1 (the `sig-001` key; fingerprint as in `fp-001`/`rot-001`), signed by current key K2 (the `sig-003` seed — `rot-001`'s K2). Canonical form, `content_hash`, Ed25519 signature over the ASCII `content_hash` string; §4 shape (public visibility, §6-encoded fingerprint, canonical-ms `compromised_since`); §5 not-self-signed rule. Executed by the runner. | success: byte-exact reproduction end-to-end |
+| `rev-002` | Compromise-boundary semantics (RFC-ACDP-0014 §7), completing `rot-001`: receipt-attested publish time strictly before `compromised_since` → *historically authorized (pre-compromise, receipt-attested)*; at/after → fail closed despite a valid receipt; no receipt (publish time unverifiable) → fail closed under the strict profile; producer-signed vs registry-attested trust classes distinguishable | mixed (per-scenario) |
+
+`rev-001` is executed arithmetically by `scripts/conformance-runner.py`; `rev-002` is behavioral. Both are required for 0.3.0 `acdp-consumer` implementations; `rev-001`'s registry-side rejections (shape → `schema_violation`; self-signed-by-revoked-key → `key_not_authorized`) bind to `acdp-registry-core` at `acdp_version` ≥ 0.3.0. No new wire error code and no profile: revocation rides existing surfaces (RFC-ACDP-0014 §10).
 
 ### did:key resolution (RFC-ACDP-0001 §5.4 / §5.11.1, 0.2.0)
 

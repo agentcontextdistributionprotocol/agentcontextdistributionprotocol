@@ -135,22 +135,22 @@
 
     "context_type": {
       "title": "Context Type",
-      "description": "Standard ACDP context types. Custom types use namespaced format like 'science:experiment-replication'.",
+      "description": "Standard ACDP context types ('key-revocation' added 0.3.0, RFC-ACDP-0014 §4 — its metadata shape is normatively constrained there). Custom types use namespaced format like 'science:experiment-replication'.",
       "type": "string",
       "anyOf": [
-        { "enum": ["data_snapshot", "analysis", "prediction", "alert"] },
+        { "enum": ["data_snapshot", "analysis", "prediction", "alert", "key-revocation"] },
         { "pattern": "^[a-z][a-z0-9_]*:[a-z][a-z0-9_-]*$" }
       ]
     },
 
     "status": {
       "title": "Context Status",
-      "description": "Derived by the registry from supersession queries and the clock. v0.1.0 emits one of 'active', 'superseded', 'expired'; future versions will add 'retracted' (RFC-ACDP-0009 §2.1) and possibly others. The pattern is open so that future status values do not break existing v0.1.0 consumers; v0.1.0 consumers MUST tolerate unknown status values and SHOULD treat them as 'active' (with logging) until they upgrade. See RFC-ACDP-0004 §4.",
+      "description": "Derived by the registry from supersession queries and the clock. v0.1.0 emits one of 'active', 'superseded', 'expired'; 0.3.0 activates 'retracted' on lifecycle-advertising registries (RFC-ACDP-0013 §7, promoting the RFC-ACDP-0009 §2.1 reservation; precedence retracted > superseded > expired); future versions may add others. The pattern is open so that future status values do not break existing v0.1.0 consumers; v0.1.0 consumers MUST tolerate unknown status values and SHOULD treat them as 'active' (with logging) until they upgrade. See RFC-ACDP-0004 §4, §4.1.",
       "type": "string",
       "pattern": "^[a-z][a-z0-9_]*$",
       "minLength": 1,
       "maxLength": 64,
-      "examples": ["active", "superseded", "expired"]
+      "examples": ["active", "superseded", "expired", "retracted"]
     },
 
     "match_summary": {

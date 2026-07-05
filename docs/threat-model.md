@@ -24,8 +24,8 @@ The full normative threat model is [RFC-ACDP-0008 Security](../rfcs/RFC-ACDP-000
 
 | Gap | Mitigation |
 |---|---|
-| No retraction | Use supersession; RFC-ACDP-0009 reserves a formal lifecycle-events mechanism. |
-| No real-time key revocation push | Pull-based; consumers consult DID documents on retrieval. |
+| No retraction | Use supersession; RFC-ACDP-0009 reserves a formal lifecycle-events mechanism. *(0.3.0, Draft)* Closed on registries advertising `acdp-registry-lifecycle`: RFC-ACDP-0013 specifies signed retraction/republication events, `status: retracted`, mark-not-delete. |
+| No real-time key revocation push | Pull-based; consumers consult DID documents on retrieval. *(0.3.0, Draft)* RFC-ACDP-0014 makes the "this key is compromised" context normative (`key-revocation` type, time-scoped fail-closed semantics against receipt-attested publish times); still pull-based — a hiding registry remains possible until the transparency log (RFC-ACDP-0009 §2.11). |
 | No third-party attestations | RFC-ACDP-0009 reserves `attestations` in registry state. |
 | No third-party `builds_on` claims | `derived_from` is producer-only. |
 | No push subscriptions | Polling only; RFC-ACDP-0009 reserves push semantics. |
