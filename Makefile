@@ -57,9 +57,13 @@ docs:
 	@echo "  9. rfcs/RFC-ACDP-0007-capabilities.md"
 	@echo " 10. rfcs/RFC-ACDP-0008-security.md"
 	@echo " 11. rfcs/RFC-ACDP-0009-extensions.md (Reserved)"
-	@echo " 12. rfcs/RFC-ACDP-0010-registry-receipts.md (0.2.0, Draft)"
-	@echo " 13. docs/overview.md"
-	@echo " 14. docs/integration-guide.md"
+	@echo " 12. rfcs/RFC-ACDP-0010-registry-receipts.md (0.2.0)"
+	@echo " 13. rfcs/RFC-ACDP-0011-lineage-head-receipts.md (0.3.0)"
+	@echo " 14. rfcs/RFC-ACDP-0012-transparency-log.md (0.3.0)"
+	@echo " 15. rfcs/RFC-ACDP-0013-lifecycle-events.md (0.3.0)"
+	@echo " 16. rfcs/RFC-ACDP-0014-key-revocation.md (0.3.0)"
+	@echo " 17. docs/overview.md"
+	@echo " 18. docs/integration-guide.md"
 
 # ── Clean ────────────────────────────────────────────────────────────────────
 

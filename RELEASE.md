@@ -86,3 +86,5 @@ Per VERSIONING.md "Release tags":
 |---|---|---|
 | `0.1.0-rc1` | 2026-05-18 | First published version; Release Candidate 1. |
 | `0.1.0` | 2026-05-19 | First `Final` release. Specification-hardening pass over `0.1.0-rc1`; wire-compatible. |
+| `0.2.0` | 2026-07-05 | Trust & Hardening promoted from `Draft` to `Final` (no RC window; the Draft carried its own two-implementation promotion gate per VERSIONING.md). Wire-compatible with 0.1.0. |
+| `0.3.0` | 2026-07-05 | 0.3.0 line promoted from `Draft` to `Final` in the same promotion (RFC-ACDP-0011–0014 + amendments). Wire-compatible with 0.1.0/0.2.0. |
