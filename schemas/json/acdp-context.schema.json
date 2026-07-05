@@ -14,8 +14,20 @@
     "registry_state": {
       "$ref": "https://schemas.acdp.io/v0.1.0/acdp-registry-state.schema.json",
       "description": "The registry-maintained state. In v0.1.0 contains only the derived 'status' field."
+    },
+    "registry_receipt": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-registry-receipt.schema.json",
+      "description": "OPTIONAL (0.2.0, RFC-ACDP-0010): the registry's signed receipt for this context. Present exactly when the registry advertises the acdp-registry-receipts profile; outside 'body' and never part of the producer's content_hash preimage. v0.1.0 consumers preserve it verbatim without parsing (RFC-ACDP-0009 §2.7); 0.2.0 consumers verify it per RFC-ACDP-0010 §8."
+    },
+    "lineage_head_receipt": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-lineage-head-receipt.schema.json",
+      "description": "OPTIONAL (0.3.0, RFC-ACDP-0011): the registry's signed attestation of the current lineage head as of response time. REQUIRED on GET /lineages/{lineage_id}/current when the registry advertises the acdp-registry-head-receipts profile; MAY accompany full retrieval; never on the body-only endpoint. Ephemeral (fresh as_of per response) and never part of any content_hash preimage. Pre-0.3.0 consumers ignore it under the RFC-ACDP-0001 §6 unknown-field rule; 0.3.0 consumers verify it per RFC-ACDP-0011 §7."
+    },
+    "log_inclusion": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-log-inclusion.schema.json",
+      "description": "OPTIONAL (0.3.0, RFC-ACDP-0012): a transparency-log inclusion proof for this context (RFC 6962 audit path + signed checkpoint). MAY be carried on full retrieval by registries advertising the acdp-registry-transparency-log profile; never on the body-only endpoint and never on the publish response. A sibling of registry_receipt — deliberately NOT a member of it, since the receipt is closed, fully signed, and byte-immutable (RFC-ACDP-0012 §10). Outside 'body' and never part of any content_hash preimage. Pre-0.3.0 consumers ignore it under the RFC-ACDP-0001 §6 unknown-field rule; 0.3.0 consumers verify it per RFC-ACDP-0012 §9."
     }
   },
   "additionalProperties": true,
-  "$comment": "additionalProperties is true so future top-level keys (e.g. registry_receipt per RFC-ACDP-0009 §2.7) can be added without a schema bump. v0.1.0 consumers MUST tolerate unknown top-level keys."
+  "$comment": "additionalProperties is true so future top-level keys can be added without a schema bump; consumers MUST tolerate unknown top-level keys. registry_receipt, reserved here since v0.1.0 (RFC-ACDP-0009 §2.7), was specified in acdp/0.2.0 (RFC-ACDP-0010) — an additive, non-breaking change, which is why the v0.1.0 $id namespace is retained (VERSIONING.md)."
 }

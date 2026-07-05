@@ -1,0 +1,41 @@
+{
+  "body": {
+    "ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234",
+    "lineage_id": "lin:sha256:c7fef01c000f8edaa9cb46122ceb5d7bca38328f002fb0f40e362e3b289bbb2a",
+    "version": 1,
+    "supersedes": null,
+    "agent_id": "did:web:agents.example.com:test-producer",
+    "contributors": [],
+    "origin_registry": "registry.example.com",
+    "created_at": "2026-04-16T10:30:15.123Z",
+    "content_hash": "sha256:f170150ddbf59d99794e7797824591b374d459782084597b644ecc57a41031b5",
+    "signature": {
+      "algorithm": "ed25519",
+      "key_id": "did:web:agents.example.com:test-producer#key-1",
+      "value": "ErkbV+FUdn49TgF3zJ3RBe3AmyGxLVAQdMjlhabUfM96qendmWwdVodX/SV3O3aKLypbUu6gmb5Npt3O/w7nDQ=="
+    },
+    "title": "Golden test vector — minimal first version",
+    "type": "data_snapshot",
+    "data_refs": [],
+    "derived_from": [],
+    "visibility": "public"
+  },
+  "registry_state": {
+    "status": "active"
+  },
+  "registry_receipt": {
+    "registry_did": "did:web:registry.example.com",
+    "ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234",
+    "lineage_id": "lin:sha256:c7fef01c000f8edaa9cb46122ceb5d7bca38328f002fb0f40e362e3b289bbb2a",
+    "origin_registry": "registry.example.com",
+    "created_at": "2026-04-16T10:30:15.123Z",
+    "content_hash": "sha256:f170150ddbf59d99794e7797824591b374d459782084597b644ecc57a41031b5",
+    "key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+    "signature": {
+      "algorithm": "ed25519",
+      "key_id": "did:web:registry.example.com#receipt-key-1",
+      "value": "vBgQKmn17pHXXY95C07BBeconmjDIdYIvxN5B+YXrQ7tIzFsDNsh1TglzgxOyPUp8lwTz7zwMNiK+Sn5whveDg=="
+    }
+  },
+  "_test_keypair_note": "0.2.0 receipt-bearing form of golden-context.json (RFC-ACDP-0010). The body and its signature are byte-identical to golden-context.json (sig-001 test producer keypair, seed = 32 zero bytes). The registry_receipt is REAL: its signature is Ed25519 over the ASCII bytes of the receipt hash (JCS of the receipt minus 'signature', SHA-256, 'sha256:' prefix) under the rcpt-001 registry test keypair (seed = 32 bytes of 0x11, public key d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737). key_fingerprint is SHA-256 over the producer's raw 32-byte public key. Both keypairs are TEST-ONLY. The conformance runner verifies this example end-to-end against rcpt-001."
+}

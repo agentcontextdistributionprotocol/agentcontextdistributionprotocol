@@ -1,0 +1,34 @@
+{
+  "id": "fed-009",
+  "description": "Cross-registry retrieval where the remote (upstream) registry advertises acdp-registry-receipts and serves a receipt: the federated resolver MUST verify the receipt per RFC-ACDP-0010 §8 against the REMOTE authority (the authority the context was fetched from), MUST preserve the receipt verbatim when forwarding the envelope, and MUST surface a verification failure as invalid_receipt (HTTP 502 — the upstream is at fault) rather than silently dropping the receipt or passing it through unverified.",
+  "tags": ["receipt", "federated", "security"],
+  "applies_to_profiles": ["acdp-registry-federated", "acdp-consumer"],
+  "input": {
+    "scenario": "Registry A (resolver, authority registry-a.example) resolves a derived_from reference acdp://registry-b.example/<uuid>; registry B advertises profiles [acdp-registry-core, acdp-registry-receipts] and serves {body, registry_state, registry_receipt}",
+    "upstream_authority": "registry-b.example",
+    "upstream_capabilities_excerpt": {
+      "acdp_version": "0.2.0",
+      "registry_did": "did:web:registry-b.example",
+      "profiles": ["acdp-registry-core", "acdp-registry-receipts"]
+    },
+    "receipt_registry_did": "did:web:registry-b.example"
+  },
+  "expected": {
+    "outcome": "success",
+    "behavior": "The resolver applies the full RFC-ACDP-0010 §8 procedure with <authority> = registry-b.example (NOT its own authority): receipt signature against registry B's DID document (with the SSRF protections of RFC-ACDP-0008 §4.8 on that fetch), registry binding (did:web:registry-b.example ↔ registry-b.example), context binding against the requested ctx_id, content binding against the resolver's own recomputed body hash, key fingerprint against the producer key the resolver resolved, timestamp form. On success the resolver forwards the envelope with the receipt preserved verbatim.",
+    "failure_cases": [
+      {
+        "case": "Receipt fails any §8 step (signature, authority binding, content binding, fingerprint, timestamp form)",
+        "expected_outcome": "failure: invalid_receipt (HTTP 502) — upstream registry at fault; the resolver MUST NOT serve the upstream body as if it were receipt-verified and MUST NOT strip the failing receipt to make the response look like a receipt-less one."
+      },
+      {
+        "case": "Upstream advertises acdp-registry-receipts but serves no receipt on full retrieval",
+        "expected_outcome": "failure: invalid_receipt (HTTP 502) — a profile-advertising registry MUST always serve receipts (RFC-ACDP-0010 §7); absence is a registry fault, not a degraded mode."
+      },
+      {
+        "case": "Upstream does NOT advertise acdp-registry-receipts and serves no receipt",
+        "expected_outcome": "success — receipt-less cross-registry resolution proceeds under the v0.1.0 trust model (RFC-ACDP-0008 §9.1 limitation applies and SHOULD be visible in the resolver's verification report)."
+      }
+    ]
+  }
+}

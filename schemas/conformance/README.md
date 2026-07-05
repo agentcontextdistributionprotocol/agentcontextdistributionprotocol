@@ -17,7 +17,14 @@ conformance/
 ├── can-*.json      Canonicalization / hashing test vectors (RFC-ACDP-0001, RFC-ACDP-0002 §6.7)
 ├── lin-*.json      Lineage-id derivation golden vectors (RFC-ACDP-0001 §5.6)
 ├── sig-*.json      Cryptographic golden vectors (signing & verification, RFC-ACDP-0001)
-├── fed-*.json      Cross-registry / SSRF protection scenarios (RFC-ACDP-0006 §7)
+├── rcpt-*.json     Registry receipts — golden vector + verification failures (RFC-ACDP-0010, 0.2.0)
+├── lhr-*.json      Lineage-head receipts — golden vector + verification failures (RFC-ACDP-0011, 0.3.0)
+├── log-*.json      Registry transparency log — Merkle golden vectors + verification failures (RFC-ACDP-0012, 0.3.0)
+├── lc-*.json       Lifecycle events & retraction scenarios (RFC-ACDP-0013, 0.3.0)
+├── rev-*.json      Producer key revocation — golden vector + boundary semantics (RFC-ACDP-0014, 0.3.0)├── fp-*.json       Key-fingerprint encoding vectors (RFC-ACDP-0010 §6, 0.2.0)
+├── rot-*.json      Historical producer-key verification with receipts (RFC-ACDP-0010 §10, 0.2.0)
+├── dk-*.json       did:key resolution rejection scenarios (RFC-ACDP-0001 §5.11.1, 0.2.0)
+├── fed-*.json      Cross-registry / SSRF protection scenarios (RFC-ACDP-0006 §7; fed-009 receipts, RFC-ACDP-0010 §11)
 ├── did-ssrf-*.json Producer DID resolution SSRF protection (RFC-ACDP-0008 §4.8)
 ├── err-*.json      Error envelope and HTTP status fixtures (RFC-ACDP-0007)
 ├── caps-*.json     Capabilities-document validation (RFC-ACDP-0007 §3.5)
@@ -38,14 +45,25 @@ conformance/
 
 - `can-*.json` — JCS canonicalization, SHA-256 hashing, lineage_id derivation
 - `lin-*.json` — lineage_id derivation golden vectors
-- `sig-*.json` — Ed25519 / ECDSA-P256 sign/verify golden vectors
+- `sig-*.json` — Ed25519 / ECDSA-P256 sign/verify golden vectors, plus pure did:key identity derivation for `sig-003` (0.2.0)
+- `rcpt-*.json` carrying a `registry_test_keypair` (i.e. `rcpt-001`) — full registry-receipt golden cycle: preimage, receipt hash, signature, producer key fingerprint (RFC-ACDP-0010 §5–§6)
+- `lhr-*.json` carrying a `registry_test_keypair` (i.e. `lhr-001`) — full lineage-head-receipt golden cycle: preimage, receipt hash, signature, binding consistency (RFC-ACDP-0011 §5, §7)
+- `log-*.json` carrying a `registry_test_keypair` (i.e. `log-001`, `log-003`) — full transparency-log golden cycle: JCS leaf encodings, `0x00`/`0x01` domain-separated leaf and node hashes, Merkle roots, signed checkpoints, inclusion-proof and consistency-proof generation and verification-algorithm folding (RFC-ACDP-0012 §4–§6, §9)
+- `fp-*.json` — key-fingerprint encoding vectors (RFC-ACDP-0010 §6)
 
-**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `schema-*`, …). Those fixtures define request/response scenarios that require a running registry or consumer to execute. They are machine-readable specifications for implementers to validate against their implementation.
+**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `schema-*`, `dk-*`, `rot-*`, `rcpt-002`..`rcpt-004`, `lhr-002`..`lhr-004`, `log-002`/`log-004`, …). Those fixtures define request/response scenarios that require a running registry or consumer to execute. They are machine-readable specifications for implementers to validate against their implementation.
 
 To claim full conformance a registry MUST:
 1. Pass `python3 scripts/conformance-runner.py` (arithmetic/cryptographic)
-2. Separately execute all behavioral fixture scenarios (`pub-*`, `vis-*`, `ret-*`, `err-*`, `schema-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, …) against a live registry instance
+2. Separately execute all behavioral fixture scenarios (`pub-*`, `vis-*`, `ret-*`, `err-*`, `schema-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `dk-*`, `rcpt-*`, `lhr-*`, `log-*`, `rot-*`, …) against a live registry instance
+- `rev-*.json` carrying a `test_keypair` (i.e. `rev-001`) — key-revocation context golden cycle: same arithmetic as `sig-*`, plus the RFC-ACDP-0014 §4 shape and §5 not-self-signed checks
+- `fp-*.json` — key-fingerprint encoding vectors (RFC-ACDP-0010 §6)
 
+**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `schema-*`, `dk-*`, `rot-*`, `lc-*`, `rcpt-002`..`rcpt-004`, `lhr-002`..`lhr-004`, `rev-002`, …). Those fixtures define request/response scenarios that require a running registry or consumer to execute. They are machine-readable specifications for implementers to validate against their implementation.
+
+To claim full conformance a registry MUST:
+1. Pass `python3 scripts/conformance-runner.py` (arithmetic/cryptographic)
+2. Separately execute all behavioral fixture scenarios (`pub-*`, `vis-*`, `ret-*`, `err-*`, `schema-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `dk-*`, `rcpt-*`, `lhr-*`, `rot-*`, `lc-*`, `rev-*`, …) against a live registry instance
 ---
 
 ## Fixture Format
@@ -90,7 +108,7 @@ The runner interface is implementation-defined.
 | `pub-004` | First-version publish illegally includes `lineage_id` | failure: `schema_violation` |
 | `pub-005` | `visibility: restricted` with no `audience` | failure: `schema_violation` |
 | `pub-006` | `signature.key_id` DID portion ≠ `body.agent_id` | failure: `key_not_authorized` |
-| `pub-007` | Publish response shape — exactly five fields, no `content_hash` or other body fields echoed back | success: HTTP 201; response object pinned to `{ctx_id, lineage_id, version, created_at, status}` |
+| `pub-007` | Publish response shape — exactly five fields, no `content_hash` or other body fields echoed back (0.2.0: receipts-profile registries additionally return `registry_receipt`, and nothing else) | success: HTTP 201; response object pinned to `{ctx_id, lineage_id, version, created_at, status}` (+ `registry_receipt` under the receipts profile) |
 | `pub-008` | `body.agent_id` is not `did:web` (v0.1.0 §5.4 mandate) | failure: `schema_violation` (preferred) or `key_not_authorized` |
 | `pub-009` | `signature.key_id` DID is not `did:web` while `agent_id` is `did:web` | failure: `key_not_authorized` |
 | `pub-010` | Non-`did:web` entry in `contributors[]` (attribution-only — registry MUST accept) | success |
@@ -109,14 +127,15 @@ The runner interface is implementation-defined.
 | `idem-004` | Same content under a NEW idempotency key — fresh publish, NEW `ctx_id` | success: HTTP 201 |
 | `idem-005` | Registry not advertising `supports_idempotency_key` MUST ignore the header (treat as absent) | success: each request mints fresh `ctx_id` |
 | `idem-006` | Concurrent publish with same `(agent_id, key)` and same hash — pinned tolerated/non-conformant outcomes | success: cardinality-1 mapping is normative, two outcomes tolerated |
+| `idem-007` | *(0.3.0)* Capabilities document advertises `acdp_version` ≥ 0.3.0 with `supports_idempotency_key` absent or `false` — idempotency is REQUIRED for `acdp-registry-core` at 0.3.0 (RFC-ACDP-0003 §6.4; RFC-ACDP-0007 §3.5 item 10) | reject: `schema_violation` (capabilities validation; consumer MUST NOT proceed) |
 
-These fixtures exercise the §6.2 contract and the §6.2.1 ordering/atomicity guidance. `idem-001..005` are REQUIRED for `acdp-registry-core` when the registry advertises `supports_idempotency_key: true`. `idem-006` is informative — the wire contract is "exactly one stored `ctx_id` per `(agent_id, key)` pair regardless of concurrency"; integration tests SHOULD verify with stress harnesses.
+These fixtures exercise the §6.2 contract and the §6.2.1 ordering/atomicity guidance. `idem-001..005` are REQUIRED for `acdp-registry-core` when the registry advertises `supports_idempotency_key: true`. `idem-006` is informative — the wire contract is "exactly one stored `ctx_id` per `(agent_id, key)` pair regardless of concurrency"; integration tests SHOULD verify with stress harnesses. *(0.3.0)* `idem-007` pins the RFC-ACDP-0003 §6.4 tightening: a registry advertising `acdp_version` ≥ 0.3.0 MUST advertise `supports_idempotency_key: true` (making `idem-001..005` unconditionally required for it) and MUST implement the §6.2.2 atomic storage contract and §6 TTL bounds. It is a capabilities-validation outcome like the `caps-*` family, but lives in the `idem-` family because the requirement it pins is RFC-ACDP-0003 §6 conformance — version-conditional, with implementation of §6 (not document repair) as the remediation; both families are behavioral, so the runner is unaffected.
 
 ### Rate limiting (RFC-ACDP-0008 §4.3)
 
 | ID | Description | Outcome |
 |---|---|---|
-| `rate-001` | Wire shape of `rate_limited` response: HTTP 429, standard error envelope, `Retry-After` SHOULD be present when retry window is bounded | failure: `rate_limited` |
+| `rate-001` | Wire shape of `rate_limited` response: HTTP 429, standard error envelope, `Retry-After` MUST be present (integer seconds or HTTP-date; a limiter without an exact refill horizon emits a conservative estimate — RFC-ACDP-0008 §4.3) | failure: `rate_limited` |
 
 Rate-limit triggering depends on registry policy (window, bucket, threshold), so this fixture pins only the wire shape. Implementers MUST self-test the trigger by configuring a known per-agent rate per the recipe in `rate-001-rate-limited-response-shape.json`.
 
@@ -196,6 +215,7 @@ A `data_refs[].location` URL is producer-controlled, so a consumer dereferencing
 | `can-009` | Stored Body → ProducerContent — exclusion set is stripped BY NAME, regardless of typed-model knowledge | success: byte-exact reproduction matches the stored `content_hash` |
 | `can-010` | Body whose `data_refs[]` entry carries an unknown producer-controlled field — DataRef is an open schema, the field MUST be retained in hash recomputation (RFC-ACDP-0002 §6.7) | success: byte-exact reproduction including the unknown DataRef field |
 | `can-011` | RFC 8785 §3.2.2.3 numeric serialization (RFC-ACDP-0001 §5.2) — exponential-notation boundaries (≥ 1e21 → `e+`, ≤ 1e-7 → `e-`), the plain-decimal band, integer exactness through 2^53, negative-zero normalization, and IEEE 754 magnitude extremes | success: byte-exact reproduction of all six numeric vectors |
+| `can-012` | Divergence-corpus vectors (0.2.0, RFC-ACDP-0001 §6 + Appendix A): `acdp_version` omitted vs explicit `"0.1.0"` vs explicit `"0.2.0"` (three distinct pinned preimages; 0.2.0 producers MUST emit the field), microsecond timestamp divergence + millisecond truncation, and null-vs-absent-vs-empty `metadata` | success: byte-exact reproduction of all seven vectors |
 
 **Test DIDs.** The `can-*` canonicalization fixtures use `did:agent:test` as a deliberately short, fictitious DID method to keep canonical-form expected values readable. The precomputed `canonical_form` and `sha256_hex` values depend on the exact string. v0.1.0 wire deployments MUST use `did:web` (RFC-ACDP-0001 §5.4) — `did:agent:` is a test-only convention and is not a registered DID method.
 
@@ -215,8 +235,72 @@ All v0.1.0 fixtures listed above are authored. The `can-005` fixture's "absent t
 |---|---|---|
 | `sig-001` | Real Ed25519 keypair (test seed of 32 zero bytes); produce content_hash, sign, verify, derive lineage. | success: byte-exact reproduction of canonical form, content_hash, signature, lineage_id |
 | `sig-002` | Real ECDSA-P256 keypair (private scalar = 1); same producer content as `sig-001`; pinned RFC 6979 deterministic signature in IEEE 1363 r‖s wire form (NOT DER). | success: byte-exact verification of canonical form, content_hash, IEEE 1363 r‖s length (64 bytes), signature verification, lineage_id |
+| `sig-003` | did:key golden vector (0.2.0): real Ed25519 keypair (test seed of 32 `0x42` bytes); derive `did:key:z…` identity (multicodec `0xed01` + base58-btc), pure resolution (RFC-ACDP-0001 §5.11.1), explicit `acdp_version: "0.2.0"` inside the signed bytes; produce content_hash, sign, verify, derive lineage. | success: byte-exact reproduction of did:key identity, canonical form, content_hash, signature, lineage_id |
 
-The `sig-*` fixtures are checked by `scripts/conformance-runner.py` (CI). A failing `sig-001` or `sig-002` indicates an end-to-end pipeline defect: JCS, SHA-256, signing-input framing (full `sha256:` prefix), Ed25519/ECDSA, base64, IEEE 1363 r‖s framing for ECDSA (NOT DER), or lineage derivation.
+The `sig-*` fixtures are checked by `scripts/conformance-runner.py` (CI). A failing `sig-001`, `sig-002`, or `sig-003` indicates an end-to-end pipeline defect: JCS, SHA-256, signing-input framing (full `sha256:` prefix), Ed25519/ECDSA, base64, IEEE 1363 r‖s framing for ECDSA (NOT DER), did:key identity derivation (`sig-003`), or lineage derivation.
+
+### Registry receipts & key fingerprints (RFC-ACDP-0010, 0.2.0)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `rcpt-001` | Receipt golden vector: registry test keypair (seed of 32 `0x11` bytes), receipt preimage canonical bytes, receipt hash, Ed25519 signature, producer `key_fingerprint`. Executed by the runner — the `sig-001`-equivalent for the receipt layer. | success: byte-exact reproduction end-to-end |
+| `rcpt-002` | `created_at` tampered after minting → recomputed preimage diverges → receipt signature MUST fail to verify (body verdict independent) | failure: `invalid_receipt` category |
+| `rcpt-003` | `receipt.key_fingerprint` ≠ fingerprint of the resolved producer key (RFC-ACDP-0010 §8 step 5) | failure: `invalid_receipt` category |
+| `rcpt-004` | `receipt.registry_did` does not bind to the serving authority (RFC-ACDP-0010 §8 step 2; same principle as `fed-006`) | failure: `invalid_receipt` category |
+| `fp-001` | Key-fingerprint encoding vectors (RFC-ACDP-0010 §6): `sha256:` over the raw 32-byte Ed25519 key / 33-byte SEC1-compressed P-256 point — never SPKI, multibase, or JWK serializations. Executed by the runner. | success: byte-exact fingerprints |
+| `rot-001` | Historical key verification (RFC-ACDP-0010 §10): K1 retired to verificationMethod-only, K2 current; valid receipt attesting K1's fingerprint → *historically authorized (receipt-attested)*; same retrieval without receipt → fails closed; K1 removed from verificationMethod entirely → fails closed regardless | mixed (per-scenario) |
+
+`rcpt-001` and `fp-001` are executed arithmetically by `scripts/conformance-runner.py`; the runner also verifies `examples/retrieval/golden-context-with-receipt.json` end-to-end against the `rcpt-001` registry keypair. `rcpt-002`..`rcpt-004` and `rot-001` are behavioral. Required for `acdp-registry-receipts` and `acdp-consumer`.
+
+### Lineage-head receipts (RFC-ACDP-0011, 0.3.0)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `lhr-001` | Head-receipt golden vector: same registry test keypair as `rcpt-001` (RFC-ACDP-0011 §5 reuses the RFC-ACDP-0010 receipt signing key and construction), head-receipt preimage canonical bytes over the sig-001 golden lineage (v1 head, `active`), receipt hash, Ed25519 signature, version-1 lineage-derivation cross-check. Executed by the runner — the `rcpt-001`-equivalent for the serve-time layer. | success: byte-exact reproduction end-to-end |
+| `lhr-002` | `/current` serves a v2 head but the attached receipt attests v1 — RFC-ACDP-0011 §7 step 5 head binding MUST fail; the receipt's signature itself verifies (stale-head-serving detection is the point) | failure: `invalid_receipt` category |
+| `lhr-003` | `receipt.registry_did` does not bind to the serving authority / `capabilities.registry_did` (RFC-ACDP-0011 §7 step 3; same principle as `rcpt-004` / `fed-006`) | failure: `invalid_receipt` category |
+| `lhr-004` | Validly signed receipt whose `as_of` is in the future beyond the clock-skew allowance (RECOMMENDED 120 s) — a forged freshness claim (RFC-ACDP-0011 §7 step 6). Past-dated `as_of` is instead a consumer max-age freshness-policy matter (§6), reported distinctly. | failure: `invalid_receipt` category |
+
+`lhr-001` is executed arithmetically by `scripts/conformance-runner.py`; `lhr-002`..`lhr-004` are behavioral. Required for `acdp-registry-head-receipts`; conditionally required for `acdp-consumer` implementations that rely on `lineage_head_receipt` members (a consumer ignoring the member under the RFC-ACDP-0001 §6 unknown-field rule is unaffected). No new wire error code: head-receipt failures reuse `invalid_receipt` (RFC-ACDP-0011 §9).
+
+### Registry transparency log (RFC-ACDP-0012, 0.3.0)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `log-001` | Leaf-and-root golden vector: five leaves (leaf 0 = the `rcpt-001` receipt's publish event, binding rcpt-001's pinned receipt hash), JCS leaf encodings, §5.1 leaf hashes (`SHA-256(0x00 ‖ JCS(leaf))`), the tree-size-5 Merkle root (`0x01`-prefixed interior nodes, RFC 6962 §2.1), a checkpoint signed with the shared registry receipt test keypair, and the inclusion proof for leaf 0. Executed by the runner — the `sig-001`-equivalent for the log layer. | success: byte-exact reproduction end-to-end |
+| `log-002` | The `log-001` inclusion proof with one tampered `inclusion_path` element — the §9.1 fold yields a root ≠ the checkpoint's `root_hash`; the checkpoint's own signature verifies (the failure is the tree arithmetic, not the cryptography) | failure: `invalid_log_proof` category |
+| `log-003` | Consistency-proof golden vector: RFC 6962 §2.1.2 `PROOF(3, D[5])` between tree sizes 3 and 5 of the `log-001` tree, both checkpoints signed; §9.2 verification end-to-end — the history-rewrite detector. Executed by the runner. | success: byte-exact reproduction end-to-end |
+| `log-004` | A checkpoint whose `root_hash` was altered after signing (original signature bytes kept) — JCS-recomputing the preimage yields a different checkpoint hash, so the signature MUST fail to verify (RFC-ACDP-0012 §9.3 step 2; the `rcpt-002` analogue one layer up) | failure: `invalid_log_proof` category |
+
+`log-001` and `log-003` are executed arithmetically by `scripts/conformance-runner.py` (including negative self-checks that tampered paths and swapped roots are rejected by the verification algorithms); `log-002` and `log-004` are behavioral. Required for `acdp-registry-transparency-log`; conditionally required for `acdp-consumer` implementations that rely on `log_inclusion` members or the `/log/*` endpoints. New wire error code: proof/checkpoint failures surface as `invalid_log_proof`, deliberately distinct from `invalid_receipt` (RFC-ACDP-0012 §11).
+### Lifecycle events & retraction (RFC-ACDP-0013, 0.3.0)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `lc-001` | End-to-end retraction flow: authenticated `POST /contexts/{ctx_id}/retract` with a producer-signed event → `status: retracted`, event appended (append-only); body remains retrievable byte-identical (mark-not-delete) and the body-only endpoint is untouched; excluded from default search, returned under `status=retracted`; double retract → `invalid_lifecycle_transition` (409); `/republish` reverses with both events retained | mixed (per-scenario) |
+| `lc-002` | Lifecycle request attempting to supply/alter body content (a `body` member or body-field-named member) → `immutable_field` (400), distinct from `schema_violation`; actor ≠ `agent_id` → `not_authorized` (403, after visibility); unsigned producer event → rejected | failure (per-scenario codes) |
+| `lc-003` | `/current` with retraction (RFC-ACDP-0013 §8.3): a retracted version is never a head; all-superseded-or-retracted lineage → `not_found`; recovery via supersession of the retracted head or republication; head receipts (where advertised) never name a retracted head | mixed (per-scenario) |
+
+All `lc-*` fixtures are behavioral. Required for `acdp-registry-lifecycle`; `lc-001`/`lc-003` are conditionally required (consumer-observable aspects) for `acdp-consumer` implementations retrieving from lifecycle-advertising registries. The event vocabulary is the open registry `registries/lifecycle-event-types.md` (v1: `retracted`, `republished`); the event object schema (`acdp-lifecycle-event.schema.json`) is closed.
+
+### Producer key revocation (RFC-ACDP-0014, 0.3.0)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `rev-001` | Key-revocation context golden vector: producer-signed `key-revocation` body revoking K1 (the `sig-001` key; fingerprint as in `fp-001`/`rot-001`), signed by current key K2 (the `sig-003` seed — `rot-001`'s K2). Canonical form, `content_hash`, Ed25519 signature over the ASCII `content_hash` string; §4 shape (public visibility, §6-encoded fingerprint, canonical-ms `compromised_since`); §5 not-self-signed rule. Executed by the runner. | success: byte-exact reproduction end-to-end |
+| `rev-002` | Compromise-boundary semantics (RFC-ACDP-0014 §7), completing `rot-001`: receipt-attested publish time strictly before `compromised_since` → *historically authorized (pre-compromise, receipt-attested)*; at/after → fail closed despite a valid receipt; no receipt (publish time unverifiable) → fail closed under the strict profile; producer-signed vs registry-attested trust classes distinguishable | mixed (per-scenario) |
+
+`rev-001` is executed arithmetically by `scripts/conformance-runner.py`; `rev-002` is behavioral. Both are required for 0.3.0 `acdp-consumer` implementations; `rev-001`'s registry-side rejections (shape → `schema_violation`; self-signed-by-revoked-key → `key_not_authorized`) bind to `acdp-registry-core` at `acdp_version` ≥ 0.3.0. No new wire error code and no profile: revocation rides existing surfaces (RFC-ACDP-0014 §10).
+### did:key resolution (RFC-ACDP-0001 §5.4 / §5.11.1, 0.2.0)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `dk-001` | did:key with a multicodec prefix that is neither `0xed01` (varint of `ed25519-pub` code `0xed`) nor `0x8024` (varint of `p256-pub` code `0x1200`) — e.g. secp256k1 `0xe701` | failure: `key_resolution_failed` |
+| `dk-002` | Malformed multibase: non-`z` prefix, characters outside the base58-btc alphabet, or payload too short | failure: `key_resolution_failed` |
+| `dk-003` | Cryptographically valid did:key publish against a registry that does NOT advertise `"did:key"` in `supported_did_methods` | failure: `key_resolution_failed` (permanent — pinned code choice, RFC-ACDP-0007 §3.1) |
+| `dk-004` | `signature.key_id` fragment ≠ the DID's method-specific identifier (`did:key:z<mb>#z<mb>` convention) | failure: `key_resolution_failed` |
+
+did:key resolution is **pure** — no network, no DID document, no `assertionMethod` check (the DID *is* the key). The golden path is `sig-003`. `dk-001`/`dk-002`/`dk-004` are required for registries advertising `did:key` and for all 0.2.0 consumers; `dk-003` is required for 0.2.0 registries that do not advertise it.
 
 ### Cross-registry / SSRF (RFC-ACDP-0006)
 
@@ -230,8 +314,10 @@ The `sig-*` fixtures are checked by `scripts/conformance-runner.py` (CI). A fail
 | `fed-006` | Capabilities document declares `registry_did` ≠ `did:web:<authority>` — MUST reject | failure: `cross_registry_resolution_failed` |
 | `fed-007` | DNS answer set mixing a public and a forbidden address — MUST reject the entire resolution (filter-and-proceed is non-conformant) | failure: `cross_registry_resolution_failed` |
 | `fed-008` | Redirect to the same host but a different port — MUST reject (same host ≠ same authority; authority = scheme + host + effective port) | failure: `cross_registry_resolution_failed` |
+| `fed-009` | (0.2.0) Upstream registry advertises `acdp-registry-receipts` and serves a receipt — resolver MUST verify it per RFC-ACDP-0010 §8 against the REMOTE authority, preserve it verbatim on success, and surface failure (or a missing receipt from a profile-advertising upstream) as `invalid_receipt` | mixed (per-scenario; failures: `invalid_receipt`, HTTP 502) |
+| `fed-010` | A `derived_from` walk truncated by a §4.1 traversal control (depth / total nodes / fanout / timeout) — a surfaced partial result MUST carry an explicit truncation marker (e.g. `complete: false`) and MUST NOT be presented as exhaustive; aborting with `cross_registry_resolution_failed` remains conformant | success: partial result with truncation flag |
 
-These fixtures are required for `acdp-registry-federated` profile conformance (registries/profiles.md). The bundled conformance runner does not execute them; they describe black-box scenarios that registry integration tests MUST verify against a live deployment. `fed-007` pins the mixed-answer rejection rule (RFC-ACDP-0006 §7.1) and `fed-008` the same-authority redirect definition (RFC-ACDP-0006 §7.5).
+These fixtures are required for `acdp-registry-federated` profile conformance (registries/profiles.md). The bundled conformance runner does not execute them; they describe black-box scenarios that registry integration tests MUST verify against a live deployment. `fed-007` pins the mixed-answer rejection rule (RFC-ACDP-0006 §7.1), `fed-008` the same-authority redirect definition (RFC-ACDP-0006 §7.5), and `fed-010` the partial-walk reporting rule (RFC-ACDP-0006 §4.1 — truncation is not completeness). `fed-009` is required when the resolver also advertises `acdp-registry-receipts` or resolves from receipts-advertising upstreams; `fed-010` is additionally required for `acdp-consumer` implementations that walk `derived_from`, whether or not they resolve cross-registry.
 
 ### Error envelope (RFC-ACDP-0007)
 
@@ -249,6 +335,7 @@ These fixtures are required for `acdp-registry-federated` profile conformance (r
 | `caps-004` | `supports_idempotency_key: true` but `limits.idempotency_key_ttl_seconds` missing | reject: `schema_violation` |
 | `caps-005` | `limits.max_embedded_bytes != 65536` | reject: `schema_violation` |
 | `caps-006` | Unknown top-level field — consumer MUST tolerate (open schema) | accept |
+| `caps-007` | *(0.3.0)* `limits.max_publish_per_minute` present and ≥ 1 — OPTIONAL advisory per-agent publish ceiling (RFC-ACDP-0007 §3.2, RFC-ACDP-0008 §4.3); reject variants pin zero / negative / non-integer values | accept (valid doc); reject variants: `schema_violation` |
 
 ### Registry-state `status` pattern (RFC-ACDP-0004 §4.1)
 

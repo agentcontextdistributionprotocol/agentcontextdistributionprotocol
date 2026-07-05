@@ -1,0 +1,44 @@
+{
+  "id": "lc-003",
+  "description": "GET /lineages/{lineage_id}/current with retraction (RFC-ACDP-0013 §8.3): a retracted version is never served as head — like superseded, unlike expired. The current head is the newest version that is neither superseded nor retracted, as visible to the requester; if none exists the endpoint returns not_found. Also pins the interaction with lineage-head receipts (RFC-ACDP-0011, as amended).",
+  "tags": ["lifecycle", "retraction", "retrieval", "edge-case"],
+  "applies_to_profiles": ["acdp-registry-lifecycle"],
+  "input": {
+    "precondition": "A lineage L on a registry advertising acdp-registry-lifecycle: v1 (superseded by v2) and v2 (current head, active). The producer then retracts v2 via POST /contexts/{v2_ctx_id}/retract."
+  },
+  "scenarios": [
+    {
+      "name": "A — retracted head takes the lineage off /current",
+      "expected": {
+        "outcome": "failure",
+        "http_status": 404,
+        "error_code": "not_found",
+        "behavior": "After v2's retraction: v1 is superseded (never a head, RFC-ACDP-0004 §5.2 — v2 still exists; retraction is mark-not-delete and does not un-supersede v1) and v2 is retracted (never a head, RFC-ACDP-0013 §8.3). No eligible head remains, so GET /lineages/L/current MUST return not_found. The registry MUST NOT fall back to serving superseded v1, and MUST NOT serve v2 with status 'retracted' the way it would serve an expired head — expiry is a freshness signal, retraction is a withdrawal."
+      }
+    },
+    {
+      "name": "B — the full lineage remains the record",
+      "expected": {
+        "outcome": "success",
+        "http_status": 200,
+        "behavior": "GET /lineages/L returns both versions (per-version visibility rules of RFC-ACDP-0004 §5.4 unchanged): v1 with status 'superseded', v2 with status 'retracted' and its lifecycle_events. GET /contexts/{v2_ctx_id} returns 200 with the unchanged body — retraction removed the lineage's endorsable head, not its history (RFC-ACDP-0013 §8.1)."
+      }
+    },
+    {
+      "name": "C — recovery by superseding the retracted head",
+      "expected": {
+        "outcome": "success",
+        "http_status": 200,
+        "behavior": "The producer publishes v3 with supersedes = v2_ctx_id (supersession of a retracted context is permitted; every RFC-ACDP-0003 §3.1 constraint applies unchanged — same agent_id, lineage_id continuity, version = 3). GET /lineages/L/current now returns v3 (status 'active'). v2 keeps status 'retracted' per §7.2 precedence (retracted dominates its new superseded fact); its supersession remains visible via v3.supersedes and the lineage array. Alternative recovery: POST /contexts/{v2_ctx_id}/republish restores v2 itself as the head."
+      }
+    },
+    {
+      "name": "D — head receipts never name a retracted head",
+      "expected": {
+        "outcome": "success",
+        "behavior": "Where the registry also advertises acdp-registry-head-receipts: in scenario A no lineage_head_receipt is minted (a 404 carries no head claim); in scenario C the /current response carries a receipt with head_ctx_id = v3, head_version = 3, head_status 'active'. head_status can never be 'retracted', exactly as it can never be 'superseded' (RFC-ACDP-0011 §4 as amended; acdp-lineage-head-receipt.schema.json). On full retrieval of retracted non-head v2 alongside a receipt naming v3, the RFC-ACDP-0011 §7 step 5b self-consistency rule accepts registry_state.status 'retracted' alongside 'superseded'."
+      }
+    }
+  ],
+  "notes": "Exercises RFC-ACDP-0013 §8.3 against the ret-002 baseline: 'expired counts as non-superseded' is unchanged — an expired head is still served (with status expired); a retracted head never is. Visibility filtering per RFC-ACDP-0004 §5.4 composes: the head is the newest non-superseded, non-retracted version the requester is AUTHORIZED to retrieve."
+}

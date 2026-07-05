@@ -1,0 +1,87 @@
+{
+  "id": "rev-001",
+  "description": "Key-revocation context golden vector (RFC-ACDP-0014 §4–§5). A producer-signed key-revocation body: the producer (did:web:agents.example.com:test-producer) revokes K1 — the sig-001 test key, fingerprint as pinned by rot-001/fp-001 — signing with its current key K2 (the sig-003 test seed, matching rot-001's K2). Executed arithmetically by scripts/conformance-runner.py exactly like sig-001: JCS canonical form, content_hash, Ed25519 signature over the ASCII content_hash string. Test keypair MUST NOT be used in production.",
+  "tags": ["revocation", "signature", "golden", "happy-path"],
+  "applies_to_profiles": ["acdp-consumer", "acdp-registry-core"],
+  "test_keypair": {
+    "warning": "TEST ONLY. The private seed is publicly known (the sig-003 test seed, reused as rot-001's K2). Never use this keypair for real publications.",
+    "private_seed_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+    "public_key_hex": "2152f8d19b791d24453242e15f2eab6cb7cffa7b6a5ed30097960e069881db12",
+    "key_fingerprint": "sha256:3097e2dee2cb4a34b53840cdb705aed71067c36f68db0e0f559c3f3fa043315f",
+    "role": "K2 — the producer's CURRENT key (in verificationMethod AND assertionMethod, per the rot-001 DID document), signing the revocation of K1."
+  },
+  "revoked_key": {
+    "public_key_hex": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29",
+    "key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+    "role": "K1 — the sig-001 test key, retained in verificationMethod only (rot-001). RFC-ACDP-0010 §6 fingerprint over the raw 32-byte Ed25519 key."
+  },
+  "vectors": [
+    {
+      "name": "Producer-signed key-revocation context, signed by the current key K2",
+      "producer_content": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:web:agents.example.com:test-producer",
+        "contributors": [],
+        "title": "Key revocation — key-1 compromised",
+        "summary": "Revocation of the Ed25519 key did:web:agents.example.com:test-producer#key-1, compromised since 2026-05-01T00:00:00.000Z.",
+        "type": "key-revocation",
+        "data_refs": [],
+        "derived_from": [],
+        "visibility": "public",
+        "metadata": {
+          "revoked_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+          "compromised_since": "2026-05-01T00:00:00.000Z",
+          "reason": "laptop theft; private key material presumed exfiltrated"
+        },
+        "acdp_version": "0.3.0"
+      },
+      "expected": {
+        "canonical_form": "{\"acdp_version\":\"0.3.0\",\"agent_id\":\"did:web:agents.example.com:test-producer\",\"contributors\":[],\"data_refs\":[],\"derived_from\":[],\"metadata\":{\"compromised_since\":\"2026-05-01T00:00:00.000Z\",\"reason\":\"laptop theft; private key material presumed exfiltrated\",\"revoked_key_fingerprint\":\"sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070\"},\"summary\":\"Revocation of the Ed25519 key did:web:agents.example.com:test-producer#key-1, compromised since 2026-05-01T00:00:00.000Z.\",\"supersedes\":null,\"title\":\"Key revocation — key-1 compromised\",\"type\":\"key-revocation\",\"version\":1,\"visibility\":\"public\"}",
+        "content_hash": "sha256:210bb03ec4bd39de893eb7d39ee992913cda80f767b135a02992a71491bf57ca",
+        "signature_input": "sha256:210bb03ec4bd39de893eb7d39ee992913cda80f767b135a02992a71491bf57ca",
+        "signature_value_hex": "2dfecff9989f5063d72244768bd572e0b0726936fa92db1a90a7239b86455257204ecdabf7fddeca30c90cd59f4fea80b1e35879cbd88204c81a74fb11988f03",
+        "signature_value_base64": "Lf7P+ZifUGPXIkR2i9Vy4LByaTb6ktsakKcjm4ZFUlcgTs2r9/3eyjDJDNWfT+qAseNYecvYggTIGnT7EZiPAw==",
+        "publish_request_body": {
+          "version": 1,
+          "supersedes": null,
+          "agent_id": "did:web:agents.example.com:test-producer",
+          "contributors": [],
+          "title": "Key revocation — key-1 compromised",
+          "summary": "Revocation of the Ed25519 key did:web:agents.example.com:test-producer#key-1, compromised since 2026-05-01T00:00:00.000Z.",
+          "type": "key-revocation",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public",
+          "metadata": {
+            "revoked_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+            "compromised_since": "2026-05-01T00:00:00.000Z",
+            "reason": "laptop theft; private key material presumed exfiltrated"
+          },
+          "acdp_version": "0.3.0",
+          "content_hash": "sha256:210bb03ec4bd39de893eb7d39ee992913cda80f767b135a02992a71491bf57ca",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:web:agents.example.com:test-producer#key-2",
+            "value": "Lf7P+ZifUGPXIkR2i9Vy4LByaTb6ktsakKcjm4ZFUlcgTs2r9/3eyjDJDNWfT+qAseNYecvYggTIGnT7EZiPAw=="
+          }
+        }
+      },
+      "registry_assigned": {
+        "ctx_id": "acdp://registry.example.com/9f1e2d3c-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+        "lineage_id": "lin:sha256:6af6229c1c6a4a119695c77e47f6554941aebce3d25ba8567e2ae6ffbb6059cb",
+        "origin_registry": "registry.example.com",
+        "created_at": "2026-05-02T08:00:00.000Z"
+      },
+      "verification_steps": [
+        "1. Strip the exclusion set from publish_request_body to produce producer_content; JCS-canonicalize; MUST equal expected.canonical_form.",
+        "2. SHA-256 of the canonical bytes with 'sha256:' prefix MUST equal expected.content_hash.",
+        "3. Sign the ASCII bytes of expected.content_hash with the K2 test seed; MUST equal expected.signature_value_base64; verification with the K2 public key MUST succeed.",
+        "4. RFC-ACDP-0014 §4 shape: type == 'key-revocation'; visibility == 'public'; metadata.revoked_key_fingerprint present in RFC-ACDP-0010 §6 form; metadata.compromised_since is canonical millisecond RFC 3339 UTC. A 0.3.0 registry MUST reject violations with schema_violation.",
+        "5. RFC-ACDP-0014 §5 step 2: fingerprint(resolved signing key K2) = sha256:3097e2de… != metadata.revoked_key_fingerprint = sha256:139e3940… (K1). A revocation signed by the revoked key itself MUST be rejected by 0.3.0 registries with key_not_authorized and treated as unverified by consumers.",
+        "6. lineage_id MUST equal 'lin:sha256:' + hex(SHA-256(ctx_id))."
+      ]
+    }
+  ],
+  "notes": "The revoked fingerprint equals the fp-001 Ed25519 vector and the fingerprint attested by the rcpt-001 receipt — the same K1 story as rot-001. rev-002 builds the consumer-side before/after boundary on this vector."
+}

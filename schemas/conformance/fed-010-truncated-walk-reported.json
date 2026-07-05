@@ -1,0 +1,54 @@
+{
+  "id": "fed-010",
+  "description": "When any RFC-ACDP-0006 §4.1 traversal control (max depth, max total nodes, max fanout per context, total walk timeout) cuts a derived_from walk short and the implementation surfaces a partial result rather than aborting, it MUST distinguish the truncated result from a complete one — e.g. a complete:false flag or an explicit truncation marker in its API result — and MUST NOT present a truncated evidence set as exhaustive. Silent truncation misreads as 'the walk covered everything' exactly where walks are used to assemble the evidence chain behind a conclusion (RFC-ACDP-0006 §2): the unwalked remainder may contain the disputing or superseding context the evaluation needed. Aborting the whole walk with cross_registry_resolution_failed remains conformant (and remains the preferred behavior for fanout overruns); what is non-conformant is a truncated result indistinguishable from a complete one.",
+  "tags": ["federated", "traversal", "derived-from", "truncation", "evidence-assembly"],
+  "traversal_rule": "RFC-ACDP-0006 §4.1 (traversal controls — partial-walk reporting)",
+  "applies_to_profiles": ["acdp-registry-federated", "acdp-consumer"],
+  "input": {
+    "scenario": "Walker resolves a derived_from graph whose root fanout exceeds the configured per-context fanout cap; the implementation is configured to surface partial results instead of aborting",
+    "walk_root": "acdp://registry-a.example/11111111-1111-4111-8111-111111111111",
+    "traversal_config": {
+      "max_depth": 10,
+      "max_total_nodes": 500,
+      "max_fanout_per_context": 8,
+      "total_walk_timeout_seconds": 30,
+      "on_overrun": "surface-partial-result"
+    },
+    "graph_mock": {
+      "note": "Root context's derived_from lists 12 predecessors — 4 more than the mock fanout cap of 8. All 12 exist, are public, and verify; only the cap stops the walk.",
+      "root_derived_from_count": 12,
+      "predecessors": "acdp://registry-b.example/22222222-2222-4222-8222-2222222222{01..12}",
+      "all_predecessors_resolvable": true
+    },
+    "additional_test_cases": [
+      {
+        "note": "Depth truncation: a linear chain 12 levels deep against max_depth = 10 — the two unwalked tail nodes MUST be reported as an unwalked subtree, per the §4.1 depth row (partial results + cross_registry_resolution_failed indication for the unwalked subtree), never dropped silently.",
+        "control": "max_depth",
+        "chain_depth": 12,
+        "configured_limit": 10
+      },
+      {
+        "note": "Timeout truncation: mock registry delays responses so the 30 s end-to-end budget expires mid-walk. Abort-with-error is conformant; a surfaced partial result MUST carry the truncation marker.",
+        "control": "total_walk_timeout",
+        "configured_limit_seconds": 30
+      }
+    ]
+  },
+  "expected": {
+    "outcome": "success",
+    "behavior": "The walk returns the nodes it fetched and verified (8 of 12 predecessors), and the result MUST carry an explicit machine-readable truncation indication — e.g. complete: false, truncated: true, or a typed partial-result marker — distinguishing it from a walk that exhausted the graph. The implementation MUST NOT return the 8-node result in the same shape it uses for a complete walk. The marker SHOULD identify which control fired (max_fanout_per_context) and, where practical, the frontier ctx_ids whose subtrees were not walked.",
+    "result_constraints": {
+      "MUST_signal_truncation": true,
+      "example_result_shape": {
+        "complete": false,
+        "truncated_by": "max_fanout_per_context",
+        "nodes_verified": 8,
+        "unwalked_frontier": ["acdp://registry-b.example/22222222-2222-4222-8222-222222222209", "…"]
+      },
+      "example_is_illustrative": "The exact field names are implementation-defined — this is an API-surface contract, not a wire-format one. What is pinned is the distinction itself: complete and truncated walks MUST be distinguishable by the caller."
+    },
+    "also_conformant": "Aborting the entire walk with cross_registry_resolution_failed (HTTP 502 if surfaced via a registry endpoint; consumer-side: an equivalent typed error) instead of surfacing a partial result. For fanout overruns this fail-closed behavior remains RECOMMENDED per the §4.1 control table.",
+    "non_conformant_implementation": "A walker that, on hitting any traversal cap, returns the nodes gathered so far in the same result shape as a completed walk — no flag, no marker, no error — so the caller cannot tell a bounded walk from an exhausted graph.",
+    "rationale": "The traversal caps are resource-bounding controls, not evidence filters. A consumer assembling the evidence set behind a decision (RFC-ACDP-0006 §2) must be able to tell 'these are all the predecessors' from 'these are the predecessors I had budget for'; conflating the two silently converts a denial-of-service defense into an integrity failure."
+  }
+}

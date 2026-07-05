@@ -5,8 +5,24 @@ ACDP conformance runner.
 Reads every fixture under schemas/conformance/ and verifies arithmetic claims:
   - can-* fixtures: JCS canonicalization + SHA-256 + lineage_id derivation
   - lin-* fixtures: lineage_id derivation golden vectors
-  - sig-* fixtures: full Ed25519 sign/verify cycle, full content_hash computation
+  - sig-* fixtures: full Ed25519 / ECDSA-P256 sign/verify cycle, full content_hash
+    computation, and (for did:key fixtures) pure did:key identity derivation
+  - rev-* fixtures carrying a test_keypair: key-revocation context golden cycle
+    (same arithmetic as sig-*, plus the RFC-ACDP-0014 §4/§5 shape checks)
+  - rcpt-* fixtures carrying a registry_test_keypair: full receipt golden cycle
+    (preimage, receipt hash, signature, producer key_fingerprint) per RFC-ACDP-0010
+  - lhr-* fixtures carrying a registry_test_keypair: full lineage-head-receipt
+    golden cycle (preimage, receipt hash, signature, binding consistency) per
+    RFC-ACDP-0011
+  - log-* fixtures carrying a registry_test_keypair: full transparency-log
+    golden cycle (JCS leaf encoding, 0x00/0x01 domain-separated Merkle tree,
+    root, signed checkpoint, inclusion-proof and consistency-proof generation
+    AND verification-algorithm folding) per RFC-ACDP-0012
+  - fp-* fixtures: key-fingerprint encoding vectors (RFC-ACDP-0010 §6)
 
+Behavioral fixtures (pub-*, vis-*, dk-*, rcpt-002..004, lhr-002..004,
+log-002/log-004, lc-*, rev-002, rot-*, fed-*, ...) are not executed; they
+describe request/response scenarios for live implementations.
 Exits 0 if all vectors pass, 1 otherwise.
 
 Requires: pip install jcs cryptography
@@ -46,6 +62,30 @@ passes = 0
 
 def fail(fixture, vector_name, msg):
     failures.append(f"{fixture} :: {vector_name}: {msg}")
+
+
+B58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+
+
+def b58encode(data: bytes) -> str:
+    """base58-btc encode (for did:key identity derivation, RFC-ACDP-0001 §5.11.1)."""
+    n = int.from_bytes(data, "big")
+    out = ""
+    while n > 0:
+        n, r = divmod(n, 58)
+        out = B58_ALPHABET[r] + out
+    pad = 0
+    for b in data:
+        if b == 0:
+            pad += 1
+        else:
+            break
+    return "1" * pad + out
+
+
+def key_fingerprint(raw_public_key_bytes: bytes) -> str:
+    """RFC-ACDP-0010 §6: sha256:<lowercase hex SHA-256(raw public key bytes)>."""
+    return "sha256:" + hashlib.sha256(raw_public_key_bytes).hexdigest()
 
 
 def check_canonicalization_and_hash(fixture, vector):
@@ -147,6 +187,22 @@ def check_ed25519_vector(fixture, fixture_data, vector):
     if declared_pub_hex and pub_raw.hex() != declared_pub_hex:
         fail(fixture, name, f"public_key_hex mismatch. declared={declared_pub_hex} derived={pub_raw.hex()}")
         return False
+
+    # did:key fixtures (sig-003): derive the pure did:key identity from the public
+    # key (multicodec 0xed01 + base58-btc multibase) and byte-compare against the
+    # declared DID. RFC-ACDP-0001 §5.11.1.
+    declared_did_key = keypair.get("did_key", "")
+    if declared_did_key:
+        derived_did_key = "did:key:z" + b58encode(bytes([0xED, 0x01]) + pub_raw)
+        if derived_did_key != declared_did_key:
+            fail(fixture, name, f"did:key derivation mismatch. declared={declared_did_key} derived={derived_did_key}")
+            return False
+        sig = vector.get("expected", {}).get("publish_request_body", {}).get("signature", {})
+        if sig:
+            expected_key_id = f"{declared_did_key}#{declared_did_key.split(':', 2)[2]}"
+            if sig.get("key_id") != expected_key_id:
+                fail(fixture, name, f"did:key key_id fragment mismatch. expected={expected_key_id} actual={sig.get('key_id')}")
+                return False
 
     _, content_hash, ok = _canonicalize_and_hash(fixture, name, vector)
     if not ok:
@@ -298,6 +354,569 @@ def check_signature_vector(fixture, fixture_data, vector):
     return check_ed25519_vector(fixture, fixture_data, vector)
 
 
+def check_revocation_vector(fixture, fixture_data, vector):
+    """rev-* golden vectors: a key-revocation context (RFC-ACDP-0014) is an ordinary
+    signed body, so the arithmetic is check_ed25519_vector verbatim; on top we pin
+    the §4 shape and the §5 not-self-signed constraint."""
+    name = vector.get("name", "?")
+    if not check_ed25519_vector(fixture, fixture_data, vector):
+        return False
+
+    pc = vector.get("producer_content", {})
+    meta = pc.get("metadata", {})
+    if pc.get("type") != "key-revocation":
+        fail(fixture, name, f"type MUST be 'key-revocation', got {pc.get('type')!r}")
+        return False
+    if pc.get("visibility") != "public":
+        fail(fixture, name, f"visibility MUST be 'public' (RFC-ACDP-0014 §4), got {pc.get('visibility')!r}")
+        return False
+    import re
+    fp = meta.get("revoked_key_fingerprint", "")
+    if not re.fullmatch(r"sha256:[0-9a-f]{64}", fp):
+        fail(fixture, name, f"metadata.revoked_key_fingerprint not in RFC-ACDP-0010 §6 form: {fp!r}")
+        return False
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z", meta.get("compromised_since", "")):
+        fail(fixture, name, f"metadata.compromised_since not canonical millisecond RFC 3339 UTC: {meta.get('compromised_since')!r}")
+        return False
+
+    # §5 step 2: the signing key MUST NOT be the revoked key.
+    signer_pub_hex = fixture_data.get("test_keypair", {}).get("public_key_hex", "")
+    if signer_pub_hex and key_fingerprint(bytes.fromhex(signer_pub_hex)) == fp:
+        fail(fixture, name, "revocation is self-signed by the revoked key (RFC-ACDP-0014 §5 step 2)")
+        return False
+
+    # Cross-check the declared revoked-key fingerprint against its raw key bytes.
+    revoked = fixture_data.get("revoked_key", {})
+    if revoked.get("public_key_hex"):
+        derived = key_fingerprint(bytes.fromhex(revoked["public_key_hex"]))
+        if derived != revoked.get("key_fingerprint") or derived != fp:
+            fail(fixture, name, f"revoked_key fingerprint inconsistency: derived={derived}")
+            return False
+
+    return True
+
+
+def check_fingerprint_vector(fixture, vector):
+    """fp-* vectors: RFC-ACDP-0010 §6 key_fingerprint encoding."""
+    name = vector.get("name", "?")
+    algorithm = vector.get("algorithm", "")
+    key_hex = vector.get("input", {}).get("public_key_hex", "")
+    expected_fp = vector.get("expected", {}).get("key_fingerprint", "")
+    if not key_hex or not expected_fp:
+        fail(fixture, name, "missing input.public_key_hex or expected.key_fingerprint")
+        return False
+    try:
+        raw = bytes.fromhex(key_hex)
+    except ValueError as e:
+        fail(fixture, name, f"public_key_hex decode failed: {e}")
+        return False
+    if algorithm == "ed25519" and len(raw) != 32:
+        fail(fixture, name, f"ed25519 raw key MUST be 32 bytes, got {len(raw)}")
+        return False
+    if algorithm == "ecdsa-p256":
+        if len(raw) != 33 or raw[0] not in (0x02, 0x03):
+            fail(fixture, name, f"ecdsa-p256 fingerprint input MUST be a 33-byte SEC1 compressed point, got {len(raw)} bytes (first byte {raw[0]:#04x})")
+            return False
+        # Cross-check the compressed point against the declared uncompressed pair.
+        unc = vector.get("uncompressed_point", {})
+        if unc:
+            x = int(unc["x_hex"], 16)
+            y = int(unc["y_hex"], 16)
+            expected_prefix = 0x03 if y % 2 else 0x02
+            if raw[0] != expected_prefix or raw[1:] != x.to_bytes(32, "big"):
+                fail(fixture, name, "compressed point does not match the declared uncompressed (x, y) pair")
+                return False
+    actual = key_fingerprint(raw)
+    if actual != expected_fp:
+        fail(fixture, name, f"key_fingerprint mismatch. expected={expected_fp} actual={actual}")
+        return False
+    return True
+
+
+def check_receipt_vector(fixture, fixture_data, vector):
+    """rcpt-* golden vectors: full RFC-ACDP-0010 §5 receipt cycle with the registry test keypair."""
+    name = vector.get("name", "?")
+    keypair = fixture_data.get("registry_test_keypair", {})
+    seed_hex = keypair.get("private_seed_hex", "")
+    if not seed_hex:
+        fail(fixture, name, "missing registry_test_keypair.private_seed_hex")
+        return False
+
+    try:
+        priv = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(seed_hex))
+        pub = priv.public_key()
+        pub_raw = pub.public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+    except Exception as e:
+        fail(fixture, name, f"registry keypair load failed: {e}")
+        return False
+
+    declared_pub_hex = keypair.get("public_key_hex", "")
+    if declared_pub_hex and pub_raw.hex() != declared_pub_hex:
+        fail(fixture, name, f"registry public_key_hex mismatch. declared={declared_pub_hex} derived={pub_raw.hex()}")
+        return False
+
+    receipt_unsigned = vector.get("receipt_unsigned", {})
+    exp = vector.get("expected", {})
+
+    canonical_bytes = jcs.canonicalize(receipt_unsigned)
+    canonical = canonical_bytes.decode("utf-8")
+    if "canonical_form" in exp and canonical != exp["canonical_form"]:
+        fail(fixture, name, f"receipt canonical_form mismatch.\n    expected: {exp['canonical_form']}\n    actual:   {canonical}")
+        return False
+
+    receipt_hash = "sha256:" + hashlib.sha256(canonical_bytes).hexdigest()
+    if "receipt_hash" in exp and receipt_hash != exp["receipt_hash"]:
+        fail(fixture, name, f"receipt_hash mismatch. expected={exp['receipt_hash']} actual={receipt_hash}")
+        return False
+
+    sig_bytes = priv.sign(receipt_hash.encode("ascii"))
+    if "signature_value_hex" in exp and sig_bytes.hex() != exp["signature_value_hex"]:
+        fail(fixture, name, "receipt signature_value_hex mismatch")
+        return False
+    sig_b64 = base64.b64encode(sig_bytes).decode("ascii")
+    if "signature_value_base64" in exp and sig_b64 != exp["signature_value_base64"]:
+        fail(fixture, name, "receipt signature_value_base64 mismatch")
+        return False
+
+    try:
+        pub.verify(sig_bytes, receipt_hash.encode("ascii"))
+    except Exception as e:
+        fail(fixture, name, f"receipt signature verification failed: {e}")
+        return False
+
+    # key_fingerprint binds the producer key (RFC-ACDP-0010 §6).
+    producer_key_hex = fixture_data.get("producer_key", {}).get("public_key_hex", "")
+    if producer_key_hex:
+        fp = key_fingerprint(bytes.fromhex(producer_key_hex))
+        if fp != receipt_unsigned.get("key_fingerprint"):
+            fail(fixture, name, f"producer key_fingerprint mismatch. expected={receipt_unsigned.get('key_fingerprint')} actual={fp}")
+            return False
+
+    # The assembled registry_receipt object must be receipt_unsigned + the signature.
+    assembled = exp.get("registry_receipt")
+    if assembled:
+        stripped = {k: v for k, v in assembled.items() if k != "signature"}
+        if stripped != receipt_unsigned:
+            fail(fixture, name, "expected.registry_receipt minus signature != receipt_unsigned")
+            return False
+        if assembled.get("signature", {}).get("value") != sig_b64:
+            fail(fixture, name, "expected.registry_receipt.signature.value != computed signature")
+            return False
+
+    # Intra-receipt authority consistency (RFC-ACDP-0010 §4).
+    rd = receipt_unsigned.get("registry_did", "")
+    authority = rd[len("did:web:"):] if rd.startswith("did:web:") else ""
+    ctx_authority = receipt_unsigned.get("ctx_id", "").removeprefix("acdp://").split("/", 1)[0]
+    if not authority or authority != receipt_unsigned.get("origin_registry") or authority != ctx_authority:
+        fail(fixture, name, f"registry_did/origin_registry/ctx_id authority inconsistency: {rd} / {receipt_unsigned.get('origin_registry')} / {ctx_authority}")
+        return False
+
+    return True
+
+
+def check_lineage_head_receipt_vector(fixture, fixture_data, vector):
+    """lhr-* golden vectors: full RFC-ACDP-0011 §5 head-receipt cycle with the registry test keypair.
+
+    The signing construction is RFC-ACDP-0010 §5 verbatim (JCS preimage minus
+    'signature' → SHA-256 → sign the ASCII "sha256:<hex>" string) under the same
+    registry receipt signing key; the object shape and binding rules are
+    RFC-ACDP-0011 §4/§7.
+    """
+    import re
+
+    name = vector.get("name", "?")
+    keypair = fixture_data.get("registry_test_keypair", {})
+    seed_hex = keypair.get("private_seed_hex", "")
+    if not seed_hex:
+        fail(fixture, name, "missing registry_test_keypair.private_seed_hex")
+        return False
+
+    try:
+        priv = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(seed_hex))
+        pub = priv.public_key()
+        pub_raw = pub.public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+    except Exception as e:
+        fail(fixture, name, f"registry keypair load failed: {e}")
+        return False
+
+    declared_pub_hex = keypair.get("public_key_hex", "")
+    if declared_pub_hex and pub_raw.hex() != declared_pub_hex:
+        fail(fixture, name, f"registry public_key_hex mismatch. declared={declared_pub_hex} derived={pub_raw.hex()}")
+        return False
+
+    receipt_unsigned = vector.get("receipt_unsigned", {})
+    exp = vector.get("expected", {})
+
+    canonical_bytes = jcs.canonicalize(receipt_unsigned)
+    canonical = canonical_bytes.decode("utf-8")
+    if "canonical_form" in exp and canonical != exp["canonical_form"]:
+        fail(fixture, name, f"head-receipt canonical_form mismatch.\n    expected: {exp['canonical_form']}\n    actual:   {canonical}")
+        return False
+
+    receipt_hash = "sha256:" + hashlib.sha256(canonical_bytes).hexdigest()
+    if "receipt_hash" in exp and receipt_hash != exp["receipt_hash"]:
+        fail(fixture, name, f"head-receipt receipt_hash mismatch. expected={exp['receipt_hash']} actual={receipt_hash}")
+        return False
+
+    sig_bytes = priv.sign(receipt_hash.encode("ascii"))
+    if "signature_value_hex" in exp and sig_bytes.hex() != exp["signature_value_hex"]:
+        fail(fixture, name, "head-receipt signature_value_hex mismatch")
+        return False
+    sig_b64 = base64.b64encode(sig_bytes).decode("ascii")
+    if "signature_value_base64" in exp and sig_b64 != exp["signature_value_base64"]:
+        fail(fixture, name, "head-receipt signature_value_base64 mismatch")
+        return False
+
+    try:
+        pub.verify(sig_bytes, receipt_hash.encode("ascii"))
+    except Exception as e:
+        fail(fixture, name, f"head-receipt signature verification failed: {e}")
+        return False
+
+    # The assembled lineage_head_receipt object must be receipt_unsigned + the signature.
+    assembled = exp.get("lineage_head_receipt")
+    if assembled:
+        stripped = {k: v for k, v in assembled.items() if k != "signature"}
+        if stripped != receipt_unsigned:
+            fail(fixture, name, "expected.lineage_head_receipt minus signature != receipt_unsigned")
+            return False
+        if assembled.get("signature", {}).get("value") != sig_b64:
+            fail(fixture, name, "expected.lineage_head_receipt.signature.value != computed signature")
+            return False
+
+    # Intra-receipt consistency (RFC-ACDP-0011 §4, §7).
+    if receipt_unsigned.get("receipt_version") != "acdp-lhr/1":
+        fail(fixture, name, f"receipt_version MUST be 'acdp-lhr/1', got {receipt_unsigned.get('receipt_version')!r}")
+        return False
+    rd = receipt_unsigned.get("registry_did", "")
+    authority = rd[len("did:web:"):] if rd.startswith("did:web:") else ""
+    head_authority = receipt_unsigned.get("head_ctx_id", "").removeprefix("acdp://").split("/", 1)[0]
+    if not authority or authority != head_authority:
+        fail(fixture, name, f"registry_did/head_ctx_id authority inconsistency: {rd} / {receipt_unsigned.get('head_ctx_id')}")
+        return False
+    head_status = receipt_unsigned.get("head_status", "")
+    if head_status == "superseded" or not re.fullmatch(r"[a-z][a-z0-9_]*", head_status) or len(head_status) > 64:
+        fail(fixture, name, f"head_status invalid for a head: {head_status!r} (never 'superseded'; RFC-ACDP-0004 §4.1 pattern)")
+        return False
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z", receipt_unsigned.get("as_of", "")):
+        fail(fixture, name, f"as_of is not canonical millisecond RFC 3339 UTC: {receipt_unsigned.get('as_of')!r}")
+        return False
+    hv = receipt_unsigned.get("head_version")
+    if not isinstance(hv, int) or hv < 1:
+        fail(fixture, name, f"head_version MUST be an integer >= 1, got {hv!r}")
+        return False
+    if hv == 1:
+        # A version-1 head's lineage_id is derivable from its own ctx_id (RFC-ACDP-0001 §5.6).
+        derived = "lin:sha256:" + hashlib.sha256(receipt_unsigned.get("head_ctx_id", "").encode("utf-8")).hexdigest()
+        if derived != receipt_unsigned.get("lineage_id"):
+            fail(fixture, name, f"lineage_id mismatch for a version-1 head. expected={receipt_unsigned.get('lineage_id')} derived={derived}")
+            return False
+
+    return True
+
+
+# ── RFC-ACDP-0012 transparency log: Merkle primitives (RFC 6962 §2.1) ─────────
+
+LOG_LEAF_PREFIX = b"\x00"
+LOG_NODE_PREFIX = b"\x01"
+
+
+def _log_node_hash(left: bytes, right: bytes) -> bytes:
+    return hashlib.sha256(LOG_NODE_PREFIX + left + right).digest()
+
+
+def _log_largest_pow2_lt(n: int) -> int:
+    k = 1
+    while k * 2 < n:
+        k *= 2
+    return k
+
+
+def _log_mth(hashes):
+    """RFC 6962 §2.1 Merkle Tree Hash over leaf hashes (RFC-ACDP-0012 §5.2)."""
+    n = len(hashes)
+    if n == 0:
+        return hashlib.sha256(b"").digest()
+    if n == 1:
+        return hashes[0]
+    k = _log_largest_pow2_lt(n)
+    return _log_node_hash(_log_mth(hashes[:k]), _log_mth(hashes[k:]))
+
+
+def _log_inclusion_path(m, hashes):
+    """RFC 6962 §2.1.1 PATH(m, D[n])."""
+    n = len(hashes)
+    if n == 1:
+        return []
+    k = _log_largest_pow2_lt(n)
+    if m < k:
+        return _log_inclusion_path(m, hashes[:k]) + [_log_mth(hashes[k:])]
+    return _log_inclusion_path(m - k, hashes[k:]) + [_log_mth(hashes[:k])]
+
+
+def _log_consistency_proof(m, hashes):
+    """RFC 6962 §2.1.2 PROOF(m, D[n])."""
+
+    def subproof(m, d, b):
+        n = len(d)
+        if m == n:
+            return [] if b else [_log_mth(d)]
+        k = _log_largest_pow2_lt(n)
+        if m <= k:
+            return subproof(m, d[:k], b) + [_log_mth(d[k:])]
+        return subproof(m - k, d[k:], False) + [_log_mth(d[:k])]
+
+    return subproof(m, hashes, True)
+
+
+def _log_verify_inclusion(lh, leaf_index, tree_size, path, root):
+    """RFC-ACDP-0012 §9.1 folding algorithm (RFC 9162 §2.1.3.2)."""
+    if leaf_index >= tree_size:
+        return False
+    fn, sn, r = leaf_index, tree_size - 1, lh
+    for p in path:
+        if sn == 0:
+            return False
+        if fn % 2 == 1 or fn == sn:
+            r = _log_node_hash(p, r)
+            if fn % 2 == 0:
+                while fn % 2 == 0 and fn != 0:
+                    fn >>= 1
+                    sn >>= 1
+        else:
+            r = _log_node_hash(r, p)
+        fn >>= 1
+        sn >>= 1
+    return sn == 0 and r == root
+
+
+def _log_verify_consistency(first, second, path, first_root, second_root):
+    """RFC-ACDP-0012 §9.2 verification algorithm (RFC 9162 §2.1.4.2)."""
+    if first == second:
+        return path == [] and first_root == second_root
+    if not (0 < first < second) or not path:
+        return False
+    path = list(path)
+    if first & (first - 1) == 0:
+        path = [first_root] + path
+    fn, sn = first - 1, second - 1
+    while fn % 2 == 1:
+        fn >>= 1
+        sn >>= 1
+    fr = sr = path[0]
+    for c in path[1:]:
+        if sn == 0:
+            return False
+        if fn % 2 == 1 or fn == sn:
+            fr = _log_node_hash(c, fr)
+            sr = _log_node_hash(c, sr)
+            if fn % 2 == 0:
+                while fn % 2 == 0 and fn != 0:
+                    fn >>= 1
+                    sn >>= 1
+        else:
+            sr = _log_node_hash(sr, c)
+        fn >>= 1
+        sn >>= 1
+    return fr == first_root and sr == second_root and sn == 0
+
+
+def _hex_of(prefixed: str) -> bytes:
+    """Decode a 'sha256:<hex>' string to its raw 32-byte digest."""
+    if not prefixed.startswith("sha256:"):
+        raise ValueError(f"expected sha256:-prefixed hash, got {prefixed!r}")
+    return bytes.fromhex(prefixed[len("sha256:"):])
+
+
+def _log_verify_checkpoint(fixture, name, fixture_data, unsigned, exp_prefix, exp):
+    """Shared checkpoint cycle: JCS preimage, checkpoint hash, sign, verify (RFC-ACDP-0012 §6).
+
+    Returns (signature_b64, ok)."""
+    keypair = fixture_data.get("registry_test_keypair", {})
+    seed_hex = keypair.get("private_seed_hex", "")
+    if not seed_hex:
+        fail(fixture, name, "missing registry_test_keypair.private_seed_hex")
+        return None, False
+    priv = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(seed_hex))
+    pub = priv.public_key()
+    pub_raw = pub.public_bytes(
+        encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
+    )
+    declared_pub_hex = keypair.get("public_key_hex", "")
+    if declared_pub_hex and pub_raw.hex() != declared_pub_hex:
+        fail(fixture, name, f"registry public_key_hex mismatch. declared={declared_pub_hex} derived={pub_raw.hex()}")
+        return None, False
+
+    if unsigned.get("checkpoint_version") != "acdp-log/1":
+        fail(fixture, name, f"checkpoint_version MUST be 'acdp-log/1', got {unsigned.get('checkpoint_version')!r}")
+        return None, False
+
+    canonical_bytes = jcs.canonicalize(unsigned)
+    canonical = canonical_bytes.decode("utf-8")
+    if f"{exp_prefix}canonical_form" in exp and canonical != exp[f"{exp_prefix}canonical_form"]:
+        fail(fixture, name, f"checkpoint canonical_form mismatch.\n    expected: {exp[f'{exp_prefix}canonical_form']}\n    actual:   {canonical}")
+        return None, False
+
+    checkpoint_hash = "sha256:" + hashlib.sha256(canonical_bytes).hexdigest()
+    if f"{exp_prefix}checkpoint_hash" in exp and checkpoint_hash != exp[f"{exp_prefix}checkpoint_hash"]:
+        fail(fixture, name, f"checkpoint_hash mismatch. expected={exp[f'{exp_prefix}checkpoint_hash']} actual={checkpoint_hash}")
+        return None, False
+
+    sig_bytes = priv.sign(checkpoint_hash.encode("ascii"))
+    sig_b64 = base64.b64encode(sig_bytes).decode("ascii")
+    if f"{exp_prefix}signature_value_base64" in exp and sig_b64 != exp[f"{exp_prefix}signature_value_base64"]:
+        fail(fixture, name, "checkpoint signature_value_base64 mismatch")
+        return None, False
+    if f"{exp_prefix}signature_value_hex" in exp and sig_bytes.hex() != exp[f"{exp_prefix}signature_value_hex"]:
+        fail(fixture, name, "checkpoint signature_value_hex mismatch")
+        return None, False
+
+    try:
+        pub.verify(sig_bytes, checkpoint_hash.encode("ascii"))
+    except Exception as e:
+        fail(fixture, name, f"checkpoint signature verification failed: {e}")
+        return None, False
+
+    return sig_b64, True
+
+
+def check_log_vector(fixture, fixture_data, vector):
+    """log-* golden vectors: full RFC-ACDP-0012 transparency-log cycle."""
+    import re
+
+    name = vector.get("name", "?")
+    exp = vector.get("expected", {})
+
+    # ── Leaf-and-root vectors (log-001) ───────────────────────────────────────
+    if "leaves" in vector:
+        leaves = vector["leaves"]
+        leaf_hashes = []
+        for i, leaf in enumerate(leaves):
+            if leaf.get("leaf_version") != "acdp-log-leaf/1":
+                fail(fixture, name, f"leaf {i}: leaf_version MUST be 'acdp-log-leaf/1'")
+                return False
+            canonical_bytes = jcs.canonicalize(leaf)
+            canonical = canonical_bytes.decode("utf-8")
+            exp_forms = exp.get("leaf_canonical_forms", [])
+            if i < len(exp_forms) and canonical != exp_forms[i]:
+                fail(fixture, name, f"leaf {i} canonical_form mismatch.\n    expected: {exp_forms[i]}\n    actual:   {canonical}")
+                return False
+            lh = hashlib.sha256(LOG_LEAF_PREFIX + canonical_bytes).digest()
+            exp_hashes = exp.get("leaf_hashes", [])
+            if i < len(exp_hashes) and "sha256:" + lh.hex() != exp_hashes[i]:
+                fail(fixture, name, f"leaf {i} leaf_hash mismatch. expected={exp_hashes[i]} actual=sha256:{lh.hex()}")
+                return False
+            leaf_hashes.append(lh)
+            # Version-1 lineage derivation (all golden leaves are v1 publishes).
+            derived = "lin:sha256:" + hashlib.sha256(leaf.get("ctx_id", "").encode("utf-8")).hexdigest()
+            if derived != leaf.get("lineage_id"):
+                fail(fixture, name, f"leaf {i} lineage_id mismatch. expected={leaf.get('lineage_id')} derived={derived}")
+                return False
+            # created_at canonical millisecond form.
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z", leaf.get("created_at", "")):
+                fail(fixture, name, f"leaf {i} created_at is not canonical millisecond RFC 3339 UTC")
+                return False
+            # key_fingerprint binds the producer key (RFC-ACDP-0010 §6).
+            producer_key_hex = fixture_data.get("producer_key", {}).get("public_key_hex", "")
+            if producer_key_hex and leaf.get("key_fingerprint") != key_fingerprint(bytes.fromhex(producer_key_hex)):
+                fail(fixture, name, f"leaf {i} key_fingerprint does not match the producer key")
+                return False
+
+        root = _log_mth(leaf_hashes)
+        if "root_hash" in exp and "sha256:" + root.hex() != exp["root_hash"]:
+            fail(fixture, name, f"root_hash mismatch. expected={exp['root_hash']} actual=sha256:{root.hex()}")
+            return False
+        if "empty_tree_root_hash" in exp:
+            if "sha256:" + hashlib.sha256(b"").hexdigest() != exp["empty_tree_root_hash"]:
+                fail(fixture, name, "empty_tree_root_hash mismatch")
+                return False
+
+        _, ok = _log_verify_checkpoint(fixture, name, fixture_data, vector.get("checkpoint_unsigned", {}), "checkpoint_", exp)
+        if not ok:
+            return False
+        assembled = exp.get("log_checkpoint")
+        if assembled:
+            stripped = {k: v for k, v in assembled.items() if k != "signature"}
+            if stripped != vector.get("checkpoint_unsigned", {}):
+                fail(fixture, name, "expected.log_checkpoint minus signature != checkpoint_unsigned")
+                return False
+
+        incl = exp.get("log_inclusion")
+        if incl:
+            m, n = incl["leaf_index"], incl["tree_size"]
+            path = [_hex_of(p) for p in incl["inclusion_path"]]
+            generated = _log_inclusion_path(m, leaf_hashes[:n])
+            if generated != path:
+                fail(fixture, name, f"inclusion_path mismatch with RFC 6962 PATH({m}, D[{n}])")
+                return False
+            if not _log_verify_inclusion(leaf_hashes[m], m, n, path, root):
+                fail(fixture, name, "inclusion-proof folding (§9.1) did not reproduce the root")
+                return False
+            # Negative self-check: a tampered path element MUST NOT verify.
+            if path:
+                bad = list(path)
+                bad[0] = bytes([bad[0][0] ^ 0x01]) + bad[0][1:]
+                if _log_verify_inclusion(leaf_hashes[m], m, n, bad, root):
+                    fail(fixture, name, "folding algorithm accepted a tampered inclusion_path — fixture cannot exercise rejection")
+                    return False
+        return True
+
+    # ── Consistency vectors (log-003) ─────────────────────────────────────────
+    if "first_checkpoint_unsigned" in vector:
+        leaf_hashes = [_hex_of(h) for h in vector.get("leaf_hashes", [])]
+        first_cp = vector["first_checkpoint_unsigned"]
+        second_cp = vector["second_checkpoint_unsigned"]
+        m, n = first_cp["tree_size"], second_cp["tree_size"]
+
+        first_root = _log_mth(leaf_hashes[:m])
+        second_root = _log_mth(leaf_hashes[:n])
+        if "first_root_hash" in exp and "sha256:" + first_root.hex() != exp["first_root_hash"]:
+            fail(fixture, name, f"first_root_hash mismatch. expected={exp['first_root_hash']} actual=sha256:{first_root.hex()}")
+            return False
+        if "second_root_hash" in exp and "sha256:" + second_root.hex() != exp["second_root_hash"]:
+            fail(fixture, name, f"second_root_hash mismatch. expected={exp['second_root_hash']} actual=sha256:{second_root.hex()}")
+            return False
+        if _hex_of(first_cp["root_hash"]) != first_root or _hex_of(second_cp["root_hash"]) != second_root:
+            fail(fixture, name, "checkpoint root_hash does not match the recomputed tree root")
+            return False
+
+        _, ok = _log_verify_checkpoint(fixture, name, fixture_data, first_cp, "first_", exp)
+        if not ok:
+            return False
+        _, ok = _log_verify_checkpoint(fixture, name, fixture_data, second_cp, "second_", exp)
+        if not ok:
+            return False
+
+        resp = exp.get("consistency_proof_response", {})
+        path = [_hex_of(p) for p in resp.get("consistency_path", [])]
+        generated = _log_consistency_proof(m, leaf_hashes[:n])
+        if generated != path:
+            fail(fixture, name, f"consistency_path mismatch with RFC 6962 PROOF({m}, D[{n}])")
+            return False
+        if not _log_verify_consistency(m, n, path, first_root, second_root):
+            fail(fixture, name, "consistency-proof verification (§9.2) failed on the golden path")
+            return False
+        # Negative self-checks: tampered path or wrong roots MUST NOT verify.
+        bad = list(path)
+        bad[0] = bytes([bad[0][0] ^ 0x01]) + bad[0][1:]
+        if _log_verify_consistency(m, n, bad, first_root, second_root):
+            fail(fixture, name, "consistency algorithm accepted a tampered path — fixture cannot exercise rejection")
+            return False
+        if _log_verify_consistency(m, n, path, second_root, first_root):
+            fail(fixture, name, "consistency algorithm accepted swapped roots — fixture cannot exercise rejection")
+            return False
+        return True
+
+    fail(fixture, name, "log vector carries neither 'leaves' nor 'first_checkpoint_unsigned'")
+    return False
+
+
 for path in sorted(CONFORMANCE.glob("*.json")):
     with open(path) as f:
         data = json.load(f)
@@ -316,9 +935,38 @@ for path in sorted(CONFORMANCE.glob("*.json")):
         for v in data.get("vectors", []):
             if check_signature_vector(fixture_id, data, v):
                 passes += 1
-    # pub-, vis-, ret- fixtures describe scenarios (request → expected error code), not arithmetic
-    # vectors. Their conformance is checked by registry implementations, not by this static runner.
-
+    elif fixture_id.startswith("rev-") and "test_keypair" in data:
+        # rev golden vectors (rev-001) are executed; rev-002 is behavioral
+        # (no test_keypair) and is skipped here.
+        for v in data.get("vectors", []):
+            if check_revocation_vector(fixture_id, data, v):
+                passes += 1
+    elif fixture_id.startswith("fp-"):
+        for v in data.get("vectors", []):
+            if check_fingerprint_vector(fixture_id, v):
+                passes += 1
+    elif fixture_id.startswith("rcpt-") and "registry_test_keypair" in data:
+        # rcpt golden vectors (rcpt-001) are executed; rcpt-002..004 are behavioral
+        # scenarios without a registry_test_keypair and are skipped here.
+        for v in data.get("vectors", []):
+            if check_receipt_vector(fixture_id, data, v):
+                passes += 1
+    elif fixture_id.startswith("lhr-") and "registry_test_keypair" in data:
+        # lhr golden vectors (lhr-001) are executed; lhr-002..004 are behavioral
+        # scenarios without a registry_test_keypair and are skipped here.
+        for v in data.get("vectors", []):
+            if check_lineage_head_receipt_vector(fixture_id, data, v):
+                passes += 1
+    elif fixture_id.startswith("log-") and "registry_test_keypair" in data:
+        # log golden vectors (log-001, log-003) are executed; log-002 and log-004
+        # are behavioral scenarios without a registry_test_keypair, skipped here.
+        for v in data.get("vectors", []):
+            if check_log_vector(fixture_id, data, v):
+                passes += 1
+    # pub-, vis-, ret-, dk-, rot-, lc-, fed- (and keypair-less rcpt-/lhr-/log-/rev-)
+    # fixtures describe scenarios (request -> expected error code), not arithmetic
+    # vectors. Their conformance is checked by registry/consumer implementations,
+    # not by this static runner.
 
 def check_golden_retrieval_example():
     """Verify examples/retrieval/golden-context.json end-to-end against sig-001's test keypair.
@@ -362,7 +1010,66 @@ def check_golden_retrieval_example():
     return True
 
 
+def check_golden_receipt_example():
+    """Verify examples/retrieval/golden-context-with-receipt.json end-to-end.
+
+    The body is the sig-001 golden body (verified by check_golden_retrieval_example
+    on its sibling file); here we verify the registry_receipt against the rcpt-001
+    registry test keypair: preimage, receipt hash, signature, key_fingerprint, and
+    the §8 cross-checks against the accompanying body.
+    """
+    name = "golden-context-with-receipt.json (derivative of rcpt-001)"
+    fixture = "examples/retrieval"
+    example_path = ROOT / "examples" / "retrieval" / "golden-context-with-receipt.json"
+    if not example_path.exists():
+        fail(fixture, name, "example file missing")
+        return False
+    example = json.loads(example_path.read_text())
+    body = example["body"]
+    receipt = example["registry_receipt"]
+
+    rcpt_001 = json.loads((CONFORMANCE / "rcpt-001-receipt-golden.json").read_text())
+    reg_pub_hex = rcpt_001["registry_test_keypair"]["public_key_hex"]
+
+    preimage = {k: v for k, v in receipt.items() if k != "signature"}
+    canonical = jcs.canonicalize(preimage)
+    receipt_hash = "sha256:" + hashlib.sha256(canonical).hexdigest()
+
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+    reg_pub = Ed25519PublicKey.from_public_bytes(bytes.fromhex(reg_pub_hex))
+    try:
+        reg_pub.verify(base64.b64decode(receipt["signature"]["value"]), receipt_hash.encode("ascii"))
+    except Exception as e:
+        fail(fixture, name, f"receipt signature verification failed: {e}")
+        return False
+
+    # RFC-ACDP-0010 §8 cross-checks against the body.
+    EXCLUSION_SET = {"ctx_id", "lineage_id", "origin_registry", "created_at", "content_hash", "signature"}
+    producer_content = {k: v for k, v in body.items() if k not in EXCLUSION_SET}
+    recomputed = "sha256:" + hashlib.sha256(jcs.canonicalize(producer_content)).hexdigest()
+    if receipt["content_hash"] != recomputed:
+        fail(fixture, name, f"receipt content_hash != independently recomputed body hash ({recomputed})")
+        return False
+    for field in ("ctx_id", "lineage_id", "origin_registry", "created_at"):
+        if receipt[field] != body[field]:
+            fail(fixture, name, f"receipt.{field} != body.{field}")
+            return False
+    sig_001 = json.loads((CONFORMANCE / "sig-001-ed25519-golden.json").read_text())
+    producer_fp = key_fingerprint(bytes.fromhex(sig_001["test_keypair"]["public_key_hex"]))
+    if receipt["key_fingerprint"] != producer_fp:
+        fail(fixture, name, f"receipt.key_fingerprint != producer key fingerprint ({producer_fp})")
+        return False
+    if not receipt["registry_did"].startswith("did:web:") or receipt["registry_did"][len("did:web:"):] != receipt["origin_registry"]:
+        fail(fixture, name, "receipt registry_did does not bind to origin_registry authority")
+        return False
+
+    return True
+
+
 if check_golden_retrieval_example():
+    passes += 1
+
+if check_golden_receipt_example():
     passes += 1
 
 if failures:

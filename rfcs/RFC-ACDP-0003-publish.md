@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Publish & Supersession
 
 **Document:** RFC-ACDP-0003
-**Version:** 0.1.0
-**Status:** Community Standards Track (Final)
+**Version:** 0.3.0-draft
+**Status:** Community Standards Track (Final for acdp/0.1.0; sections marked *(0.2.0)* or *(0.3.0)* are Draft)
 
 This RFC specifies how producers publish contexts to ACDP registries and how registries handle supersession. It depends on RFC-ACDP-0001 (Core) and RFC-ACDP-0002 (Context Body).
 
@@ -12,6 +12,10 @@ This RFC specifies how producers publish contexts to ACDP registries and how reg
 ## 1. Status of This Memo
 
 This document is a Final ACDP specification (acdp/0.1.0). It is stable for the 0.1.0 release; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
+
+Passages marked *(0.2.0)* are Draft amendments from the acdp/0.2.0 Trust & Hardening program (registry receipts per [RFC-ACDP-0010](RFC-ACDP-0010-registry-receipts.md), lineage anchoring, idempotency-scope clarification). They change no v0.1.0 body field, hash, or signature semantic.
+
+Passages marked *(0.3.0)* are Draft amendments from the acdp/0.3.0 core-profile revision (Idempotency-Key support REQUIRED for `acdp-registry-core` under `acdp_version` ≥ 0.3.0 — §6.4). They change no wire shape: no body field, hash, signature semantic, header syntax, or error code is touched — the 0.3.0 change is a conformance tightening on registries that choose to advertise `acdp_version` ≥ 0.3.0. Everything not so marked remains Final and wire-frozen for acdp/0.1.0.
 
 ---
 
@@ -45,12 +49,12 @@ The registry MUST execute the following steps in order:
    - `created_at = <current_time_in_canonical_rfc3339>`
 9. **Lineage computation.** Per RFC-ACDP-0001 §5.6:
     - For first versions (`supersedes = null`), `lineage_id = "lin:sha256:" + lowercase_hex(SHA-256(ctx_id))`.
-    - For subsequent versions, walk back through `supersedes` to find the version-1 `ctx_id` and apply the same formula.
-    - If the producer supplied `lineage_id`, verify it matches the computed value; on mismatch, return `superseded_target` (HTTP 400).
+    - For subsequent versions, walk back through `supersedes` to find the version-1 `ctx_id` and apply the same formula. *(0.2.0)* The registry MAY instead use **lineage anchoring** (RFC-ACDP-0001 §5.6.2): adopt the *persisted* `lineage_id` of the immediate `supersedes` target and check `version = predecessor.version + 1` against the persisted predecessor, treating the full walk-back as an integrity audit rather than a publish-path dependency. Anchoring removes the `lineage_walk_failed` failure mode where a deep intermediate is unretrievable while the immediate predecessor exists.
+    - If the producer supplied `lineage_id`, verify it matches the computed (or anchored) value; on mismatch, return `superseded_target` (HTTP 400).
 10. **Supersession validation.** If `supersedes` is non-null, validate per §3 below.
 11. **Visibility validation.** If `visibility = "restricted"`, verify `audience` is a non-empty array of DIDs. If `visibility = "private"`, the registry MUST treat **only `agent_id`** plus any DIDs explicitly listed in `audience` (if present) as authorized; **`contributors` are NOT auto-authorized** — `contributors` is for attribution, not authorization (see RFC-ACDP-0008 §4.5).
-12. **Persistence.** Persist the body. Initialize the derived `status` per RFC-ACDP-0004 §4.
-13. **Response.** Return a publish response (§4).
+12. **Persistence.** Persist the body. Initialize the derived `status` per RFC-ACDP-0004 §4. *(0.2.0)* A registry advertising the `acdp-registry-receipts` profile MUST mint the registry receipt (RFC-ACDP-0010 §4–§5) in this step, **after identifier assignment and atomically with persistence**: the body and its receipt commit together or neither does. The receipt's `key_fingerprint` is the RFC-ACDP-0010 §6 fingerprint of the producer key resolved in step 6.
+13. **Response.** Return a publish response (§4). *(0.2.0)* Receipts-profile registries include the minted `registry_receipt`.
 
 The registry MUST execute steps 1–7 before any persistence. Steps 8–12 are atomic with respect to other concurrent publications: when two publications target the same `supersedes` value, the registry MUST accept exactly one (the first to fully validate and reach step 12 (persistence)), and MUST reject every subsequent attempt with `superseded_target` (`details.reason = "already_superseded"`, HTTP 409 Conflict).
 
@@ -115,7 +119,7 @@ For a publish request with `supersedes = <prev_ctx_id>`, the registry MUST:
 
 The previous version's body is unchanged. The previous version's derived `status` becomes `superseded` (RFC-ACDP-0004 §4) — automatically, on the next status query. Registries MAY cache `status` but MUST recompute on supersession events.
 
-### 3.3 No retraction
+### 3.3 No retraction *(v0.1.0; succeeded by RFC-ACDP-0013 in 0.3.0)*
 
 This version of ACDP does not provide a retraction mechanism. Once a context is published, its body is permanent. A producer that discovers an error has two options:
 
@@ -123,6 +127,8 @@ This version of ACDP does not provide a retraction mechanism. Once a context is 
 2. **Publish a context describing the issue,** with the buggy context in `derived_from` and a `description` explaining the problem. This is a soft signal.
 
 In neither case does the original context disappear. A formal retraction mechanism is reserved in RFC-ACDP-0009.
+
+***(0.3.0)*** The RFC-ACDP-0009 §2.1 reservation is promoted: [RFC-ACDP-0013](RFC-ACDP-0013-lifecycle-events.md) specifies retraction as a signed lifecycle event on registries advertising the OPTIONAL `acdp-registry-lifecycle` profile — **mark-not-delete**: the body stays permanently retrievable with `status: retracted`; nothing above changes for registries that do not advertise the profile. Two supersession interactions are defined there: a retracted context MAY be superseded (same §3.1 constraints — the recovery path for a retracted head, RFC-ACDP-0013 §8.3), and retraction dominates the §3.2 `superseded` status for the derived field only (RFC-ACDP-0013 §7.2).
 
 ---
 
@@ -159,8 +165,11 @@ The publish response object has exactly the following fields:
 | `version` | integer | Yes | Version number of the newly published context (1 for first version, `previous.version + 1` otherwise). |
 | `created_at` | string | Yes | Registry-assigned creation timestamp (RFC 3339, canonical millisecond form per RFC-ACDP-0001 §5.3). |
 | `status` | string | Yes | Initial lifecycle status. MUST be `"active"` (a newly-published context cannot already be `superseded` or `expired`). |
+| `registry_receipt` | object | *(0.2.0)* Conditional | The registry receipt (RFC-ACDP-0010 §4). MUST be present when the registry advertises the `acdp-registry-receipts` profile; MUST be absent otherwise. Returning the receipt here gives the producer immediate possession of its proof of publication. |
 
-Registries MUST NOT include `content_hash`, `signature`, or any other body field in the publish response. `content_hash` is part of ProducerContent (RFC-ACDP-0001 §2, §5.7); the producer already submitted it and signed it, so echoing it back conveys no integrity guarantee. Consumers that need the full body for verification MUST retrieve it via `GET /contexts/{ctx_id}` (RFC-ACDP-0004 §2) — the body returned there is byte-identical to what the producer signed. The publish response is intentionally minimal: it conveys only the registry-assigned identifiers needed for subsequent retrieval and the initial derived `status`. The response schema is `additionalProperties: false`; consumer deserializers MUST NOT rely on additional fields appearing.
+Registries MUST NOT include `content_hash`, `signature`, or any other body field in the publish response. `content_hash` is part of ProducerContent (RFC-ACDP-0001 §2, §5.7); the producer already submitted it and signed it, so echoing it back conveys no integrity guarantee. (The `content_hash` *inside* `registry_receipt` is different in kind: it is registry-signed evidence, not an echo, and the producer verifies it against its own value per RFC-ACDP-0010 §8.) Consumers that need the full body for verification MUST retrieve it via `GET /contexts/{ctx_id}` (RFC-ACDP-0004 §2) — the body returned there is byte-identical to what the producer signed. The publish response is intentionally minimal: it conveys only the registry-assigned identifiers needed for subsequent retrieval, the initial derived `status`, and *(0.2.0)* the receipt where the profile is advertised. The response schema remains `additionalProperties: false`; consumer deserializers MUST NOT rely on fields beyond this table appearing.
+
+> ***(0.2.0)* Compatibility note.** `registry_receipt` is the one 0.2.0 addition to a previously closed v0.1.0 response shape. A v0.1.0 producer library with a strict (`deny_unknown_fields`) publish-response decoder will fail to parse a receipt-bearing response; producers MUST be upgraded to tolerate the optional member before publishing to a receipts-advertising registry (migration note in RFC-ACDP-0010 §12). Producers SHOULD verify the returned receipt immediately (RFC-ACDP-0010 §8) and persist it alongside their local publication record.
 
 ---
 
@@ -193,7 +202,7 @@ All errors use the envelope defined in RFC-ACDP-0007 §4 with codes from the reg
 
 ## 6. Idempotency
 
-Identical publish requests create distinct `ctx_id`s by default. Producers retrying after network errors can inadvertently create duplicate publications. Registries SHOULD support the `Idempotency-Key` HTTP header for safe retries.
+Identical publish requests create distinct `ctx_id`s by default. Producers retrying after network errors can inadvertently create duplicate publications. Registries SHOULD support the `Idempotency-Key` HTTP header for safe retries. *(0.3.0)* For registries advertising `acdp_version` ≥ 0.3.0, this SHOULD is upgraded to a MUST — see §6.4; registries advertising `acdp_version` 0.1.0 or 0.2.0 are unchanged (support remains optional and capability-gated).
 
 ### 6.1 Producer behavior
 
@@ -204,6 +213,8 @@ Producers MAY include an `Idempotency-Key` header on `POST /contexts`:
 - Producers retrying a failed request SHOULD reuse the same key.
 
 ### 6.2 Registry behavior
+
+***(0.2.0)* Key scope (NORMATIVE).** Idempotency keys are scoped **per `agent_id`**: the unit the registry tracks is the `(agent_id, idempotency_key)` pair, never the bare key. Two different agents using the same `Idempotency-Key` value MUST NOT interact in any way — neither receives the other's stored response, and neither can trigger `duplicate_publish` for the other. The `agent_id` in the pair is the *verified* signing identity (`body.agent_id` after the §2.1 pipeline, per RFC-ACDP-0008 §6.1), not any transport-level identifier, so one agent cannot occupy or probe another agent's key space. This was implicit in the `(agent_id, idempotency_key)` notation below; it is now explicit because a registry that indexes on the bare key is non-conformant in a way producers cannot detect until a cross-agent collision occurs.
 
 Registries supporting idempotency:
 
@@ -228,7 +239,7 @@ The atomicity requirement in step 4 is normative: it is the difference between i
 
 The ordering choice in steps 1–2 is a SHOULD, not a MUST: a registry MAY perform schema validation, payload-size validation, or any other cheap check before idempotency lookup. It MUST NOT perform DID resolution or signature verification before idempotency lookup, because doing so defeats the cost-amortization purpose of the header. Registries that treat the `Idempotency-Key` header as a post-hoc dedup mechanism (after signature verification has already run) are conformant only if their measured cost on retries matches an implementation that performed the lookup first — i.e., the test is observable behavior, not internal sequencing.
 
-The conformance fixtures `idem-001` through `idem-006` exercise this surface.
+The conformance fixtures `idem-001` through `idem-006` exercise this surface. *(0.3.0)* `idem-007` additionally pins the §6.4 capabilities-level requirement.
 
 #### 6.2.2 Distributed idempotency (NORMATIVE)
 
@@ -240,6 +251,8 @@ Registries operating across multiple nodes MUST implement idempotency using an a
 - a compare-and-swap on a unique `(agent_id, idempotency_key)` index that pre-reserves the slot before §2.1 step 12 runs;
 - a single-master shard that serializes idempotency-keyed publishes per `(agent_id, idempotency_key)`;
 - an external lock service (Redis Redlock, etcd lease, Postgres advisory lock) held for the lifetime of the publish.
+
+***(0.2.0)* Implementation guidance (NON-NORMATIVE).** The straightforward conformant shape is a storage-level **unique constraint on `(agent_id, idempotency_key)`** with a transactional insert: the idempotency row and the body persist in one transaction (or the row pre-reserves the slot via compare-and-swap before §2.1 step 12), and a TTL sweep deletes rows older than the advertised `limits.idempotency_key_ttl_seconds`. Single-writer or CAS-capable storage is what makes the guarantee real; a registry whose storage offers neither MUST NOT advertise `supports_idempotency_key` (restating the conformance rule below in storage terms).
 
 A registry that cannot guarantee atomic idempotency storage MUST either:
 
@@ -254,6 +267,22 @@ Producers relying on idempotency for retry safety SHOULD verify the advertised c
 ### 6.3 Content-deterministic deduplication
 
 Independent of `Idempotency-Key`, the body's `content_hash` is content-deterministic. Producers MAY use it as a local deduplication key (e.g. record `content_hash` after a successful publish; on retry, look up by hash before re-submitting). This is a producer-side optimization and does not require registry cooperation.
+
+### 6.4 *(0.3.0)* Idempotency-Key support is REQUIRED at `acdp_version` ≥ 0.3.0
+
+Under acdp/0.1.0 and acdp/0.2.0, Idempotency-Key support is OPTIONAL and capability-gated (§6.2); nothing in this section changes that. Starting with acdp/0.3.0, the option closes for the core profile:
+
+A registry advertising `acdp_version` ≥ 0.3.0 in its capabilities document MUST support the `Idempotency-Key` header on `POST /contexts` per this section (§6). Specifically, such a registry:
+
+1. MUST advertise `"supports_idempotency_key": true` in its capabilities document (RFC-ACDP-0007 §3.2). The flag is no longer optional-to-support, but it MUST still be advertised — consumers and conformance tooling introspect it, and its absence (or `false`) alongside `acdp_version` ≥ 0.3.0 makes the capabilities document self-contradictory and the registry NON-CONFORMANT (fixture `idem-007`; RFC-ACDP-0007 §3.5 item 10).
+2. MUST implement the §6.2.2 atomic storage contract — the `(agent_id, idempotency_key, content_hash, response)` record and the body persistence MUST commit together. The reference pattern is a storage-level **unique constraint on `(agent_id, idempotency_key)`** with a transactional insert (or an equivalent compare-and-swap pre-reservation), per the §6.2.2 *(0.2.0)* implementation guidance. The §6.2.2 escape hatch of "do not advertise `supports_idempotency_key`" is not available at 0.3.0: a registry whose storage cannot provide single-writer or CAS atomicity MUST NOT advertise `acdp_version` ≥ 0.3.0.
+3. MUST enforce the §6 TTL bounds: track `(agent_id, idempotency_key)` pairs for at least 86400 seconds (24h) and at most 604800 seconds (7d), and advertise the actual TTL as `limits.idempotency_key_ttl_seconds` (§6.2).
+
+**Rationale.** Without idempotency, the DEFAULT behavior of the protocol under retry is duplication: a producer whose `POST /contexts` times out after the registry persisted the body has no safe move — retrying mints a second `ctx_id` for the same content (RFC-ACDP-0008 §3.6), and not retrying risks the publish never having happened. Capability-gated idempotency pushes the mitigation onto every producer as permanent client-side dedup machinery (§6.3) that must be maintained against every registry forever, because no producer can assume the capability is present. The registry-side cost is one uniqueness constraint and a TTL sweep (§6.2.2). At 0.3.0 the trade is settled in favor of the producer: safe retry becomes a floor guarantee of `acdp-registry-core`, and §6.3 client-side dedup is demoted from a necessity to the defense-in-depth it was always meant to be.
+
+**Migration (per [VERSIONING.md](../VERSIONING.md)).** This is a conformance tightening, not a wire change: the header syntax, the §6.2 response semantics (200-replay / `duplicate_publish`), the capabilities field, and the TTL bounds are all unchanged from 0.1.0. No schema `$id`, body field, hash, or signature semantic changes. A 0.2.0-conformant registry upgrades by implementing §6 (including §6.2.2 atomic storage) *before* advertising `acdp_version` ≥ 0.3.0; until it does, it simply continues to advertise `0.2.0` (or `0.1.0`) and remains fully conformant. Producers need no change: they already probe `supports_idempotency_key` per §6.1, and against a 0.3.0 registry the probe simply always succeeds.
+
+Conformance fixture `idem-007` pins the capabilities-level rejection: a capabilities document with `acdp_version` ≥ 0.3.0 and `supports_idempotency_key` absent or `false` MUST be rejected by consumers per RFC-ACDP-0007 §3.5.
 
 ---
 
@@ -277,6 +306,7 @@ See [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md). Specific to publishing:
 - [RFC-ACDP-0006 Cross-Registry References](RFC-ACDP-0006-cross-registry.md)
 - [RFC-ACDP-0007 Capabilities & Errors](RFC-ACDP-0007-capabilities.md)
 - [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md)
+- [RFC-ACDP-0010 Registry Receipts](RFC-ACDP-0010-registry-receipts.md) *(0.2.0)*
 
 ---
 
@@ -288,7 +318,7 @@ The §2.1 registry pipeline is normative; the producer-side flow in §2.2 is nor
 
 Before submitting `POST /contexts`:
 
-1. **Build ProducerContent** with all required fields (`version`, `supersedes`, `agent_id`, `contributors`, `title`, `type`, `data_refs`, `derived_from`, `visibility`) and any optional fields the producer intends to include. **Do NOT** include any of the §5.7 exclusion-set fields (`content_hash`, `signature`, `ctx_id`, `lineage_id`, `origin_registry`, `created_at`).
+1. **Build ProducerContent** with all required fields (`version`, `supersedes`, `agent_id`, `contributors`, `title`, `type`, `data_refs`, `derived_from`, `visibility`) and any optional fields the producer intends to include. *(0.2.0)* Producers authoring under 0.2.0 MUST include `acdp_version: "0.2.0"` explicitly (RFC-ACDP-0001 §6). **Do NOT** include any of the §5.7 exclusion-set fields (`content_hash`, `signature`, `ctx_id`, `lineage_id`, `origin_registry`, `created_at`).
 2. **Validate field constraints locally** (so the registry's `schema_violation` is rare): title length ≤ 500; metadata depth ≤ 8 and JCS-canonicalized size ≤ 65536; each `data_refs[]` has exactly one of `location` or `embedded`; tags match `^[A-Za-z0-9][A-Za-z0-9_.-]*$`; `audience` is non-empty when `visibility = "restricted"`; `lineage_id` is absent when `supersedes = null`.
 3. **Truncate every timestamp** in the request to canonical millisecond form (RFC-ACDP-0001 §5.3). This applies to `expires_at`, `data_period.{start,end}`, and any timestamps inside `data_refs`.
 4. **Validate `agent_id` is `did:web:<…>`** (v0.1.0 mandate, RFC-ACDP-0001 §5.4 DID method scope table).
@@ -315,7 +345,7 @@ Reproduced here in step-only form for cross-checking (full normative text in §2
 10. Supersession constraints (§3.1: not_found, cross_registry_supersession_unsupported, lineage_mismatch, version_mismatch, already_superseded, plus `not_authorized` for cross-agent supersession).
 11. Visibility validation (`schema_violation` for restricted-without-audience; private semantics — RFC-ACDP-0008 §4.5).
 12. Persistence + `status` initialization (RFC-ACDP-0004 §4).
-13. Response (§4 — exactly five fields, see fixture pub-007).
+13. Response (§4 — the five v0.1.0 fields, see fixture pub-007; *(0.2.0)* plus `registry_receipt` when the receipts profile is advertised).
 
 Steps 1–7 MUST complete before any persistence. Steps 8–12 are atomic with respect to concurrent publications targeting the same `supersedes` value.
 

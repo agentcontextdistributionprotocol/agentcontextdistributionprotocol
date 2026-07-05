@@ -1,0 +1,38 @@
+{
+  "id": "lhr-002",
+  "description": "Head-receipt verification MUST fail when the receipt's head fields do not byte-match the accompanying /current response (RFC-ACDP-0011 §7 step 5). Here the registry serves version 2 as the current head but attaches a (genuinely signed, previously valid) receipt still attesting version 1 — the stale-head-serving scenario head receipts exist to make attributable. The receipt's own signature verifies; the failure is the head binding, not the cryptography.",
+  "tags": ["lineage-head-receipt", "receipt", "failure", "security", "stale-head"],
+  "applies_to_profiles": ["acdp-registry-head-receipts", "acdp-consumer"],
+  "input": {
+    "scenario": "Consumer calls GET /lineages/lin:sha256:c7fef01c…/current. The response body is version 2 (head_ctx_id acdp://registry.example.com/aaaaaaaa-…), registry_state.status 'active', but lineage_head_receipt is the lhr-001 golden receipt attesting version 1.",
+    "served_response": {
+      "body_excerpt": {
+        "ctx_id": "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "lineage_id": "lin:sha256:c7fef01c000f8edaa9cb46122ceb5d7bca38328f002fb0f40e362e3b289bbb2a",
+        "version": 2
+      },
+      "registry_state": { "status": "active" },
+      "lineage_head_receipt": {
+        "receipt_version": "acdp-lhr/1",
+        "registry_did": "did:web:registry.example.com",
+        "lineage_id": "lin:sha256:c7fef01c000f8edaa9cb46122ceb5d7bca38328f002fb0f40e362e3b289bbb2a",
+        "head_ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234",
+        "head_version": 1,
+        "head_status": "active",
+        "as_of": "2026-07-04T09:00:00.000Z",
+        "signature": {
+          "algorithm": "ed25519",
+          "key_id": "did:web:registry.example.com#receipt-key-1",
+          "value": "h4w9cdnmpNXWBkmQQLgbcQ2p22c1wKZCqnHx1sQXE2GuMRP2nlVt+twGikpFPP6zpRCjqEa3UxIxC8Y9qnl7BA=="
+        }
+      }
+    },
+    "registry_public_key_hex": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737"
+  },
+  "expected": {
+    "outcome": "failure",
+    "failure_category": "invalid_receipt",
+    "behavior": "Steps 1–4 of RFC-ACDP-0011 §7 pass (closed parse, signature verifies under the registry key, registry binding holds, lineage_id matches). Step 5 fails: on /current the receipt MUST describe the very head being served — head_ctx_id 'acdp://…/12345678-…' ≠ body.ctx_id 'acdp://…/aaaaaaaa-…' and head_version 1 ≠ body.version 2. The head receipt MUST be reported as failed (invalid_receipt category). The converse reading is the detection value: if the registry instead serves the v1 body WITH this receipt while a fresher receipt (or another vantage) shows a v2 head, the two signed receipts are the registry's own conflicting evidence of stale-head serving (RFC-ACDP-0011 §11).",
+    "verdict_independence": "The served body's producer signature and content_hash, and any RFC-ACDP-0010 registry_receipt on the response, are verified independently and may still pass — only the serve-time head attestation is invalid (RFC-ACDP-0011 §7)."
+  }
+}

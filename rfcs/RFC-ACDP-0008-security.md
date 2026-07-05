@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Security & Threat Model
 
 **Document:** RFC-ACDP-0008
-**Version:** 0.1.0
-**Status:** Community Standards Track (Final)
+**Version:** 0.3.0-draft
+**Status:** Community Standards Track (Final for acdp/0.1.0; sections marked *(0.2.0)* or *(0.3.0)* are Draft)
 
 This RFC specifies the threat model for ACDP v0.1.0 and the defenses every implementation MUST provide. It depends on the entire core RFC stack (0001–0007).
 
@@ -12,6 +12,8 @@ This RFC specifies the threat model for ACDP v0.1.0 and the defenses every imple
 ## 1. Status of This Memo
 
 This document is a Final ACDP specification (acdp/0.1.0). It is stable for the 0.1.0 release; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
+
+Passages marked *(0.2.0)* are Draft amendments from the acdp/0.2.0 Trust & Hardening program. Passages marked *(0.3.0)* are Draft amendments from the acdp/0.3.0 program (advertising the rate-limit ceiling via `limits.max_publish_per_minute` — §4.3; lifecycle events & retraction — RFC-ACDP-0013, §5; the producer key-revocation signal — RFC-ACDP-0014, §5/§9.3). Neither set changes any v0.1.0 body field, hash, or signature semantic; everything not so marked remains Final and wire-frozen for acdp/0.1.0.
 
 ---
 
@@ -43,6 +45,7 @@ The threat surface is therefore: **the entire path from producer's signing key, 
 | **3.8 Spam / Sybil** | Per-agent rate limiting is REQUIRED (§4). |
 | **3.9 Algorithm downgrade** | Signature algorithm is named in the body (`signature.algorithm`) and MUST be in the registry's `supported_signature_algorithms`. Verifiers MUST reject if `signature.algorithm` does not match the algorithm declared by the resolved verification method in the producer's DID document — this prevents downgrade attacks where an attacker substitutes a weaker algorithm than the producer's actual key supports. |
 | **3.10 Race on supersession** | The registry serializes supersession events: a `superseded_target` error is returned for the loser of a race. |
+| ***(0.2.0)* 3.11 Registry identifier/time dishonesty (with receipts)** | Where the registry advertises `acdp-registry-receipts`, a verified receipt (RFC-ACDP-0010 §8) binds `ctx_id`, `lineage_id`, `origin_registry`, `created_at`, the body `content_hash`, and the resolved producer-key fingerprint to the registry's DID. Republishing under different identifiers or backdating after mint becomes detectable and non-repudiable; receipt-less responses retain the §9.1 limitation. |
 
 ---
 
@@ -66,7 +69,9 @@ The threat surface is therefore: **the entire path from producer's signing key, 
 
 - Registries MUST rate-limit `POST /contexts` per `agent_id` (the signing producer).
 - Registries SHOULD rate-limit retrieval and search endpoints per requesting principal.
-- Rate-limit responses MUST use `rate_limited` (HTTP 429) and SHOULD include a `Retry-After` header when bounded.
+- Rate-limit responses MUST use `rate_limited` (HTTP 429) with the standard error envelope (RFC-ACDP-0007 §4) and MUST include a `Retry-After` header — either an integer seconds value or an HTTP-date (RFC 7231 §7.1.3). A limiter that cannot compute an exact refill horizon (e.g. a concurrency-based limiter) MUST emit a conservative estimate rather than omit the header: the header is the only machine-readable backoff signal the protocol defines, and its absence forces every well-behaved producer into guesswork while leaving retry-storm clients no worse off. *(This upgrades the pre-round-5 SHOULD; the error code and envelope were already MUST.)*
+- The trigger remains black-box-untestable: conformance testing cannot deterministically provoke a per-agent rate limit on an arbitrary registry, so the wire shape (429 + envelope + `Retry-After`) is pinned by the `rate-001` fixture and implementers MUST self-test the trigger per its recipe.
+- *(0.3.0)* Registries SHOULD advertise the nominal per-agent publish ceiling via `limits.max_publish_per_minute` in the capabilities document (RFC-ACDP-0007 §3.2, integer ≥ 1) so producers can pace below the limiter instead of discovering it via 429s. The field is advisory and its presence changes nothing above: per-agent rate limiting remains REQUIRED whether or not the ceiling is advertised, `Retry-After` remains mandatory on every 429, and a registry MAY enforce tighter dynamic limits than the advertised nominal ceiling (in which case `Retry-After` remains the authoritative backoff signal).
 
 ### 4.4 Signature verification
 
@@ -174,8 +179,8 @@ Implementations exposing a `DataRefFetcher` (or equivalent) abstraction MUST app
 
 | Gap | Reason | Mitigation in v0.1.0 |
 |---|---|---|
-| **No retraction** | Permanent publication is the v0.1.0 invariant. | Use supersession to publish corrections. RFC-ACDP-0009 reserves a formal lifecycle-events mechanism. |
-| **No real-time key revocation push** | Out of scope for the substrate. | Pull-based; consumers consult DID documents. Producers can publish a "this key is compromised" context as a soft signal. |
+| **No retraction** | Permanent publication is the v0.1.0 invariant. | Use supersession to publish corrections. RFC-ACDP-0009 reserves a formal lifecycle-events mechanism. ***(0.3.0)* Closed** on registries advertising `acdp-registry-lifecycle`: [RFC-ACDP-0013](RFC-ACDP-0013-lifecycle-events.md) promotes the reservation — signed retraction/republication events, `status: retracted`, mark-not-delete (the body remains retrievable). The gap stands for non-advertising registries. |
+| **No real-time key revocation push** | Out of scope for the substrate. | Pull-based; consumers consult DID documents. Producers can publish a "this key is compromised" context as a soft signal. ***(0.3.0)* The signal is now normative:** [RFC-ACDP-0014](RFC-ACDP-0014-key-revocation.md) defines the `key-revocation` context type and time-scoped fail-closed semantics against receipt-attested publish times (§9.3, RFC-ACDP-0010 §10). Revocation remains **pull-based** — no push, and a malicious registry can still hide a revocation from search (mitigation: the RFC-ACDP-0009 §2.11 transparency log; out-of-band delivery is explicitly supported). |
 | **No third-party attestations** | Out of scope for v0.1.0. | RFC-ACDP-0009 reserves `attestations` in registry state. |
 | **No third-party `builds_on` claims** | Out of scope for v0.1.0. | `derived_from` is producer-only; downstream consumers can publish their own `derived_from` context. |
 | **No push subscriptions** | Polling is the v0.1.0 model. | RFC-ACDP-0009 reserves push semantics. |
@@ -249,7 +254,7 @@ Two acceptable v0.1.0 responses for the consumer:
 - **Strict.** Reject the context. Old contexts whose signing keys have been rotated out are no longer locally verifiable.
 - **Pragmatic.** Trust the producer's current DID document's claim about key rotation timeline (if any), or defer to an out-of-band attestation. The consumer accepts the residual risk that K1 was rotated *because* it was compromised, in which case signatures from K1 should not have been honored after `t2`.
 
-A future ACDP version (RFC-ACDP-0009 §2.7 reserves registry receipts) will let the registry attest to *which producer key was current at the time of acceptance*, removing the historical-key dependency entirely. Until then, deployments where this matters SHOULD use external transparency logs as documented in §9.2.
+***(0.2.0)* With a registry receipt.** RFC-ACDP-0010 makes the registry attest to *which producer key verified the body at acceptance*: the receipt's `key_fingerprint` records K1. If the consumer verifies the receipt (RFC-ACDP-0010 §8) and P has retained K1 in `verificationMethod` (removing it from `assertionMethod` only, per RFC-ACDP-0001 §5.11), the body verifies with the distinguishable status **historically authorized (receipt-attested)** (RFC-ACDP-0010 §10) — the strict/pragmatic dilemma above applies only to receipt-less responses. If P removed K1 from `verificationMethod` entirely (the compromise-revocation signal), verification fails closed regardless of the receipt. Fixture `rot-001` pins both halves. `did:key` producers are outside this scenario entirely — the key is the identity and never rotates (RFC-ACDP-0001 §5.11.1). For receipt-less deployments where this matters, external transparency logs (§9.2) remain the mitigation.
 
 ### 7.4 Replay of a captured publish
 
@@ -277,26 +282,46 @@ These three pillars are the minimum. Implementations MUST NOT relax any of them.
 
 ---
 
-## 9. Known Limitations
+## 9. Known Limitations *(rewritten for 0.2.0)*
 
-### 9.1 Producer signatures do not bind registry-assigned fields
+### 9.1 Producer signatures do not bind registry-assigned fields — closed by verified receipts
 
-ACDP v0.1.0 producer signatures cover producer-controlled fields. They do not cover registry-assigned identifiers (`ctx_id`, `lineage_id`, `origin_registry`, `created_at`). A consumer can verify content authorship by `agent_id` but **cannot** cryptographically verify which registry first accepted the content, what `ctx_id` the producer intended, or when publication occurred. These facts rely on registry honesty.
+ACDP producer signatures cover producer-controlled fields. They do not cover registry-assigned identifiers (`ctx_id`, `lineage_id`, `origin_registry`, `created_at`). On a **receipt-less response**, a consumer can verify content authorship by `agent_id` but **cannot** cryptographically verify which registry first accepted the content, what `ctx_id` it was assigned, or when publication occurred — these facts rely on registry honesty, and a malicious or compromised registry could republish a producer's signed content under a different `ctx_id` or `origin_registry`, or backdate `created_at`. (A malicious registry still **cannot** forge content from a producer, modify a body after publication, or forge a `derived_from` lineage — that protection is producer-signature-based and receipt-independent.)
 
-A malicious or compromised registry could republish a producer's signed content under a different `ctx_id` or `origin_registry` (the signature would still verify), or backdate `created_at`. A malicious registry **cannot** forge content from a producer, modify a body after publication, or forge a `derived_from` lineage.
+***(0.2.0)*** Where the response carries a receipt **verified per RFC-ACDP-0010 §8**, this limitation is closed for that response: the registry has signed, under its DID-bound key, exactly the binding of `ctx_id`, `lineage_id`, `origin_registry`, `created_at`, body `content_hash`, and resolved producer-key fingerprint that the consumer independently cross-checked. Republication under different identifiers, registry misattribution, and post-mint backdating now require the registry to produce conflicting signed receipts — attributable, non-repudiable evidence of misbehavior. The residual mint-time limitation is documented in §9.2 and RFC-ACDP-0010 §13.
 
-### 9.2 Mitigations and future work
+The limitation **stands unchanged for receipt-less responses**: registries not advertising `acdp-registry-receipts`, the body-only endpoint (RFC-ACDP-0004 §2.2), and v0.1.0 deployments.
 
-Deployments where this binding gap matters SHOULD use:
+#### Assurance levels *(0.2.0)*
 
-- External transparency logs anchoring `(ctx_id, content_hash, registry_did, timestamp)` tuples.
-- Multi-registry replication with consumer-side comparison.
+| Registry claim | v0.1.0 / receipt-less | 0.2.0 with verified receipt |
+|---|---|---|
+| Body authorship and integrity | **High** (producer signature; unchanged) | **High** (unchanged — never depended on the registry) |
+| Registry attribution (`origin_registry`, which registry accepted it) | **Low** — assertion only | **High** — registry-signed, authority-cross-checked (RFC-ACDP-0010 §8 step 2) |
+| Identifier binding (`ctx_id`, `lineage_id` as assigned) | **Low** — assertion only | **High** — registry-signed, cross-checked against the requested `ctx_id` and recomputed lineage |
+| Timestamp authenticity (`created_at`) | **Low** — assertion only | **Medium** — non-repudiably attested at mint; mint-time backdating remains possible until a transparency log ships (RFC-ACDP-0009 §2.11) |
 
-A future ACDP version will introduce **registry receipts**: registry-signed attestations binding `(ctx_id, lineage_id, origin_registry, created_at, content_hash)` to the registry's DID. The reservation is in [RFC-ACDP-0009 §2.7](RFC-ACDP-0009-extensions.md#27-registry-receipts).
+***(0.3.0)*** The transparency log has shipped as [RFC-ACDP-0012](RFC-ACDP-0012-transparency-log.md) (optional profile `acdp-registry-transparency-log`). Where the serving registry advertises it and the consumer (or a monitor it trusts) retains checkpoints, the residual mint-time limitations become **detectable-with-witnesses**: post-mint backdating is bounded by a leaf's position relative to retained checkpoints, history rewrites fail consistency proofs (RFC-ACDP-0012 §9.2), omission of a receipt-bearing publish is provable by its producer (a receipt with no obtainable inclusion proof), and split-view requires signing conflicting checkpoints — compact, non-repudiable evidence. Timestamp authenticity remains **Medium** even then: checkpoint `timestamp` values are still registry-asserted, and external time anchoring is reserved for witness cosigning (RFC-ACDP-0009 §2.12). Detection requires someone to retain and compare checkpoints — a consumer that never does gets the 0.2.0 receipt guarantees unchanged (RFC-ACDP-0012 §13).
+| Producer-key-at-publish-time | **Low** — unknowable after rotation | **High** — receipt-attested fingerprint (RFC-ACDP-0010 §10) |
 
-### 9.3 Historical key validity
+### 9.2 Residual gaps and mitigations
 
-Verifying a context whose producer has rotated keys requires knowing which key was valid at `created_at`. Most DID methods do not expose reliable historical key validity. ACDP v0.1.0 SHOULD verify against the producer's current DID document; verifiers requiring historical accuracy MUST employ external mechanisms (DID-document snapshotting at publish time, transparency logs, archival proofs). A future ACDP version will define a normative DID-document snapshot mechanism.
+A receipt makes registry claims *attributable and non-repudiable*, not *unforgeable at mint time* (RFC-ACDP-0010 §13): a registry can still backdate `created_at` at the moment it first mints, can omit contexts it hides, and can equivocate between consumers at the cost of producing conflicting signed receipts that ACDP 0.2.0 gives no built-in infrastructure to compare. Deployments where mint-time honesty matters SHOULD continue to use:
+
+- External transparency logs anchoring `(ctx_id, content_hash, registry_did, timestamp)` tuples — and SHOULD anchor the receipt itself, which is purpose-built evidence for such logs.
+- Multi-registry replication with consumer-side comparison; consumers SHOULD persist received receipts (RFC-ACDP-0010 §15) so equivocation is detectable after the fact.
+
+The protocol-native next layer — an append-only, registry-signed publication log with Merkle-tree checkpoints — is reserved as [RFC-ACDP-0009 §2.11](RFC-ACDP-0009-extensions.md#211-transparency-log).
+
+### 9.3 Historical key validity — closed by receipt-attested fingerprints where receipts are deployed
+
+Verifying a context whose producer has rotated keys requires knowing which key was valid at `created_at`. Most DID methods do not expose reliable historical key validity.
+
+***(0.2.0)*** The receipt's `key_fingerprint` is the registry's publish-time attestation of exactly that fact. With a verified receipt, a producer key retained in `verificationMethod` (RFC-ACDP-0001 §5.11), and the RFC-ACDP-0010 §10 rule, historical contexts verify with the distinguishable *historically authorized (receipt-attested)* status — no external snapshotting needed. `did:key` producers never have the problem (the key is the identity). 
+
+**Receipt-less behavior is unchanged from v0.1.0:** verifiers SHOULD verify against the producer's current DID document, and verifiers requiring historical accuracy MUST employ external mechanisms (DID-document snapshotting at publish time, transparency logs, archival proofs), accepting the documented residual risk of §7.3.
+
+***(0.3.0)*** [RFC-ACDP-0014](RFC-ACDP-0014-key-revocation.md) adds the **time-scoped compromise case**: a verified `key-revocation` context for fingerprint F with boundary T splits F's history — receipt-attested publish times strictly before T remain *historically authorized (pre-compromise, receipt-attested)*; at/after T, or with no verifiable publish time, verification fails closed under the strict profile. Removal from `verificationMethod` remains the total-kill signal (all times fail closed, receipt or none), and clean rotation remains not-a-revocation. Fixtures `rev-001`/`rev-002` pin it, completing the `rot-001` scenario set.
 
 ---
 
@@ -309,7 +334,10 @@ Verifying a context whose producer has rotated keys requires knowing which key w
 - [RFC-ACDP-0005 Discovery](RFC-ACDP-0005-discovery.md)
 - [RFC-ACDP-0006 Cross-Registry References](RFC-ACDP-0006-cross-registry.md)
 - [RFC-ACDP-0007 Capabilities & Errors](RFC-ACDP-0007-capabilities.md)
-- [RFC-ACDP-0009 Extensions](RFC-ACDP-0009-extensions.md) — §2.7 reserves registry receipts.
+- [RFC-ACDP-0009 Extensions](RFC-ACDP-0009-extensions.md) — §2.11 reserves the transparency log.
+- [RFC-ACDP-0010 Registry Receipts](RFC-ACDP-0010-registry-receipts.md) *(0.2.0)* — closes §9.1/§9.3 for receipt-bearing responses.
+- [RFC-ACDP-0013 Lifecycle Events & Retraction](RFC-ACDP-0013-lifecycle-events.md) *(0.3.0)* — closes the §5 retraction gap on lifecycle-advertising registries.
+- [RFC-ACDP-0014 Producer Key-Revocation Signal](RFC-ACDP-0014-key-revocation.md) *(0.3.0)* — makes the §5 soft signal normative; time-scopes §9.3.
 - [docs/threat-model.md](../docs/threat-model.md) — non-normative summary.
 - [DID-CORE] W3C, "Decentralized Identifiers (DIDs) v1.0".
 - [RFC 8032] Josefsson, S. and I. Liusvaara, "Edwards-Curve Digital Signature Algorithm (EdDSA)".

@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.1.0/acdp-lineage-head-receipt.schema.json",
+  "title": "ACDP Lineage-Head Receipt (0.3.0)",
+  "description": "A registry-signed attestation that, as of a stated time, a stated context version was the current head of a stated lineage with a stated status. Specified by RFC-ACDP-0011 (acdp/0.3.0), extending the RFC-ACDP-0010 receipt layer to serve-time claims; additive minor, so this schema lives in the v0.1.0 namespace (VERSIONING.md). The receipt preimage is the JCS canonicalization of this object minus 'signature'; the registry signs the ASCII bytes of 'sha256:<hex(SHA-256(preimage))>' exactly as RFC-ACDP-0001 §5.8 / RFC-ACDP-0010 §5, with the RFC-ACDP-0010 receipt signing key.",
+
+  "type": "object",
+  "required": [
+    "receipt_version",
+    "registry_did",
+    "lineage_id",
+    "head_ctx_id",
+    "head_version",
+    "head_status",
+    "as_of",
+    "signature"
+  ],
+  "properties": {
+    "receipt_version": {
+      "const": "acdp-lhr/1",
+      "description": "Head-receipt envelope version and in-preimage domain separator (RFC-ACDP-0011 §4): a lineage-head receipt can never be mistaken for an RFC-ACDP-0010 context receipt."
+    },
+    "registry_did": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did",
+      "description": "The attesting registry's DID. MUST be did:web:<authority> where <authority> equals the serving authority (RFC-ACDP-0011 §4, §7 step 3). did:web-only, as RFC-ACDP-0010 §4."
+    },
+    "lineage_id": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/lineage_id",
+      "description": "The attested lineage (RFC-ACDP-0001 §5.6). MUST equal the requested lineage / the accompanying body.lineage_id (RFC-ACDP-0011 §7 step 4)."
+    },
+    "head_ctx_id": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id",
+      "description": "The ctx_id of the head version. Its authority MUST equal the registry_did method-specific identifier (RFC-ACDP-0011 §4)."
+    },
+    "head_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The head's body.version."
+    },
+    "head_status": {
+      "allOf": [
+        { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/status" },
+        { "not": { "enum": ["superseded", "retracted"] } }
+      ],
+      "description": "The head's registry-derived status at as_of (RFC-ACDP-0004 §4). Never 'superseded' — a superseded version is never the current head (RFC-ACDP-0004 §5.2) — and (0.3.0) never 'retracted' — a retracted version is never served as head (RFC-ACDP-0013 §8.3). In practice 'active' or 'expired'. Open pattern for future status values, as RFC-ACDP-0004 §4.1."
+    },
+    "as_of": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+      "description": "Registry response-time clock reading when the head claim was evaluated; canonical millisecond-precision RFC 3339 UTC (RFC-ACDP-0001 §5.3). Consumers reject a future as_of beyond a small skew allowance and apply their own max-age freshness policy (RFC-ACDP-0011 §6, §7 step 6)."
+    },
+    "signature": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/signature",
+      "description": "The registry's signature over the receipt hash (RFC-ACDP-0011 §5 — the RFC-ACDP-0010 §5 construction verbatim, same receipt signing key). signature.key_id MUST be a DID URL under registry_did; key lifecycle per RFC-ACDP-0010 §9."
+    }
+  },
+  "additionalProperties": false,
+  "$comment": "Closed schema, as acdp-registry-receipt.schema.json (RFC-ACDP-0007 §3.3.1 openness map): every field is signed, so an unknown member would change the preimage. Extensions require a receipt_version bump."
+}

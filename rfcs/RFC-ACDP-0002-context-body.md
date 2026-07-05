@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Context Body
 
 **Document:** RFC-ACDP-0002
-**Version:** 0.1.0
-**Status:** Community Standards Track (Final)
+**Version:** 0.3.0-draft
+**Status:** Community Standards Track (Final for acdp/0.1.0; the section marked *(0.3.0)* is Draft)
 
 This RFC specifies the immutable, signed body of an ACDP context. It depends on RFC-ACDP-0001 Core (identifiers, JCS, content hash, signature).
 
@@ -188,6 +188,8 @@ The `type` field categorizes a context's role. The following values are defined 
 
 Implementations MAY define custom types using a namespaced format: `<namespace>:<type>` (e.g., `science:experiment-replication`). Custom types are not interpreted by core ACDP; consumers handling them MUST understand the namespace. The standard registry of types is in [`registries/context-types.md`](../registries/context-types.md).
 
+***(0.3.0)*** The standard vocabulary gains **`key-revocation`** — a producer's time-scoped declaration that a signing key is compromised, with a normatively constrained metadata shape and consumer verification semantics specified in [RFC-ACDP-0014 §4](RFC-ACDP-0014-key-revocation.md). It is the first standard type whose metadata shape registries validate at publish time (at `acdp_version` ≥ 0.3.0).
+
 ---
 
 ## 6. Data References
@@ -256,6 +258,8 @@ If `data_refs` points to an external URL (e.g. `https://`, `s3://`, `postgres://
 Producers requiring true end-to-end visibility on data MUST ensure the referenced storage system enforces equivalent access controls. ACDP does not enforce or verify this.
 
 For embedded `data_refs` (where `content` is in the body itself), visibility applies fully because the content is part of the registry record.
+
+See also: [docs/data-protection.md](../docs/data-protection.md) (non-normative) for the erasure-rights consequence of this split — bodies are permanent, so personal or sensitive data belongs behind an erasable `data_refs[].location`, never embedded.
 
 ### 6.5 Transport security for data_refs
 

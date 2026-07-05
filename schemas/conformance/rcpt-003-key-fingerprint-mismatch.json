@@ -1,0 +1,21 @@
+{
+  "id": "rcpt-003",
+  "description": "Receipt verification MUST fail when receipt.key_fingerprint does not equal the fingerprint of the producer key the consumer resolved for body.signature.key_id (RFC-ACDP-0010 §8 step 5). Here the receipt is correctly signed by the registry, but its key_fingerprint names a different key than the one that actually verifies the body — the binding between the registry's attestation and the producer identity is broken (e.g. a registry attesting a key substitution, or an honest mismatch after a bad resolver cache).",
+  "tags": ["receipt", "failure", "security", "fingerprint"],
+  "applies_to_profiles": ["acdp-registry-receipts", "acdp-consumer"],
+  "input": {
+    "scenario": "Consumer retrieves the sig-001 golden context (producer key 3b6a27bc…, fingerprint sha256:139e3940…) but the receipt's key_fingerprint is the fingerprint of a different Ed25519 key (sha256:10ba682c… — the fp-001 registry key, standing in for 'some other key'). The receipt's own signature verifies.",
+    "resolved_producer_key": {
+      "algorithm": "ed25519",
+      "public_key_hex": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29",
+      "correct_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070"
+    },
+    "receipt_key_fingerprint": "sha256:10ba682c8ad13513971e8b56881aab8bd702bb807796eca81932c735a94d6e6d"
+  },
+  "expected": {
+    "outcome": "failure",
+    "failure_category": "invalid_receipt",
+    "behavior": "After the receipt signature verifies (§8 step 1) and the registry/context/content bindings pass (steps 2–4), the consumer computes the RFC-ACDP-0010 §6 fingerprint of the resolved producer key and compares it to receipt.key_fingerprint. sha256:139e3940… ≠ sha256:10ba682c… → the receipt MUST be reported as failed. The historical-key path of RFC-ACDP-0010 §10 applies only when the receipt fingerprint matches a key retained in the producer's verificationMethod — it MUST NOT be used to excuse a fingerprint that matches no key in the producer's DID document.",
+    "body_verdict": "Body verdict is computed independently; with the correct producer key the body still verifies. The application decides whether to proceed without a valid registry binding."
+  }
+}

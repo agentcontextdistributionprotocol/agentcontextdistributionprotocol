@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Capabilities & Errors
 
 **Document:** RFC-ACDP-0007
-**Version:** 0.1.0
-**Status:** Community Standards Track (Final)
+**Version:** 0.3.0-draft
+**Status:** Community Standards Track (Final for acdp/0.1.0; sections marked *(0.2.0)* or *(0.3.0)* are Draft)
 
 This RFC specifies the registry capability declaration document and the standard error envelope used by all ACDP endpoints.
 
@@ -12,6 +12,8 @@ This RFC specifies the registry capability declaration document and the standard
 ## 1. Status of This Memo
 
 This document is a Final ACDP specification (acdp/0.1.0). It is stable for the 0.1.0 release; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
+
+Passages marked *(0.2.0)* are Draft amendments from the acdp/0.2.0 Trust & Hardening program. Passages marked *(0.3.0)* are Draft amendments from the acdp/0.3.0 core-profile revision (mandatory Idempotency-Key support per RFC-ACDP-0003 §6.4, and the OPTIONAL `limits.max_publish_per_minute` capabilities field). Neither set changes any v0.1.0 body field, hash, or signature semantic; everything not so marked remains Final and wire-frozen for acdp/0.1.0.
 
 ---
 
@@ -41,8 +43,8 @@ Returns the registry's capability declaration. Conforms to [`schemas/json/acdp-c
 | `acdp_version` | string | The ACDP specification version this registry implements. Form: `<major>.<minor>.<patch>`. |
 | `registry_did` | string | The registry's own DID, typically `did:web:<hostname>`. |
 | `supported_signature_algorithms` | array of string | Signature algorithms accepted on publish. MUST contain at least `"ed25519"`. |
-| `supported_did_methods` | array of string | DID methods this registry can resolve. MUST be non-empty and MUST include `"did:web"` (RFC-ACDP-0001 §5.4 mandates `did:web` for v0.1.0 producers; RFC-ACDP-0001 §5.11 specifies the resolution algorithm). |
-| `profiles` | array of string | Profile(s) this implementation claims conformance to. Any registry MUST declare at least `"acdp-registry-core"`. See RFC-ACDP-0001 §9. |
+| `supported_did_methods` | array of string | DID methods this registry can resolve. MUST be non-empty and MUST include `"did:web"` (RFC-ACDP-0001 §5.4 mandates `did:web` for v0.1.0 producers; RFC-ACDP-0001 §5.11 specifies the resolution algorithm). *(0.2.0)* MAY additionally include `"did:key"` (pure resolution per RFC-ACDP-0001 §5.11.1). A registry that does **not** advertise `"did:key"` MUST reject a `did:key` publish with `key_resolution_failed` (permanent, HTTP 400) — this code choice is pinned here and by fixture `dk-003`: the condition is producer-caused and not retryable against this registry, so `key_resolution_unreachable` (transient, 502) and `unsupported_algorithm` (the *algorithm* may well be supported) are both wrong. |
+| `profiles` | array of string | Profile(s) this implementation claims conformance to. Any registry MUST declare at least `"acdp-registry-core"`. See RFC-ACDP-0001 §9. *(0.2.0)* The profile `"acdp-registry-receipts"` (RFC-ACDP-0010 §11) declares that the registry mints and serves registry receipts on every publish response and full retrieval — advertising it is a hard commitment: there is no degraded "receipts sometimes" mode and no `receipt_unavailable` error. Registries advertising it MUST also advertise `acdp_version` ≥ `0.2.0`. |
 | `limits.max_payload_bytes` | integer | Maximum size of a publish request body in bytes. |
 | `limits.max_embedded_bytes` | integer | Maximum decoded size of any embedded data reference. **Fixed at 65536 by the spec.** |
 
@@ -52,8 +54,9 @@ Returns the registry's capability declaration. Conforms to [`schemas/json/acdp-c
 |---|---|---|
 | `read_authentication_methods` | array of string | Read-authentication methods supported by this registry. At least one MUST be declared if the registry serves any non-public contexts. Defined values: `http_signatures`, `mtls`, `oauth`. See RFC-ACDP-0008 §6.2. |
 | `anonymous_public_reads` | boolean | Whether anonymous (unauthenticated) reads are permitted for public contexts. Default `false`. See RFC-ACDP-0008 §6.3. |
-| `supports_idempotency_key` | boolean | Whether this registry honors the `Idempotency-Key` header on `POST /contexts`. Default `false`. See RFC-ACDP-0003 §6. |
+| `supports_idempotency_key` | boolean | Whether this registry honors the `Idempotency-Key` header on `POST /contexts`. Default `false`. See RFC-ACDP-0003 §6. *(0.3.0)* A registry advertising `acdp_version` ≥ 0.3.0 MUST support the header and MUST advertise this field as `true` — the field stays in the document for introspection even though its value is no longer free (RFC-ACDP-0003 §6.4; §3.5 item 10; fixture `idem-007`). |
 | `limits.idempotency_key_ttl_seconds` | integer | How long this registry retains idempotency-key mappings, in seconds. MUST be present when `supports_idempotency_key` is true. Range 86400 (24h) to 604800 (7d). |
+| `limits.max_publish_per_minute` | integer | *(0.3.0)* OPTIONAL. The nominal per-agent publish ceiling this registry enforces on `POST /contexts`, in requests per minute. Integer ≥ 1. Advisory: producers SHOULD use it to pace publishes below the limiter's threshold. Its presence does NOT change the RFC-ACDP-0008 §4.3 requirements — per-agent rate limiting is REQUIRED whether or not the ceiling is advertised, and 429 responses MUST still carry `Retry-After`. The `limits` sub-object is a closed schema (§3.3.1), so this field is a 0.3.0 schema addition: strict pre-0.3.0 validators of `limits` will reject documents carrying it (same compatibility posture as `registry_receipt` on the closed publish response — validators must track the additive schema edit). Fixture `caps-007`. |
 
 ### 3.3 Forward-compatible additions
 
@@ -91,13 +94,20 @@ ACDP uses a mix of CLOSED schemas (`additionalProperties: false`, used for tight
 | `match_summary` (in `acdp-common.schema.json`) | **Closed** | `false` |
 | `signature` (in `acdp-common.schema.json`) | **Closed** | `false` |
 | `data_period` (in `acdp-common.schema.json`) | **Closed** | `false` |
-
+| `acdp-registry-receipt.schema.json` *(0.2.0)* | **Closed** | `false` |
+| `acdp-lineage-head-receipt.schema.json` *(0.3.0)* | **Closed** | `false` |
+| `acdp-log-leaf.schema.json` *(0.3.0)* | **Closed** | `false` |
+| `acdp-log-checkpoint.schema.json` *(0.3.0)* | **Closed** | `false` |
+| `acdp-log-inclusion.schema.json` *(0.3.0)* | **Closed** | `false` |
+| `acdp-lifecycle-event.schema.json` *(0.3.0)* | **Closed** | `false` — the event *object* is closed (every member is signed where a signature is present, RFC-ACDP-0013 §4); the `event_type` *vocabulary* is open (`registries/lifecycle-event-types.md`) |
 Conformant consumers MUST reject deserializing a closed-schema object that contains fields not defined in the schema (`schema_violation`). Conformant consumers MUST NOT reject deserializing an open-schema object that contains unknown fields. The fixtures pin specific instances of both rules:
 
 - **Open (tolerate):** `caps-006`/`schema-004` (capabilities document top level), `can-008` (unknown field at the body root), `can-010` (unknown field inside a `data_refs[]` entry).
 - **Closed (reject):** `pub-007`/`schema-002` (publish response — forbid extras like `content_hash`), `schema-001` (search response — forbid `results`), `schema-003` (DataRef `embedded` sub-object), `schema-008` (`signature` object), `schema-009` (`data_period` object), `schema-010` (capabilities `limits` sub-object).
 
 The table above governs every shape across the schema set; the fixtures are representative, not exhaustive.
+
+*(0.3.0)* Closed does not mean frozen: a closed schema can still gain a field through an additive schema edit in a minor version — the closure means only that fields *not in the schema* are rejected. The `limits` sub-object remains **Closed** (`additionalProperties: false`) and gains the OPTIONAL `max_publish_per_minute` field in 0.3.0 (§3.2), exactly as the closed publish response gained `registry_receipt` in 0.2.0. Validators MUST track the current schema text; a `limits` object carrying any field beyond `max_payload_bytes`, `max_embedded_bytes`, `idempotency_key_ttl_seconds`, and *(0.3.0)* `max_publish_per_minute` remains a `schema_violation` (fixture `schema-010`).
 
 ### 3.4 Example
 
@@ -132,8 +142,10 @@ After fetching `/.well-known/acdp.json`, consumers and cross-registry resolvers 
 7. `limits.max_payload_bytes` MUST be `>= 1024`.
 8. If `supports_idempotency_key` is `true`, `limits.idempotency_key_ttl_seconds` MUST be present and in the inclusive range `86400..604800` (24h to 7d).
 9. If the registry serves any non-public contexts, `read_authentication_methods` MUST be non-empty (RFC-ACDP-0008 §6.2). **(value, cross-field)**
+10. *(0.3.0)* If `acdp_version` ≥ `0.3.0`, `supports_idempotency_key` MUST be present and `true` (RFC-ACDP-0003 §6.4) — and check 8 therefore always applies. A 0.3.0-advertising registry without idempotency support is self-contradictory and NON-CONFORMANT. **(value, cross-field)** Fixture `idem-007`.
+11. *(0.3.0)* If `limits.max_publish_per_minute` is present, it MUST be an integer ≥ 1 (schema-enforced: zero, negative, or non-integer values are a `schema_violation`). Fixture `caps-007`.
 
-A consumer encountering a capabilities document that fails any of the checks above MUST NOT proceed with the operation that required fetching capabilities (publish, retrieval, cross-registry resolution). Implementations SHOULD surface the failing check to operators so the registry can be corrected. The conformance fixtures `caps-001..006` (`schemas/conformance/caps-001-valid-minimal.json` through `caps-006-extra-top-level-field.json`) pin representative positive and negative payloads for the checklist.
+A consumer encountering a capabilities document that fails any of the checks above MUST NOT proceed with the operation that required fetching capabilities (publish, retrieval, cross-registry resolution). Implementations SHOULD surface the failing check to operators so the registry can be corrected. The conformance fixtures `caps-001..007` (`schemas/conformance/caps-001-valid-minimal.json` through `caps-007-max-publish-per-minute.json`) plus *(0.3.0)* `idem-007` pin representative positive and negative payloads for the checklist.
 
 #### 3.5.1 Implementer note: validate capabilities at server construction time
 
@@ -151,6 +163,9 @@ server = RegistryServer.try_new(store, caps, authority)
   # - caps.supports_idempotency_key == true AND
   #     (caps.limits.idempotency_key_ttl_seconds is None
   #      or not 86400 <= caps.limits.idempotency_key_ttl_seconds <= 604800)
+  # - caps.acdp_version >= 0.3.0 AND caps.supports_idempotency_key != true   (0.3.0)
+  # - caps.limits.max_publish_per_minute is not None
+  #     AND caps.limits.max_publish_per_minute < 1                           (0.3.0)
   # - caps serves any non-public visibility AND caps.read_authentication_methods is empty
 ```
 
@@ -224,10 +239,13 @@ The full registry is maintained in [`registries/error-codes.md`](../registries/e
 | `invalid_cursor` | 400 | A pagination cursor is malformed or unrecognized. | RFC-ACDP-0005 §2.5.4 |
 | `duplicate_publish` | 409 | An idempotent publish was retried with conflicting content (same `Idempotency-Key`, different `content_hash`). | RFC-ACDP-0003 §6.2 |
 | `cross_registry_resolution_failed` | 502 | A cross-registry resolution failed (DNS resolution refused, response oversize, timeout, redirect-policy violation, or upstream registry unavailable). | RFC-ACDP-0006 §7 |
+| `invalid_receipt` *(0.2.0)* | 502 | A registry receipt failed the RFC-ACDP-0010 §8 verification procedure (signature, registry/authority binding, context binding, content binding, key binding, or timestamp form). Emitted on the wire by a federated resolver (or any registry validating an upstream receipt on a caller's behalf) about a receipt obtained from an upstream registry — hence 502, the upstream is at fault. It is also the verification-failure **category** consumer SDKs MUST use in their own diagnostics when a locally verified receipt fails; in that consumer-side use it does not invalidate the body, whose producer signature is judged independently (RFC-ACDP-0010 §8). There is deliberately no `receipt_unavailable`: registries advertising `acdp-registry-receipts` MUST always mint (RFC-ACDP-0010 §7), so a missing receipt from such a registry is a registry fault, not an error category. | RFC-ACDP-0010 §8, §11 |
+| `immutable_field` *(0.3.0)* | 400 | A lifecycle (or any future mutation) endpoint request attempted to supply or alter immutable body content — e.g. a `body` member or a body-field-named member on `POST /contexts/{ctx_id}/retract`. Bodies are immutable; lifecycle endpoints mutate registry state only. Activated by RFC-ACDP-0013 §6 from the reservation held since v0.1.0 (RFC-ACDP-0009 §2.1); distinct from `schema_violation` so producers learn the category error. Not retryable. | RFC-ACDP-0013 §6, §10 |
+| `invalid_lifecycle_transition` *(0.3.0)* | 409 | The requested lifecycle transition conflicts with the context's current retraction state (retract of an already-retracted context; republish of a never-retracted one). A state conflict, like the 409 arm of `superseded_target`; retryable only after the state changes. | RFC-ACDP-0013 §6 step 4, §10 |
+| `invalid_log_proof` *(0.3.0)* | 502 | A transparency-log artifact failed the RFC-ACDP-0012 §9 verification procedures: an inclusion proof whose folded audit path does not reproduce the checkpoint's `root_hash`, a consistency proof that fails between two tree sizes of the same `log_id`, or a checkpoint whose signature does not verify over the recomputed preimage. Deliberately **not** `invalid_receipt`: a proof failure indicts the log, not the receipt, and the verdicts are independent (RFC-ACDP-0012 §9.3). Emitted on the wire by a federated resolver (or any registry validating an upstream's proofs on a caller's behalf) — hence 502, the upstream is at fault; also the verification-failure category consumer SDKs use for locally failing proofs. Malformed proof requests are `schema_violation`; an unlogged or invisible `ctx_id` on `GET /log/proof` is `not_found`; there is deliberately no `log_unavailable` (RFC-ACDP-0012 §7). | RFC-ACDP-0012 §9, §11 |
 | `internal_error` | 500 | The registry encountered an unexpected internal condition. The standard error envelope MUST be used; `error.message` MUST NOT leak stack traces or sensitive context. Retryable. | RFC-ACDP-0007 §4 |
 
-> **Reserved codes (not in this table or the v0.1.0 wire enum):** `immutable_field` is reserved for a future version's mutation endpoints (retraction, attestation updates — see RFC-ACDP-0009 §2.1). `unsupported_embedding_model` is reserved for a future version's similarity endpoints (see RFC-ACDP-0009 §2.9). Implementations MUST NOT emit either in v0.1.0 responses.
-
+> **Reserved codes (not in this table or the v0.1.0 wire enum):** `unsupported_embedding_model` is reserved for a future version's similarity endpoints (see RFC-ACDP-0009 §2.9). Implementations MUST NOT emit it. *(0.2.0)* `invalid_receipt` graduated from reserved space into the table above and the wire enum; implementations declaring `acdp_version` `0.1.0` MUST NOT emit it. *(0.3.0)* `immutable_field` — reserved for "a future version's mutation endpoints" since v0.1.0 — is activated by RFC-ACDP-0013 and likewise graduates, together with the new `invalid_lifecycle_transition`; and `invalid_log_proof` is added via the §5.1 process by RFC-ACDP-0012 (it was never in reserved space — RFC-ACDP-0009 §2.11 reserved field/endpoint/profile names only). Implementations declaring `acdp_version` < `0.3.0` MUST NOT emit any of the three.
 **Distinguishing hash failures.** Three failure codes can arise from integrity checks; implementations MUST keep them distinct so consumers can react correctly:
 
 - `hash_mismatch` — the body's ProducerContent hash, recomputed by the registry or consumer, does not match `body.content_hash`. The body's signed content cannot be verified; the **body is untrusted**.
@@ -269,7 +287,7 @@ See [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md). Specific to capabilitie
 - The capabilities document MUST be served over TLS.
 - Registries SHOULD include the same `registry_did` value across all responses to avoid identity confusion.
 - Error messages MUST NOT echo unsanitized request content (defends against XSS in registry-served clients and injection into log pipelines).
-- Rate-limit responses (`rate_limited`) SHOULD include `Retry-After` headers when bounded.
+- Rate-limit responses (`rate_limited`) MUST include a `Retry-After` header (integer seconds or HTTP-date); a limiter without an exact refill horizon emits a conservative estimate rather than omitting the header (RFC-ACDP-0008 §4.3).
 
 ---
 
@@ -280,3 +298,5 @@ See [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md). Specific to capabilitie
 - [RFC-ACDP-0004 Retrieval](RFC-ACDP-0004-retrieval.md)
 - [RFC-ACDP-0005 Discovery](RFC-ACDP-0005-discovery.md)
 - [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md)
+- [RFC-ACDP-0010 Registry Receipts](RFC-ACDP-0010-registry-receipts.md) *(0.2.0)*
+- [RFC-ACDP-0013 Lifecycle Events & Retraction](RFC-ACDP-0013-lifecycle-events.md) *(0.3.0)* — activates `immutable_field`; adds `invalid_lifecycle_transition`.
