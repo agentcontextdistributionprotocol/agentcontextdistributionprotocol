@@ -1,0 +1,31 @@
+{
+  "id": "log-004",
+  "description": "Checkpoint verification MUST fail when the signature does not verify over the recomputed checkpoint preimage (RFC-ACDP-0012 §9.3 step 2). This fixture takes the genuine log-001 checkpoint and alters root_hash AFTER signing (first hex nibble flipped from '0' to 'f') while keeping the original signature bytes — the shape of a history rewrite that reuses an old signature. JCS-recomputing the preimage over the served object yields a different checkpoint hash, so the pinned signature MUST fail to verify. The analogue of rcpt-002 one layer up: the failure is detected by recomputation, never by trusting served bytes.",
+  "tags": ["transparency-log", "checkpoint", "signature", "failure", "security"],
+  "applies_to_profiles": ["acdp-registry-transparency-log", "acdp-consumer"],
+  "input": {
+    "scenario": "Consumer calls GET /log/checkpoint (or receives log_inclusion.log_checkpoint) and verifies the checkpoint per RFC-ACDP-0012 §9.3 against the registry's DID document.",
+    "log_checkpoint": {
+      "checkpoint_version": "acdp-log/1",
+      "log_id": "did:web:registry.example.com/log/1",
+      "tree_size": 5,
+      "root_hash": "sha256:fb5978172c671ca050b44790a749b18fc29d58a7a17495fbb4e0f86eb885f731",
+      "timestamp": "2026-07-04T12:00:00.000Z",
+      "signature": {
+        "algorithm": "ed25519",
+        "key_id": "did:web:registry.example.com#receipt-key-1",
+        "value": "o5rJmVE+1w/f7xAvW2P4vHA9FqWcMpS0crUPkMUZKSrBhrCVt/jyS+PCgnHNsNpmr+N+sR9I9qbqQ/Y0ZfOrDQ=="
+      }
+    },
+    "registry_public_key_hex": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737",
+    "genuine_root_hash_the_signature_covers": "sha256:0b5978172c671ca050b44790a749b18fc29d58a7a17495fbb4e0f86eb885f731",
+    "genuine_checkpoint_hash": "sha256:da3a30118d2f3c9e80d5199cabeb4a33a3f787cd7fa15d0853ccd32368962902"
+  },
+  "expected": {
+    "outcome": "failure",
+    "failure_category": "invalid_log_proof",
+    "behavior": "RFC-ACDP-0012 §9.3 step 1 passes (closed parse, checkpoint_version 'acdp-log/1'). Step 2 MUST fail: JCS-canonicalizing the served checkpoint minus 'signature' and hashing yields a checkpoint hash ≠ input.genuine_checkpoint_hash, and the pinned signature does not verify over its ASCII bytes under the registry receipt key. The checkpoint MUST be rejected with the invalid_log_proof category; every proof presented against it is thereby unverified. A verifier that byte-compares root_hash against a served value instead of recomputing-and-verifying the signature would wrongly accept this checkpoint.",
+    "evidence_note": "Contrast the split-view case: TWO checkpoints that each verify under §9.3 but fail a §9.2 consistency check between them are not a verification error — they are valid, non-repudiable evidence of registry misbehavior, and consumers SHOULD retain both (RFC-ACDP-0012 §15).",
+    "verdict_independence": "The body, registry_receipt, and lineage_head_receipt verdicts are independent and unaffected (RFC-ACDP-0012 §9.3)."
+  }
+}

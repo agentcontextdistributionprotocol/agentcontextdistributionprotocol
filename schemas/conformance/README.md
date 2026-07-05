@@ -19,6 +19,7 @@ conformance/
 ├── sig-*.json      Cryptographic golden vectors (signing & verification, RFC-ACDP-0001)
 ├── rcpt-*.json     Registry receipts — golden vector + verification failures (RFC-ACDP-0010, 0.2.0)
 ├── lhr-*.json      Lineage-head receipts — golden vector + verification failures (RFC-ACDP-0011, 0.3.0)
+├── log-*.json      Registry transparency log — Merkle golden vectors + verification failures (RFC-ACDP-0012, 0.3.0)
 ├── fp-*.json       Key-fingerprint encoding vectors (RFC-ACDP-0010 §6, 0.2.0)
 ├── rot-*.json      Historical producer-key verification with receipts (RFC-ACDP-0010 §10, 0.2.0)
 ├── dk-*.json       did:key resolution rejection scenarios (RFC-ACDP-0001 §5.11.1, 0.2.0)
@@ -46,13 +47,14 @@ conformance/
 - `sig-*.json` — Ed25519 / ECDSA-P256 sign/verify golden vectors, plus pure did:key identity derivation for `sig-003` (0.2.0)
 - `rcpt-*.json` carrying a `registry_test_keypair` (i.e. `rcpt-001`) — full registry-receipt golden cycle: preimage, receipt hash, signature, producer key fingerprint (RFC-ACDP-0010 §5–§6)
 - `lhr-*.json` carrying a `registry_test_keypair` (i.e. `lhr-001`) — full lineage-head-receipt golden cycle: preimage, receipt hash, signature, binding consistency (RFC-ACDP-0011 §5, §7)
+- `log-*.json` carrying a `registry_test_keypair` (i.e. `log-001`, `log-003`) — full transparency-log golden cycle: JCS leaf encodings, `0x00`/`0x01` domain-separated leaf and node hashes, Merkle roots, signed checkpoints, inclusion-proof and consistency-proof generation and verification-algorithm folding (RFC-ACDP-0012 §4–§6, §9)
 - `fp-*.json` — key-fingerprint encoding vectors (RFC-ACDP-0010 §6)
 
-**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `schema-*`, `dk-*`, `rot-*`, `rcpt-002`..`rcpt-004`, `lhr-002`..`lhr-004`, …). Those fixtures define request/response scenarios that require a running registry or consumer to execute. They are machine-readable specifications for implementers to validate against their implementation.
+**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `schema-*`, `dk-*`, `rot-*`, `rcpt-002`..`rcpt-004`, `lhr-002`..`lhr-004`, `log-002`/`log-004`, …). Those fixtures define request/response scenarios that require a running registry or consumer to execute. They are machine-readable specifications for implementers to validate against their implementation.
 
 To claim full conformance a registry MUST:
 1. Pass `python3 scripts/conformance-runner.py` (arithmetic/cryptographic)
-2. Separately execute all behavioral fixture scenarios (`pub-*`, `vis-*`, `ret-*`, `err-*`, `schema-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `dk-*`, `rcpt-*`, `lhr-*`, `rot-*`, …) against a live registry instance
+2. Separately execute all behavioral fixture scenarios (`pub-*`, `vis-*`, `ret-*`, `err-*`, `schema-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `dk-*`, `rcpt-*`, `lhr-*`, `log-*`, `rot-*`, …) against a live registry instance
 
 ---
 
@@ -252,6 +254,17 @@ The `sig-*` fixtures are checked by `scripts/conformance-runner.py` (CI). A fail
 | `lhr-004` | Validly signed receipt whose `as_of` is in the future beyond the clock-skew allowance (RECOMMENDED 120 s) — a forged freshness claim (RFC-ACDP-0011 §7 step 6). Past-dated `as_of` is instead a consumer max-age freshness-policy matter (§6), reported distinctly. | failure: `invalid_receipt` category |
 
 `lhr-001` is executed arithmetically by `scripts/conformance-runner.py`; `lhr-002`..`lhr-004` are behavioral. Required for `acdp-registry-head-receipts`; conditionally required for `acdp-consumer` implementations that rely on `lineage_head_receipt` members (a consumer ignoring the member under the RFC-ACDP-0001 §6 unknown-field rule is unaffected). No new wire error code: head-receipt failures reuse `invalid_receipt` (RFC-ACDP-0011 §9).
+
+### Registry transparency log (RFC-ACDP-0012, 0.3.0)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `log-001` | Leaf-and-root golden vector: five leaves (leaf 0 = the `rcpt-001` receipt's publish event, binding rcpt-001's pinned receipt hash), JCS leaf encodings, §5.1 leaf hashes (`SHA-256(0x00 ‖ JCS(leaf))`), the tree-size-5 Merkle root (`0x01`-prefixed interior nodes, RFC 6962 §2.1), a checkpoint signed with the shared registry receipt test keypair, and the inclusion proof for leaf 0. Executed by the runner — the `sig-001`-equivalent for the log layer. | success: byte-exact reproduction end-to-end |
+| `log-002` | The `log-001` inclusion proof with one tampered `inclusion_path` element — the §9.1 fold yields a root ≠ the checkpoint's `root_hash`; the checkpoint's own signature verifies (the failure is the tree arithmetic, not the cryptography) | failure: `invalid_log_proof` category |
+| `log-003` | Consistency-proof golden vector: RFC 6962 §2.1.2 `PROOF(3, D[5])` between tree sizes 3 and 5 of the `log-001` tree, both checkpoints signed; §9.2 verification end-to-end — the history-rewrite detector. Executed by the runner. | success: byte-exact reproduction end-to-end |
+| `log-004` | A checkpoint whose `root_hash` was altered after signing (original signature bytes kept) — JCS-recomputing the preimage yields a different checkpoint hash, so the signature MUST fail to verify (RFC-ACDP-0012 §9.3 step 2; the `rcpt-002` analogue one layer up) | failure: `invalid_log_proof` category |
+
+`log-001` and `log-003` are executed arithmetically by `scripts/conformance-runner.py` (including negative self-checks that tampered paths and swapped roots are rejected by the verification algorithms); `log-002` and `log-004` are behavioral. Required for `acdp-registry-transparency-log`; conditionally required for `acdp-consumer` implementations that rely on `log_inclusion` members or the `/log/*` endpoints. New wire error code: proof/checkpoint failures surface as `invalid_log_proof`, deliberately distinct from `invalid_receipt` (RFC-ACDP-0012 §11).
 
 ### did:key resolution (RFC-ACDP-0001 §5.4 / §5.11.1, 0.2.0)
 

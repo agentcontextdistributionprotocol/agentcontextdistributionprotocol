@@ -1,0 +1,40 @@
+{
+  "id": "log-002",
+  "description": "Inclusion-proof verification MUST fail when the folded audit path does not reproduce the checkpoint's root_hash (RFC-ACDP-0012 §9.1 step 6). This fixture takes the log-001 golden inclusion proof for leaf 0 at tree size 5 and tampers ONE element of inclusion_path (first hex nibble of element 1 flipped from '5' to '0'). The checkpoint itself is the genuine log-001 checkpoint and its signature verifies (§9.3 passes) — the failure is the tree arithmetic, not the cryptography. A verifier that accepts this proof is not verifying inclusion at all.",
+  "tags": ["transparency-log", "merkle", "inclusion-proof", "failure", "security"],
+  "applies_to_profiles": ["acdp-registry-transparency-log", "acdp-consumer"],
+  "input": {
+    "scenario": "Consumer calls GET /log/proof?ctx_id=acdp://registry.example.com/12345678-1234-4321-8123-123456781234 (or receives log_inclusion on full retrieval) and independently reconstructs the leaf per RFC-ACDP-0012 §9.1 step 1 from the verified body and receipt (the rcpt-001 golden material). The served proof carries a tampered inclusion_path.",
+    "leaf_hash": "sha256:95d99654d4d3de54a4d7cc04e079de61135023c78bb8192bdb79a09253afb8c1",
+    "log_inclusion": {
+      "log_id": "did:web:registry.example.com/log/1",
+      "leaf_index": 0,
+      "tree_size": 5,
+      "inclusion_path": [
+        "sha256:846b4d6c07ca099eea348c1e219345ddd426c0531cc30d3dd626d0fa34ec7704",
+        "sha256:04d7edc4ba9d151eedd7f4bb872884f0af5ff32b39f98866d67873b00687c605",
+        "sha256:6f673f8532d24869047264d89e2ad65f6ff2fa3c2674bb2fb9fa02855e090b3a"
+      ],
+      "log_checkpoint": {
+        "checkpoint_version": "acdp-log/1",
+        "log_id": "did:web:registry.example.com/log/1",
+        "tree_size": 5,
+        "root_hash": "sha256:0b5978172c671ca050b44790a749b18fc29d58a7a17495fbb4e0f86eb885f731",
+        "timestamp": "2026-07-04T12:00:00.000Z",
+        "signature": {
+          "algorithm": "ed25519",
+          "key_id": "did:web:registry.example.com#receipt-key-1",
+          "value": "o5rJmVE+1w/f7xAvW2P4vHA9FqWcMpS0crUPkMUZKSrBhrCVt/jyS+PCgnHNsNpmr+N+sR9I9qbqQ/Y0ZfOrDQ=="
+        }
+      }
+    },
+    "registry_public_key_hex": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737",
+    "untampered_path_element_1": "sha256:54d7edc4ba9d151eedd7f4bb872884f0af5ff32b39f98866d67873b00687c605"
+  },
+  "expected": {
+    "outcome": "failure",
+    "failure_category": "invalid_log_proof",
+    "behavior": "Checkpoint verification (RFC-ACDP-0012 §9.3) passes: closed parse, signature under the registry receipt key, registry binding, form. Binding checks (§9.1 step 4) pass: tree_size 5 == checkpoint.tree_size, log_ids equal, leaf_index 0 < 5. The §9.1 step 5 fold over the tampered path yields a root ≠ checkpoint.root_hash → step 6 MUST fail. The proof MUST be reported as failed with the invalid_log_proof category; a federated resolver validating this upstream proof on a caller's behalf emits invalid_log_proof on the wire (HTTP 502, RFC-ACDP-0012 §11).",
+    "verdict_independence": "The body verdict (producer signature + recomputed content_hash), the RFC-ACDP-0010 registry_receipt verdict, and any RFC-ACDP-0011 lineage_head_receipt verdict are independent and may all still pass — only the log-membership evidence is invalid (RFC-ACDP-0012 §9.3)."
+  }
+}
