@@ -20,6 +20,7 @@ conformance/
 ├── rcpt-*.json     Registry receipts — golden vector + verification failures (RFC-ACDP-0010, 0.2.0)
 ├── lhr-*.json      Lineage-head receipts — golden vector + verification failures (RFC-ACDP-0011, 0.3.0)
 ├── log-*.json      Registry transparency log — Merkle golden vectors + verification failures (RFC-ACDP-0012, 0.3.0)
+├── wit-*.json      Transparency-log witness cosignatures — cosignature golden vector, consistency refusal, N-witnessed quorum + verification failures (RFC-ACDP-0015, 0.4.0)
 ├── lc-*.json       Lifecycle events & retraction scenarios (RFC-ACDP-0013, 0.3.0)
 ├── rev-*.json      Producer key revocation — golden vector + boundary semantics (RFC-ACDP-0014, 0.3.0)
 ├── fp-*.json       Key-fingerprint encoding vectors (RFC-ACDP-0010 §6, 0.2.0)
@@ -50,6 +51,7 @@ conformance/
 - `rcpt-*.json` carrying a `registry_test_keypair` (i.e. `rcpt-001`) — full registry-receipt golden cycle: preimage, receipt hash, signature, producer key fingerprint (RFC-ACDP-0010 §5–§6)
 - `lhr-*.json` carrying a `registry_test_keypair` (i.e. `lhr-001`) — full lineage-head-receipt golden cycle: preimage, receipt hash, signature, binding consistency (RFC-ACDP-0011 §5, §7)
 - `log-*.json` carrying a `registry_test_keypair` (i.e. `log-001`, `log-003`) — full transparency-log golden cycle: JCS leaf encodings, `0x00`/`0x01` domain-separated leaf and node hashes, Merkle roots, signed checkpoints, inclusion-proof and consistency-proof generation and verification-algorithm folding (RFC-ACDP-0012 §4–§6, §9)
+- `wit-*.json` carrying a `witness_test_keypair(s)` (i.e. `wit-001`, `wit-003`) — full witness-cosignature golden cycle: JCS cosignature preimage, cosignature hash, witness-keyed Ed25519 signature, checkpoint chaining to `log-001`, and the N-witnessed quorum count over distinct witness DIDs (RFC-ACDP-0015 §5, §8)
 - `fp-*.json` — key-fingerprint encoding vectors (RFC-ACDP-0010 §6)
 
 **It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `schema-*`, `dk-*`, `rot-*`, `rcpt-002`..`rcpt-004`, `lhr-002`..`lhr-004`, `log-002`/`log-004`, …). Those fixtures define request/response scenarios that require a running registry or consumer to execute. They are machine-readable specifications for implementers to validate against their implementation.
@@ -274,6 +276,18 @@ The `sig-*` fixtures are checked by `scripts/conformance-runner.py` (CI). A fail
 | `log-004` | A checkpoint whose `root_hash` was altered after signing (original signature bytes kept) — JCS-recomputing the preimage yields a different checkpoint hash, so the signature MUST fail to verify (RFC-ACDP-0012 §9.3 step 2; the `rcpt-002` analogue one layer up) | failure: `invalid_log_proof` category |
 
 `log-001` and `log-003` are executed arithmetically by `scripts/conformance-runner.py` (including negative self-checks that tampered paths and swapped roots are rejected by the verification algorithms); `log-002` and `log-004` are behavioral. Required for `acdp-registry-transparency-log`; conditionally required for `acdp-consumer` implementations that rely on `log_inclusion` members or the `/log/*` endpoints. New wire error code: proof/checkpoint failures surface as `invalid_log_proof`, deliberately distinct from `invalid_receipt` (RFC-ACDP-0012 §11).
+
+### Transparency-log witness cosignatures (RFC-ACDP-0015, 0.4.0)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `wit-001` | Cosignature golden vector: an independent witness cosigns the `log-001` tree-size-5 checkpoint with its OWN Ed25519 assertionMethod key (a distinct witness test keypair, seed `0x33`×32 — NOT the registry receipt key). Pins the JCS cosignature preimage (object minus `signature`), the cosignature hash, the ASCII `sha256:<hex>` signing input, and the signature — the RFC-ACDP-0010 §5 construction keyed by the witness. Chains to `log-001`. Executed by the runner — the `sig-001`-equivalent for the witness layer. | success: byte-exact reproduction end-to-end |
+| `wit-002` | Consistency refusal: a witness holding the `log-003` size-3 retained head is presented a signature-valid size-5 checkpoint whose `root_hash` was rewritten. The §9.2 consistency proof from size 3 fails → the witness MUST NOT cosign and MUST persist evidence (RFC-ACDP-0015 §7 — the entire point of witnessing). | behavioral: no cosignature; evidence persisted |
+| `wit-003` | Quorum golden vector: two distinct witnesses (seeds `0x33` and `0x44`) cosign the SAME `log-001` checkpoint tuple → the checkpoint is 2-witnessed (RFC-ACDP-0015 §8). Both cosignatures executed; the runner asserts distinct `witness_id`s over one `(log_id, tree_size, root_hash)`. | success: byte-exact reproduction; N-witnessed = 2 |
+| `wit-004` | Cosignature-key mismatch: a cosignature over witness A's body whose `signature.value` was produced by the wrong key (witness B's key) → verification under witness A's resolved `assertionMethod` key fails (RFC-ACDP-0015 §8 step 2; the `rcpt-003`/`log-004` analogue for the witness layer). | failure: `invalid_witness_cosignature` |
+
+`wit-001` and `wit-003` are executed arithmetically by `scripts/conformance-runner.py` (`wit-003` additionally asserting the N-witnessed count); `wit-002` and `wit-004` are behavioral. Required for `acdp-log-witness`; conditionally required for `acdp-consumer` implementations that rely on `witness_signatures` cosignatures (a consumer ignoring the member under the RFC-ACDP-0001 §6 unknown-field rule is unaffected). New wire error code: cosignature failures surface as `invalid_witness_cosignature`, deliberately distinct from `invalid_log_proof` (RFC-ACDP-0015 §10). The witness signs with its OWN key — the one construction in the trust arc that does not reuse the registry receipt key.
+
 ### Lifecycle events & retraction (RFC-ACDP-0013, 0.3.0)
 
 | ID | Description | Outcome |
