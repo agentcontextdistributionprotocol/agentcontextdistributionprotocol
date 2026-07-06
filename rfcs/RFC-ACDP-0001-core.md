@@ -619,6 +619,18 @@ Adds lifecycle events and retraction (RFC-ACDP-0013). OPTIONAL — permanence-on
 Registries that do not advertise the profile MUST return `not_implemented` on the lifecycle endpoints and MUST NOT emit `lifecycle_events`, the `retracted` status, or the 0.3.0 lifecycle error codes.
 
 There is no profile for RFC-ACDP-0014 (producer key revocation) — deliberately: a revocation is an ordinary context (type `key-revocation`) carried entirely by existing surfaces, with the registry-side validation bound to `acdp_version` ≥ `0.3.0` and the consumer semantics bound to `acdp-consumer` (RFC-ACDP-0014 §10).
+
+#### `acdp-log-witness` *(0.4.0)*
+
+A **witness** for the RFC-ACDP-0012 transparency log (the RFC-ACDP-0009 §2.12 promotion) — an independent party, **not** a registry (no publish surface, no receipts), that observes a registry's checkpoints and cosigns the ones it verifies. This profile has **no registry prerequisite** (a witness is not a registry) and is advertised in the witness capabilities document (RFC-ACDP-0015 §9), not the registry capabilities document. Implementations MUST:
+
+- Before cosigning any checkpoint, verify its RFC-ACDP-0012 §9.3 checkpoint signature AND its RFC-ACDP-0012 §9.2 consistency against the witness's retained head; **never cosign a checkpoint that fails consistency**, and persist evidence on failure (RFC-ACDP-0015 §7).
+- Produce cosignatures per RFC-ACDP-0015 §4–§5: the closed `acdp-log-cosignature` object (`cosignature_version: "acdp-cosig/1"`, `witness_id`, `witnessed_checkpoint`, `witnessed_at`, `signature`), signed with the **witness's own** `assertionMethod` key under the witness's DID and the RFC-ACDP-0010 §9 key lifecycle.
+- SHOULD serve their cosignature history at `GET /log/witness` (RFC-ACDP-0015 §6.2).
+- Advertise `acdp_version` ≥ `0.4.0` and pass the witness conformance fixtures (`wit-001..004`).
+
+Cosignature-aware consumers verify cosignatures per RFC-ACDP-0015 §8 whenever they rely on witness evidence, count a checkpoint as *N*-witnessed over distinct trusted witness DIDs, apply local quorum/freshness policy (RFC-ACDP-0015 §8.1), and report the witness verdict separately from the body, context-receipt, head-receipt, and log verdicts; failures surface as `invalid_witness_cosignature` (RFC-ACDP-0015 §10). Registries MAY aggregate cosignatures as the top-level `witness_signatures` member under their existing `acdp-registry-transparency-log` profile (RFC-ACDP-0015 §6.1); no registry profile is required to do so.
+
 ### 9.2 Verification profile names (RECOMMENDED)
 
 v0.1.0 verification is always strict for any conformance claim — §5.11 ("v0.1.0 strict verification profile") defines the strict pipeline and requires that it be the non-loosenable default. SDKs MAY additionally expose relaxed or diagnostic verification modes for debugging and test harnesses. When they do, they SHOULD use the following identifiers so documentation, logs, and error messages are consistent across language implementations:

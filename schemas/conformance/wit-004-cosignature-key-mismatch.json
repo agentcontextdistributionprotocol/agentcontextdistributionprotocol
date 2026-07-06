@@ -1,0 +1,38 @@
+{
+  "id": "wit-004",
+  "description": "Behavioral: a witness cosignature whose signature does not verify under the witness's resolved assertionMethod key MUST fail consumer verification with invalid_witness_cosignature (RFC-ACDP-0015 §8 step 2, §10). The cosignature body is witness A's (witness_id did:web:witness.example.org, signature.key_id claiming witness A's key), but signature.value was produced by the WRONG key — witness B's private key (seed 0x44) over witness A's cosignature hash sha256:70f416... So when a consumer resolves did:web:witness.example.org#witness-key-1 (public key 17cb79...) and verifies, the signature does NOT verify. The cosignature parses and is well-formed; the failure is cryptographic — the analogue of rcpt-003 / log-004 for the witness layer. Behavioral — not executed by scripts/conformance-runner.py (no witness_test_keypair). MUST count toward N only if it verifies; here it MUST NOT.",
+  "tags": ["witness", "cosignature", "key-mismatch", "invalid_witness_cosignature", "behavioral"],
+  "witness_did_document": {
+    "note": "The resolved witness A DID document. witness-key-1 is the ONLY assertionMethod key (public key 17cb79fb2b4120f2b1ec65e4198d6e08b28e813feb01e4a400839b85e18080ce).",
+    "id": "did:web:witness.example.org",
+    "assertion_method_key_public_hex": "17cb79fb2b4120f2b1ec65e4198d6e08b28e813feb01e4a400839b85e18080ce"
+  },
+  "wrong_signer_key_public_hex": "d759793bbc13a2819a827c76adb6fba8a49aee007f49f2d0992d99b825ad2c48",
+  "cosignature": {
+    "cosignature_version": "acdp-cosig/1",
+    "witness_id": "did:web:witness.example.org",
+    "witnessed_checkpoint": {
+      "log_id": "did:web:registry.example.com/log/1",
+      "tree_size": 5,
+      "root_hash": "sha256:0b5978172c671ca050b44790a749b18fc29d58a7a17495fbb4e0f86eb885f731",
+      "timestamp": "2026-07-04T12:00:00.000Z"
+    },
+    "witnessed_at": "2026-07-04T12:00:05.000Z",
+    "signature": {
+      "algorithm": "ed25519",
+      "key_id": "did:web:witness.example.org#witness-key-1",
+      "value": "q904p7YsZEtlVsTioF90JlFyY76z7+cD3mHTiC8sTI0VCGQ/ec0lf7pqILeqnL2w/PvUdaGFoGHlI0+8a31SBQ=="
+    }
+  },
+  "expected": {
+    "expected_outcome": "failure",
+    "error_code": "invalid_witness_cosignature",
+    "cosignature_hash": "sha256:70f416e2ea52df79aeffb09f6e7bb0ff7ef85105ec73f1e3abefeeda7373edf0",
+    "notes": [
+      "RFC-ACDP-0015 §8 step 2: recompute the cosignature hash (sha256:70f416...), resolve signature.key_id (did:web:witness.example.org#witness-key-1 → public key 17cb79...), and verify signature.value over the ASCII bytes of the hash. The value is a valid Ed25519 signature by key d759793... (witness B), so it does NOT verify under 17cb79... (witness A) → FAIL.",
+      "SDKs surface the failure as invalid_witness_cosignature (RFC-ACDP-0015 §10) — deliberately distinct from invalid_log_proof: this indicts a witness's attestation, not the registry's log.",
+      "The failing cosignature does NOT count toward the N-witnessed total (RFC-ACDP-0015 §8); it does not, by itself, fail the checkpoint (the checkpoint verdict is RFC-ACDP-0012 §9.3, independent).",
+      "For contrast, the correct signature over this exact body by witness A's key is the wit-001 golden value omUcflbxeirUvPyIbuiGW0t7fch/xO2lSzTQwAvOAqsawocn4Y5J69Nwracq1I2Zercj5Qdnlc18NZQyoPcEBA== — the pinned wrong-key value differs."
+    ]
+  }
+}

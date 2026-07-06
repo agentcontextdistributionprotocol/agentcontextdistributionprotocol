@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.1.0/acdp-log-cosignature.schema.json",
+  "title": "ACDP Transparency-Log Witness Cosignature (0.4.0)",
+  "description": "An independent witness's signed observation of an RFC-ACDP-0012 transparency-log checkpoint: 'witness witness_id observed checkpoint (log_id, tree_size, root_hash, timestamp), verified its signature and consistency from its retained head, and cosigned it at witnessed_at' (RFC-ACDP-0015 §4). The cosignature preimage is the JCS canonicalization of this object minus 'signature'; the witness signs the ASCII bytes of 'sha256:<hex(SHA-256(preimage))>' exactly as RFC-ACDP-0001 §5.8 / RFC-ACDP-0010 §5, with the WITNESS's own assertionMethod key (RFC-ACDP-0015 §5) — witnesses are NOT registries and use their own DID and key material. Specified by RFC-ACDP-0015 (acdp/0.4.0), promoting the RFC-ACDP-0009 §2.12 reservation; additive minor, so this schema lives in the v0.1.0 namespace (VERSIONING.md).",
+
+  "type": "object",
+  "required": [
+    "cosignature_version",
+    "witness_id",
+    "witnessed_checkpoint",
+    "witnessed_at",
+    "signature"
+  ],
+  "properties": {
+    "cosignature_version": {
+      "const": "acdp-cosig/1",
+      "description": "Cosignature envelope version and in-preimage domain separator (RFC-ACDP-0015 §4; the RFC-ACDP-0011 receipt_version / RFC-ACDP-0012 checkpoint_version convention): a cosignature can never be mistaken for — or replayed as — a checkpoint, a receipt, or any other JCS-canonicalized ACDP object."
+    },
+    "witness_id": {
+      "type": "string",
+      "pattern": "^did:(web:[a-zA-Z0-9.%:-]+|key:z[1-9A-HJ-NP-Za-km-z]+)$",
+      "description": "The witness's DID (did:web or did:key). A witness is an independent party, NOT a registry (it has no publish surface); this DID and the key referenced by signature.key_id are the witness's own, never the registry's (RFC-ACDP-0015 §3). The N-witnessed count (RFC-ACDP-0015 §8) is over DISTINCT witness_id values."
+    },
+    "witnessed_checkpoint": {
+      "type": "object",
+      "required": ["log_id", "tree_size", "root_hash", "timestamp"],
+      "properties": {
+        "log_id": {
+          "type": "string",
+          "pattern": "^did:web:[a-zA-Z0-9.%:-]+/log/[a-z0-9-]{1,32}$",
+          "description": "The observed log instantiation identifier, copied verbatim from the RFC-ACDP-0012 §6 checkpoint the witness verified."
+        },
+        "tree_size": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The observed checkpoint's tree_size."
+        },
+        "root_hash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "description": "The observed checkpoint's root_hash. Together with log_id and tree_size this is the tuple the N-witnessed count is computed over (RFC-ACDP-0015 §8)."
+        },
+        "timestamp": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+          "description": "The registry-CLAIMED checkpoint timestamp (the RFC-ACDP-0012 §6 checkpoint.timestamp), copied verbatim. Registry-asserted; the witness does NOT vouch for it — witnessed_at is what the witness attests against parties the registry does not control (RFC-ACDP-0015 §4, §12)."
+        }
+      },
+      "additionalProperties": false,
+      "description": "The identity-bearing subset of the RFC-ACDP-0012 §6 log_checkpoint the witness observed (log_id, tree_size, root_hash, timestamp). Closed: the witness copies exactly these members from the checkpoint it verified; the registry's checkpoint_version and signature are deliberately NOT restated (the consumer verifies the registry checkpoint signature independently, RFC-ACDP-0012 §9.3). Honors the RFC-ACDP-0009 §2.12 reserved name 'witnessed_checkpoint'."
+    },
+    "witnessed_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+      "description": "The witness-clock time at which the witness observed and cosigned the checkpoint; canonical millisecond-precision RFC 3339 UTC (RFC-ACDP-0001 §5.3). This is the witness's OWN observation time, anchored against a party the registry does not control — it bounds when the checkpoint existed regardless of the registry's claimed timestamp (RFC-ACDP-0015 §4). Consumers apply a freshness policy to witnessed_at (RFC-ACDP-0015 §7). Honors the RFC-ACDP-0009 §2.12 reserved name 'witnessed_at'."
+    },
+    "signature": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/signature",
+      "description": "The WITNESS's signature over the cosignature hash (RFC-ACDP-0015 §5 — the RFC-ACDP-0010 §5 construction verbatim, but keyed by the witness's own assertionMethod key under the witness's DID). signature.key_id MUST be a DID URL under witness_id."
+    }
+  },
+  "additionalProperties": false,
+  "$comment": "Closed schema, as acdp-log-checkpoint.schema.json: every field is signed, so an unknown member would change the preimage. Extensions require a cosignature_version bump. Reserved names from RFC-ACDP-0009 §2.12 adopted: witness_id (the sketch's field), witnessed_checkpoint, witnessed_at. The array member 'witness_signatures' that carries these on checkpoint responses (RFC-ACDP-0015 §6) is a separate top-level envelope member, a sibling of log_inclusion (RFC-ACDP-0012 §10)."
+}

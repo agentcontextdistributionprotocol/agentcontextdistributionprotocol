@@ -1,0 +1,36 @@
+{
+  "id": "wit-002",
+  "description": "Behavioral: a witness MUST NOT cosign a checkpoint that fails consistency against its retained head (RFC-ACDP-0015 §7 step 2 — the entire point of witnessing). The witness has previously observed and retained the genuine log-003 size-3 head (root_hash sha256:cf4604...). The registry now presents a signature-valid size-5 checkpoint whose root_hash has been REWRITTEN to sha256:dead...  (not the genuine log-001 size-5 root sha256:0b5978...), so the RFC-ACDP-0012 §9.2 consistency proof between the retained size-3 head and this size-5 checkpoint MUST fail. Expected: the witness refuses to cosign, persists both checkpoints and the failing proof as evidence, and (SHOULD) surfaces it. Behavioral — not executed by scripts/conformance-runner.py (no witness_test_keypair). The registry checkpoint signature itself verifying is not sufficient; consistency is the gate.",
+  "tags": ["witness", "cosignature", "consistency", "refusal", "split-view", "behavioral"],
+  "scenario": {
+    "log_id": "did:web:registry.example.com/log/1",
+    "retained_head": {
+      "note": "The genuine log-003 size-3 checkpoint the witness observed earlier and stored (RFC-ACDP-0015 §7 retained head).",
+      "checkpoint_version": "acdp-log/1",
+      "log_id": "did:web:registry.example.com/log/1",
+      "tree_size": 3,
+      "root_hash": "sha256:cf4604eee5578b1ca5b9414d901840b1c0e6e275222d3f613301989d20f58e9d",
+      "timestamp": "2026-07-04T10:00:00.000Z"
+    },
+    "presented_checkpoint": {
+      "note": "A size-5 checkpoint whose root_hash was REWRITTEN. Its own registry signature is assumed valid (RFC-ACDP-0012 §9.3 passes); what fails is consistency (§9.2). The genuine log-001 size-5 root is sha256:0b5978172c671ca050b44790a749b18fc29d58a7a17495fbb4e0f86eb885f731 — this fabricated root differs, so no valid consistency proof from size 3 exists.",
+      "checkpoint_version": "acdp-log/1",
+      "log_id": "did:web:registry.example.com/log/1",
+      "tree_size": 5,
+      "root_hash": "sha256:deadbeef00000000000000000000000000000000000000000000000000000000",
+      "timestamp": "2026-07-04T12:00:00.000Z"
+    }
+  },
+  "expected": {
+    "witness_action": "refuse",
+    "cosignature_emitted": false,
+    "evidence_persisted": true,
+    "reason": "consistency_proof_failed_against_retained_head",
+    "notes": [
+      "RFC-ACDP-0015 §7 step 2: verify an RFC-ACDP-0012 §9.2 consistency proof between the retained size-3 head and the presented size-5 checkpoint BEFORE cosigning. No valid PROOF(3, D[5]) reproduces both the retained sha256:cf4604... root and the fabricated sha256:deadbeef... root, so consistency fails.",
+      "The witness MUST NOT emit a cosignature (RFC-ACDP-0015 §7): a witness that cosigns a root-rewrite provides negative security value.",
+      "The witness MUST persist both signature-valid-but-mutually-inconsistent checkpoints and the failing proof as evidence (RFC-ACDP-0015 §7, RFC-ACDP-0012 §15) and SHOULD surface a distinct non-cosigning status on GET /log/witness.",
+      "A consumer therefore never sees a cosignature for the rewritten checkpoint from an honest witness; the checkpoint stays 0-witnessed and the consumer's quorum policy (RFC-ACDP-0015 §8.1) declines to rely on it."
+    ]
+  }
+}

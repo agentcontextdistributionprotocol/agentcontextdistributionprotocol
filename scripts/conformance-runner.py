@@ -18,10 +18,13 @@ Reads every fixture under schemas/conformance/ and verifies arithmetic claims:
     golden cycle (JCS leaf encoding, 0x00/0x01 domain-separated Merkle tree,
     root, signed checkpoint, inclusion-proof and consistency-proof generation
     AND verification-algorithm folding) per RFC-ACDP-0012
+  - wit-* fixtures carrying a witness_test_keypair(s): full witness-cosignature
+    golden cycle (JCS preimage, cosignature hash, witness-keyed signature,
+    checkpoint chaining, and the N-witnessed quorum count) per RFC-ACDP-0015
   - fp-* fixtures: key-fingerprint encoding vectors (RFC-ACDP-0010 §6)
 
 Behavioral fixtures (pub-*, vis-*, dk-*, rcpt-002..004, lhr-002..004,
-log-002/log-004, lc-*, rev-002, rot-*, fed-*, ...) are not executed; they
+log-002/log-004, wit-002/wit-004, lc-*, rev-002, rot-*, fed-*, ...) are not executed; they
 describe request/response scenarios for live implementations.
 Exits 0 if all vectors pass, 1 otherwise.
 
@@ -917,6 +920,129 @@ def check_log_vector(fixture, fixture_data, vector):
     return False
 
 
+def check_witness_cosignature_vector(fixture, fixture_data, vector):
+    """wit-* golden vectors: full RFC-ACDP-0015 §5 witness-cosignature cycle.
+
+    The signing construction is RFC-ACDP-0010 §5 verbatim (JCS preimage minus
+    'signature' -> SHA-256 -> sign the ASCII "sha256:<hex>" string) but keyed by
+    the WITNESS's own key (RFC-ACDP-0015 §5), not the registry receipt key. The
+    object shape and binding rules are RFC-ACDP-0015 §4/§8.
+    """
+    import re
+
+    name = vector.get("name", "?")
+    keypair = vector.get("witness_test_keypair") or fixture_data.get("witness_test_keypair", {})
+    seed_hex = keypair.get("private_seed_hex", "")
+    if not seed_hex:
+        fail(fixture, name, "missing witness_test_keypair.private_seed_hex")
+        return False
+
+    try:
+        priv = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(seed_hex))
+        pub = priv.public_key()
+        pub_raw = pub.public_bytes(
+            encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
+        )
+    except Exception as e:
+        fail(fixture, name, f"witness keypair load failed: {e}")
+        return False
+
+    declared_pub_hex = keypair.get("public_key_hex", "")
+    if declared_pub_hex and pub_raw.hex() != declared_pub_hex:
+        fail(fixture, name, f"witness public_key_hex mismatch. declared={declared_pub_hex} derived={pub_raw.hex()}")
+        return False
+
+    unsigned = vector.get("cosignature_unsigned", {})
+    exp = vector.get("expected", {})
+
+    if unsigned.get("cosignature_version") != "acdp-cosig/1":
+        fail(fixture, name, f"cosignature_version MUST be 'acdp-cosig/1', got {unsigned.get('cosignature_version')!r}")
+        return False
+
+    canonical_bytes = jcs.canonicalize(unsigned)
+    canonical = canonical_bytes.decode("utf-8")
+    if "canonical_form" in exp and canonical != exp["canonical_form"]:
+        fail(fixture, name, f"cosignature canonical_form mismatch.\n    expected: {exp['canonical_form']}\n    actual:   {canonical}")
+        return False
+
+    cosignature_hash = "sha256:" + hashlib.sha256(canonical_bytes).hexdigest()
+    if "cosignature_hash" in exp and cosignature_hash != exp["cosignature_hash"]:
+        fail(fixture, name, f"cosignature_hash mismatch. expected={exp['cosignature_hash']} actual={cosignature_hash}")
+        return False
+
+    sig_bytes = priv.sign(cosignature_hash.encode("ascii"))
+    if "signature_value_hex" in exp and sig_bytes.hex() != exp["signature_value_hex"]:
+        fail(fixture, name, "cosignature signature_value_hex mismatch")
+        return False
+    sig_b64 = base64.b64encode(sig_bytes).decode("ascii")
+    if "signature_value_base64" in exp and sig_b64 != exp["signature_value_base64"]:
+        fail(fixture, name, "cosignature signature_value_base64 mismatch")
+        return False
+
+    try:
+        pub.verify(sig_bytes, cosignature_hash.encode("ascii"))
+    except Exception as e:
+        fail(fixture, name, f"cosignature signature verification failed: {e}")
+        return False
+
+    # The assembled log_cosignature object must be cosignature_unsigned + the signature.
+    assembled = exp.get("log_cosignature")
+    if assembled:
+        stripped = {k: v for k, v in assembled.items() if k != "signature"}
+        if stripped != unsigned:
+            fail(fixture, name, "expected.log_cosignature minus signature != cosignature_unsigned")
+            return False
+        if assembled.get("signature", {}).get("value") != sig_b64:
+            fail(fixture, name, "expected.log_cosignature.signature.value != computed signature")
+            return False
+        # Witness binding (RFC-ACDP-0015 §8 step 3): key_id DID portion == witness_id.
+        did_part = assembled.get("signature", {}).get("key_id", "").split("#", 1)[0]
+        if did_part != unsigned.get("witness_id"):
+            fail(fixture, name, f"signature.key_id DID portion {did_part!r} != witness_id {unsigned.get('witness_id')!r}")
+            return False
+
+    # Canonical millisecond form for both timestamps (RFC-ACDP-0015 §4).
+    wc = unsigned.get("witnessed_checkpoint", {})
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z", unsigned.get("witnessed_at", "")):
+        fail(fixture, name, f"witnessed_at not canonical millisecond RFC 3339 UTC: {unsigned.get('witnessed_at')!r}")
+        return False
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z", wc.get("timestamp", "")):
+        fail(fixture, name, "witnessed_checkpoint.timestamp not canonical millisecond RFC 3339 UTC")
+        return False
+
+    # Chain to the log golden checkpoint being cosigned (RFC-ACDP-0015 §5).
+    chain = fixture_data.get("chains_to_log_fixture")
+    if chain:
+        log_fx = json.loads((CONFORMANCE / chain).read_text())
+        cp = log_fx["vectors"][0]["expected"]["log_checkpoint"]
+        for field in ("log_id", "tree_size", "root_hash"):
+            if wc.get(field) != cp.get(field):
+                fail(fixture, name, f"witnessed_checkpoint.{field} does not match {chain} checkpoint ({cp.get(field)})")
+                return False
+
+    return True
+
+
+def check_witness_quorum(fixture, fixture_data):
+    """RFC-ACDP-0015 §8: a checkpoint is N-witnessed = number of DISTINCT witness_id
+    values whose cosignatures verify over one (log_id, tree_size, root_hash)."""
+    exp = fixture_data.get("expected_quorum")
+    if not exp:
+        return None
+    seen = {}  # (log_id, tree_size, root_hash) -> set(witness_id)
+    for v in fixture_data.get("vectors", []):
+        u = v.get("cosignature_unsigned", {})
+        wc = u.get("witnessed_checkpoint", {})
+        tup = (wc.get("log_id"), wc.get("tree_size"), wc.get("root_hash"))
+        seen.setdefault(tup, set()).add(u.get("witness_id"))
+    target = (exp["log_id"], exp["tree_size"], exp["root_hash"])
+    n = len(seen.get(target, set()))
+    if n != exp["witnessed_count"]:
+        fail(fixture, "quorum", f"N-witnessed mismatch. expected {exp['witnessed_count']} distinct witnesses over {target}, got {n}")
+        return False
+    return True
+
+
 for path in sorted(CONFORMANCE.glob("*.json")):
     with open(path) as f:
         data = json.load(f)
@@ -963,7 +1089,15 @@ for path in sorted(CONFORMANCE.glob("*.json")):
         for v in data.get("vectors", []):
             if check_log_vector(fixture_id, data, v):
                 passes += 1
-    # pub-, vis-, ret-, dk-, rot-, lc-, fed- (and keypair-less rcpt-/lhr-/log-/rev-)
+    elif fixture_id.startswith("wit-") and ("witness_test_keypair" in data or "witness_test_keypairs" in data):
+        # wit golden vectors (wit-001, wit-003) are executed; wit-002 and wit-004
+        # are behavioral scenarios without a witness test keypair, skipped here.
+        for v in data.get("vectors", []):
+            if check_witness_cosignature_vector(fixture_id, data, v):
+                passes += 1
+        if check_witness_quorum(fixture_id, data) is True:
+            passes += 1
+    # pub-, vis-, ret-, dk-, rot-, lc-, fed- (and keypair-less rcpt-/lhr-/log-/rev-/wit-)
     # fixtures describe scenarios (request -> expected error code), not arithmetic
     # vectors. Their conformance is checked by registry/consumer implementations,
     # not by this static runner.
