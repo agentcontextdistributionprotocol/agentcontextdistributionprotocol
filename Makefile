@@ -62,8 +62,9 @@ docs:
 	@echo " 14. rfcs/RFC-ACDP-0012-transparency-log.md (0.3.0)"
 	@echo " 15. rfcs/RFC-ACDP-0013-lifecycle-events.md (0.3.0)"
 	@echo " 16. rfcs/RFC-ACDP-0014-key-revocation.md (0.3.0)"
-	@echo " 17. docs/overview.md"
-	@echo " 18. docs/integration-guide.md"
+	@echo " 17. rfcs/RFC-ACDP-0015-witness-cosigning.md (0.4.0, Draft)"
+	@echo " 18. docs/overview.md"
+	@echo " 19. docs/integration-guide.md"
 
 # ── Clean ────────────────────────────────────────────────────────────────────
 

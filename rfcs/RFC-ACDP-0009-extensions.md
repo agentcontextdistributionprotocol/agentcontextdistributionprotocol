@@ -3,7 +3,7 @@
 
 **Document:** RFC-ACDP-0009
 **Version:** 0.3.0-reserved
-**Status:** **Reserved** — number pinned, no normative text yet (§2.7 promoted to [RFC-ACDP-0010](RFC-ACDP-0010-registry-receipts.md) in acdp/0.2.0; §2.1 promoted to [RFC-ACDP-0013](RFC-ACDP-0013-lifecycle-events.md) and §2.11 promoted to [RFC-ACDP-0012](RFC-ACDP-0012-transparency-log.md) in acdp/0.3.0)
+**Status:** **Reserved** — number pinned, no normative text yet (§2.7 promoted to [RFC-ACDP-0010](RFC-ACDP-0010-registry-receipts.md) in acdp/0.2.0; §2.1 promoted to [RFC-ACDP-0013](RFC-ACDP-0013-lifecycle-events.md) and §2.11 promoted to [RFC-ACDP-0012](RFC-ACDP-0012-transparency-log.md) in acdp/0.3.0; §2.12 promoted to [RFC-ACDP-0015](RFC-ACDP-0015-witness-cosigning.md) in acdp/0.4.0)
 
 This RFC is a placeholder. It reserves the numbering and the field namespaces under which post-v0.1.0 capabilities will be specified. **It contains no normative requirements.**
 
@@ -191,7 +191,9 @@ The following names are RESERVED and MUST NOT be used by extensions: `log_inclus
 
 ---
 
-### 2.12 Checkpoint witnessing & cosigning
+### 2.12 Checkpoint witnessing & cosigning — **PROMOTED to RFC-ACDP-0015 (acdp/0.4.0)**
+
+> **Status of this section:** the reservation below was promoted to a full normative specification, [RFC-ACDP-0015 Transparency-Log Witness Cosigning](RFC-ACDP-0015-witness-cosigning.md), opening the acdp/0.4.0 line. The reserved names — the array member `witness_signatures`, the cosignature member `witnessed_checkpoint`, `witness_id`, `witnessed_at`, the profile name `acdp-log-witness`, and the endpoint path `/log/witness` — were all adopted with their reserved meanings, with one refinement of the sketch recorded in RFC-ACDP-0015 §12: `witnessed_checkpoint` is realized as a **grouping object** holding the observed checkpoint's committed tuple (`log_id`, `tree_size`, `root_hash`, `timestamp`) rather than restating those checkpoint fields flat, so the cosignature's top level carries only the witness's own assertions plus the one grouped thing-observed. The witness cosignature's field named `witness_id` is the witness's own DID (`did:web` or `did:key`); the cosignature is signed by the **witness's** own key (RFC-ACDP-0015 §5), the one construction in the trust arc that does not reuse the registry receipt key. The text below is retained verbatim as the historical reservation; witness-cosigning behavior is specified exclusively by RFC-ACDP-0015 and applies to 0.4.0 implementations. Gossip among witnesses remains named future work (RFC-ACDP-0015 §13); no gossip protocol is normative in the 0.4.0 program.
 
 A future ACDP version may introduce **external witnesses** for the RFC-ACDP-0012 transparency log: independent parties that observe a registry's checkpoints over time, verify consistency between them (RFC-ACDP-0012 §9.2), and **cosign** checkpoints they have verified — so that a consumer can require "this checkpoint was also seen, consistency-checked, and signed by N witnesses I trust" instead of trusting the registry's clock and history alone. This closes the two gaps RFC-ACDP-0012 §13 leaves open by design: checkpoint `timestamp` values are registry-asserted (a witness cosignature anchors *when the checkpoint was witnessed* against parties the registry does not control), and split-view detection requires comparing checkpoints across vantages (witnesses *are* the standing vantages, and a gossip protocol among them makes comparison systematic rather than incidental).
 
@@ -230,5 +232,6 @@ This document will be replaced by concrete RFCs when each capability is specifie
 - [RFC-ACDP-0008 Security](RFC-ACDP-0008-security.md)
 - [RFC-ACDP-0010 Registry Receipts](RFC-ACDP-0010-registry-receipts.md) — promotion of §2.7
 - [RFC-ACDP-0013 Lifecycle Events & Retraction](RFC-ACDP-0013-lifecycle-events.md) — promotion of §2.1
+- [RFC-ACDP-0015 Transparency-Log Witness Cosigning](RFC-ACDP-0015-witness-cosigning.md) — promotion of §2.12
 - [VERSIONING.md](../VERSIONING.md)
 - [CHANGELOG.md](../CHANGELOG.md)
