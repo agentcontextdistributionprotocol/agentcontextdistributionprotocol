@@ -52,13 +52,6 @@ conformance/
 - `lhr-*.json` carrying a `registry_test_keypair` (i.e. `lhr-001`) — full lineage-head-receipt golden cycle: preimage, receipt hash, signature, binding consistency (RFC-ACDP-0011 §5, §7)
 - `log-*.json` carrying a `registry_test_keypair` (i.e. `log-001`, `log-003`) — full transparency-log golden cycle: JCS leaf encodings, `0x00`/`0x01` domain-separated leaf and node hashes, Merkle roots, signed checkpoints, inclusion-proof and consistency-proof generation and verification-algorithm folding (RFC-ACDP-0012 §4–§6, §9)
 - `wit-*.json` carrying a `witness_test_keypair(s)` (i.e. `wit-001`, `wit-003`) — full witness-cosignature golden cycle: JCS cosignature preimage, cosignature hash, witness-keyed Ed25519 signature, checkpoint chaining to `log-001`, and the N-witnessed quorum count over distinct witness DIDs (RFC-ACDP-0015 §5, §8)
-- `fp-*.json` — key-fingerprint encoding vectors (RFC-ACDP-0010 §6)
-
-**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `schema-*`, `dk-*`, `rot-*`, `rcpt-002`..`rcpt-004`, `lhr-002`..`lhr-004`, `log-002`/`log-004`, …). Those fixtures define request/response scenarios that require a running registry or consumer to execute. They are machine-readable specifications for implementers to validate against their implementation.
-
-To claim full conformance a registry MUST:
-1. Pass `python3 scripts/conformance-runner.py` (arithmetic/cryptographic)
-2. Separately execute all behavioral fixture scenarios (`pub-*`, `vis-*`, `ret-*`, `err-*`, `schema-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `dk-*`, `rcpt-*`, `lhr-*`, `log-*`, `rot-*`, …) against a live registry instance
 - `rev-*.json` carrying a `test_keypair` (i.e. `rev-001`) — key-revocation context golden cycle: same arithmetic as `sig-*`, plus the RFC-ACDP-0014 §4 shape and §5 not-self-signed checks
 - `fp-*.json` — key-fingerprint encoding vectors (RFC-ACDP-0010 §6)
 
