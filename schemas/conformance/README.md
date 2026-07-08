@@ -55,7 +55,9 @@ conformance/
 - `rev-*.json` carrying a `test_keypair` (i.e. `rev-001`) — key-revocation context golden cycle: same arithmetic as `sig-*`, plus the RFC-ACDP-0014 §4 shape and §5 not-self-signed checks
 - `fp-*.json` — key-fingerprint encoding vectors (RFC-ACDP-0010 §6)
 
-**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `schema-*`, `dk-*`, `rot-*`, `lc-*`, `rcpt-002`..`rcpt-004`, `lhr-002`..`lhr-004`, `rev-002`, …). Those fixtures define request/response scenarios that require a running registry or consumer to execute. They are machine-readable specifications for implementers to validate against their implementation.
+**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `schema-*`, `dk-*`, `rot-*`, `lc-*`, `rcpt-002`..`rcpt-004`, `lhr-002`..`lhr-004`, `rev-002`, …). Those fixtures define request/response scenarios that require a running registry or consumer to execute. They are machine-readable specifications for implementers to validate against their implementation. The runner's summary line reports how many behavioral fixtures were left to live implementations.
+
+Runner guards: a fixture whose `id` prefix matches no family declared in `registries/profiles.json` `fixture_families` is a **failure**, not a silent skip; so is an executable-family fixture with an empty `vectors` list. `--only <id-or-prefix>` (e.g. `--only sig-002`, `--only can`) runs a subset while iterating on a fixture. The companion `scripts/check-consistency.py` (`make consistency`) verifies every fixture is wired into `registries/profiles.json`, `registries/profiles.md`, and this README's index, and that every asserted error code is registered.
 
 To claim full conformance a registry MUST:
 1. Pass `python3 scripts/conformance-runner.py` (arithmetic/cryptographic)

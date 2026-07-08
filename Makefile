@@ -1,4 +1,4 @@
-.PHONY: help bootstrap validate validate-all json-validate json-schema-validate conformance clean install-tools install-python-deps docs
+.PHONY: help bootstrap validate validate-all json-validate json-schema-validate conformance consistency clean install-tools install-python-deps docs
 
 # ── Default ───────────────────────────────────────────────────────────────────
 
@@ -13,6 +13,7 @@ help:
 	@echo "  make json-schema-validate  Validate JSON Schema itself"
 	@echo "  make json-validate         Validate JSON examples / fixtures against schemas"
 	@echo "  make conformance           Run executable conformance vectors"
+	@echo "  make consistency           Check fixtures <-> profiles <-> README <-> registries wiring"
 	@echo
 	@echo "Docs:"
 	@echo "  make docs                  Print the docs reading order"
@@ -24,12 +25,16 @@ help:
 
 # ── Validation ────────────────────────────────────────────────────────────────
 
-validate: json-schema-validate json-validate conformance
+validate: json-schema-validate json-validate conformance consistency
 	@echo "✓ All validations passed"
 
 conformance:
 	@echo "Running executable conformance vectors..."
 	@python3 scripts/conformance-runner.py
+
+consistency:
+	@echo "Checking cross-artifact consistency..."
+	@python3 scripts/check-consistency.py
 
 validate-all: validate
 	@echo "✓ All validations completed"
