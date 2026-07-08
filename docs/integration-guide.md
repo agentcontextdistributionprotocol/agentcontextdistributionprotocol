@@ -97,6 +97,8 @@ result = resp.json()
 # result has: ctx_id, lineage_id, version, created_at, status
 ```
 
+> **Retries — use an `Idempotency-Key`.** A publish that times out may or may not have persisted; a blind retry mints a second `ctx_id` for the same content. Send an `Idempotency-Key` header (a UUID you generate per logical publish): a retry with the same key and content returns the original response, and a retry with the same key but *different* content is rejected with `duplicate_publish` (RFC-ACDP-0003 §6). Registries advertising `acdp_version` ≥ 0.3.0 MUST support it (`supports_idempotency_key: true` in capabilities); against older registries, check the capabilities document first — an unsupported header is silently ignored.
+
 ---
 
 ## Consumer flow
@@ -153,6 +155,19 @@ Steps 1–3 are the **`StrictV010`** verification profile (RFC-ACDP-0001 §9.2, 
 At this point the body is verifiably authentic. Inspect `data_refs`, fetch any `location` references, check `data_period` against the use case, check `state["status"]` and `body.get("expires_at")` for currency.
 
 > **SSRF — DataRef fetches.** `data_refs[].location` is producer-controlled. When a `location` is an `https://` URL and you dereference it, you are making an outbound request to a host the producer chose — apply the SSRF protections of RFC-ACDP-0008 §4.9 (HTTPS-only, DNS-level IP-range filtering on every resolved address, IP pinning against rebinding, same-authority redirect cap capped at 3 follows). A refused fetch does not invalidate the body — the producer signature and `content_hash` stay valid; only the external reference is unreachable on the SSRF-safe path. Non-HTTP schemes (`s3://`, `postgres://`, …) are dereferenced by their own clients under your deployment's egress policy. Access to the referenced data is governed by that system's own ACLs, not by ACDP `visibility` (RFC-ACDP-0002 §6.4).
+
+### Step 5 (optional): Verify trust artifacts beyond the producer signature
+
+Registries advertising the 0.2.0+ trust profiles attach additional members to the retrieval envelope. Each is optional, each has its own verification procedure, and each verdict is **reported separately** from the body verdict — a failing receipt does not invalidate a body whose producer signature verifies, and vice versa. A consumer that ignores these members entirely (RFC-ACDP-0001 §6 unknown-field tolerance) remains conformant for the core flow.
+
+| Envelope member | What verifying it buys you | Procedure | Failure category |
+|---|---|---|---|
+| `registry_receipt` | The registry cryptographically attests `ctx_id` / `lineage_id` / `origin_registry` / `created_at` and which producer key verified at publish — no longer just registry honesty. Also unlocks *historically authorized* verification of rotated/revoked keys (RFC-ACDP-0010 §10, RFC-ACDP-0014). | RFC-ACDP-0010 §8 | `invalid_receipt` |
+| `lineage_head_receipt` (on `/lineages/{id}/current`) | "This was the head as of `as_of`" — protects against a registry serving a stale head. Freshness policy for `as_of` is yours. | RFC-ACDP-0011 §7 | `invalid_receipt` |
+| `log_inclusion` | The publish is committed to an append-only Merkle log: fold the inclusion proof to the checkpoint's `root_hash`, verify the checkpoint signature, and check consistency between checkpoints over time. | RFC-ACDP-0012 §9 | `invalid_log_proof` |
+| `witness_signatures` | Independent witnesses cosigned the checkpoint with their **own** keys — protection against a registry showing you a different history than everyone else. Quorum and freshness are local policy (RECOMMENDED defaults: 1 witness, 300 s). | RFC-ACDP-0015 §8 | `invalid_witness_cosignature` |
+
+Golden vectors for every construction live in [`schemas/conformance/`](../schemas/conformance/README.md) (`rcpt-001`, `lhr-001`, `log-001`/`log-003`, `wit-001`/`wit-003`), and [`examples/retrieval/golden-context-with-receipt.json`](../examples/retrieval/golden-context-with-receipt.json) is a full receipt-bearing envelope that `scripts/conformance-runner.py` verifies end-to-end — build your verifier against those before pointing it at a live registry.
 
 ---
 
@@ -259,6 +274,7 @@ A full wire-shape example of such a context is [examples/visibility/private-with
 | `superseded_target` | Supersession constraints failed | Check `details.reason` — common values: `not_found`, `lineage_mismatch`, `version_mismatch`, `already_superseded`. |
 | `unsupported_algorithm` | You used a non-ed25519 algorithm | Either use ed25519 or check the registry's `supported_signature_algorithms`. |
 | `embedded_too_large` | Embedded data > 64 KB | Switch to `location` form. |
+| `duplicate_publish` | Retried an `Idempotency-Key` with different content | Same key = same logical publish. Generate a fresh key for new content; reuse the key only for byte-identical retries (RFC-ACDP-0003 §6.2). |
 
 ---
 

@@ -30,6 +30,7 @@ The full normative threat model is [RFC-ACDP-0008 Security](../rfcs/RFC-ACDP-000
 | No third-party `builds_on` claims | `derived_from` is producer-only. |
 | No push subscriptions | Polling only; RFC-ACDP-0009 reserves push semantics. |
 | No federation peering | Cross-registry resolution via `acdp://` is the federation primitive. |
+| Registry-assigned fields bound only by registry honesty | *(0.2.0–0.4.0)* Closed incrementally where the optional trust profiles are advertised: registry receipts attest the assigned fields at publish (RFC-ACDP-0010); lineage-head receipts attest serve-time currency (RFC-ACDP-0011); the transparency log makes publish history append-only and provable (RFC-ACDP-0012); witness cosigning defends against a registry serving split views (RFC-ACDP-0015, Draft). |
 | No multi-party / threshold signatures | Use `contributors` for joint authorship. |
 | No quality scoring by registries | Consumers compute their own trust from DID + signature evidence. |
 
