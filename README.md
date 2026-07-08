@@ -231,7 +231,7 @@ ACDP `0.1.0` is **wire-frozen**: existing bodies, signatures, and `content_hash`
 - **Conformance fixtures** under `schemas/conformance/`, validated in CI.
 - **Registries** under `registries/` evolve without destabilizing the core.
 - **Examples** under `examples/` are validated against the canonical schemas.
-- **GitHub Actions CI** validates JSON Schemas, examples, and fixtures on every PR.
+- **GitHub Actions CI** validates JSON Schemas, examples, fixtures, and the cross-artifact wiring (fixtures ↔ profiles ↔ registries) on every PR.
 
 ---
 
@@ -239,7 +239,7 @@ ACDP `0.1.0` is **wire-frozen**: existing bodies, signatures, and `content_hash`
 
 ```bash
 make bootstrap        # Install dev deps: ajv-cli + Python (one-time)
-make validate         # JSON Schemas + examples + conformance runner
+make validate         # JSON Schemas + examples + conformance runner + consistency gate
 make help             # Show all targets
 ```
 

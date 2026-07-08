@@ -16,6 +16,8 @@
 
 - [ ] JSON Schemas validate (`make json-schema-validate`)
 - [ ] JSON examples and fixtures validate (`make json-validate`)
+- [ ] Executable conformance vectors pass (`make conformance`)
+- [ ] Cross-artifact consistency passes (`make consistency`)
 - [ ] Affected RFC is updated and version-bumped if normative
 - [ ] Backward compatibility considered and documented
 

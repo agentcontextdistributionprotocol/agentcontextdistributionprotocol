@@ -24,7 +24,7 @@ This installs `ajv-cli` (Node.js, for JSON Schema validation) and Python package
 Once bootstrapped:
 
 ```bash
-make validate     # Run all validations (schema + JSON + conformance)
+make validate     # Run all validations (schema + JSON + conformance + consistency)
 make help         # Show all targets
 ```
 
@@ -69,16 +69,19 @@ Conformance fixtures under `schemas/conformance/` come in two kinds, dispatched 
 
 Adding a fixture is a three-file change:
 
-1. The fixture JSON under `schemas/conformance/` (its `id` prefix MUST match a handled family so the runner auto-discovers it).
+1. The fixture JSON under `schemas/conformance/` (its `id` prefix MUST match a family declared in `registries/profiles.json` `fixture_families` — the runner fails on unknown prefixes rather than silently skipping them).
 2. An entry in the relevant profile(s) in **both** `registries/profiles.json` and `registries/profiles.md`.
 3. A row in the `schemas/conformance/README.md` fixture index.
 
+This wiring is enforced by `make consistency` (`scripts/check-consistency.py`), which CI runs on every PR: a fixture missing from either manifest or the index, a manifest entry pointing at a nonexistent fixture, or an error code not registered in `registries/error-codes.md` fails the build. While iterating on a single fixture, `python3 scripts/conformance-runner.py --only <id-or-prefix>` runs just that subset.
+
 ## Technical requirements
 
-- `make validate` MUST pass — this is the gate CI enforces on every PR. It runs the three checks below.
+- `make validate` MUST pass — this is the gate CI enforces on every PR. It runs the four checks below.
 - JSON examples MUST validate against the relevant JSON Schema (`make json-validate`).
 - JSON Schemas MUST themselves be valid (`make json-schema-validate`).
 - The executable conformance vectors MUST pass (`make conformance`).
+- The cross-artifact consistency gate MUST pass (`make consistency`): fixtures ↔ profile manifests ↔ fixture index ↔ error-code registry ↔ example routing.
 - Backward compatibility MUST be addressed explicitly in the PR description.
 
 ## Versioning and releases

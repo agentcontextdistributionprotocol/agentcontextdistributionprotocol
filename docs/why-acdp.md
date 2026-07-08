@@ -70,9 +70,9 @@ ACDP is not a replacement for purpose-built data systems. A registry is a metada
 
 ## Why this version is minimal
 
-The first published version of ACDP is intentionally a **minimal substrate**. Lifecycle events, retractions, third-party `builds_on` claims, attestations, push subscriptions, and server-side traversal are all reserved (RFC-ACDP-0009) but not specified.
+The first published version of ACDP is intentionally a **minimal substrate**. Higher-order capabilities were reserved (RFC-ACDP-0009) rather than specified, and are promoted only when the substrate proves them out: retraction/lifecycle events, registry receipts, transparency logging, key revocation, and witness cosigning have since been specified as OPTIONAL profiles (RFC-ACDP-0010 – 0015, version lines 0.2.0 – 0.4.0) — each additive on the frozen v0.1.0 wire. Third-party `builds_on` claims, attestations, push subscriptions, and server-side traversal remain reserved.
 
-That choice keeps the surface area small and the trust model legible: every body is signed, every lineage is derivable, every retrieval is locally verifiable. Once that substrate is solid, higher-order capabilities can be added without breaking the contract.
+That choice keeps the surface area small and the trust model legible: every body is signed, every lineage is derivable, every retrieval is locally verifiable. The promotions since 0.1.0 demonstrate the layering works: none of them changed a body field, a signature semantic, or a `content_hash`.
 
 The bet: the right primitive is **content-addressed signed bodies with deterministic lineage**. Everything else can be layered on.
 

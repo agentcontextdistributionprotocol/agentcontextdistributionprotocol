@@ -51,6 +51,8 @@ producer DID document. Verification is local and stateless
 (no third-party call required after the producer DID is resolved).
 ```
 
+Registries advertising the optional trust profiles attach additional top-level members to the retrieval envelope — `registry_receipt` (0.2.0), `lineage_head_receipt` on `/current` (0.3.0), `log_inclusion` (0.3.0), `witness_signatures` (0.4.0 Draft). Each carries its own verification procedure and its verdict is reported separately from the body verdict; a consumer that ignores them under the RFC-ACDP-0001 §6 unknown-field rule is unaffected. See §2.6.
+
 ### 2.3 Cross-registry lineage walk
 
 ```
@@ -92,6 +94,19 @@ v1's status becomes "superseded" on the next status query.
 v1's body is unchanged.
 ```
 
+### 2.6 The trust arc (0.2.0 – 0.4.0, optional profiles)
+
+In v0.1.0 the producer signature covers ProducerContent only; the registry-assigned fields (`ctx_id`, `lineage_id`, `origin_registry`, `created_at`) and the registry's serving behavior are bound by registry honesty. Four optional, additive profiles close that gap in sequence — each one attests what the previous layer still left to trust:
+
+| Layer | Profile | Attests | Spec |
+|---|---|---|---|
+| Registry receipt | `acdp-registry-receipts` | The registry-assigned fields and which producer key verified, signed by the registry at publish time. | RFC-ACDP-0010 (0.2.0) |
+| Lineage-head receipt | `acdp-registry-head-receipts` | "This context was the lineage head as of `as_of`" — a serve-time freshness attestation. | RFC-ACDP-0011 (0.3.0) |
+| Transparency log | `acdp-registry-transparency-log` | The registry's publish history is append-only: Merkle inclusion proofs per context, consistency proofs between signed checkpoints. | RFC-ACDP-0012 (0.3.0) |
+| Witness cosignatures | `acdp-log-witness` | Independent parties (not registries) verified a checkpoint's signature and consistency and cosigned it with **their own** keys — split-view protection. | RFC-ACDP-0015 (0.4.0, Draft) |
+
+All four ride the frozen v0.1.0 wire as additional envelope members; none changes a body, a signature, or a `content_hash`. Alongside them, `acdp-registry-lifecycle` (RFC-ACDP-0013, 0.3.0) adds signed retraction/republication events (mark-not-delete), and RFC-ACDP-0014 (0.3.0) defines the `key-revocation` context type with fail-closed verification against receipt-attested publish times.
+
 ## 3. The transport
 
 ACDP v0.1.0 is JSON over HTTP, content type `application/acdp+json`. All endpoints accept and emit this type.
@@ -110,7 +125,10 @@ Binary transport bindings are out of scope for v0.1.0 and may be specified in a 
 | Producer DID document | Each producer | Public — `did:web` or other. |
 | Registry DID document | Each registry | Public — `did:web` matching the authority. |
 | Bodies | Origin registry | Persistent. Immutable. Indefinite retention. |
-| Registry-state | Origin registry | Persistent. Mutable in v0.1.0 only via supersession-driven status recomputation. |
+| Registry-state | Origin registry | Persistent. Mutable via supersession-driven status recomputation; at 0.3.0 with `acdp-registry-lifecycle`, also via signed retraction/republication events appended to `lifecycle_events`. |
+| Registry receipts (0.2.0) | Origin registry | Persistent, minted atomically with the body; immutable once signed. |
+| Transparency log (0.3.0) | Origin registry | Append-only Merkle tree; signed checkpoints. Never rewritten — a consistency-proof failure is evidence of misbehavior. |
+| Witness cosignatures (0.4.0) | Witnesses (and aggregating registries) | Each witness persists its retained head and cosignature history. |
 | Producer DID document cache | Consumers | TTL cache. |
 | Capabilities document cache | Consumers | TTL cache (1 hour suggested). |
 | Body cache | Consumers | Indefinite — bodies are immutable. Key by `ctx_id`, validate by `content_hash`. |
@@ -140,3 +158,12 @@ If a consumer needs anything else to verify a context, the system is doing too m
 6. [RFC-ACDP-0006 Cross-Registry](../rfcs/RFC-ACDP-0006-cross-registry.md) — `acdp://` resolution.
 7. [RFC-ACDP-0007 Capabilities](../rfcs/RFC-ACDP-0007-capabilities.md) — well-known doc + errors.
 8. [RFC-ACDP-0008 Security](../rfcs/RFC-ACDP-0008-security.md) — what you must enforce.
+
+Then, for the optional profiles you plan to advertise (all additive on the frozen core):
+
+9. [RFC-ACDP-0010 Registry Receipts](../rfcs/RFC-ACDP-0010-registry-receipts.md) (0.2.0) — the receipt construction every later trust layer reuses.
+10. [RFC-ACDP-0011 Lineage-Head Receipts](../rfcs/RFC-ACDP-0011-lineage-head-receipts.md) (0.3.0).
+11. [RFC-ACDP-0012 Transparency Log](../rfcs/RFC-ACDP-0012-transparency-log.md) (0.3.0).
+12. [RFC-ACDP-0013 Lifecycle Events](../rfcs/RFC-ACDP-0013-lifecycle-events.md) (0.3.0) — retraction/republication.
+13. [RFC-ACDP-0014 Key Revocation](../rfcs/RFC-ACDP-0014-key-revocation.md) (0.3.0).
+14. [RFC-ACDP-0015 Witness Cosigning](../rfcs/RFC-ACDP-0015-witness-cosigning.md) (0.4.0, Draft).

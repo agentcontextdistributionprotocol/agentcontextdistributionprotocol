@@ -52,10 +52,13 @@ a documentation bug.
       release version. The namespace never carries an `-rcN` suffix.
 - [ ] `registries/profiles.json` and `registries/profiles.md` agree on every
       profile's required-fixture set (profiles.md is authoritative on divergence).
-- [ ] Every fixture referenced by `profiles.json` exists under `schemas/conformance/`
-      and every fixture file is referenced by the conformance README index.
+      The mechanical half of this — every listed fixture exists, every fixture is
+      listed in both forms and in the conformance README index — is enforced by
+      `make consistency`; review the *semantic* placement (right profile, right
+      conditionality) by hand.
 - [ ] `make validate` passes (JSON Schema meta-validation, example/fixture
-      validation, and the executable conformance runner).
+      validation, the executable conformance runner, and the cross-artifact
+      consistency gate).
 
 ## 4. Changelog
 

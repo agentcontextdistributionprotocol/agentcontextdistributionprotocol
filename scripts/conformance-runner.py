@@ -32,6 +32,7 @@ Requires: pip install jcs cryptography
 (jcs handles JCS canonicalization including the -0.0 normalization that stdlib json.dumps misses.)
 """
 
+import argparse
 import json
 import hashlib
 import sys
@@ -59,8 +60,25 @@ except ImportError:
 ROOT = Path(__file__).resolve().parent.parent
 CONFORMANCE = ROOT / "schemas" / "conformance"
 
+_parser = argparse.ArgumentParser(description="ACDP conformance runner")
+_parser.add_argument(
+    "--only",
+    metavar="PREFIX",
+    help="run only fixtures whose id or filename starts with PREFIX "
+    "(e.g. --only sig-002 or --only can). The golden-example checks are "
+    "skipped when a filter is active.",
+)
+ARGS = _parser.parse_args()
+
 failures = []
 passes = 0
+skipped_behavioral = []
+
+# Known fixture families come from the machine-readable conformance manifest,
+# so a typo'd fixture prefix fails loudly instead of being silently skipped.
+KNOWN_FAMILIES = set(
+    json.loads((ROOT / "registries" / "profiles.json").read_text()).get("fixture_families", {})
+)
 
 
 def fail(fixture, vector_name, msg):
@@ -1043,64 +1061,82 @@ def check_witness_quorum(fixture, fixture_data):
     return True
 
 
+def _vectors(data, fixture_id):
+    """Vectors of an executable fixture; an empty/missing list is a fixture bug
+    (the fixture would otherwise pass with zero assertions)."""
+    vectors = data.get("vectors", [])
+    if not vectors:
+        fail(fixture_id, "-", "executable fixture has no vectors")
+    return vectors
+
+
 for path in sorted(CONFORMANCE.glob("*.json")):
     with open(path) as f:
         data = json.load(f)
     fixture_id = data.get("id", path.stem)
 
+    if ARGS.only and not (fixture_id.startswith(ARGS.only) or path.stem.startswith(ARGS.only)):
+        continue
+
+    if not any(fixture_id.startswith(fam + "-") for fam in KNOWN_FAMILIES):
+        fail(fixture_id, "-", f"unknown fixture family — id prefix not in registries/profiles.json fixture_families; the runner would silently skip it")
+        continue
+
     if fixture_id.startswith("can-") or fixture_id.startswith("lin-"):
         # can-* fixtures carry JCS/SHA-256 vectors and (some) lineage vectors;
         # lin-* fixtures are dedicated lineage_id derivation golden vectors.
         # Both are verified by the same arithmetic check.
-        for v in data.get("vectors", []):
+        for v in _vectors(data, fixture_id):
             result = check_canonicalization_and_hash(fixture_id, v)
             if result is True:
                 passes += 1
             # result is None → descriptive vector, skipped silently
     elif fixture_id.startswith("sig-"):
-        for v in data.get("vectors", []):
+        for v in _vectors(data, fixture_id):
             if check_signature_vector(fixture_id, data, v):
                 passes += 1
     elif fixture_id.startswith("rev-") and "test_keypair" in data:
         # rev golden vectors (rev-001) are executed; rev-002 is behavioral
         # (no test_keypair) and is skipped here.
-        for v in data.get("vectors", []):
+        for v in _vectors(data, fixture_id):
             if check_revocation_vector(fixture_id, data, v):
                 passes += 1
     elif fixture_id.startswith("fp-"):
-        for v in data.get("vectors", []):
+        for v in _vectors(data, fixture_id):
             if check_fingerprint_vector(fixture_id, v):
                 passes += 1
     elif fixture_id.startswith("rcpt-") and "registry_test_keypair" in data:
         # rcpt golden vectors (rcpt-001) are executed; rcpt-002..004 are behavioral
         # scenarios without a registry_test_keypair and are skipped here.
-        for v in data.get("vectors", []):
+        for v in _vectors(data, fixture_id):
             if check_receipt_vector(fixture_id, data, v):
                 passes += 1
     elif fixture_id.startswith("lhr-") and "registry_test_keypair" in data:
         # lhr golden vectors (lhr-001) are executed; lhr-002..004 are behavioral
         # scenarios without a registry_test_keypair and are skipped here.
-        for v in data.get("vectors", []):
+        for v in _vectors(data, fixture_id):
             if check_lineage_head_receipt_vector(fixture_id, data, v):
                 passes += 1
     elif fixture_id.startswith("log-") and "registry_test_keypair" in data:
         # log golden vectors (log-001, log-003) are executed; log-002 and log-004
         # are behavioral scenarios without a registry_test_keypair, skipped here.
-        for v in data.get("vectors", []):
+        for v in _vectors(data, fixture_id):
             if check_log_vector(fixture_id, data, v):
                 passes += 1
     elif fixture_id.startswith("wit-") and ("witness_test_keypair" in data or "witness_test_keypairs" in data):
         # wit golden vectors (wit-001, wit-003) are executed; wit-002 and wit-004
         # are behavioral scenarios without a witness test keypair, skipped here.
-        for v in data.get("vectors", []):
+        for v in _vectors(data, fixture_id):
             if check_witness_cosignature_vector(fixture_id, data, v):
                 passes += 1
         if check_witness_quorum(fixture_id, data) is True:
             passes += 1
-    # pub-, vis-, ret-, dk-, rot-, lc-, fed- (and keypair-less rcpt-/lhr-/log-/rev-/wit-)
-    # fixtures describe scenarios (request -> expected error code), not arithmetic
-    # vectors. Their conformance is checked by registry/consumer implementations,
-    # not by this static runner.
+    else:
+        # pub-, vis-, ret-, dk-, rot-, lc-, fed- (and keypair-less rcpt-/lhr-/log-/rev-/wit-)
+        # fixtures describe scenarios (request -> expected error code), not arithmetic
+        # vectors. Their conformance is checked by registry/consumer implementations,
+        # not by this static runner.
+        skipped_behavioral.append(fixture_id)
 
 def check_golden_retrieval_example():
     """Verify examples/retrieval/golden-context.json end-to-end against sig-001's test keypair.
@@ -1200,11 +1236,16 @@ def check_golden_receipt_example():
     return True
 
 
-if check_golden_retrieval_example():
-    passes += 1
-
-if check_golden_receipt_example():
-    passes += 1
+if ARGS.only:
+    if passes == 0 and not failures:
+        print(f"✗ --only {ARGS.only!r} matched no executable fixtures "
+              f"(behavioral matches: {', '.join(skipped_behavioral) or 'none'})", file=sys.stderr)
+        sys.exit(1)
+else:
+    if check_golden_retrieval_example():
+        passes += 1
+    if check_golden_receipt_example():
+        passes += 1
 
 if failures:
     print(f"\n✗ {len(failures)} conformance failure(s):", file=sys.stderr)
@@ -1213,5 +1254,6 @@ if failures:
     print(f"\nPassed: {passes}\nFailed: {len(failures)}", file=sys.stderr)
     sys.exit(1)
 else:
-    print(f"✓ All {passes} arithmetic conformance vectors passed.")
+    print(f"✓ All {passes} arithmetic conformance vectors passed "
+          f"({len(skipped_behavioral)} behavioral fixtures left to live implementations).")
     sys.exit(0)
