@@ -1,0 +1,35 @@
+{
+  "id": "anc-004",
+  "description": "content_hash over a body carrying anchors, proving the field enters the JCS preimage exactly like any other producer-controlled field (RFC-ACDP-0001 §5.7, RFC-ACDP-0016 §5). The can-*-equivalent golden vector for this RFC.",
+  "tags": ["happy-path", "canonicalization", "hashing", "anchors"],
+  "vectors": [
+    {
+      "name": "Body with one macp.commitment anchor: canonicalization and SHA-256",
+      "description": "Producer-supplied body fields including a single well-formed anchors entry. Apply JCS, then SHA-256, hex-encode lowercase. The anchor's own content_hash (sha256:fa8fe6b9...) is an opaque external-artifact digest, unrelated to the body's own content_hash being computed here.",
+      "input": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:agent:test",
+        "contributors": [],
+        "title": "settlement finalized",
+        "type": "data_snapshot",
+        "data_refs": [],
+        "anchors": [
+          {
+            "scheme": "macp.commitment",
+            "content_hash": "sha256:fa8fe6b9143b469866d31de09b81928cc44d226ed935162cd346ae80d14fd200"
+          }
+        ]
+      },
+      "expected": {
+        "canonical_form": "{\"agent_id\":\"did:agent:test\",\"anchors\":[{\"content_hash\":\"sha256:fa8fe6b9143b469866d31de09b81928cc44d226ed935162cd346ae80d14fd200\",\"scheme\":\"macp.commitment\"}],\"contributors\":[],\"data_refs\":[],\"supersedes\":null,\"title\":\"settlement finalized\",\"type\":\"data_snapshot\",\"version\":1}",
+        "sha256_hex": "2a5fe49a82228322e0be1b9de8f5c7905f95b7f0fe469809e9c7399412206861",
+        "content_hash_field_value": "sha256:2a5fe49a82228322e0be1b9de8f5c7905f95b7f0fe469809e9c7399412206861"
+      },
+      "implementer_notes": [
+        "anchors sorts alphabetically before contributors in the JCS member ordering (RFC 8785 lexicographic key sort) — implementations sorting object keys by insertion order rather than by codepoint will diverge here.",
+        "The anchor's own content_hash is a nested value inside the body being hashed, not itself the hash target — do not confuse it with the outer sha256_hex being computed."
+      ]
+    }
+  ]
+}

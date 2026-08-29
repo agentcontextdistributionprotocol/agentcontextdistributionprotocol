@@ -98,6 +98,30 @@
       "type": "string",
       "pattern": "^\\d+\\.\\d+\\.\\d+$",
       "description": "Optional. ACDP protocol version this body was authored under. Absent value MUST be treated as '0.1.0', the inaugural release. Producer-signed (part of the content_hash). Producers SHOULD include this field explicitly (a v0.1.0 producer sets '0.1.0'). Verifiers use this field to determine which exclusion set (RFC-ACDP-0001 §5.7) and signature algorithm registry to apply."
+    },
+    "anchors": {
+      "type": "array",
+      "description": "(0.5.0) Typed external anchors (RFC-ACDP-0016 §4). Absent when empty. Registries advertising acdp_version < 0.5.0 MUST reject a publish carrying this field with schema_violation.",
+      "minItems": 1,
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "required": ["scheme", "content_hash"],
+        "properties": {
+          "scheme": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$"
+          },
+          "content_hash": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/content_hash" },
+          "uri": {
+            "type": "string",
+            "format": "uri",
+            "description": "Advisory only. MUST NOT be dereferenced as part of ACDP-level verification (RFC-ACDP-0016 §6)."
+          }
+        },
+        "additionalProperties": true
+      }
     }
   },
   "additionalProperties": false,

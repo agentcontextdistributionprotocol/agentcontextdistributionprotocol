@@ -1,0 +1,20 @@
+{
+  "id": "anc-002",
+  "description": "An anchors entry whose content_hash does not match the 'sha256:' + 64-lowercase-hex shape MUST be rejected with schema_violation — both at registry publish time and by a consumer validating a retrieved body. anchors[].content_hash uses the same acdp-common content_hash $def as the body's own content_hash field, so the same shape rule applies (RFC-ACDP-0016 §4).",
+  "tags": ["failure", "publish", "schema", "anchors"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "anchor_under_test": {
+      "scheme": "macp.commitment",
+      "content_hash": "not-a-valid-hash"
+    }
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 400,
+    "error_code": "schema_violation",
+    "consumer_outcome": "reject",
+    "consumer_error": "schema_violation",
+    "rationale": "content_hash inside an anchor is not free-form — it is the acdp-common content_hash $def (RFC-ACDP-0001 §5.7 shape: 'sha256:' + 64 lowercase hex). A value failing that pattern fails schema validation at the same step any other malformed content_hash field would (contrast can-*, which pins the arithmetic case where the shape is valid but the digest doesn't match its preimage — this fixture pins the shape rejection itself)."
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "id": "anc-003",
+  "description": "anchors: [] MUST be rejected with schema_violation. anchors follows the absent-vs-null / absent-when-empty convention (RFC-ACDP-0002 §6.8, RFC-ACDP-0016 §4): a producer with no external anchors MUST omit the field entirely, not send an empty array. minItems: 1 on the schema enforces this — an empty array is a structural violation, not a semantically-equivalent alternative to omission.",
+  "tags": ["failure", "publish", "schema", "absent-vs-empty", "anchors"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "anchor_under_test": []
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 400,
+    "error_code": "schema_violation",
+    "consumer_outcome": "reject",
+    "consumer_error": "schema_violation",
+    "rationale": "Sending anchors: [] instead of omitting the field would give a body-with-no-anchors two distinct canonical wire forms, breaking the single-canonical-form guarantee every other absent-vs-null field in the spec relies on (contrast derived_from, which is required-even-empty for historical reasons and is therefore NOT analogous — anchors is a later additive field and follows the absent-when-empty rule instead, per RFC-ACDP-0016 §4)."
+  }
+}
