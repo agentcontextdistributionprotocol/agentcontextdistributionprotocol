@@ -2,6 +2,30 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.4.0 — promoted to Final — 2026-08-28
+
+**The `acdp/0.4.0` line is promoted from `Draft` to `Final`.** RFC-ACDP-0015 (Transparency-Log Witness Cosigning) is Final at version `0.4.0`; its `Version:` header now reads bare `0.4.0`. RFC-ACDP-0009 remains `Reserved` and is not promoted. **Zero normative changes ride this promotion** — it is a coordinated status transition only: no body field, schema `$id`, JCS rule, content-hash semantic, signature semantic, conformance fixture, or error-code semantic changed, and the line remains wire-compatible with v0.1.0/0.2.0/0.3.0 exactly as its Draft entry below recorded.
+
+**Promotion evidence (the VERSIONING.md two-implementation gate).** The 0.4.0 conformance pack (`wit-001..004`) passes against two independent interoperating implementations, each at a pinned checkout of this spec, each run recorded in CI. The evidence blocks are quoted verbatim as captured at the gate:
+
+> **=== EVIDENCE BLOCK 1 — acdp-rs ===**
+> Repo: `agentcontextdistributionprotocol/acdp-rs`
+> Crate/tag: `acdp` v0.8.1 (workspace-lockstep; the v0.8.2 release PR #154 was unmerged at run time)
+> Pinned spec SHA: `bff3cf3afbdcea619834916e8f0bcac7e82ba658`
+> Executed `wit-*`: wit-001, wit-002, wit-003, wit-004 — require-mode (`ACDP_SPEC_DIR` set, `ACDP_REQUIRE_CONFORMANCE=1`, `cargo test --workspace --all-features`): 658 passed / 0 failed; the `log-*`/`rev-*`/`lc-*` bindings also executed
+> CI run: <https://github.com/agentcontextdistributionprotocol/acdp-rs/actions/runs/33232085544/job/99046540516> (the `conformance (spec fixtures)` job; verified success)
+
+> **=== EVIDENCE BLOCK 2 — acdp-verifier-py ===**
+> Repo: `agentcontextdistributionprotocol/acdp-verifier-py`
+> Version/tag: 0.1.0 / `v0.1.0` → `351668521e89303928766036c1c3f4a4cd768c9a`
+> Pinned spec SHA: `bff3cf3afbdcea619834916e8f0bcac7e82ba658` (pinned in the repo's CI workflow)
+> Executed `wit-*`: wit-001, wit-002, wit-003, wit-004 — registered executors in `run_conformance.py` (the runner hard-fails unregistered fixtures). Result at the pin: 85 PASS / 0 FAIL / 54 SKIP / 139 total (137 fixtures + 2 end-to-end example verifications); pytest 187 passed
+> CI run: <https://github.com/agentcontextdistributionprotocol/acdp-verifier-py/actions/runs/33235087345> (verified success on the tagged commit)
+
+Both runs executed against spec `bff3cf3` (this repo's `main` as of the gate); the subsequent hygiene round below changed no fixture, so the evidence remains valid for this promotion commit.
+
+**Registry graduation (riding the promotion, per the new RELEASE.md §3 bullet).** `invalid_witness_cosignature` (`registries/error-codes.md`) graduates `Proposed` → `Stable` — the two implementations above both implement it (fixture `wit-004`). `retracted` / `republished` (`registries/lifecycle-event-types.md`) and the `key-revocation` context type (`registries/context-types.md`) graduate `Proposed` → `Stable` — their graduation was skipped at the 0.3.0 promotion despite the gate having been met (`lc-*`/`rev-*` evidence in the 0.2.0/0.3.0 promotion entry below; both evidence runs above re-executed the `rev-*`/`lc-*` bindings). RELEASE.md §3 now carries an explicit registry-graduation checklist bullet so future promotions cannot skip it, and RELEASE.md's release history gains the 0.4.0 row.
+
 ## v0.4.0 — Clarifications & tooling: pre-promotion hygiene round 2 — 2026-08-28
 
 **No wire change.** No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed — this round is consistency-tooling hardening (two new cross-artifact gates), conformance-provenance tooling, editorial boilerplate, and governance/release-process bookkeeping.

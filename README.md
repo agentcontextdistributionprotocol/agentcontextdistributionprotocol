@@ -1,6 +1,6 @@
 # Agent Context Distribution Protocol (ACDP)
 
-**Version:** 0.3.0 (Final) — the 0.1.0, 0.2.0, and 0.3.0 lines are all Final
+**Version:** 0.4.0 (Final) — the 0.1.0, 0.2.0, 0.3.0, and 0.4.0 lines are all Final
 **Status:** Community Standards Track
 **Wire format:** JSON over HTTP
 **Required JSON canonicalization:** [JCS — RFC 8785](https://datatracker.ietf.org/doc/html/rfc8785)
@@ -15,11 +15,11 @@ The "producer-controlled portion" — the **ProducerContent** — comprises the 
 
 There is no central authority. Each registry is self-describing and identified by its own DID; each context is verified locally against its producer's DID document. ACDP is **coordination-agnostic** — it does not specify session, voting, consensus, marketplace, or reputation semantics.
 
-The **current version** of ACDP is **`acdp/0.3.0` (`Final`)**. The first published version, `acdp/0.1.0`, was released as `Final` and remains wire-frozen. The **`acdp/0.2.0` Trust & Hardening line (Final)** added registry receipts ([RFC-ACDP-0010](rfcs/RFC-ACDP-0010-registry-receipts.md)) closing the registry-honesty gap for receipt-bearing responses, `did:key` producers with infrastructure-independent verification, and the hash-divergence corpus hardening cross-implementation interop. The **`acdp/0.3.0` line (Final)** adds lineage-head receipts ([RFC-ACDP-0011](rfcs/RFC-ACDP-0011-lineage-head-receipts.md)), the registry transparency log ([RFC-ACDP-0012](rfcs/RFC-ACDP-0012-transparency-log.md) — promoting the RFC-ACDP-0009 §2.11 reservation), lifecycle events & retraction ([RFC-ACDP-0013](rfcs/RFC-ACDP-0013-lifecycle-events.md) — mark-not-delete, promoting the RFC-ACDP-0009 §2.1 reservation), and the producer key-revocation signal ([RFC-ACDP-0014](rfcs/RFC-ACDP-0014-key-revocation.md)). Both lines were promoted from Draft to Final on 2026-07-05 after their conformance packs passed against two independent interoperating implementations (see [CHANGELOG.md](CHANGELOG.md)). The **`acdp/0.4.0` line (Draft)** opens with transparency-log witness cosigning ([RFC-ACDP-0015](rfcs/RFC-ACDP-0015-witness-cosigning.md) — promoting the RFC-ACDP-0009 §2.12 reservation), so independent witnesses can cosign the checkpoints they verify and a consumer trusting one honest witness inherits split-view protection. Post-publication relationships, attestations, push subscriptions, and server-side traversal remain deferred to future versions.
+The **current version** of ACDP is **`acdp/0.4.0` (`Final`)**. The first published version, `acdp/0.1.0`, was released as `Final` and remains wire-frozen. The **`acdp/0.2.0` Trust & Hardening line (Final)** added registry receipts ([RFC-ACDP-0010](rfcs/RFC-ACDP-0010-registry-receipts.md)) closing the registry-honesty gap for receipt-bearing responses, `did:key` producers with infrastructure-independent verification, and the hash-divergence corpus hardening cross-implementation interop. The **`acdp/0.3.0` line (Final)** adds lineage-head receipts ([RFC-ACDP-0011](rfcs/RFC-ACDP-0011-lineage-head-receipts.md)), the registry transparency log ([RFC-ACDP-0012](rfcs/RFC-ACDP-0012-transparency-log.md) — promoting the RFC-ACDP-0009 §2.11 reservation), lifecycle events & retraction ([RFC-ACDP-0013](rfcs/RFC-ACDP-0013-lifecycle-events.md) — mark-not-delete, promoting the RFC-ACDP-0009 §2.1 reservation), and the producer key-revocation signal ([RFC-ACDP-0014](rfcs/RFC-ACDP-0014-key-revocation.md)). Both lines were promoted from Draft to Final on 2026-07-05 after their conformance packs passed against two independent interoperating implementations (see [CHANGELOG.md](CHANGELOG.md)). The **`acdp/0.4.0` line (Final)** adds transparency-log witness cosigning ([RFC-ACDP-0015](rfcs/RFC-ACDP-0015-witness-cosigning.md) — promoting the RFC-ACDP-0009 §2.12 reservation), so independent witnesses can cosign the checkpoints they verify and a consumer trusting one honest witness inherits split-view protection; it was promoted from Draft to Final on 2026-08-28 under the same two-implementation gate. Post-publication relationships, attestations, push subscriptions, and server-side traversal remain deferred to future versions.
 
 ## Project status
 
-ACDP is maintained by a single maintainer on a best-effort basis; changes land when a consumer needs them, with no SLA. The stable surface is the 0.1.0 / 0.2.0 / 0.3.0 Final lines, which are wire-frozen. RFC-ACDP-0015 (witness cosigning) is Draft on the 0.4.0 line and RFC-ACDP-0009 is Reserved; neither is a dependable surface until promoted. Promotion to Final requires the conformance pack to pass against two independent implementations (`acdp-rs` and `acdp-verifier-py`); the second implementation is therefore part of the protocol's governance machinery, not an optional extra. Security reports: see SECURITY.md in the org profile.
+ACDP is maintained by a single maintainer on a best-effort basis; changes land when a consumer needs them, with no SLA. The stable surface is the 0.1.0 / 0.2.0 / 0.3.0 / 0.4.0 Final lines, which are wire-frozen. RFC-ACDP-0009 is Reserved and is not a dependable surface until promoted. Promotion to Final requires the conformance pack to pass against two independent implementations (`acdp-rs` and `acdp-verifier-py`); the second implementation is therefore part of the protocol's governance machinery, not an optional extra. Security reports: see SECURITY.md in the org profile.
 
 ---
 
@@ -68,7 +68,7 @@ agentcontextdistributionprotocol/
     RFC-ACDP-0012-transparency-log.md # Registry transparency log (0.3.0)
     RFC-ACDP-0013-lifecycle-events.md # Lifecycle events & retraction (0.3.0)
     RFC-ACDP-0014-key-revocation.md  # Producer key-revocation signal (0.3.0)
-    RFC-ACDP-0015-witness-cosigning.md # Transparency-log witness cosigning (0.4.0, Draft)
+    RFC-ACDP-0015-witness-cosigning.md # Transparency-log witness cosigning (0.4.0)
 
   docs/
     overview.md
@@ -183,7 +183,7 @@ Evaluating ACDP against MCP, A2A, C2PA, AT Protocol, or DIDComm? Read **[docs/ac
 | `acdp-registry-head-receipts` *(0.3.0)* | + 0011 | Mints lineage-head receipts on every `GET /lineages/{lineage_id}/current` response. |
 | `acdp-registry-transparency-log` *(0.3.0)* | + 0012 | Serves the append-only Merkle log: checkpoints, inclusion/consistency proofs, leaf enumeration. |
 | `acdp-registry-lifecycle` *(0.3.0)* | + 0013 | Retraction/republication endpoints, append-only lifecycle events, `status: retracted`. |
-| `acdp-consumer` | 0001, 0002, 0004 (read), 0006, 0008 (+ 0010/0011/0012/0013/0014 verification surfaces under 0.2.0/0.3.0) | A consumer that retrieves, verifies, and visibility-checks contexts. |
+| `acdp-consumer` | 0001, 0002, 0004 (read), 0006, 0008 (+ 0010/0011/0012/0013/0014/0015 verification surfaces under 0.2.0/0.3.0/0.4.0) | A consumer that retrieves, verifies, and visibility-checks contexts. |
 
 There is no producer-only profile: producers MUST be able to verify any context they publish, and that requires the same cryptographic core as a registry.
 
@@ -205,13 +205,13 @@ There is no producer-only profile: producers MUST be able to verify any context 
 - **RFC-ACDP-0012 Registry Transparency Log** *(0.3.0)* — per-registry append-only Merkle tree over publish events; signed checkpoints, inclusion and consistency proofs.
 - **RFC-ACDP-0013 Lifecycle Events & Retraction** *(0.3.0)* — signed, append-only retraction/republication events; `status: retracted`; mark-not-delete.
 - **RFC-ACDP-0014 Producer Key-Revocation Signal** *(0.3.0)* — the `key-revocation` context type; time-scoped fail-closed verification against receipt-attested publish times.
-- **RFC-ACDP-0015 Transparency-Log Witness Cosigning** *(0.4.0, Draft)* — independent witnesses cosign the checkpoints they verify for consistency; consumers verify N-witnessed quorum, closing RFC-ACDP-0012's registry-asserted-timestamp residual.
+- **RFC-ACDP-0015 Transparency-Log Witness Cosigning** *(0.4.0)* — independent witnesses cosign the checkpoints they verify for consistency; consumers verify N-witnessed quorum, closing RFC-ACDP-0012's registry-asserted-timestamp residual.
 
 ---
 
 ## Compatibility model
 
-- **Protocol version** is `0.3.0` (Final); the `0.1.0` and `0.2.0` lines are also Final and wire-frozen. A registry advertises its version as `acdp_version` in its capabilities document; a producer optionally carries it per-body as the producer-signed `body.acdp_version`. An absent `body.acdp_version` is interpreted as `0.1.0` (RFC-ACDP-0001 §6); 0.2.0+ producers MUST set the field explicitly.
+- **Protocol version** is `0.4.0` (Final); the `0.1.0`, `0.2.0`, and `0.3.0` lines are also Final and wire-frozen. A registry advertises its version as `acdp_version` in its capabilities document; a producer optionally carries it per-body as the producer-signed `body.acdp_version`. An absent `body.acdp_version` is interpreted as `0.1.0` (RFC-ACDP-0001 §6); 0.2.0+ producers MUST set the field explicitly.
 - **Registry capabilities** advertise per-registry options — supported signature algorithms, supported DID methods, read-authentication methods, profiles, and limits (RFC-ACDP-0007 §3).
 
 Major mismatches are not compatible. Minor versions are expected to be backward compatible. Unknown fields MUST be ignored on body and registry-state. See [VERSIONING.md](VERSIONING.md).

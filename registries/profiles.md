@@ -15,7 +15,7 @@ The schema vocabulary is open. Profiles are normatively defined in [RFC-ACDP-000
 | `acdp-registry-head-receipts` | Optional (0.3.0, Final) | RFC-ACDP-0011 §9, RFC-ACDP-0001 §9.1 | `acdp-registry-receipts`, `acdp_version` ≥ 0.3.0 |
 | `acdp-registry-transparency-log` | Optional (0.3.0, Final) | RFC-ACDP-0012 §11, RFC-ACDP-0001 §9.1 | `acdp-registry-receipts`, `acdp_version` ≥ 0.3.0 |
 | `acdp-registry-lifecycle` | Optional (0.3.0, Final) | RFC-ACDP-0013 §10, RFC-ACDP-0001 §9.1 | `acdp-registry-core`, `acdp_version` ≥ 0.3.0 |
-| `acdp-log-witness` | Optional (0.4.0, Draft) | RFC-ACDP-0015 §10, RFC-ACDP-0001 §9.1 | — (a witness is not a registry), `acdp_version` ≥ 0.4.0 |
+| `acdp-log-witness` | Optional (0.4.0, Final) | RFC-ACDP-0015 §10, RFC-ACDP-0001 §9.1 | — (a witness is not a registry), `acdp_version` ≥ 0.4.0 |
 | `acdp-consumer` | For consumer deployments | RFC-ACDP-0001 §9.1 | — |
 
 (RFC-ACDP-0014, the producer key-revocation signal, deliberately defines **no profile**: a revocation is an ordinary context carried by existing surfaces; its registry-side validation binds to `acdp_version` ≥ 0.3.0 and its consumer semantics to `acdp-consumer` — RFC-ACDP-0014 §10.)
