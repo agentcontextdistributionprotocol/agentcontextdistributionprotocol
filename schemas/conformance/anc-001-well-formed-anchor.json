@@ -1,0 +1,43 @@
+{
+  "id": "anc-001",
+  "description": "A publish request whose body carries one well-formed anchors entry (a valid macp.commitment scheme, a valid content_hash shape) MUST be accepted: it passes schema validation, hash recomputation includes anchors byte-exactly, and signature verification succeeds normally. Anchors are ordinary producer-signed content — accepting them requires no new registry machinery beyond schema acceptance (RFC-ACDP-0016 §4, §5).",
+  "tags": ["happy-path", "publish", "anchors"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "body": {
+      "version": 1,
+      "supersedes": null,
+      "agent_id": "did:web:agents.example.com:test-producer",
+      "contributors": [],
+      "content_hash": "sha256:2a5fe49a82228322e0be1b9de8f5c7905f95b7f0fe469809e9c7399412206861",
+      "signature": {
+        "algorithm": "ed25519",
+        "key_id": "did:web:agents.example.com:test-producer#key-1",
+        "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+      },
+      "title": "settlement finalized",
+      "type": "data_snapshot",
+      "data_refs": [],
+      "derived_from": [],
+      "visibility": "public",
+      "acdp_version": "0.5.0",
+      "anchors": [
+        {
+          "scheme": "macp.commitment",
+          "content_hash": "sha256:fa8fe6b9143b469866d31de09b81928cc44d226ed935162cd346ae80d14fd200"
+        }
+      ]
+    },
+    "notes": "content_hash and signature.value here are placeholders (as in pub-012's template) — this fixture pins acceptance of the anchors field's shape, not a full end-to-end signature golden (that is anc-004's job at the JCS/hash layer)."
+  },
+  "expected": {
+    "outcome": "success",
+    "http_status": 201,
+    "response_shape": "Standard publish response (RFC-ACDP-0003 §4): ctx_id, lineage_id, version, created_at, status.",
+    "post_publish_invariants": [
+      "GET /contexts/{ctx_id} returns the body with anchors present, byte-identical to what was signed.",
+      "content_hash recomputed over the retrieved body (anchors included) matches the stored content_hash."
+    ],
+    "rationale": "A registry advertising acdp_version >= 0.5.0 MUST accept a well-formed anchors field exactly as it accepts any other schema-conformant optional field — anchors introduces no new validation step beyond the schema itself (RFC-ACDP-0016 §10)."
+  }
+}

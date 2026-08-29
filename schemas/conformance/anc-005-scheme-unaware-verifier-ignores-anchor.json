@@ -1,0 +1,17 @@
+{
+  "id": "anc-005",
+  "description": "A verifier that does not understand an anchor's scheme MUST ignore it for resolution purposes while still treating the body as fully verified. Core ACDP verification (signature, content_hash) never depends on understanding any scheme — anchors are opaque producer claims (RFC-ACDP-0016 §6). This is the scheme-unaware-verifier scenario from the source use-case draft (there numbered anc-004; renumbered anc-005 here — see RFC-ACDP-0016 §13's numbering note).",
+  "tags": ["happy-path", "verification", "anchors", "forward-compatibility"],
+  "input": {
+    "retrieved_body_summary": "A valid, signed body carrying anchors: [{scheme: 'a-scheme.this-verifier.does-not-recognize', content_hash: 'sha256:<64 hex>'}]. Signature and content_hash are otherwise valid (as in anc-001/anc-004).",
+    "verifier_under_test": "A conformant acdp-verify implementation with no scheme-aware resolution logic registered for the anchor's scheme."
+  },
+  "expected": {
+    "outcome": "success",
+    "body_verification_verdict": "valid",
+    "signature_verdict": "valid",
+    "content_hash_verdict": "valid",
+    "anchor_resolution_attempted": false,
+    "rationale": "RFC-ACDP-0016 §6 (NORMATIVE): a verifier that does not understand scheme MUST ignore the anchor for resolution purposes while still treating it as signed content it retains and re-serves byte-exactly. Core verification MUST NOT be required to resolve the external system or confirm the anchor's content_hash names a real artifact — an unrecognized scheme therefore has zero effect on the body's ACDP-level verification verdict. This is the same forward-compatibility posture as any other unknown producer-controlled sub-value (RFC-ACDP-0001 §5.7/§6), applied specifically to the scheme namespace."
+  }
+}

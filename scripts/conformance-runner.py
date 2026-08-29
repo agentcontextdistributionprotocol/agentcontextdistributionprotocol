@@ -1131,8 +1131,18 @@ for path in sorted(CONFORMANCE.glob("*.json")):
                 passes += 1
         if check_witness_quorum(fixture_id, data) is True:
             passes += 1
+    elif fixture_id.startswith("anc-") and "vectors" in data:
+        # anc-004 is an arithmetic content_hash golden (a body carrying anchors,
+        # proving the field enters the JCS preimage) verified by the same check
+        # as can-/lin-; anc-001/002/003/005 are behavioral scenarios without a
+        # top-level vectors array and are skipped here.
+        for v in _vectors(data, fixture_id):
+            result = check_canonicalization_and_hash(fixture_id, v)
+            if result is True:
+                passes += 1
     else:
-        # pub-, vis-, ret-, dk-, rot-, lc-, fed- (and keypair-less rcpt-/lhr-/log-/rev-/wit-)
+        # pub-, vis-, ret-, dk-, rot-, lc-, fed- (and keypair-less rcpt-/lhr-/log-/rev-/wit-/
+        # vectors-less anc-)
         # fixtures describe scenarios (request -> expected error code), not arithmetic
         # vectors. Their conformance is checked by registry/consumer implementations,
         # not by this static runner.

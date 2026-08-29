@@ -23,6 +23,7 @@ conformance/
 ├── wit-*.json      Transparency-log witness cosignatures — cosignature golden vector, consistency refusal, N-witnessed quorum + verification failures (RFC-ACDP-0015, 0.4.0)
 ├── lc-*.json       Lifecycle events & retraction scenarios (RFC-ACDP-0013, 0.3.0)
 ├── rev-*.json      Producer key revocation — golden vector + boundary semantics (RFC-ACDP-0014, 0.3.0)
+├── anc-*.json      Typed external anchors — content-hash golden vector + schema/tolerance scenarios (RFC-ACDP-0016, 0.5.0)
 ├── fp-*.json       Key-fingerprint encoding vectors (RFC-ACDP-0010 §6, 0.2.0)
 ├── rot-*.json      Historical producer-key verification with receipts (RFC-ACDP-0010 §10, 0.2.0)
 ├── dk-*.json       did:key resolution rejection scenarios (RFC-ACDP-0001 §5.11.1, 0.2.0)
@@ -54,14 +55,15 @@ conformance/
 - `wit-*.json` carrying a `witness_test_keypair(s)` (i.e. `wit-001`, `wit-003`) — full witness-cosignature golden cycle: JCS cosignature preimage, cosignature hash, witness-keyed Ed25519 signature, checkpoint chaining to `log-001`, and the N-witnessed quorum count over distinct witness DIDs (RFC-ACDP-0015 §5, §8)
 - `rev-*.json` carrying a `test_keypair` (i.e. `rev-001`) — key-revocation context golden cycle: same arithmetic as `sig-*`, plus the RFC-ACDP-0014 §4 shape and §5 not-self-signed checks
 - `fp-*.json` — key-fingerprint encoding vectors (RFC-ACDP-0010 §6)
+- `anc-*.json` carrying a top-level `vectors` array (i.e. `anc-004`) — `content_hash` over a body carrying `anchors`, verified by the same canonicalization/hash check as `can-*` (RFC-ACDP-0016 §5)
 
-**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `schema-*`, `dk-*`, `rot-*`, `lc-*`, `rcpt-002`..`rcpt-004`, `lhr-002`..`lhr-004`, `rev-002`, …). Those fixtures define request/response scenarios that require a running registry or consumer to execute. They are machine-readable specifications for implementers to validate against their implementation. The runner's summary line reports how many behavioral fixtures were left to live implementations.
+**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `schema-*`, `dk-*`, `rot-*`, `lc-*`, `rcpt-002`..`rcpt-004`, `lhr-002`..`lhr-004`, `rev-002`, `anc-001`..`anc-003`, `anc-005`, …). Those fixtures define request/response scenarios that require a running registry or consumer to execute. They are machine-readable specifications for implementers to validate against their implementation. The runner's summary line reports how many behavioral fixtures were left to live implementations.
 
 Runner guards: a fixture whose `id` prefix matches no family declared in `registries/profiles.json` `fixture_families` is a **failure**, not a silent skip; so is an executable-family fixture with an empty `vectors` list. `--only <id-or-prefix>` (e.g. `--only sig-002`, `--only can`) runs a subset while iterating on a fixture. The companion `scripts/check-consistency.py` (`make consistency`) verifies every fixture is wired into `registries/profiles.json`, `registries/profiles.md`, and this README's index, and that every asserted error code is registered.
 
 To claim full conformance a registry MUST:
 1. Pass `python3 scripts/conformance-runner.py` (arithmetic/cryptographic)
-2. Separately execute all behavioral fixture scenarios (`pub-*`, `vis-*`, `ret-*`, `err-*`, `schema-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `dk-*`, `rcpt-*`, `lhr-*`, `rot-*`, `lc-*`, `rev-*`, …) against a live registry instance
+2. Separately execute all behavioral fixture scenarios (`pub-*`, `vis-*`, `ret-*`, `err-*`, `schema-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `dk-*`, `rcpt-*`, `lhr-*`, `rot-*`, `lc-*`, `rev-*`, `anc-*`, …) against a live registry instance
 ---
 
 ## Fixture Format
@@ -301,6 +303,19 @@ All `lc-*` fixtures are behavioral. Required for `acdp-registry-lifecycle`; `lc-
 | `rev-002` | Compromise-boundary semantics (RFC-ACDP-0014 §7), completing `rot-001`: receipt-attested publish time strictly before `compromised_since` → *historically authorized (pre-compromise, receipt-attested)*; at/after → fail closed despite a valid receipt; no receipt (publish time unverifiable) → fail closed under the strict profile; producer-signed vs registry-attested trust classes distinguishable | mixed (per-scenario) |
 
 `rev-001` is executed arithmetically by `scripts/conformance-runner.py`; `rev-002` is behavioral. Both are required for 0.3.0 `acdp-consumer` implementations; `rev-001`'s registry-side rejections (shape → `schema_violation`; self-signed-by-revoked-key → `key_not_authorized`) bind to `acdp-registry-core` at `acdp_version` ≥ 0.3.0. No new wire error code and no profile: revocation rides existing surfaces (RFC-ACDP-0014 §10).
+
+### Typed external anchors (RFC-ACDP-0016, 0.5.0)
+
+| ID | Description | Outcome |
+|---|---|---|
+| `anc-001` | A publish request whose body carries one well-formed `macp.commitment` anchor MUST be accepted: schema validation passes, hash recomputation includes `anchors` byte-exactly, signature verification succeeds normally | success: standard publish response |
+| `anc-002` | An `anchors[].content_hash` that does not match the `"sha256:" + 64-lowercase-hex` shape MUST be rejected, both at registry publish time and by a consumer validating a retrieved body | failure: `schema_violation` |
+| `anc-003` | `anchors: []` MUST be rejected — the absent-when-empty convention (§4/§6.8): omit the field, never send an empty array | failure: `schema_violation` |
+| `anc-004` | `content_hash` over a body carrying `anchors`, proving the field enters the JCS preimage exactly like any other producer-controlled field (RFC-ACDP-0001 §5.7). The `can-*`-equivalent golden vector for this RFC. Executed by the runner. | success: byte-exact reproduction end-to-end |
+| `anc-005` | A verifier that does not understand an anchor's `scheme` MUST ignore it for resolution purposes while the body's signature and `content_hash` still verify normally | success: body verifies; anchor resolution not attempted |
+
+`anc-004` is executed arithmetically by `scripts/conformance-runner.py`; `anc-001`/`anc-002`/`anc-003`/`anc-005` are behavioral. All five are required for 0.5.0 `acdp-consumer` implementations, unconditional like `rev-001`/`rev-002`. No new wire error code (malformed anchors reuse `schema_violation`) and no new profile: anchors verification folds into `acdp-consumer`'s existing surface (RFC-ACDP-0016 §10). Vectors generated by `scripts/gen-0.5.0-vectors.py`.
+
 ### did:key resolution (RFC-ACDP-0001 §5.4 / §5.11.1, 0.2.0)
 
 | ID | Description | Outcome |

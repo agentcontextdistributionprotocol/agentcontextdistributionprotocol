@@ -146,6 +146,34 @@
       "type": "string",
       "pattern": "^\\d+\\.\\d+\\.\\d+$",
       "description": "Optional. ACDP protocol version this body was authored under. Absent value MUST be treated as '0.1.0'. Producer-signed (part of the content_hash). See RFC-ACDP-0001 §6."
+    },
+    "anchors": {
+      "type": "array",
+      "description": "(0.5.0) Typed external anchors (RFC-ACDP-0016 §4). Genesis-links this body to a non-ACDP, content-addressed external artifact. Absent when empty (§6.8 convention) — omit rather than sending []. Producer-signed (part of ProducerContent, RFC-ACDP-0001 §5.7), immutable.",
+      "minItems": 1,
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "required": ["scheme", "content_hash"],
+        "properties": {
+          "scheme": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$",
+            "description": "Dotted-namespace external-system identifier (e.g. macp.commitment). See registries/anchor-schemes.md."
+          },
+          "content_hash": {
+            "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/content_hash",
+            "description": "The external artifact's own content digest. Meaning is scheme-defined (RFC-ACDP-0016 §7)."
+          },
+          "uri": {
+            "type": "string",
+            "format": "uri",
+            "description": "Optional locator hint; advisory only. MUST NOT be dereferenced as part of ACDP-level verification (RFC-ACDP-0016 §6)."
+          }
+        },
+        "additionalProperties": true
+      }
     }
   },
   "additionalProperties": true,
