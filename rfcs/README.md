@@ -19,6 +19,7 @@ This directory contains the normative RFCs that define the Agent Context Distrib
 | [RFC-ACDP-0013](RFC-ACDP-0013-lifecycle-events.md) | Lifecycle Events & Retraction | Final (acdp/0.3.0) |
 | [RFC-ACDP-0014](RFC-ACDP-0014-key-revocation.md) | Producer Key-Revocation Signal | Final (acdp/0.3.0) |
 | [RFC-ACDP-0015](RFC-ACDP-0015-witness-cosigning.md) | Transparency-Log Witness Cosigning | Final (acdp/0.4.0) |
+| [RFC-ACDP-0016](RFC-ACDP-0016-external-anchors.md) | Typed External Anchors | Draft (acdp/0.5.0) |
 
 The acdp/0.2.0 and acdp/0.3.0 lines were promoted from Draft to Final on 2026-07-05, and the acdp/0.4.0 line (RFC-ACDP-0015) on 2026-08-28, each after its conformance pack passed against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md)). The 0.4.0 gate was met by `acdp-rs` (crates.io `acdp 0.8.1`, require-mode conformance at spec `bff3cf3afbdcea619834916e8f0bcac7e82ba658`, [CI run](https://github.com/agentcontextdistributionprotocol/acdp-rs/actions/runs/33232085544/job/99046540516)) and `acdp-verifier-py` (`v0.1.0`, at the same pinned spec SHA, [CI run](https://github.com/agentcontextdistributionprotocol/acdp-verifier-py/actions/runs/33235087345)), each executing `wit-001..004`. In-prose *(0.2.0)* / *(0.3.0)* / *(0.4.0)* markers record the release line that added a passage.
 
@@ -40,6 +41,7 @@ The numbering matches dependency order. Read top-to-bottom:
 12. **[RFC-ACDP-0013 Lifecycle Events & Retraction](RFC-ACDP-0013-lifecycle-events.md)** *(0.3.0)* — signed, append-only lifecycle events in registry state; producer/registry retraction and republication; the `retracted` status (dominating `superseded`/`expired`); mark-not-delete throughout. Promotes RFC-ACDP-0009 §2.1.
 13. **[RFC-ACDP-0014 Producer Key-Revocation Signal](RFC-ACDP-0014-key-revocation.md)** *(0.3.0)* — the normative `key-revocation` context type and time-scoped verification boundary: receipt-attested publish times before `compromised_since` stay historically authorized; at/after (or unverifiable) fail closed.
 14. **[RFC-ACDP-0015 Transparency-Log Witness Cosigning](RFC-ACDP-0015-witness-cosigning.md)** *(0.4.0)* — independent witnesses observe a registry's RFC-ACDP-0012 checkpoints, verify consistency, and cosign what they saw; a consumer trusting any one honest witness inherits split-view protection and an external anchor for checkpoint time. Promotes RFC-ACDP-0009 §2.12; opens the 0.4.0 line.
+15. **[RFC-ACDP-0016 Typed External Anchors](RFC-ACDP-0016-external-anchors.md)** *(0.5.0, Draft)* — an optional, producer-signed `anchors` field lets a body genesis-link to a non-ACDP, content-addressed external artifact (a commitment, a sealed decision, any digest-identified object); core verification never resolves the external system and never dereferences the advisory `uri`. Opens the 0.5.0 line.
 
 Reserved (no normative text, numbering pinned for future work):
 
