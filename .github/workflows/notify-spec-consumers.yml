@@ -1,8 +1,8 @@
 name: notify spec consumers
 
 # When conformance-relevant spec files change on main, notify repos that pin the
-# spec by SHA (currently acdp-rs) so they open a held "adopt new spec" PR via
-# acdp-ci's bump-spec-ref. App-authenticated (org secrets) — no PAT.
+# spec by SHA (acdp-rs and acdp-verifier-py) so each opens a held "adopt new
+# spec" PR via acdp-ci's bump-spec-ref. App-authenticated (org secrets) — no PAT.
 
 on:
   push:
@@ -19,19 +19,24 @@ permissions:
 jobs:
   notify:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        repo: [acdp-rs, acdp-verifier-py]
     steps:
-      - name: Mint token for acdp-rs
+      - name: Mint token for ${{ matrix.repo }}
         id: app
         uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ secrets.ACDP_BOT_APP_ID }}
           private-key: ${{ secrets.ACDP_BOT_PRIVATE_KEY }}
           owner: agentcontextdistributionprotocol
-          repositories: acdp-rs
+          repositories: ${{ matrix.repo }}
       - name: Dispatch spec-released
         env:
           GH_TOKEN: ${{ steps.app.outputs.token }}
           SHA: ${{ github.sha }}
+          REPO: ${{ matrix.repo }}
         run: |
           jq -nc --arg s "$SHA" '{event_type:"spec-released",client_payload:{sha:$s}}' \
-            | gh api repos/agentcontextdistributionprotocol/acdp-rs/dispatches --method POST --input -
+            | gh api "repos/agentcontextdistributionprotocol/$REPO/dispatches" --method POST --input -
