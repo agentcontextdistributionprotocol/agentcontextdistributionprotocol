@@ -64,7 +64,7 @@ The profile registry is the one registry kept in two synchronized forms: `profil
 
 Conformance fixtures under `schemas/conformance/` come in two kinds, dispatched by `id` prefix in `scripts/conformance-runner.py`:
 
-- `can-*` / `lin-*` (canonicalization, hashing, lineage) and `sig-*` (Ed25519 / ECDSA-P256 golden vectors) are **executed arithmetically** — the runner reproduces the JCS / hash / signature and byte-compares against the pinned `expected`. Compute `canonical_form` and `sha256_hex` with the `jcs` library (RFC 8785); never hand-write them, because the runner byte-compares. Python stdlib `json.dumps` is non-conformant.
+- `can-*` / `lin-*` (canonicalization, hashing, lineage) and `sig-*` (Ed25519 / ECDSA-P256 golden vectors) are **executed arithmetically** — the runner reproduces the JCS / hash / signature and byte-compares against the pinned `expected`. Compute `canonical_form` and `sha256_hex` with the `jcs` library (RFC 8785); never hand-write them, because the runner byte-compares. Python stdlib `json.dumps` is non-conformant. The committed generators `scripts/gen-0.2.0-vectors.py` / `gen-0.3.0-vectors.py` / `gen-0.4.0-vectors.py` are the provenance for the shipped `sig-`/`rcpt-`/`lhr-`/`log-`/`wit-` goldens and their TEST-ONLY keypair seeds; a new release line's vectors get a sibling generator following the same pattern.
 - All other families (`pub-`, `vis-`, `ret-`, `caps-`, `schema-`, `*-ssrf-`, `fed-`, …) are **behavioral scenarios** the runner does not execute; they describe a request → expected outcome that registry implementations verify.
 
 Adding a fixture is a three-file change:
