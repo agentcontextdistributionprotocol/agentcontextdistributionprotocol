@@ -62,6 +62,12 @@ a documentation bug.
 - [ ] `make validate` passes (JSON Schema meta-validation, example/fixture
       validation, the executable conformance runner, and the cross-artifact
       consistency gate).
+- [ ] Every registry row under `registries/` whose status is gated on the
+      promoted line graduates (`Proposed`/`Provisional` → `Stable`): the
+      registries/README.md ladder makes `Stable` mean "two interoperating
+      implementations confirmed", which is exactly what the §1 promotion gate
+      just established. After the promotion, no registry row may reference a
+      `Final` RFC while still sitting at `Proposed`.
 
 ## 4. Changelog
 
@@ -98,3 +104,4 @@ Per VERSIONING.md "Release tags":
 | `0.1.0` | 2026-05-19 | First `Final` release. Specification-hardening pass over `0.1.0-rc1`; wire-compatible. The §5 release tags were not cut at release time (only the pre-release `v0.0.1` existed); the full set — `acdp/0.1.0`, `schema-v0.1.0`, `rfc-acdp-0001-v0.1.0`..`rfc-acdp-0008-v0.1.0` (RFC-ACDP-0009 is `Reserved`, never tagged) — is cut retroactively on the release merge commit `7afc29f`, recorded 2026-08-28. |
 | `0.2.0` | 2026-07-05 | Trust & Hardening promoted from `Draft` to `Final` (no RC window; the Draft carried its own two-implementation promotion gate per VERSIONING.md). Wire-compatible with 0.1.0. |
 | `0.3.0` | 2026-07-05 | 0.3.0 line promoted from `Draft` to `Final` in the same promotion (RFC-ACDP-0011–0014 + amendments). Wire-compatible with 0.1.0/0.2.0. |
+| `0.4.0` | 2026-08-28 | 0.4.0 line (RFC-ACDP-0015 witness cosigning) promoted from `Draft` to `Final` (no RC window; the two-implementation promotion gate met and recorded with CI evidence — see CHANGELOG.md). Wire-compatible with 0.1.0/0.2.0/0.3.0. Registry rows gated on the promoted lines graduated to `Stable` in the same change (`invalid_witness_cosignature`; `retracted`/`republished` and `key-revocation`, skipped at the 0.3.0 promotion). |

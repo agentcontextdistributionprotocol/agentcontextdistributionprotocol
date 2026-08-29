@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Transparency-Log Witness Cosigning
 
 **Document:** RFC-ACDP-0015
-**Version:** 0.4.0-draft
-**Status:** Community Standards Track (Draft)
+**Version:** 0.4.0
+**Status:** Community Standards Track (Final)
 
 This RFC specifies **transparency-log witness cosigning**: independent parties (**witnesses**) that observe an RFC-ACDP-0012 registry's checkpoints, verify each checkpoint's signature and its consistency against the witness's retained head, and **cosign** the checkpoints they have verified. A consumer that trusts any one honest witness inherits split-view protection: a checkpoint is believed only when it was also seen, consistency-checked, and signed by parties the registry does not control. It promotes the RFC-ACDP-0009 §2.12 reservation to a full normative specification and opens the ACDP 0.4.0 line. It depends on RFC-ACDP-0001 (Core), RFC-ACDP-0007 (Capabilities & Errors), RFC-ACDP-0008 (Security), RFC-ACDP-0010 (Registry Receipts), and RFC-ACDP-0012 (Registry Transparency Log).
 
@@ -11,7 +11,7 @@ This RFC specifies **transparency-log witness cosigning**: independent parties (
 
 ## 1. Status of This Memo
 
-This document is a **Draft** ACDP specification (acdp/0.4.0). It is open for substantive change until promoted to Final per [VERSIONING.md](../VERSIONING.md); its `Version:` header reads `0.4.0-draft`. It goes Final once the conformance fixtures it defines (`wit-001..004`) pass against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md)). It is the first document of the 0.4.0 line.
+This document is a **Final** ACDP specification (acdp/0.4.0). It is stable for the 0.4.0 line; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md). It was promoted from Draft to Final on 2026-08-28, the VERSIONING.md gate having been met: the conformance fixtures it defines (`wit-001..004`) pass against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md) for the promotion record). It is the first document of the 0.4.0 line.
 
 This RFC promotes the RFC-ACDP-0009 §2.12 reservation. The reserved names — the array member `witness_signatures`, the cosignature member `witnessed_checkpoint`, `witness_id`, `witnessed_at`, the profile `acdp-log-witness`, and the endpoint path `/log/witness` — are all adopted with their reserved meanings; §12 records the one place this document refines the §2.12 *sketch* (grouping the observed checkpoint's committed tuple under the reserved `witnessed_checkpoint` member rather than restating its fields flat). Nothing in this document invalidates any v0.1.0/0.2.0/0.3.0 body, signature, `content_hash`, RFC-ACDP-0010 receipt, RFC-ACDP-0011 head receipt, or RFC-ACDP-0012 checkpoint, proof, or log.
 

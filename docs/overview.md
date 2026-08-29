@@ -15,7 +15,7 @@ When two autonomous agents need to share knowledge — across organizations, beh
 
 ACDP gives them one signed artifact that answers all four: the **context body**. The protocol around it specifies how the body is published, retrieved, discovered, and resolved across registry boundaries.
 
-The signature covers the producer-controlled portion of the body; registry-assigned fields (`ctx_id`, `origin_registry`, `created_at`) are bound only by registry honesty in v0.1.0 (RFC-ACDP-0008 §9.1). Later version lines close that gap incrementally where the corresponding OPTIONAL profiles are deployed: registry **receipts** cryptographically attest the registry-assigned fields (0.2.0, RFC-ACDP-0010), **lineage-head receipts** attest "this was the current head as of T" (0.3.0, RFC-ACDP-0011), a **transparency log** makes the registry's publish history append-only and provable (0.3.0, RFC-ACDP-0012), and **witness cosigning** lets independent parties attest the log's checkpoints against split views (0.4.0 Draft, RFC-ACDP-0015).
+The signature covers the producer-controlled portion of the body; registry-assigned fields (`ctx_id`, `origin_registry`, `created_at`) are bound only by registry honesty in v0.1.0 (RFC-ACDP-0008 §9.1). Later version lines close that gap incrementally where the corresponding OPTIONAL profiles are deployed: registry **receipts** cryptographically attest the registry-assigned fields (0.2.0, RFC-ACDP-0010), **lineage-head receipts** attest "this was the current head as of T" (0.3.0, RFC-ACDP-0011), a **transparency log** makes the registry's publish history append-only and provable (0.3.0, RFC-ACDP-0012), and **witness cosigning** lets independent parties attest the log's checkpoints against split views (0.4.0, RFC-ACDP-0015).
 
 ---
 
@@ -64,7 +64,7 @@ A context body is JCS-canonicalized, SHA-256 hashed, and signed by the producer.
 | **0012 Transparency Log** *(0.3.0)* | Append-only Merkle log of accepted publishes: signed checkpoints, inclusion and consistency proofs. |
 | **0013 Lifecycle Events** *(0.3.0)* | Signed retraction/republication events; `status: retracted` is mark-not-delete — the body stays retrievable. |
 | **0014 Key Revocation** *(0.3.0)* | The `key-revocation` context type and time-scoped fail-closed verification against receipt-attested publish times. |
-| **0015 Witness Cosigning** *(0.4.0, Draft)* | Independent witnesses verify and cosign log checkpoints, protecting consumers from split views. |
+| **0015 Witness Cosigning** *(0.4.0)* | Independent witnesses verify and cosign log checkpoints, protecting consumers from split views. |
 
 Everything past 0008 is an **OPTIONAL profile layered on the frozen v0.1.0 core** — a registry advertises what it implements in `/.well-known/acdp.json`, and existing bodies, signatures, and `content_hash` values remain valid throughout.
 

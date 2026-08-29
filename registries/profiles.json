@@ -275,7 +275,7 @@
     {
       "id": "acdp-log-witness",
       "inherits": null,
-      "spec_reference": "RFC-ACDP-0015 (0.4.0, Draft)",
+      "spec_reference": "RFC-ACDP-0015 (0.4.0, Final)",
       "behavioral_requirements": [
         "Before cosigning a checkpoint: verify its RFC-ACDP-0012 §9.3 checkpoint signature AND a §9.2 consistency proof against the witness's retained head; MUST NOT cosign a checkpoint that fails consistency (RFC-ACDP-0015 §7)",
         "On a consistency failure: persist both signature-valid-but-inconsistent checkpoints and the failing proof as evidence, and SHOULD surface a non-cosigning status (RFC-ACDP-0015 §7)",
