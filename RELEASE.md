@@ -18,7 +18,9 @@ a documentation bug.
       vectors **and** the behavioral fixtures — passes against **at least two
       interoperating implementations** (the `Final` gate in VERSIONING.md).
 - [ ] No open issue is labelled `blocks-final` for the version line being promoted.
-- [ ] Every RFC in the line is at `Release Candidate` (not `Draft`/`Review`) or
+- [ ] Every RFC in the line is at `Release Candidate`, **or** is at `Draft` with the
+      VERSIONING.md two-implementation promotion gate met and recorded (the
+      0.2.0/0.3.0 precedent — see the [Release history](#release-history)), or is
       `Reserved`. `Reserved` RFCs (e.g. RFC-ACDP-0009) are **not** promoted.
 
 ## 2. RFC prose
@@ -49,7 +51,8 @@ a documentation bug.
 ## 3. Schemas and conformance
 
 - [ ] Schema `$id` namespace (`schemas.acdp.io/v<major>.<minor>.<patch>/`) matches the
-      release version. The namespace never carries an `-rcN` suffix.
+      release version **or** remains in the wire-frozen `v0.1.0` namespace per the
+      VERSIONING.md additive-minor rule. The namespace never carries an `-rcN` suffix.
 - [ ] `registries/profiles.json` and `registries/profiles.md` agree on every
       profile's required-fixture set (profiles.md is authoritative on divergence).
       The mechanical half of this — every listed fixture exists, every fixture is
@@ -63,8 +66,12 @@ a documentation bug.
 ## 4. Changelog
 
 - [ ] `CHANGELOG.md` has a new dated entry for the `Final` release.
-- [ ] The entry states wire-compatibility with the preceding RC.
-- [ ] The prior `-rcN` entry is left intact as historical record.
+- [ ] The entry states wire-compatibility with the preceding RC (applies to lines
+      that shipped an RC; a line promoted straight from `Draft` states
+      wire-compatibility with the preceding `Final` line instead).
+- [ ] The prior `-rcN` entry is left intact as historical record (applies to lines
+      that shipped an RC; for a no-RC line, the prior `Draft` entry is the record
+      left intact).
 
 ## 5. Tag
 

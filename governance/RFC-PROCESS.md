@@ -53,13 +53,30 @@ Idea → Draft → Review → Final Comment Period → Release Candidate N → F
 
 ## RFC Template
 
-```markdown
-# RFC-ACDP-XXXX: Title
+The header block below is the house format every shipped RFC uses (see e.g.
+`rfcs/RFC-ACDP-0011-lineage-head-receipts.md` lines 1–8): two H1 lines (the RFC
+number, then the full protocol-name title), a blank line, the three bold
+`**Document:** / **Version:** / **Status:**` labels, a blank line, a one-paragraph
+abstract, and a `---` separator before the first numbered section.
 
-- **Status:** Draft
-- **Authors:** @handle
-- **Created:** YYYY-MM-DD
-- **Spec sections affected:** rfcs/RFC-ACDP-NNNN-*.md, schemas/json/*.schema.json
+The `Version:` value follows the suffix rules in VERSIONING.md ("RFC version" row):
+Final RFCs carry the bare semver string (e.g. `0.1.0`); Draft-stage documents use
+`-draft` (e.g. `0.2.0-draft`); pre-final candidates use `-rcN` during the Release
+Candidate window (e.g. `0.1.0-rc1`); reserved-numbering RFCs without normative text
+use `-reserved` (e.g. `0.2.0-reserved`). Authorship and dates live in git history
+and the dated `CHANGELOG.md` entries, not in the header.
+
+```markdown
+# RFC-ACDP-XXXX
+# Agent Context Distribution Protocol (ACDP) — Title
+
+**Document:** RFC-ACDP-XXXX
+**Version:** 0.X.0-draft
+**Status:** Draft
+
+One-paragraph abstract: what this RFC specifies, and which RFCs it depends on.
+
+---
 
 ## Summary
 

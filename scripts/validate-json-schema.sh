@@ -47,7 +47,7 @@ for target in "${ALL_SCHEMAS[@]}"; do
         fi
     done
 
-    if ajv compile -s "$target" "${REFS[@]}" --spec=draft2020 --strict=false; then
+    if ajv compile -s "$target" "${REFS[@]}" -c ajv-formats --spec=draft2020 --strict=false; then
         VALIDATED=$((VALIDATED + 1))
         echo "  ✓ Valid"
     else

@@ -95,12 +95,12 @@ validate_dir_against() {
         [ -f "$f" ] || continue
         TOTAL=$((TOTAL + 1))
         echo "  $(basename "$f")"
-        if ajv validate -s "${schema}" "${REFS[@]}" -d "${f}" --spec=draft2020 --strict=false >/dev/null 2>&1; then
+        if ajv validate -s "${schema}" "${REFS[@]}" -d "${f}" -c ajv-formats --spec=draft2020 --strict=false >/dev/null 2>&1; then
             VALIDATED=$((VALIDATED + 1))
             echo "    ✓ Valid"
         else
             echo "    ✗ Invalid against ${label} schema"
-            ajv validate -s "${schema}" "${REFS[@]}" -d "${f}" --spec=draft2020 --strict=false || true
+            ajv validate -s "${schema}" "${REFS[@]}" -d "${f}" -c ajv-formats --spec=draft2020 --strict=false || true
             exit 1
         fi
     done

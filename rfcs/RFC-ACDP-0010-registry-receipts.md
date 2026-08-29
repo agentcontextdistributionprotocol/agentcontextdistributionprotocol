@@ -187,7 +187,7 @@ Receipts make registry claims **attributable and non-repudiable** — they do no
 - decline to mention contexts it has hidden (a receipt proves what was published, not what wasn't);
 - equivocate between consumers only at the cost of producing conflicting signed receipts — detectable when receipts are compared, but ACDP 0.2.0 specifies no comparison infrastructure.
 
-The next layer — an append-only, registry-signed publication log with Merkle-tree checkpoints, making backdating and equivocation detectable by any auditor — is named future work, reserved as [RFC-ACDP-0009 §2.11](RFC-ACDP-0009-extensions.md#211-transparency-log). It is deliberately out of scope for this document. ***(0.3.0)*** That layer has since shipped as [RFC-ACDP-0012 Registry Transparency Log](RFC-ACDP-0012-transparency-log.md), promoting the §2.11 reservation; it remains out of scope for *this* document.
+The next layer — an append-only, registry-signed publication log with Merkle-tree checkpoints, making backdating and equivocation detectable by any auditor — is named future work, the [RFC-ACDP-0009 §2.11](RFC-ACDP-0009-extensions.md#211-transparency-log--promoted-to-rfc-acdp-0012-acdp030) reservation. It is deliberately out of scope for this document. ***(0.3.0)*** That layer has since shipped as [RFC-ACDP-0012 Registry Transparency Log](RFC-ACDP-0012-transparency-log.md), promoting the §2.11 reservation; it remains out of scope for *this* document.
 
 Deployments needing stronger-than-receipt guarantees today SHOULD continue the v0.1.0 mitigations (external transparency logs, multi-registry replication with consumer-side comparison — RFC-ACDP-0008 §9.2).
 
