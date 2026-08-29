@@ -4,10 +4,51 @@
   "tags": ["revocation", "key-rotation", "security", "mixed"],
   "applies_to_profiles": ["acdp-consumer"],
   "input": {
-    "revocation": "The rev-001 golden key-revocation context, verified per RFC-ACDP-0014 §5 (producer-signed by K2; signer fingerprint != revoked fingerprint; visibility public). Boundary T = metadata.compromised_since = 2026-05-01T00:00:00.000Z.",
-    "body_under_test": "The sig-001 golden context, signed by K1 (fingerprint sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070).",
-    "producer_did_document": "The rot-001 DID document: K1 retained in verificationMethod only (NOT removed — RFC-ACDP-0014 §9: revocation does not require removal; the pre-T record needs the key material); K2 in verificationMethod and assertionMethod.",
-    "registry_receipt": "The rcpt-001 golden receipt shape for the body under test: key_fingerprint attests K1; created_at is the receipt-attested publish time compared against T (RFC-ACDP-0010 §8 verification is a precondition — an unverified receipt provides no publish time)."
+    "revocation": {
+      "note": "The rev-001 golden key-revocation context, verified per RFC-ACDP-0014 §5 (producer-signed by K2; signer fingerprint != revoked fingerprint; visibility public).",
+      "fixture_ref": "rev-001",
+      "type": "key-revocation",
+      "visibility": "public",
+      "signer_key_id": "did:web:agents.example.com:test-producer#key-2",
+      "signer_key_fingerprint": "sha256:3097e2dee2cb4a34b53840cdb705aed71067c36f68db0e0f559c3f3fa043315f",
+      "revoked_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+      "compromised_since": "2026-05-01T00:00:00.000Z"
+    },
+    "body_under_test": {
+      "note": "The sig-001 golden context, signed by K1.",
+      "fixture_ref": "sig-001",
+      "signer_key_id": "did:web:agents.example.com:test-producer#key-1",
+      "signer_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070"
+    },
+    "producer_did_document": {
+      "note": "The rot-001 DID document: K1 retained in verificationMethod only (NOT removed — RFC-ACDP-0014 §9: revocation does not require removal; the pre-T record needs the key material); K2 in verificationMethod and assertionMethod.",
+      "fixture_ref": "rot-001",
+      "keys": {
+        "key-1": {
+          "role": "K1 — the revoked key",
+          "key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+          "in_verificationMethod": true,
+          "in_assertionMethod": false
+        },
+        "key-2": {
+          "role": "K2 — the current key, signer of the revocation",
+          "key_fingerprint": "sha256:3097e2dee2cb4a34b53840cdb705aed71067c36f68db0e0f559c3f3fa043315f",
+          "in_verificationMethod": true,
+          "in_assertionMethod": true
+        }
+      }
+    },
+    "registry_receipt": {
+      "note": "The rcpt-001 golden receipt shape for the body under test. RFC-ACDP-0010 §8 verification is a precondition — an unverified receipt provides no publish time.",
+      "fixture_ref": "rcpt-001",
+      "key_fingerprint_attests": "key-1",
+      "compared_against": "revocation.compromised_since (T)",
+      "created_at_by_scenario": {
+        "A": "2026-04-16T10:30:15.123Z",
+        "B": "2026-05-03T09:00:00.000Z",
+        "C": null
+      }
+    }
   },
   "scenarios": [
     {
