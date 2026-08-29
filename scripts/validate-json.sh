@@ -46,7 +46,7 @@ echo
 
 if ! command -v ajv >/dev/null 2>&1; then
     echo "Error: ajv-cli is not installed"
-    echo "Install with: npm install -g ajv-cli ajv-formats"
+    echo "Install with: npm install -g ajv-cli@5 ajv-formats@3"
     echo "Or run: make install-tools"
     exit 1
 fi
