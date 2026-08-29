@@ -1,3 +1,10 @@
+# Scope: Dependabot PRs ONLY. The reusable workflow it calls
+# (acdp-ci/.github/workflows/auto-merge.yml@v1) no-ops unless the PR author is
+# dependabot[bot]; for those PRs it arms GitHub's NATIVE auto-merge, so the
+# branch-protection required checks (CI: make validate) still gate the merge —
+# nothing is bypassed. Patch and minor bumps merge unattended; major bumps open
+# the PR but wait for a human. Human-authored PRs — and in particular spec
+# changes and spec-adoption PRs in consumer repos — are never auto-merged.
 name: auto-merge
 on: pull_request
 permissions:

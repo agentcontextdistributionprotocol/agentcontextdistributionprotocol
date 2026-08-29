@@ -35,6 +35,7 @@ The project maintains the following registries under [`registries/`](../registri
 - Context types (`registries/context-types.md`)
 - Data-ref types (`registries/data-ref-types.md`)
 - Error codes (`registries/error-codes.md`)
+- Lifecycle event types (`registries/lifecycle-event-types.md`)
 - Locator schemes (`registries/locator-schemes.md`)
 - Media types (`registries/media-types.md`)
 - Profiles (`registries/profiles.md`, with the machine-readable manifest `registries/profiles.json`)

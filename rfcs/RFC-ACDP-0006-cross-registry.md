@@ -13,6 +13,8 @@ This RFC specifies how consumers resolve `acdp://` references that point to cont
 
 This document is a Final ACDP specification (acdp/0.1.0). It is stable for the 0.1.0 release; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
 
+The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **SHOULD**, **SHOULD NOT**, **RECOMMENDED**, **MAY**, and **OPTIONAL** in this document are to be interpreted as described in BCP 14 ([RFC 2119](https://datatracker.ietf.org/doc/html/rfc2119), [RFC 8174](https://datatracker.ietf.org/doc/html/rfc8174)) when, and only when, they appear in all capitals — the conventions of [RFC-ACDP-0001 §2](RFC-ACDP-0001-core.md#2-conventions-and-terminology).
+
 ---
 
 ## 2. Motivation

@@ -56,7 +56,7 @@ Breaking changes require:
 
 ## Registry additions
 
-To add an entry to a registry under `registries/` (`auth-methods.md`, `context-types.md`, `data-ref-types.md`, `error-codes.md`, `locator-schemes.md`, `media-types.md`, `profiles.md`, `signature-algorithms.md`), submit a PR adding a row to the relevant table. Each entry MUST include a `Status` (`Proposed`, `Provisional`, `Stable`, `Deprecated`). New identifiers MUST NOT conflict with existing entries.
+To add an entry to a registry under `registries/` (`auth-methods.md`, `context-types.md`, `data-ref-types.md`, `error-codes.md`, `lifecycle-event-types.md`, `locator-schemes.md`, `media-types.md`, `profiles.md`, `signature-algorithms.md`), submit a PR adding a row to the relevant table. Each entry MUST include a `Status` (`Proposed`, `Provisional`, `Stable`, `Deprecated`). New identifiers MUST NOT conflict with existing entries.
 
 The profile registry is the one registry kept in two synchronized forms: `profiles.md` (human-readable, authoritative on divergence) and `profiles.json` (machine-readable conformance manifest). A change to one MUST be mirrored in the other.
 
@@ -64,7 +64,7 @@ The profile registry is the one registry kept in two synchronized forms: `profil
 
 Conformance fixtures under `schemas/conformance/` come in two kinds, dispatched by `id` prefix in `scripts/conformance-runner.py`:
 
-- `can-*` / `lin-*` (canonicalization, hashing, lineage) and `sig-*` (Ed25519 / ECDSA-P256 golden vectors) are **executed arithmetically** — the runner reproduces the JCS / hash / signature and byte-compares against the pinned `expected`. Compute `canonical_form` and `sha256_hex` with the `jcs` library (RFC 8785); never hand-write them, because the runner byte-compares. Python stdlib `json.dumps` is non-conformant.
+- `can-*` / `lin-*` (canonicalization, hashing, lineage) and `sig-*` (Ed25519 / ECDSA-P256 golden vectors) are **executed arithmetically** — the runner reproduces the JCS / hash / signature and byte-compares against the pinned `expected`. Compute `canonical_form` and `sha256_hex` with the `jcs` library (RFC 8785); never hand-write them, because the runner byte-compares. Python stdlib `json.dumps` is non-conformant. The committed generators `scripts/gen-0.2.0-vectors.py` / `gen-0.3.0-vectors.py` / `gen-0.4.0-vectors.py` are the provenance for the shipped `sig-`/`rcpt-`/`lhr-`/`log-`/`wit-` goldens and their TEST-ONLY keypair seeds; a new release line's vectors get a sibling generator following the same pattern.
 - All other families (`pub-`, `vis-`, `ret-`, `caps-`, `schema-`, `*-ssrf-`, `fed-`, …) are **behavioral scenarios** the runner does not execute; they describe a request → expected outcome that registry implementations verify.
 
 Adding a fixture is a three-file change:
@@ -90,13 +90,15 @@ ACDP `0.1.0` is wire-frozen: existing bodies, signatures, and `content_hash` val
 
 - [VERSIONING.md](VERSIONING.md) — the layered versioning policy and the status ladder.
 - [RELEASE.md](RELEASE.md) — the checklist for promoting a version line to `Final` and cutting tags.
-- Record non-breaking spec changes in [CHANGELOG.md](CHANGELOG.md) under a `## v0.1.0 — Clarifications addendum (round N)` heading that opens by asserting that no body field, schema `$id`, JCS rule, content-hash, or signature semantic changed.
+- Record non-breaking spec changes in [CHANGELOG.md](CHANGELOG.md) under a dated heading for the affected line (e.g. `## v0.4.0 — Clarifications & tooling: … — YYYY-MM-DD`) that opens by asserting that no body field, schema `$id`, JCS rule, content-hash, or signature semantic changed.
 
 ## Pull requests
 
 - Use the [pull request template](.github/PULL_REQUEST_TEMPLATE.md) and complete its checklist.
 - Write a clear, present-tense PR summary describing what changed and why.
 - Keep a PR scoped to one logical change; split unrelated edits.
+
+**Auto-merge scope.** The repository's `auto-merge` workflow (`.github/workflows/auto-merge.yml`, calling the shared `acdp-ci` reusable workflow) applies to **Dependabot PRs only**: it arms GitHub's native auto-merge for patch/minor dependency bumps once the required CI checks pass, and holds major bumps for a human. It never merges human-authored PRs — every spec change is reviewed and merged by a maintainer.
 
 ## Reporting security issues
 

@@ -19,6 +19,8 @@ Passages marked *(0.3.0)* are amendments from the acdp/0.3.0 core-profile revisi
 
 Both amendment lines are **Final** as of 2026-07-05, promoted after their conformance packs passed against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md)); the markers record provenance, not status. Everything not so marked remains Final and wire-frozen for acdp/0.1.0.
 
+The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **SHOULD**, **SHOULD NOT**, **RECOMMENDED**, **MAY**, and **OPTIONAL** in this document are to be interpreted as described in BCP 14 ([RFC 2119](https://datatracker.ietf.org/doc/html/rfc2119), [RFC 8174](https://datatracker.ietf.org/doc/html/rfc8174)) when, and only when, they appear in all capitals — the conventions of [RFC-ACDP-0001 §2](RFC-ACDP-0001-core.md#2-conventions-and-terminology).
+
 ---
 
 ## 2. Publishing a Context

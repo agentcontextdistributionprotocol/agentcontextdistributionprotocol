@@ -95,6 +95,6 @@ Per VERSIONING.md "Release tags":
 | Version | Date | Notes |
 |---|---|---|
 | `0.1.0-rc1` | 2026-05-18 | First published version; Release Candidate 1. |
-| `0.1.0` | 2026-05-19 | First `Final` release. Specification-hardening pass over `0.1.0-rc1`; wire-compatible. |
+| `0.1.0` | 2026-05-19 | First `Final` release. Specification-hardening pass over `0.1.0-rc1`; wire-compatible. The §5 release tags were not cut at release time (only the pre-release `v0.0.1` existed); the full set — `acdp/0.1.0`, `schema-v0.1.0`, `rfc-acdp-0001-v0.1.0`..`rfc-acdp-0008-v0.1.0` (RFC-ACDP-0009 is `Reserved`, never tagged) — is cut retroactively on the release merge commit `7afc29f`, recorded 2026-08-28. |
 | `0.2.0` | 2026-07-05 | Trust & Hardening promoted from `Draft` to `Final` (no RC window; the Draft carried its own two-implementation promotion gate per VERSIONING.md). Wire-compatible with 0.1.0. |
 | `0.3.0` | 2026-07-05 | 0.3.0 line promoted from `Draft` to `Final` in the same promotion (RFC-ACDP-0011–0014 + amendments). Wire-compatible with 0.1.0/0.2.0. |

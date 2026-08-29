@@ -85,9 +85,9 @@ bootstrap: install-tools install-python-deps
 	@echo "  Run: make validate"
 
 install-tools:
-	@echo "Installing ajv-cli and ajv-formats..."
+	@echo "Installing ajv-cli and ajv-formats (pinned to the CI majors)..."
 	@if command -v npm >/dev/null 2>&1; then \
-		npm install -g ajv-cli ajv-formats; \
+		npm install -g ajv-cli@5 ajv-formats@3; \
 	else \
 		echo "ERROR: npm required (see https://nodejs.org)"; exit 1; \
 	fi
@@ -95,7 +95,13 @@ install-tools:
 install-python-deps:
 	@echo "Installing Python conformance-runner dependencies..."
 	@if command -v pip3 >/dev/null 2>&1; then \
-		pip3 install --quiet -r requirements-dev.txt; \
+		pip3 install --quiet -r requirements-dev.txt || { \
+			echo; \
+			echo "pip3 install failed. On a PEP 668 externally-managed Python"; \
+			echo "(e.g. Homebrew on macOS), use a virtualenv, or run:"; \
+			echo "  pip3 install --user --break-system-packages -r requirements-dev.txt"; \
+			exit 1; \
+		}; \
 	else \
 		echo "ERROR: pip3 required"; exit 1; \
 	fi

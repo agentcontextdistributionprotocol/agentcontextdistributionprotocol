@@ -15,6 +15,8 @@ This document is a Final ACDP specification (acdp/0.1.0, with Final amendments t
 
 Passages marked *(0.2.0)* are amendments from the acdp/0.2.0 Trust & Hardening program. Passages marked *(0.3.0)* are amendments from the acdp/0.3.0 program (advertising the rate-limit ceiling via `limits.max_publish_per_minute` — §4.3; lifecycle events & retraction — RFC-ACDP-0013, §5; the producer key-revocation signal — RFC-ACDP-0014, §5/§9.3; the transparency log — RFC-ACDP-0012, §9.1). Both lines are **Final** as of 2026-07-05, promoted after their conformance packs passed against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md)); the markers record provenance, not status. Neither set changes any v0.1.0 body field, hash, or signature semantic; everything not so marked remains Final and wire-frozen for acdp/0.1.0.
 
+The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **SHOULD**, **SHOULD NOT**, **RECOMMENDED**, **MAY**, and **OPTIONAL** in this document are to be interpreted as described in BCP 14 ([RFC 2119](https://datatracker.ietf.org/doc/html/rfc2119), [RFC 8174](https://datatracker.ietf.org/doc/html/rfc8174)) when, and only when, they appear in all capitals — the conventions of [RFC-ACDP-0001 §2](RFC-ACDP-0001-core.md#2-conventions-and-terminology).
+
 ---
 
 ## 2. Threat Surface

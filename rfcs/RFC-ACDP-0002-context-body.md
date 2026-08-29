@@ -15,6 +15,8 @@ This document is a Final ACDP specification (acdp/0.1.0, with a Final amendment 
 
 The section marked *(0.3.0)* records the release line that added it. The acdp/0.3.0 line is **Final** as of 2026-07-05, promoted after its conformance pack passed against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md)). It changes no v0.1.0 body field, hash, or signature semantic.
 
+The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **SHOULD**, **SHOULD NOT**, **RECOMMENDED**, **MAY**, and **OPTIONAL** in this document are to be interpreted as described in BCP 14 ([RFC 2119](https://datatracker.ietf.org/doc/html/rfc2119), [RFC 8174](https://datatracker.ietf.org/doc/html/rfc8174)) when, and only when, they appear in all capitals — the conventions of [RFC-ACDP-0001 §2](RFC-ACDP-0001-core.md#2-conventions-and-terminology).
+
 ---
 
 ## 2. The Two-Part Structure

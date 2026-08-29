@@ -20,14 +20,25 @@ individual validators cannot see:
   7. Every examples/ subdirectory is routed (validated or syntax-checked) in
      scripts/validate-json.sh — a new directory must be consciously wired in.
   8. Every schema under schemas/json/ has a unique $id.
+  9. Every repo-relative markdown link resolves to an existing file, and every
+     fragment (`#anchor`) resolves to a real heading in the target file (GitHub
+     slug rules) — every promotion renames a §2.x heading, and a renamed heading
+     silently breaks every inbound anchor.
+ 10. Per-profile fixture placement: every fixture a profile lists in
+     profiles.json is covered in that profile's own section of profiles.md
+     (literal mention, `fam-001..N` range, or `fam-*` wildcard) — checks 3/4
+     only prove a fixture is referenced *somewhere*, so a fixture moved to the
+     wrong profile in one file would otherwise pass.
 
 Exits 0 if all checks pass, 1 otherwise.
 """
 
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
+from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFORMANCE = ROOT / "schemas" / "conformance"
@@ -198,6 +209,167 @@ def check_examples_routed():
                 f"(add a validate_dir_against or syntax_check_dir line, or it will never be validated)")
 
 
+# ── Check 9: markdown links and anchors ──────────────────────────────────────
+
+FENCE_RE = re.compile(r"^(```|~~~)")
+INLINE_CODE_RE = re.compile(r"`[^`\n]*`")
+# Inline links/images: [text](target) / ![alt](target "title"); target may be
+# wrapped in <angle brackets>. Deliberately does not match targets containing
+# parentheses or whitespace — repo-relative paths never carry either.
+LINK_RE = re.compile(r"!?\[[^\]^\[]*\]\(<?([^()<>\s]+)>?(?:\s+\"[^\"]*\")?\)")
+SCHEME_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*:")
+HEADING_RE = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
+
+
+def strip_fences(text):
+    """Return the markdown text with fenced code blocks blanked out (line count
+    preserved so reported line numbers stay real)."""
+    out, in_fence, fence_mark = [], False, None
+    for line in text.splitlines():
+        m = FENCE_RE.match(line.strip())
+        if m and not in_fence:
+            in_fence, fence_mark = True, m.group(1)
+            out.append("")
+        elif in_fence and line.strip().startswith(fence_mark):
+            in_fence = False
+            out.append("")
+        else:
+            out.append("" if in_fence else line)
+    return "\n".join(out)
+
+
+def github_slug(heading):
+    """GitHub's heading→anchor slug: strip markdown/link syntax, lowercase,
+    drop everything but word chars, spaces, and hyphens, spaces→hyphens."""
+    text = re.sub(r"!?\[([^\]]*)\]\([^)]*\)", r"\1", heading)  # links → text
+    text = re.sub(r"[`*_~]", "", text)                          # emphasis/code
+    text = text.strip().lower()
+    text = re.sub(r"[^\w\- ]", "", text)
+    return text.replace(" ", "-")
+
+
+def markdown_anchors(path, _cache={}):
+    """Set of valid GitHub anchors for a markdown file (duplicate headings get
+    -1, -2, … suffixes, as on GitHub)."""
+    if path not in _cache:
+        anchors, counts = set(), {}
+        for line in strip_fences(path.read_text()).splitlines():
+            m = HEADING_RE.match(line)
+            if not m:
+                continue
+            slug = github_slug(m.group(2))
+            n = counts.get(slug, 0)
+            counts[slug] = n + 1
+            anchors.add(slug if n == 0 else f"{slug}-{n}")
+        _cache[path] = anchors
+    return _cache[path]
+
+
+def tracked_markdown_files():
+    try:
+        names = subprocess.run(
+            ["git", "-C", str(ROOT), "ls-files", "*.md"],
+            capture_output=True, text=True, check=True,
+        ).stdout.split("\n")
+        return [ROOT / n for n in names if n]
+    except (OSError, subprocess.CalledProcessError):
+        # Not a git checkout (e.g. an exported tarball): fall back to a walk,
+        # skipping the locally-ignored directories.
+        skip = {".git", "node_modules", "temp", "plans"}
+        return [p for p in ROOT.rglob("*.md")
+                if not (set(p.relative_to(ROOT).parts[:-1]) & skip)]
+
+
+def check_markdown_links():
+    for path in sorted(tracked_markdown_files()):
+        rel = path.relative_to(ROOT)
+        text = strip_fences(path.read_text())
+        for lineno, line in enumerate(text.splitlines(), 1):
+            line = INLINE_CODE_RE.sub("", line)
+            for target in LINK_RE.findall(line):
+                target = unquote(target)
+                if SCHEME_RE.match(target) or target.startswith("//"):
+                    continue  # external URL / explicit scheme (https:, did:, acdp:, mailto:)
+                if target.startswith("#"):
+                    dest, frag = path, target[1:]
+                else:
+                    part, _, frag = target.partition("#")
+                    dest = (ROOT / part.lstrip("/")) if part.startswith("/") \
+                        else (path.parent / part)
+                    try:
+                        dest = dest.resolve()
+                        dest.relative_to(ROOT)
+                    except (OSError, ValueError):
+                        err("md-link", f"{rel}:{lineno}: link target {target!r} escapes the repository")
+                        continue
+                    if not dest.exists():
+                        err("md-link", f"{rel}:{lineno}: broken link — {target!r} does not exist")
+                        continue
+                if frag and dest.suffix == ".md" and dest.is_file():
+                    if frag.lower() not in markdown_anchors(dest):
+                        err("md-anchor",
+                            f"{rel}:{lineno}: broken anchor — "
+                            f"{'#' + frag if dest == path else target!r} does not match any heading in "
+                            f"{dest.relative_to(ROOT)}")
+
+
+# ── Check 10: per-profile fixture placement (profiles.json ↔ profiles.md) ────
+
+WILDCARD_RE = re.compile(r"([a-z][a-z-]*)-\*")
+
+
+def profile_fixture_sets(profiles_json):
+    """{profile_id: set of short fixture ids that profile lists in the
+    machine-readable manifest} — manifest lists only, never prose fields."""
+    sets = {}
+    for p in profiles_json.get("profiles", []):
+        listed = []
+        for key in ("required_fixtures", "required_fixtures_added",
+                    "tolerated_outcomes", "self_test_only", "self_test_only_added"):
+            listed.extend(p.get(key, []) or [])
+        for cond in p.get("conditional_fixtures", []) or []:
+            listed.extend(cond.get("fixtures", []) or [])
+        # Entries are fixture stems (or short ids), possibly with a prose tail
+        # (self_test_only) — take the leading short id only; a pure-prose entry
+        # contributes nothing.
+        sets[p["id"]] = {sid for sid in (short_of(e) for e in listed) if sid}
+    return sets
+
+
+def profiles_md_sections():
+    """{profile_id: section text} — each `### \\`id\\`` block in profiles.md up
+    to the next heading of the same-or-higher level."""
+    text = (REGISTRIES / "profiles.md").read_text()
+    sections = {}
+    matches = list(re.finditer(r"^###\s+`([^`]+)`.*$", text, flags=re.MULTILINE))
+    for i, m in enumerate(matches):
+        end = len(text)
+        nxt = re.search(r"^#{1,3}\s", text[m.end():], flags=re.MULTILINE)
+        if nxt:
+            end = m.end() + nxt.start()
+        sections[m.group(1)] = text[m.start():end]
+    return sections
+
+
+def check_profile_placement(fixtures, profiles_json):
+    sections = profiles_md_sections()
+    families = {fid.rsplit("-", 1)[0] for fid in fixtures}
+    for pid, json_ids in profile_fixture_sets(profiles_json).items():
+        section = sections.get(pid)
+        if section is None:
+            err("profile-placement",
+                f"profile {pid!r} (profiles.json) has no `### \\`{pid}\\`` section in registries/profiles.md")
+            continue
+        covered = set(SHORT_ID_RE.findall(section)) | expand_ranges(section)
+        for fam in WILDCARD_RE.findall(section):
+            if fam in families:
+                covered.update(fid for fid in fixtures if fid.rsplit("-", 1)[0] == fam)
+        for fid in sorted(json_ids - covered):
+            err("profile-placement",
+                f"profile {pid!r}: fixture {fid} is listed in profiles.json but not covered in "
+                f"that profile's section of registries/profiles.md — wrong-profile placement or a missed mirror edit")
+
+
 def check_schema_ids():
     seen = {}
     for path in sorted(SCHEMAS.glob("*.schema.json")):
@@ -231,6 +403,8 @@ def main():
     check_error_codes(fixtures)
     check_examples_routed()
     check_schema_ids()
+    check_markdown_links()
+    check_profile_placement(fixtures, profiles_json)
 
     if errors:
         print(f"✗ {len(errors)} consistency error(s):", file=sys.stderr)
@@ -239,7 +413,8 @@ def main():
         sys.exit(1)
     print(f"✓ Cross-artifact consistency: {len(fixtures)} fixtures wired into "
           f"profiles.json, profiles.md, and the conformance README; error codes, "
-          f"example routing, and schema $ids consistent.")
+          f"example routing, schema $ids, per-profile fixture placement, and "
+          f"markdown links/anchors consistent.")
 
 
 if __name__ == "__main__":
