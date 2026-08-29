@@ -124,8 +124,8 @@ This document is non-normative. It explains what ACDP intentionally does not add
 
 ## 16. Audit-grade time anchoring
 
-**Non-goal.** `created_at` is the registry's clock.
+**Non-goal.** `created_at` remains the registry's clock, and ACDP does not integrate time-stamp authorities or blockchain anchoring. Typed **content** anchors (RFC-ACDP-0016) are in scope: they are opaque, never-dereferenced producer claims about external artifacts, not time attestations.
 
 **Rationale.** Strong time anchoring requires external time-stamp authorities, blockchain anchoring, or similar — high-cost mechanisms not every deployment needs.
 
-**What ACDP does instead.** Producers wishing strong time guarantees can publish a separate context referencing an external time-stamp service in `data_refs`, bound to the original by `derived_from`.
+**What ACDP does instead.** Producers wishing strong time guarantees can publish a separate context referencing an external time-stamp service in `data_refs`, bound to the original by `derived_from`. *(0.5.0)* Producers wishing to genesis-link a body to a non-ACDP, content-addressed external artifact — without any time claim — use the `anchors` field (RFC-ACDP-0016).
