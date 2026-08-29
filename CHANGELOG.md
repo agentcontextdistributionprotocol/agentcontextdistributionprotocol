@@ -2,6 +2,10 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.3.0 — rev-002 editorial: prose input → machine-readable matrix — 2026-08-29
+
+**Editorial, no normative change.** `schemas/conformance/rev-002-before-after-boundary.json`'s `input` block (the shared fixtures the four before/after-boundary scenarios reference — the revocation, the body under test, the producer DID document, the registry receipt) was four prose strings; it is now four typed objects carrying the same facts (key fingerprints, DID-document key-role placement, the receipt's `key_fingerprint`/`created_at` semantics), so a conformance executor can consume it without parsing English. `wit-002` was already in this shape and needed no change (out of scope, see below); rev-002 was the one remaining prose-`input` fixture. The `scenarios[]`/`expected` blocks (names, outcomes, and their explanatory `behavior` prose) are byte-for-byte unchanged — same semantics, same boundary timestamps (`2026-05-01T00:00:00.000Z`), same four scenario names A–D. No fixture `id`, no error code, no schema, no wire semantic changed. Paired executor work (verifier-py's `run_rev_002`, reading the fixture file directly) lands as a separate pin-bump-plus-executor PR in that repo.
+
 ## v0.5.0 — anc-* conformance pack — 2026-08-29
 
 **No wire change beyond what the Draft entry below already opened.** This round wires the `anchors` field into the schemas and the conformance suite; RFC-ACDP-0016 itself (the previous entry) already specified the field.
