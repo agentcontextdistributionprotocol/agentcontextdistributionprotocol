@@ -31,6 +31,7 @@ Status MUST be reflected in the RFC document header and SHOULD match the ladder 
 
 The project maintains the following registries under [`registries/`](../registries/):
 
+- Anchor schemes (`registries/anchor-schemes.md`)
 - Auth methods (`registries/auth-methods.md`)
 - Context types (`registries/context-types.md`)
 - Data-ref types (`registries/data-ref-types.md`)

@@ -56,7 +56,7 @@ Breaking changes require:
 
 ## Registry additions
 
-To add an entry to a registry under `registries/` (`auth-methods.md`, `context-types.md`, `data-ref-types.md`, `error-codes.md`, `lifecycle-event-types.md`, `locator-schemes.md`, `media-types.md`, `profiles.md`, `signature-algorithms.md`), submit a PR adding a row to the relevant table. Each entry MUST include a `Status` (`Proposed`, `Provisional`, `Stable`, `Deprecated`). New identifiers MUST NOT conflict with existing entries.
+To add an entry to a registry under `registries/` (`anchor-schemes.md`, `auth-methods.md`, `context-types.md`, `data-ref-types.md`, `error-codes.md`, `lifecycle-event-types.md`, `locator-schemes.md`, `media-types.md`, `profiles.md`, `signature-algorithms.md`), submit a PR adding a row to the relevant table. Each entry MUST include a `Status` (`Proposed`, `Provisional`, `Stable`, `Deprecated`). New identifiers MUST NOT conflict with existing entries.
 
 The profile registry is the one registry kept in two synchronized forms: `profiles.md` (human-readable, authoritative on divergence) and `profiles.json` (machine-readable conformance manifest). A change to one MUST be mirrored in the other.
 

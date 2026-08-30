@@ -102,7 +102,7 @@ A body MAY carry several anchors — for example, a fact referencing both an ori
 ## 9. Schema and Registry
 
 - **Schema.** `anchors` is added to `schemas/json/acdp-context-body.schema.json` (open, `additionalProperties: true`, so this is a tightening rather than a wire change) and mirrored into `schemas/json/acdp-publish-request.schema.json` (closed, `additionalProperties: false` — without the mirror, every anchored publish would be rejected). Both schemas stay in the `v0.1.0` namespace per the VERSIONING.md additive-minor rule.
-- **Registry.** Anchor schemes are registered in `registries/anchor-schemes.md`, status per the house convention (`Proposed` / `Provisional` / `Stable` / `Deprecated`). Seeding that registry with `macp.commitment` and `seam.decision` is tracked separately and is not a precondition for this RFC's own conformance gate.
+- **Registry.** Anchor schemes are registered in `registries/anchor-schemes.md`, status per the house convention (`Proposed` / `Provisional` / `Stable` / `Deprecated`). `macp.commitment` and `seam.decision` are seeded there at `Provisional`; seeding was tracked separately from, and was never a precondition for, this RFC's own conformance gate.
 
 ---
 

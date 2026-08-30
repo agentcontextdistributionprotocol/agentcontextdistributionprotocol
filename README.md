@@ -84,6 +84,7 @@ agentcontextdistributionprotocol/
 
   registries/
     README.md
+    anchor-schemes.md                # External anchor scheme vocabulary (0.5.0)
     auth-methods.md
     context-types.md
     data-ref-types.md

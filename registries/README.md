@@ -4,6 +4,7 @@ This directory tracks the well-known identifiers used in ACDP. Each registry is 
 
 | Registry | File | Authority RFC |
 |---|---|---|
+| Anchor schemes | [anchor-schemes.md](anchor-schemes.md) | [RFC-ACDP-0016 §9](../rfcs/RFC-ACDP-0016-external-anchors.md) |
 | Authentication methods | [auth-methods.md](auth-methods.md) | [RFC-ACDP-0007](../rfcs/RFC-ACDP-0007-capabilities.md), [RFC-ACDP-0008](../rfcs/RFC-ACDP-0008-security.md) |
 | Context types | [context-types.md](context-types.md) | [RFC-ACDP-0002 §5](../rfcs/RFC-ACDP-0002-context-body.md) |
 | DataRef types | [data-ref-types.md](data-ref-types.md) | [RFC-ACDP-0002 §6](../rfcs/RFC-ACDP-0002-context-body.md) |
@@ -29,4 +30,5 @@ This directory tracks the well-known identifiers used in ACDP. Each registry is 
 - Lifecycle event types are lowercase snake_case matching `^[a-z][a-z0-9_]*$`.
 - Error codes use lowercase snake_case.
 - Locator scheme identifiers use dotted-namespace form (e.g. `kafka.offset`).
+- Anchor scheme identifiers use dotted-namespace form (e.g. `macp.commitment`).
 - Experimental identifiers SHOULD use a vendor-prefixed reverse-domain name (e.g. `com.example.feature`).
