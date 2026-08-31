@@ -85,9 +85,9 @@ An anchor is an **authenticated assertion by the producer** — exactly like `da
 
 Anchors are deliberately opaque to core ACDP: `content_hash` inside an anchor means whatever the named `scheme`'s external system defines it to mean, and ACDP defines no mapping between schemes. As of this writing, three related-but-distinct digest constructions exist in the wider ecosystem, recorded here so implementers do not assume interchangeability:
 
-- **`macp.commitment`** anchors carry the MACP canonical commitment hash (RFC-MACP-0013) — `"sha256:" + hex(SHA-256("macp-commitment-hash/1:" || JCS(CommitmentPayload)))`, a hash over a fixed, RFC-MACP-0013-enumerated field set.
-- **`seam.decision`** anchors carry a Seam sealed-decision-record audit digest (`audit_entry.digest`) — a distinct, length-prefixed tuple construction (`seam-commitment-digest:v1`), not a JCS preimage.
-- The MACP commitment hash MAY appear as an opaque substring **inside** a Seam decision digest's own preimage (a Seam `Commitment.supersedes` string embeds a MACP `commitment_hash`) — this is containment, one way, not equivalence. A change to either construction's versioned label is that construction's own breaking change; it is never triggered by, and never triggers, a change here.
+- **`macp.commitment`** anchors carry a canonical commitment hash defined and versioned entirely by the Multi-Agent Coordination Protocol (MACP), independently of ACDP — see `registries/anchor-schemes.md`. ACDP does not reproduce or track that construction here.
+- **`seam.decision`** anchors carry a sealed-decision-record audit digest defined and versioned entirely by the Seam decision-record system, independently of ACDP — see `registries/anchor-schemes.md`. ACDP does not reproduce or track that construction here.
+- Some schemes' external systems MAY choose to embed one anchor construction as an opaque substring inside another's preimage (containment, not equivalence). Any such relationship is those systems' own concern: a change to either construction's versioned label is that construction's own breaking change, never triggered by, and never triggering, a change here.
 
 ACDP's contract is limited to: the anchor's `content_hash` is exactly what the named scheme says it is, byte-for-byte, immutable once signed. Resolving what that digest means, and whether two digests from different schemes relate, is entirely the concern of the systems that define those schemes — never of core ACDP verification.
 

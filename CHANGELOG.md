@@ -2,6 +2,13 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — RFC-ACDP-0016 §7: stop reproducing MACP's hash formula — 2026-08-30
+
+**Editorial, non-normative section only, no wire change.** No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. §7 ("Relationship to Other Digests") previously quoted MACP's exact `macp.commitment` hash construction (`"sha256:" + hex(SHA-256("macp-commitment-hash/1:" || JCS(CommitmentPayload)))`, citing RFC-MACP-0013 by number) and a similarly specific description of the Seam `seam.decision` construction, directly in ACDP's own RFC text.
+
+- Reworded to state only that each construction is defined and versioned entirely by its owning system, pointing to `registries/anchor-schemes.md` instead of reproducing or citing the formula. Same decoupling rationale as the `registries/anchor-schemes.md` seed above: ACDP's own RFC text MUST NOT carry a normative or drift-prone dependency on another protocol's internal formula or RFC numbering — including MACP and AITP. If MACP versions or restructures its own commitment-hash construction, no change is needed here.
+- The containment note (MACP hash may appear as an opaque substring inside a Seam digest's preimage) is preserved in substance, generalized to not name either construction's formula.
+
 ## v0.5.0 — seed `registries/anchor-schemes.md`, decoupled from owning protocols — 2026-08-30
 
 **Additive registry seed, no wire change.** No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. `registries/anchor-schemes.md` (referenced but not yet created by RFC-ACDP-0016 §9) now exists, registering `macp.commitment` and `seam.decision` at `Provisional`, and is indexed in `registries/README.md`.
