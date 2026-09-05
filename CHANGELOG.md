@@ -9,6 +9,12 @@ All notable changes to ACDP are recorded here. ACDP follows the versioning polic
 - `.github/workflows/notify-spec-consumers.yml`'s dispatch matrix now includes `acdp-registry-rs` alongside `acdp-rs` and `acdp-verifier-py` (`repo: [acdp-rs, acdp-verifier-py, acdp-registry-rs]`), and the stale header comment naming only the first two repos is updated to name all three.
 - No permission or token change was required: the job already mints a per-repo token via `actions/create-github-app-token@v3` scoped to `matrix.repo`, and the `acdp-deps-bot` App is already installed org-wide (`repository_selection: "all"`), so the new matrix leg authenticates identically. `acdp-registry-rs`'s own `repository_dispatch: spec-released` listener already exists — added via `acdp-registry-rs#119` (its `bump-spec.yml`) — so this loop is confirmed closed on the receiving end, not just a one-way dispatch into the void.
 
+## v0.3.0 — erratum: RFC-ACDP-0014 §13 covers cross-producer revocation — 2026-09-05
+
+**Non-normative erratum to a Security Considerations section, no wire change.** No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed.
+
+- RFC-ACDP-0014 §13's existing "Revocation as a weapon" defenses are all conditioned on an attacker holding only the compromised key; they do not cover a DID holder who legitimately controls their own key publishing a §5-valid revocation naming a *different* producer's fingerprint — §5 binds the signer to its own DID, not to the revoked fingerprint, and §7's trigger is fingerprint-keyed, not producer-scoped. A new second bullet, "Cross-producer revocation," names this gap and states that the mitigations (surfacing the issuing DID, an operator override, and the RFC-ACDP-0012 transparency log) are consumer-local and operational, not a protocol change.
+
 ## v0.5.0 — RFC-ACDP-0016 §7: stop reproducing MACP's hash formula — 2026-08-30
 
 **Editorial, non-normative section only, no wire change.** No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. §7 ("Relationship to Other Digests") previously quoted MACP's exact `macp.commitment` hash construction (`"sha256:" + hex(SHA-256("macp-commitment-hash/1:" || JCS(CommitmentPayload)))`, citing RFC-MACP-0013 by number) and a similarly specific description of the Seam `seam.decision` construction, directly in ACDP's own RFC text.
