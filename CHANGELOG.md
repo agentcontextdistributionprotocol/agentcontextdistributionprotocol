@@ -2,6 +2,16 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.1.0 — erratum: RFC-ACDP-0006 §4.1 binds the resolved ctx_id — 2026-09-05
+
+**Erratum adding one resolution step plus a fixture, no wire change.** No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed.
+
+- **The gap.** RFC-ACDP-0006 §4.1 steps 5–6 verify the producer signature and recompute `content_hash`, but neither step compared the retrieved `body.ctx_id` to the `ctx_id` used to construct the step-4 request URI. `ctx_id` is in the RFC-ACDP-0001 §5.7 registry-assigned exclusion set — stripped from ProducerContent before hashing — so a substituted `ctx_id` is invisible to both the hash check and the signature it protects. A registry (compromised, buggy, or malicious) could therefore serve any other validly-signed body by the same producer under a different context's URL, and a consumer stopping at steps 5–6 would attribute the wrong content to the requested identity.
+- **The fix.** §4.1 gains a new step 7, "Bind the resolved identity. (NORMATIVE)": `body.ctx_id` MUST equal the requested `ctx_id`; on mismatch, treat the resolution as failed, surface `cross_registry_resolution_failed`, and never surface or cache the body under the requested identity (§4.3). The former step 7 ("Walk further references") is renumbered to step 8 with its traversal-control table and indentation preserved verbatim. §5 Failure Modes gains one corresponding row, placed alongside the other integrity failures.
+- **No new error code.** `cross_registry_resolution_failed` (already `Stable`/502, already RFC-ACDP-0006's code for non-SSRF resolution failures) is reused rather than minting a new one — the same house precedent RFC-ACDP-0014 §10 set for declining a new code when the condition is a verification verdict rather than a wire condition. `registries/error-codes.md` gains no new row; only its existing Meaning cell gains a clause naming the new cause.
+- **`fed-011-ctx-id-binding`** is a new behavioral fixture pinning the step-7 check, wired into both `acdp-registry-federated` and `acdp-consumer` in `registries/profiles.json` / `registries/profiles.md` / `schemas/conformance/README.md`. It covers the receipt-less case (the acdp-rs #189 shape), the case where an accompanying receipt attests the wrong body (RFC-ACDP-0010 §8 step 3 independently fails it as `invalid_receipt`, and step 7 must independently fail too), and URI-encoding / RFC-ACDP-0004 §2.1 path-style equivalence (compared as parsed `acdp://` identities, never as raw path strings).
+- Provenance: `acdp-rs` #189, where `resolve()` bound `ctx_id` only via the receipt path and not otherwise. This tightens consumer conformance: an implementation that skipped the check was relying on the serving registry's honesty for context identity, which RFC-ACDP-0006 §4.2 explicitly says a consumer MUST NOT do.
+
 ## v0.1.0 — vis-005: total_estimate pinned as leak-invariance, not an exact count — 2026-09-05
 
 **Fixture correction plus a clarifying RFC sentence, no wire change.** No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed.
