@@ -2,6 +2,15 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.1.0 — vis-005: total_estimate pinned as leak-invariance, not an exact count — 2026-09-05
+
+**Fixture correction plus a clarifying RFC sentence, no wire change.** No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed.
+
+- `vis-005`'s `derived_from` scenario (index 2) previously pinned `"total_estimate": 0` as an exact scalar. This was over-specified, with three independent conflicts: the schema (`acdp-search-response.schema.json`) declares `total_estimate` approximate ("May be approximate; not guaranteed to be exact"); RFC-ACDP-0005 §5 says it "SHOULD NOT be relied upon for exact counts"; and §3 explicitly permits omitting the field entirely under visibility scoping. A registry that applies `derived_from` as a post-SQL refinement — the architecture §2.3 itself sanctions — may legitimately report the pre-refinement, requester-visible count (here `1`, the unrelated public context), which the old scalar pin rejected.
+- The scenario now carries a `total_estimate_constraints` object instead, pinning the property that actually matters: the estimate MUST NOT count the private context, MUST be invariant across non-producer requesters, MAY be omitted entirely, and (for this setup) `0` and `1` are conformant while `2` (which requires counting the private context) is not. `matches_count: 0` remains an exact, unchanged pin — that count is a normative MUST, not an estimate.
+- Reported by `acdp-registry-rs` (REG-10 Phase 9b), whose post-SQL `derived_from` refinement returns `total_estimate: 1` and failed the old exact-`0` pin. This change **loosens** the fixture; no registry behavior that was previously conformant becomes non-conformant.
+- RFC-ACDP-0005 §2.5.5 Q2 gains one clarifying sentence stating that a registry applying a lineage filter as a post-refinement MAY report the pre-refinement, requester-visible estimate — closing the loop the fixture left implicit.
+
 ## v0.5.0 — notify-spec-consumers dispatches to acdp-registry-rs — 2026-09-05
 
 **CI plumbing only, no wire change.** No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed.
