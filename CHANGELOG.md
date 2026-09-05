@@ -2,6 +2,13 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — README: canonical posture paragraph regains the 0.5.0 Draft line — 2026-09-05
+
+**Doc-only fix, no wire change.** No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed.
+
+- **The gap.** `README.md`'s "current version" lede and its "Project status" posture paragraph — the paragraph downstream repos (`.github` profile, `acdp-verifier-py`, others) copy byte-faithfully — collapsed to naming only the 0.1.0–0.4.0 Final lines and the RFC-ACDP-0009 reservation after RFC-ACDP-0015's promotion to Final. That dropped the only signal that an in-flight surface exists, even though `rfcs/README.md` already listed RFC-ACDP-0016 as `Draft (acdp/0.5.0)` and this CHANGELOG's own `v0.5.0` entries were already dated. A downstream org-profile update (`.github#6`) was left blocked on this ambiguity.
+- **The fix.** `README.md:18`'s lede now distinguishes "current stable version" (`acdp/0.4.0`, Final) from the open `0.5.0` line carrying RFC-ACDP-0016 in Draft. The Project-status paragraph (`README.md:22`) now names RFC-ACDP-0016 alongside RFC-ACDP-0009 as not-yet-dependable surfaces. Downstream copies re-sync mechanically from this canonical wording.
+
 ## v0.1.0 — erratum: RFC-ACDP-0006 §4.1 binds the resolved ctx_id — 2026-09-05
 
 **Erratum adding one resolution step plus a fixture, no wire change.** No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed.
