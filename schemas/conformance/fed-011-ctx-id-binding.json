@@ -1,0 +1,50 @@
+{
+  "id": "fed-011",
+  "description": "Cross-registry resolution MUST bind the retrieved body to the ctx_id that was requested. Per RFC-ACDP-0006 §4.1 step 7, `body.ctx_id` MUST equal the `ctx_id` used to construct the request URI in step 4 — a check that signature verification (step 5) and content_hash recomputation (step 6) cannot supply, because `ctx_id` is in the RFC-ACDP-0001 §5.7 registry-assigned exclusion set and is therefore stripped from ProducerContent before hashing. `GET /contexts/<encoded ctx_id A>` returns a body whose `ctx_id` is B; A and B share the same `agent_id`, and B's signature and content_hash BOTH verify correctly — that is the whole point: a resolver relying solely on steps 5 and 6 would accept this response and attribute body B to identity A.",
+  "tags": ["security", "federated", "consumer", "resolution", "ctx-id-binding"],
+  "resolution_rule": "RFC-ACDP-0006 §4.1 step 7 (resolved-identity binding)",
+  "applies_to_profiles": ["acdp-registry-federated", "acdp-consumer"],
+  "input": {
+    "scenario": "Resolver requests GET https://registry.example.com/contexts/<encoded ctx_id A>; the registry (compromised, buggy, or malicious) instead returns a fully valid body whose body.ctx_id is B, a different context minted for the same agent_id. B's producer signature verifies against B's content_hash, and recomputing content_hash over B's JCS-canonicalized ProducerContent (with the RFC-ACDP-0001 §5.7 exclusion set stripped) matches — both step 5 and step 6 PASS. Only the new step 7 comparison of body.ctx_id (B) against the requested ctx_id (A) detects the substitution.",
+    "requested_ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111",
+    "returned_body_ctx_id": "acdp://registry.example.com/22222222-2222-4222-8222-222222222222",
+    "shared_agent_id": "did:web:producer.example.com",
+    "signature_verifies": true,
+    "content_hash_verifies": true,
+    "additional_test_cases": [
+      {
+        "case": "no_receipt_served",
+        "note": "The response carries no registry_receipt at all — the acdp-rs #189 shape. RFC-ACDP-0010 §8's receipt-path binding does not apply because there is no receipt to check. The §4.1 step 7 comparison is the ONLY thing standing between the consumer and misattribution, which is exactly why the erratum makes it unconditional rather than leaving it implicit in the receipt path."
+      },
+      {
+        "case": "receipt_served_but_attests_returned_body",
+        "note": "The response DOES carry a registry_receipt, but the receipt attests ctx_id B (the body actually returned) rather than the requested ctx_id A — a self-consistent receipt for the wrong body. RFC-ACDP-0010 §8 step 3 (receipt.ctx_id MUST equal the requested ctx_id) catches this FIRST and independently, verdict invalid_receipt. The new §4.1 step 7 check MUST ALSO independently fail on the same body/ctx_id comparison. A consumer MUST NOT treat a successful receipt check as a substitute for the unconditional step-7 check, and MUST NOT treat a failing receipt check as a substitute for step 7 either — both verdicts are produced and reported."
+      },
+      {
+        "case": "uri_encoding_and_path_style_equivalence",
+        "note": "The requested ctx_id and body.ctx_id are compared as parsed acdp:// URIs (authority + UUID), never as raw strings. Two forms that MUST NOT be treated as a mismatch: (1) percent-encoding differences in the request path that decode to the identical authority+UUID; (2) the RFC-ACDP-0004 §2.1 path-style alternate retrieval form (GET /contexts/<authority>/<uuid>) versus the acdp://<authority>/<uuid> URI form — both resolve to the same context per RFC-ACDP-0004 §2.1 and MUST compare equal after parsing. A naive byte-compare of the raw request path against body.ctx_id would produce false failures on these equivalent forms."
+      }
+    ]
+  },
+  "expected": {
+    "outcome": "failure",
+    "error_code": "cross_registry_resolution_failed",
+    "http_status": 502,
+    "behavior": "The resolver MUST compare the parsed acdp:// identity of body.ctx_id against the parsed acdp:// identity of the ctx_id used to construct the step-4 request URI. On mismatch, the resolver MUST treat the resolution as failed and surface cross_registry_resolution_failed (consumer-side: an equivalent typed error). The body MUST NOT be surfaced to the caller under the originally-requested identity, and MUST NOT be entered into a cache keyed by the requested ctx_id (RFC-ACDP-0006 §4.3) — content_hash validation on a cache read would not detect the substitution, because ctx_id sits outside the hashed ProducerContent.",
+    "rationale": "ctx_id is a registry-assigned field in the RFC-ACDP-0001 §5.7 exclusion set: it is stripped from ProducerContent before content_hash is computed, so it is covered by neither content_hash recomputation (RFC-ACDP-0006 §4.1 step 6) nor the producer signature (step 5), which signs only the hash. Without an explicit binding check, a registry — compromised, buggy, or malicious — can serve any other validly-signed body by the same producer under any other context's URL, and a resolver that stops at steps 5–6 will accept it and attribute the wrong content to the requested identity. Attributing the wrong body silently corrupts any evidence chain a derived_from walk later grafts onto that identity. RFC-ACDP-0010 §8 step 3 already requires this same binding when a registry receipt accompanies the response; this fixture pins the unconditional form so a receipt-less retrieval (the acdp-rs #189 gap) is not weaker.",
+    "additional_failure_cases": [
+      {
+        "case": "no receipt served",
+        "expected_outcome": "The step 7 ctx_id-binding check still applies and still fails with cross_registry_resolution_failed; absence of a registry_receipt does not weaken or bypass the binding requirement."
+      },
+      {
+        "case": "a receipt IS served but attests the returned (wrong) body",
+        "expected_outcome": "RFC-ACDP-0010 §8 step 3 catches the receipt/requested-ctx_id mismatch first and independently, verdict invalid_receipt. The §4.1 step 7 check MUST ALSO independently fail (cross_registry_resolution_failed) on the same underlying comparison. A consumer MUST NOT treat receipt verification success as a substitute for the unconditional step-7 check — the two checks are reported as distinct verdicts, not collapsed into one."
+      },
+      {
+        "case": "percent-encoding or RFC-ACDP-0004 §2.1 path-style equivalence",
+        "expected_outcome": "MUST NOT be treated as a mismatch. The comparison is over the parsed acdp:// URI (authority + UUID), not the raw request path string, so percent-encoding differences and the path-style alternate retrieval form (/contexts/<authority>/<uuid>) compare equal to the acdp://<authority>/<uuid> form when they denote the same context."
+      }
+    ]
+  }
+}

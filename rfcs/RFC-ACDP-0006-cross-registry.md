@@ -60,7 +60,18 @@ When a consumer encounters an `acdp://other-registry.example/uuid` reference and
 4. **Issue retrieval.** `GET https://<authority>/contexts/{encoded_ctx_id}` per RFC-ACDP-0004 §2.
 5. **Verify the body's signature.** Resolve the producing agent's signing key per RFC-ACDP-0001 §5.11, then verify `body.signature.value` against `body.content_hash`. v0.1.0 producers MUST use `did:web` (RFC-ACDP-0001 §5.4); consumers encountering other DID methods MAY surface this to higher layers as `key_resolution_failed`-equivalent if they cannot resolve them.
 6. **Verify the content hash.** Recompute `content_hash` over the JCS-canonicalized body (with the exclusion set from RFC-ACDP-0001 §5.7) and confirm it matches.
-7. **Walk further references.** For each entry in `body.derived_from`, repeat from step 1 if the consumer needs the predecessor. ACDP's content-addressing forbids cycles in honest data (a body cannot reference its own future `ctx_id`), but consumers SHOULD detect cycles defensively (track visited `ctx_id`s within a single walk) and abort with a logged error if one is observed — its presence indicates a tampered body or a registry serving forged data.
+7. **Bind the resolved identity. (NORMATIVE)** Confirm that `body.ctx_id` equals the `ctx_id` used
+   to construct the request URI in step 4. Steps 5 and 6 cannot supply this: `ctx_id` is in the
+   RFC-ACDP-0001 §5.7 registry-assigned exclusion set, so it is stripped from ProducerContent
+   before hashing and is therefore covered by neither the `content_hash` nor the producer
+   signature. Without this check a registry can serve any other validly-signed body by the same
+   producer under the requested context's URL and both preceding checks still pass. On mismatch,
+   treat the resolution as failed and surface `cross_registry_resolution_failed` (consumer-side: an
+   equivalent typed error); the body MUST NOT be surfaced under the originally-requested identity,
+   and MUST NOT be entered into a cache keyed by the requested `ctx_id` (§4.3). Where a registry
+   receipt accompanies the response, RFC-ACDP-0010 §8 step 3 already requires the same binding —
+   this step makes it unconditional, so a receipt-less retrieval is not weaker.
+8. **Walk further references.** For each entry in `body.derived_from`, repeat from step 1 if the consumer needs the predecessor. ACDP's content-addressing forbids cycles in honest data (a body cannot reference its own future `ctx_id`), but consumers SHOULD detect cycles defensively (track visited `ctx_id`s within a single walk) and abort with a logged error if one is observed — its presence indicates a tampered body or a registry serving forged data.
 
    Implementations MUST apply the following traversal controls to bound work on hostile or accidentally-deep DAGs. The schema permits `derived_from.maxItems = 1000`, so a naïve walk that follows only depth limits can still traverse millions of nodes in a wide graph; the per-axis controls below are NORMATIVE:
 
@@ -129,6 +140,7 @@ Authenticated remote retrieval — bearer-forwarding / token-exchange expectatio
 | Retrieval returns 404 | The reference is unresolvable. The consumer MUST NOT infer that the context never existed; only that it is not currently retrievable. |
 | Signature verification fails | The retrieved body is **untrustworthy**. The consumer MUST NOT use it as evidence regardless of which registry served it. |
 | Hash mismatch | Same as signature failure — body is corrupt. |
+| `body.ctx_id` ≠ the requested `ctx_id` | The registry served a different context under the requested URL. Signature and `content_hash` may both verify — `ctx_id` is registry-assigned and outside the hashed ProducerContent (RFC-ACDP-0001 §5.7). Treat the resolution as failed per §4.1 step 7; do not surface or cache the body under the requested identity. |
 | Visibility-restricted (404 `not_found` returned indistinguishably) | The reference is not accessible to the consumer. The serving registry returns `not_found`; consumers cannot distinguish from a genuinely missing context. v0.1.0 has no bearer-forwarding or token-exchange mechanism to authenticate the cross-registry fetch — see §4.4. The consumer must authenticate to the remote registry directly (out of band) to retrieve a non-public context. |
 
 ---

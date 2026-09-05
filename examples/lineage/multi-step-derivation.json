@@ -93,7 +93,7 @@
     "1. Consumer fetches step 3 (alert), verifies its signature.",
     "2. For each entry in step3.body.derived_from, consumer fetches the predecessor (step 2 analysis) and verifies its signature.",
     "3. For each entry in step2.body.derived_from, consumer fetches the predecessor (step 1 snapshot) and verifies.",
-    "4. Walk terminates when derived_from is empty (step 1) or the consumer's depth cap is reached (RFC-ACDP-0006 §4.1 step 7; RECOMMENDED depth: 10).",
+    "4. Walk terminates when derived_from is empty (step 1) or the consumer's depth cap is reached (RFC-ACDP-0006 §4.1 step 8; RECOMMENDED depth: 10).",
     "5. Each fetch is content-addressed; cycles are forbidden by the immutable-body invariant. Consumers SHOULD detect cycles defensively."
   ]
 }
