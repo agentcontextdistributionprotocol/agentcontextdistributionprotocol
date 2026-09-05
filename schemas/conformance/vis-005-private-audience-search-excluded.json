@@ -65,9 +65,17 @@
       "expected": {
         "status": 200,
         "matches_count": 0,
-        "total_estimate": 0
+        "matches_ctx_ids": [],
+        "total_estimate_constraints": {
+          "exact_value_not_pinned": true,
+          "MUST_NOT_count_the_private_context": true,
+          "MUST_be_invariant_across_non_producer_requesters": true,
+          "MAY_be_omitted_entirely": true,
+          "conformant_values_for_this_setup": [0, 1],
+          "non_conformant_values_for_this_setup": [2]
+        }
       },
-      "notes": "The `derived_from` filter is search (RFC-ACDP-0005 §2.4), not retrieval. Even an audience member of a private context cannot use it to enumerate descendants. Note: in this scenario the search target is the private context's ctx_id, exposed via the URL parameter; the response MUST behave identically to any other search filter that would otherwise surface a private context to a non-agent_id requester."
+      "notes": "The `derived_from` filter is search (RFC-ACDP-0005 §2.4), not retrieval. Even an audience member of a private context cannot use it to enumerate descendants — `matches_count` MUST be 0. Note: in this scenario the search target is the private context's `ctx_id`, exposed via the URL parameter; the response MUST behave identically to any other search filter that would otherwise surface a private context to a non-`agent_id` requester. **`total_estimate` is deliberately not pinned to an exact value here.** `total_estimate` is approximate by schema (`acdp-search-response.schema.json`) and informational by RFC-ACDP-0005 §5; §3 permits omitting it entirely under visibility scoping, and §2.3 sanctions applying per-requester filters *after* a storage page is read — so a registry that applies `derived_from` as a post-refinement may legitimately report the pre-refinement count of the requester-visible set (here `1`, the unrelated public context). What is pinned is the leak-invariance property of RFC-ACDP-0005 §2.5.5 Q2 and §3: the estimate MUST NOT count the private context for any requester other than its `agent_id`, and MUST NOT vary between the audience member and an outsider. See `examples/search/empty-page-post-filter-response.json` for the spec's own non-zero estimate on an empty post-filtered page."
     },
     {
       "name": "Outsider searches: sees ONLY the public context",

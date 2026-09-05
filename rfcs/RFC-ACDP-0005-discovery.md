@@ -186,6 +186,8 @@ A registry MUST apply the `anonymous_public_reads` rule to `total_estimate` with
 
 This rule MUST also be applied to `total_estimate` (RFC-ACDP-0005 §3): private contexts never count toward another DID's `total_estimate`, and registries MUST avoid leaking their existence via per-requester variance in the estimate.
 
+A registry that applies a lineage filter as a post-refinement MAY report an estimate that reflects the pre-refinement, requester-visible count; what §2.5.5 and §3 forbid is counting the private context itself, and varying the estimate by requester. Exactness after post-filtering is not required (§5).
+
 ---
 
 ## 3. Visibility Scoping
