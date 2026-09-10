@@ -2,6 +2,15 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — notify-spec-consumers fires on registries/ changes — 2026-09-10
+
+**CI plumbing only, no wire change.** No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed.
+
+- **The gap.** `.github/workflows/notify-spec-consumers.yml` describes itself as firing "when conformance-relevant spec files change on main", but its `paths` filter listed only `schemas/**`, `examples/**`, and `rfcs/**`. `registries/**` was absent — so a commit touching only the IANA-style registries dispatched `spec-released` to nobody, and the SHA-pinning consumers (`acdp-rs`, `acdp-verifier-py`, `acdp-registry-rs`) learned of it only when some later `schemas/`/`rfcs/`/`examples/` commit swept it in, or via manual `workflow_dispatch`.
+- **Why that directory is conformance-relevant.** `registries/` holds `profiles.json` and `profiles.md` — the machine- and human-readable conformance manifests that map fixtures to profiles — plus every registry a consumer must recognize to interoperate: `error-codes.md`, `signature-algorithms.md`, `media-types.md`, `context-types.md`, `data-ref-types.md`, `auth-methods.md`, `lifecycle-event-types.md`, `locator-schemes.md`, and `anchor-schemes.md`. Registering a new error code or signature algorithm is exactly the kind of change a pinning consumer needs to see.
+- **The concrete failure this was found through.** `acdp-registry-rs` maintains two spec-drift guards that read the pinned `registries/profiles.json`: a coverage ratchet over `fixture_families`' keys, and an exact-equality assertion between its hardcoded registry-profile list and the `acdp-registry-`-prefixed ids recomputed from the spec, whose doc comment states the intent as "a future spec change (e.g. an eighth registry profile) turns CI red instead of silently drifting out of sync". Under the old filter, the two tests built to catch `registries/` drift were precisely the tests a `registries/`-only commit could not trigger; the guard held, but only on an unrelated commit's schedule. Surfaced as `acdp-registry-rs#184` while landing the previous entry, which was itself a `registries/`-only commit.
+- **The fix.** `registries/**` is added to the `paths` filter. No permission, token, or matrix change: the job still mints a per-repo App token scoped to `matrix.repo`, and all three consumers already listen for `repository_dispatch: spec-released`.
+
 ## v0.1.0 — registries/profiles.json: self-test-only entries become machine-matchable — 2026-09-10
 
 **Manifest-shape fix, no wire change.** No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. No conformance obligation is added, removed, or relaxed by this entry: every fixture required before this change is required after it, and the two profiles touched (`acdp-registry-core`, `acdp-registry-federated`) keep identical requirement sets.
