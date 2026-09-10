@@ -12,6 +12,7 @@ on:
       - 'schemas/**'
       - 'examples/**'
       - 'rfcs/**'
+      - 'registries/**'
   workflow_dispatch:
 
 permissions:
