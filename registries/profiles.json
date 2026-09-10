@@ -142,7 +142,7 @@
         "GET /contexts/search (registry MAY return 501 if acdp-registry-discovery is not advertised)"
       ],
       "self_test_only": [
-        "rate-001-rate-limited-response-shape (per profiles.md note — black-box conformance cannot deterministically trigger per-agent rate limit)"
+        "rate-001-rate-limited-response-shape"
       ],
       "notes": "All pub-001..014 fixtures are required. sig-002 is conditionally required only when the registry advertises ecdsa-p256 in supported_signature_algorithms. idem-001..005 are conditionally required when supports_idempotency_key is true; idem-006 documents a tolerated race outcome and is not a strict requirement. can-010 extends the canonicalization golden vectors to DataRef-level openness; lin-001 is the dedicated lineage_id derivation golden vector; schema-008..010 pin the closed nested schemas (signature, data_period, capabilities.limits); schema-011/012 pin absent-vs-null rejection for the DataRef fields format and location (RFC-ACDP-0002 §6.8) and schema-014 for capabilities.limits.idempotency_key_ttl_seconds (RFC-ACDP-0005 §2.2.1); did-ssrf-001..003 pin producer-DID-resolution SSRF refusal at publish-time signature verification (RFC-ACDP-0008 §4.8); did-ssrf-004 pins mixed-answer rejection (RFC-ACDP-0006 §7.1) and did-ssrf-005 same-host-different-port redirect rejection (RFC-ACDP-0006 §7.5). can-011 pins the RFC 8785 §3.2.2.3 numeric-serialization vectors (exponential-notation boundaries, the plain-decimal band, integer exactness through 2^53, and negative-zero normalization) — a registry whose JCS pipeline diverges on these will mint content_hash values that consumers reject. 0.2.0 additions: can-012 extends the divergence corpus (acdp_version omitted vs explicit '0.1.0' vs explicit '0.2.0', microsecond timestamps, null-vs-absent-vs-empty metadata — RFC-ACDP-0001 Appendix A); sig-003 + dk-001/002/004 are conditionally required when the registry advertises did:key in supported_did_methods, and dk-003 conversely pins the key_resolution_failed rejection on 0.2.0 registries that do NOT advertise it. 0.3.0 additions: Idempotency-Key support is REQUIRED at acdp_version >= 0.3.0 (RFC-ACDP-0003 §6.4) — supports_idempotency_key MUST be advertised true, the §6.2.2 atomic storage contract (UNIQUE(agent_id, idempotency_key) with transactional insert) MUST be implemented, and the §6 TTL bounds MUST be enforced; idem-007 pins the capabilities-level rejection and idem-001..005 become unconditionally required for 0.3.0 registries (0.1.0/0.2.0 registries unchanged). caps-007 pins the OPTIONAL limits.max_publish_per_minute field (integer >= 1, advisory pacing ceiling — RFC-ACDP-0007 §3.2, RFC-ACDP-0008 §4.3); its presence never relaxes the §4.3 rate-limiting MUSTs or the mandatory Retry-After on 429."
     },
@@ -185,7 +185,7 @@
         "fed-010-truncated-walk-reported",
         "fed-011-ctx-id-binding"
       ],
-      "self_test_only_added": [
+      "behavioral_requirements": [
         "Response-size caps (RFC-ACDP-0006 §7.3)",
         "Timeouts (RFC-ACDP-0006 §7.4)",
         "DNS-rebinding pinning (RFC-ACDP-0006 §7.6)"
