@@ -22,7 +22,7 @@ conformance/
 ├── log-*.json      Registry transparency log — Merkle golden vectors + verification failures (RFC-ACDP-0012, 0.3.0)
 ├── wit-*.json      Transparency-log witness cosignatures — cosignature golden vector, consistency refusal, N-witnessed quorum + verification failures (RFC-ACDP-0015, 0.4.0)
 ├── lc-*.json       Lifecycle events & retraction scenarios (RFC-ACDP-0013, 0.3.0)
-├── rev-*.json      Producer key revocation — golden vector + boundary semantics (RFC-ACDP-0014, 0.3.0)
+├── rev-*.json      Producer key revocation — golden vector, consumer boundary/lineage-fold semantics, publish-rejection matrix (RFC-ACDP-0014, 0.3.0)
 ├── anc-*.json      Typed external anchors — content-hash golden vector + schema/tolerance scenarios (RFC-ACDP-0016, 0.5.0)
 ├── fp-*.json       Key-fingerprint encoding vectors (RFC-ACDP-0010 §6, 0.2.0)
 ├── rot-*.json      Historical producer-key verification with receipts (RFC-ACDP-0010 §10, 0.2.0)
@@ -57,7 +57,7 @@ conformance/
 - `fp-*.json` — key-fingerprint encoding vectors (RFC-ACDP-0010 §6)
 - `anc-*.json` carrying a top-level `vectors` array (i.e. `anc-004`) — `content_hash` over a body carrying `anchors`, verified by the same canonicalization/hash check as `can-*` (RFC-ACDP-0016 §5)
 
-**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `schema-*`, `dk-*`, `rot-*`, `lc-*`, `rcpt-002`..`rcpt-004`, `lhr-002`..`lhr-004`, `rev-002`, `anc-001`..`anc-003`, `anc-005`, …). Those fixtures define request/response scenarios that require a running registry or consumer to execute. They are machine-readable specifications for implementers to validate against their implementation. The runner's summary line reports how many behavioral fixtures were left to live implementations.
+**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `schema-*`, `dk-*`, `rot-*`, `lc-*`, `rcpt-002`..`rcpt-004`, `lhr-002`..`lhr-004`, `rev-002`, `rev-003`, `anc-001`..`anc-003`, `anc-005`, …). Those fixtures define request/response scenarios that require a running registry or consumer to execute. They are machine-readable specifications for implementers to validate against their implementation. The runner's summary line reports how many behavioral fixtures were left to live implementations.
 
 Runner guards: a fixture whose `id` prefix matches no family declared in `registries/profiles.json` `fixture_families` is a **failure**, not a silent skip; so is an executable-family fixture with an empty `vectors` list. `--only <id-or-prefix>` (e.g. `--only sig-002`, `--only can`) runs a subset while iterating on a fixture. The companion `scripts/check-consistency.py` (`make consistency`) verifies every fixture is wired into `registries/profiles.json`, `registries/profiles.md`, and this README's index, and that every asserted error code is registered.
 
@@ -81,6 +81,23 @@ To claim full conformance a registry MUST:
   }
 }
 ```
+
+Multi-case fixtures have no single house style — cases appear as `vectors`, a `scenarios` array,
+`input.cases`, `reject_variants`, `negative_examples`, or `expected.tolerated_outcomes`. Read each
+fixture's own shape rather than assuming one, and see **What the bundled conformance runner
+verifies** above for which shapes the runner executes and on what it dispatches.
+
+Within a `scenarios` array, a scenario MAY carry a **`harness`** string: prose marking that scenario as **self-test only** — not runnable by an
+external black-box harness — with the reason. It is the per-scenario counterpart of the
+whole-fixture `self_test_only` list in `registries/profiles.json` (used for `rate-001`), and exists
+because a fixture can be mostly black-box testable with one or two cases that are not: `rev-003`
+scenarios H and M are published by the registry under its own DID, so a harness's own signature
+would fail verification long before the check under test is reached.
+
+A rejection scenario MAY also carry **`control`** and **`differs_from_control`** — the scenario it is
+derived from, and the body paths on which it differs. `rev-003` uses both so that "this body differs
+from a valid one in exactly one respect" is a derived, recomputable fact rather than a prose claim
+that drifts as the fixture is edited.
 
 ---
 
@@ -301,8 +318,9 @@ All `lc-*` fixtures are behavioral. Required for `acdp-registry-lifecycle`; `lc-
 |---|---|---|
 | `rev-001` | Key-revocation context golden vector: producer-signed `key-revocation` body revoking K1 (the `sig-001` key; fingerprint as in `fp-001`/`rot-001`), signed by current key K2 (the `sig-003` seed — `rot-001`'s K2). Canonical form, `content_hash`, Ed25519 signature over the ASCII `content_hash` string; §4 shape (public visibility, §6-encoded fingerprint, canonical-ms `compromised_since`); §5 not-self-signed rule. Executed by the runner. | success: byte-exact reproduction end-to-end |
 | `rev-002` | Compromise-boundary semantics (RFC-ACDP-0014 §7), completing `rot-001`: receipt-attested publish time strictly before `compromised_since` → *historically authorized (pre-compromise, receipt-attested)*; at/after → fail closed despite a valid receipt; no receipt (publish time unverifiable) → fail closed under the strict profile; producer-signed vs registry-attested trust classes distinguishable. Scenarios E–G extend the same fixture to a revocation *lineage*: the earliest `compromised_since` across all members is effective (E), a retracted revocation still counts in that fold (F), and a non-revocation superseding a revocation does not disarm it (G) — so the lineage MUST be assembled via `GET /lineages/{lineage_id}`, never `/current` | mixed (per-scenario) |
+| `rev-003` | Publish-time rejection matrix for the RFC-ACDP-0014 §4/§5 registry obligations: non-public `visibility`, absent/malformed `revoked_key_fingerprint`, absent/non-canonical `compromised_since`, `reason` over 1024 characters, and the `revoked_key_controller` binding in both directions → `schema_violation` (400); revocation signed by the very key it revokes → `key_not_authorized` (403), over `did:web` and — where the registry advertises the method — `did:key`. Four positive controls (producer-signed controller-absent, controller-present-and-equal, §6 registry-attested, `reason` of exactly 1024 characters) pin the accept side. Scenarios H and M are self-test only — the registry publishes them under its own DID | behavioral |
 
-`rev-001` is executed arithmetically by `scripts/conformance-runner.py`; `rev-002` is behavioral. Both are required for 0.3.0 `acdp-consumer` implementations; `rev-001`'s registry-side rejections (shape → `schema_violation`; self-signed-by-revoked-key → `key_not_authorized`) bind to `acdp-registry-core` at `acdp_version` ≥ 0.3.0. No new wire error code and no profile: revocation rides existing surfaces (RFC-ACDP-0014 §10).
+`rev-001` is executed arithmetically by `scripts/conformance-runner.py`; `rev-002` and `rev-003` are behavioral. `rev-001` and `rev-002` are required for 0.3.0 `acdp-consumer` implementations; `rev-003` is **registry-side only** (`acdp-registry-core`, conditional on `acdp_version` ≥ 0.3.0) and carries no consumer obligation. It is the matrix that makes the §4/§5 publish-time rejections checkable and introduces no obligation of its own — every outcome it asserts comes from RFC-ACDP-0014 §4 (the metadata table plus the MUST-reject paragraph immediately following it) and §5 step 2. Two of its fourteen scenarios (H and M, the §6 registry-attested pair) are **self-test only**: the registry publishes them under its own DID, so an external harness cannot submit them. No new wire error code and no profile: revocation rides existing surfaces (RFC-ACDP-0014 §10).
 
 ### Typed external anchors (RFC-ACDP-0016, 0.5.0)
 

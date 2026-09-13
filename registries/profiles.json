@@ -137,8 +137,8 @@
           "capability_match": ">=0.5.0"
         },
         {
-          "fixtures": ["rev-001-revocation-context-golden"],
-          "required_when": "acdp_version >= 0.3.0 (0.3.0) — the registry side of RFC-ACDP-0014 §4/§5: accept a well-formed key-revocation publish; reject shape violations (missing/malformed revoked_key_fingerprint or compromised_since, non-public visibility) with schema_violation; reject a revocation self-signed by the revoked key with key_not_authorized",
+          "fixtures": ["rev-001-revocation-context-golden", "rev-003-revocation-publish-rejects"],
+          "required_when": "acdp_version >= 0.3.0 (0.3.0) — the registry side of RFC-ACDP-0014 §4/§5: accept a well-formed key-revocation publish; reject shape violations (missing/malformed revoked_key_fingerprint or compromised_since, non-public visibility) with schema_violation; reject a revocation self-signed by the revoked key with key_not_authorized. rev-001 pins the accept side arithmetically; rev-003 is the behavioral rejection matrix for the same obligations — twelve black-box scenarios plus two (H and M, the registry-attested pair of RFC-ACDP-0014 §6) that the registry publishes under its own DID and so MUST self-test, as with rate-001. Scenario J additionally applies only to registries advertising did:key in supported_did_methods; for a registry that does not, dk-003 governs that publish shape instead (key_resolution_failed at RFC-ACDP-0001 §5.4, before RFC-ACDP-0014 §5 step 2 is reached)",
           "capability_key": "acdp_version",
           "capability_match": ">=0.3.0"
         }

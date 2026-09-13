@@ -24,7 +24,7 @@ Reads every fixture under schemas/conformance/ and verifies arithmetic claims:
   - fp-* fixtures: key-fingerprint encoding vectors (RFC-ACDP-0010 §6)
 
 Behavioral fixtures (pub-*, vis-*, dk-*, rcpt-002..004, lhr-002..004,
-log-002/log-004, wit-002/wit-004, lc-*, rev-002, rot-*, fed-*, ...) are not executed; they
+log-002/log-004, wit-002/wit-004, lc-*, rev-002/rev-003, rot-*, fed-*, ...) are not executed; they
 describe request/response scenarios for live implementations.
 Exits 0 if all vectors pass, 1 otherwise.
 
