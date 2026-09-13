@@ -2,6 +2,15 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.4.0 — erratum: RFC-ACDP-0007 §5 regains `invalid_witness_cosignature`, plus a guard — 2026-09-13
+
+**Documentation erratum and a new consistency guard, no wire change.** No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. No implementation behavior changes: the code, its HTTP status, and its version gate are exactly as already shipped in `registries/error-codes.md` and the wire enum.
+
+- **The gap.** RFC-ACDP-0015 §10 states that `invalid_witness_cosignature` was "added to the RFC-ACDP-0007 §5 table and the `acdp-error.schema.json` wire enum". It reached the registry (`registries/error-codes.md`) and the enum, but **never the RFC-ACDP-0007 §5 table** — which carried 24 rows against 25 in both other sources. The §5 reserved-codes blockquote likewise had *(0.2.0)* and *(0.3.0)* graduation sentences but no *(0.4.0)* one.
+- **Why it went unnoticed.** The wire error-code vocabulary is defined in three places, and nothing compared them. `check_error_codes` only verified that codes *asserted by fixtures* were registered — a code missing from the RFC table asserts nothing, so it drifted silently for the whole 0.4.0 line.
+- **The fix.** The §5 row is restored in the established idiom (marked *(0.4.0)*, placed immediately before the `internal_error` terminator row, Meaning condensed from the registry entry which remains authoritative on detail), and the blockquote gains its *(0.4.0)* graduation sentence.
+- **The guard.** `scripts/check-consistency.py` gains `check_error_code_registry_sync`, which asserts set equality across RFC-ACDP-0007 §5, `registries/error-codes.md`'s main table, and the `acdp-error.schema.json` enum, reporting each direction separately. It is scoped by section on both markdown sides: `error-codes.md`'s "Reserved future codes" table holds `unsupported_embedding_model`, which MUST NOT appear in the enum, and its "`superseded_target` reason codes" table holds reason tokens rather than error codes; RFC-ACDP-0007's §3.1/§3.3 tables carry backticked capability-field names in the same first-cell position. Sets are compared, never order — the three sources order their rows differently by design. The existing `registered_error_codes()` parser is deliberately reused (refactored to share one scoped scanner) rather than forked, so the two readers of that file cannot themselves drift.
+
 ## v0.5.0 — notify-spec-consumers fires on registries/ changes — 2026-09-10
 
 **CI plumbing only, no wire change.** No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed.

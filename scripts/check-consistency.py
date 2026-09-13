@@ -17,6 +17,13 @@ individual validators cannot see:
      mentioned in profiles.md resolves to exactly one fixture file.
   5. Every fixture filename appears in the schemas/conformance/README.md index.
   6. Every error code asserted by a fixture exists in registries/error-codes.md.
+  6b. The wire error-code vocabulary agrees across all three places that define it:
+     RFC-ACDP-0007 §5, registries/error-codes.md's main table, and the
+     acdp-error.schema.json enum. Nothing compared them before, which is how
+     `invalid_witness_cosignature` reached the registry and the enum but never the
+     RFC table (RFC-ACDP-0015 §10 claimed it had). Scoped to the relevant section on
+     both markdown sides so the reserved-codes and `superseded_target` reason tables
+     — and RFC-0007's capability-field tables — are not mistaken for error codes.
   7. Every examples/ subdirectory is routed (validated or syntax-checked) in
      scripts/validate-json.sh — a new directory must be consciously wired in.
   8. Every schema under schemas/json/ has a unique $id.
@@ -178,9 +185,38 @@ def check_conformance_readme(fixtures):
             err("conformance-readme", f"fixture {path.stem} missing from schemas/conformance/README.md index")
 
 
-def registered_error_codes():
-    text = (REGISTRIES / "error-codes.md").read_text()
+def _section(text, heading_re, stop_re=r"^#{2,3}\s"):
+    """Slice `text` from the line matching heading_re to the next heading matching stop_re.
+
+    Returns "" when the heading is absent, so a caller can report a missing section
+    rather than silently scanning nothing.
+    """
+    m = re.search(heading_re, text, flags=re.MULTILINE)
+    if not m:
+        return ""
+    rest = text[m.end():]
+    stop = re.search(stop_re, rest, flags=re.MULTILINE)
+    return rest[: stop.start()] if stop else rest
+
+
+def _first_cell_tokens(text):
+    """Backticked lowercase tokens in the first cell of each markdown table row.
+
+    Tolerates a trailing version marker in the same cell (e.g. `| `code` *(0.4.0)* |`),
+    since only the backticked span is captured.
+    """
     return set(re.findall(r"^\|\s*`([a-z_]+)`", text, flags=re.MULTILINE))
+
+
+def registered_error_codes():
+    """Every backticked first-cell token in error-codes.md, across ALL its tables.
+
+    Deliberately permissive: check_error_codes needs the reserved code and the
+    `superseded_target` reason tokens to count as "registered" when a fixture cites one.
+    For the strict wire-enum comparison use main_table_error_codes() instead.
+    """
+    text = (REGISTRIES / "error-codes.md").read_text()
+    return _first_cell_tokens(text)
 
 
 def check_error_codes(fixtures):
@@ -205,6 +241,59 @@ def check_error_codes(fixtures):
         walk(data)
         for c in sorted(used - codes):
             err("error-codes", f"{fid}: error code {c!r} is not in registries/error-codes.md")
+
+
+def check_error_code_registry_sync():
+    """The wire error-code vocabulary is defined in three places; they MUST agree.
+
+    RFC-ACDP-0007 §5 (the normative table), registries/error-codes.md (the registry), and
+    acdp-error.schema.json's enum (the wire contract). Nothing previously compared them,
+    which is how `invalid_witness_cosignature` shipped in the registry and the enum while
+    never reaching the RFC table (RFC-ACDP-0015 §10 claimed it had).
+
+    Scoped deliberately on both markdown sides:
+      - error-codes.md -> only the main table. The "Reserved future codes" table holds
+        `unsupported_embedding_model`, which MUST NOT be in the enum, and the
+        "`superseded_target` reason codes" table holds reason tokens, not error codes.
+      - RFC-ACDP-0007 -> only section 5. Other sections (§3.1/§3.3) carry tables whose
+        first cell is a backticked lowercase token (capability field names).
+    Sets are compared, never order: the three sources order their rows differently by design.
+    """
+    check = "error-code-sync"
+
+    rfc_path = RFCS / "RFC-ACDP-0007-capabilities.md"
+    rfc_section = _section(rfc_path.read_text(), r"^##\s+5\.\s+Error Code Registry\s*$")
+    if not rfc_section:
+        err(check, "could not locate section 5 in rfcs/RFC-ACDP-0007-capabilities.md")
+        return
+    rfc_codes = _first_cell_tokens(rfc_section)
+
+    reg_text = (REGISTRIES / "error-codes.md").read_text()
+    reg_section = _section(reg_text, r"^##\s+v0\.1\.0 codes\b.*$")
+    if not reg_section:
+        err(check, "could not locate the main code table heading in registries/error-codes.md")
+        return
+    reg_codes = _first_cell_tokens(reg_section)
+
+    schema = json.loads((SCHEMAS / "acdp-error.schema.json").read_text())
+    try:
+        enum_codes = set(schema["properties"]["error"]["properties"]["code"]["enum"])
+    except (KeyError, TypeError):
+        err(check, "could not read error.code enum from schemas/json/acdp-error.schema.json")
+        return
+
+    if not (rfc_codes and reg_codes and enum_codes):
+        err(check, "one of the three error-code sources parsed as empty; refusing to compare")
+        return
+
+    for label_a, a, label_b, b in (
+        ("RFC-ACDP-0007 §5", rfc_codes, "registries/error-codes.md", reg_codes),
+        ("registries/error-codes.md", reg_codes, "acdp-error.schema.json enum", enum_codes),
+    ):
+        for code in sorted(a - b):
+            err(check, f"error code {code!r} is in {label_a} but missing from {label_b}")
+        for code in sorted(b - a):
+            err(check, f"error code {code!r} is in {label_b} but missing from {label_a}")
 
 
 def check_examples_routed():
@@ -437,6 +526,7 @@ def main():
     check_profiles_md(fixtures)
     check_conformance_readme(fixtures)
     check_error_codes(fixtures)
+    check_error_code_registry_sync()
     check_examples_routed()
     check_schema_ids()
     check_markdown_links()
@@ -449,8 +539,9 @@ def main():
             print(f"  {e}", file=sys.stderr)
         sys.exit(1)
     print(f"✓ Cross-artifact consistency: {len(fixtures)} fixtures wired into "
-          f"profiles.json, profiles.md, and the conformance README; error codes, "
-          f"example routing, schema $ids, per-profile fixture placement, and "
+          f"profiles.json, profiles.md, and the conformance README; error codes "
+          f"(and their RFC/registry/enum three-way sync), example routing, "
+          f"schema $ids, per-profile fixture placement, and "
           f"markdown links/anchors consistent.")
 
 
