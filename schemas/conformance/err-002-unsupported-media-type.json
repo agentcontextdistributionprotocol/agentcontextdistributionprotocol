@@ -1,0 +1,62 @@
+{
+  "id": "err-002",
+  "description": "A body-bearing request whose Content-Type is outside the registry's accept-set MUST be rejected with HTTP 415 and code 'unsupported_media_type' (RFC-ACDP-0007 §4.1, §5), using the standard error envelope (§4). The body MUST NOT be parsed first — the code's whole point is that no structural claim about the body is made, which is why schema_violation (pinned to 400, and asserting a validation that did not run) is NOT conformant here. Every registry MUST accept application/acdp+json; accepting application/json or more is the registry's own choice (RFC-ACDP-0001 §5.1), so this fixture's scenarios pin only the mandatory member, the parameter-ignoring rule, and the rejection shape. REQUIRED only for registries advertising acdp_version >= 0.5.0; earlier registries have no specified behavior here and MUST NOT emit the code.",
+  "tags": ["failure", "error-envelope", "4xx", "media-type"],
+  "applies_to_profiles": ["acdp-registry-core"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "note": "Scenarios vary only the request Content-Type. The request body is a well-formed publish request in every case — any rejection must therefore be attributable to the media type alone, never to body content. A harness that sends a malformed body cannot distinguish 415-for-media-type from 400-for-body and is not exercising this fixture."
+  },
+  "scenarios": [
+    {
+      "name": "A — canonical type is accepted",
+      "request_content_type": "application/acdp+json",
+      "expected": {
+        "outcome": "success",
+        "behavior": "MUST be accepted. application/acdp+json is the one mandatory member of every registry's accept-set (RFC-ACDP-0007 §4.1). This is the positive control: a registry that 415s here is rejecting the protocol's own canonical media type."
+      }
+    },
+    {
+      "name": "B — canonical type with a charset parameter is accepted",
+      "request_content_type": "application/acdp+json; charset=utf-8",
+      "expected": {
+        "outcome": "success",
+        "behavior": "MUST be accepted. Media-type parameters MUST be ignored when deciding acceptance (RFC-ACDP-0007 §4.1). RFC-ACDP-0001 §5.1 already fixes the encoding as UTF-8, so charset is redundant rather than distinguishing, and registries/media-types.md explicitly permits implementations to include it. Rejecting this is the most likely real-world false positive in a naive string-equality implementation."
+      }
+    },
+    {
+      "name": "C — an unaccepted type is rejected with 415",
+      "request_content_type": "text/plain",
+      "expected": {
+        "outcome": "failure",
+        "http_status": 415,
+        "error_code": "unsupported_media_type",
+        "content_type": "application/acdp+json",
+        "envelope": {
+          "error": {
+            "code": "unsupported_media_type",
+            "message": "Content-Type 'text/plain' is not accepted; use application/acdp+json."
+          }
+        },
+        "behavior": "MUST be rejected with 415 and unsupported_media_type, carrying the standard error envelope with response Content-Type application/acdp+json (RFC-ACDP-0007 §4 — the envelope is REQUIRED on every failure response, 415 included). The body MUST NOT be parsed: schema_violation is NOT conformant here, because it asserts a structural validation that never ran and is pinned to 400. not_implemented is also wrong — the endpoint exists. The error.message MUST NOT echo the request body."
+      }
+    },
+    {
+      "name": "D — application/json is registry choice, not a conformance requirement",
+      "request_content_type": "application/json",
+      "expected": {
+        "outcome": "either",
+        "behavior": "BOTH outcomes are conformant and a harness MUST NOT assert one. RFC-ACDP-0001 §5.1 says implementations MAY accept application/json, and registries/media-types.md RECOMMENDS it as a legacy-client fallback — but neither makes it mandatory. A registry that accepts it proceeds to the RFC-ACDP-0003 §2.1 pipeline; one that does not MUST answer 415 unsupported_media_type exactly as in scenario C. This scenario exists to stop implementers reading scenario C as 'reject everything that is not application/acdp+json'."
+      }
+    },
+    {
+      "name": "E — absent Content-Type is registry choice",
+      "request_content_type": null,
+      "expected": {
+        "outcome": "either",
+        "behavior": "BOTH outcomes are conformant (RFC-ACDP-0007 §4.1): the registry MAY reject with 415 unsupported_media_type, or MAY infer application/acdp+json and proceed. Registries SHOULD document which. A missing header is a client defect either way, and mandating one reading would break deployed clients for no security gain. If the registry rejects, the envelope MUST match scenario C's shape."
+      }
+    }
+  ],
+  "notes": "Behavioral fixture — scripts/conformance-runner.py does not execute err-* (there is no err- dispatch branch; it falls through to the behavioral path). Scoped to acdp-registry-core but REQUIRED only at acdp_version >= 0.5.0, so it is wired as a conditional_fixtures entry rather than an unconditional one: a 0.3.0/0.4.0 registry MUST NOT emit this code at all (RFC-ACDP-0007 §5 blockquote), so asserting the rejection against one would be testing a requirement it is forbidden to satisfy. Scenarios D and E deliberately pin *latitude* rather than behavior — the accept-set beyond the mandatory member is the registry's own choice, and a fixture that hard-codes one registry's policy as conformance would be wrong. GET and other body-less methods are out of scope: no request body means no request media type. Method-level rejection (405) is likewise out of scope and has no ACDP error code."
+}

@@ -204,8 +204,15 @@ def _first_cell_tokens(text):
 
     Tolerates a trailing version marker in the same cell (e.g. `| `code` *(0.4.0)* |`),
     since only the backticked span is captured.
+
+    The character class includes digits deliberately. No current code contains one, but
+    `registries/error-codes.md`'s "Adding a code" rule requires lowercase snake_case without
+    forbidding digits — and an `[a-z_]+` class would drop such a code from the markdown sides
+    only (the enum side is read from JSON, exactly), silently passing a code that is in the
+    RFC and the registry but missing from the wire enum. That is precisely the
+    `invalid_witness_cosignature` bug this guard exists to catch.
     """
-    return set(re.findall(r"^\|\s*`([a-z_]+)`", text, flags=re.MULTILINE))
+    return set(re.findall(r"^\|\s*`([a-z0-9_]+)`", text, flags=re.MULTILINE))
 
 
 def registered_error_codes():

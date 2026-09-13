@@ -19,6 +19,12 @@ Accept: application/acdp+json
 
 Servers SHOULD honor the preference where supported. The default if no `Accept` header is supplied is `application/acdp+json`.
 
+### Request `Content-Type` *(0.5.0)*
+
+The paragraph above governs the **response** type via `Accept`. On the **request** side, a registry MUST accept `application/acdp+json` on body-bearing methods, MAY accept `application/json` (RECOMMENDED as a legacy fallback — see Registration status below) and anything further of its choosing, and MUST ignore media-type parameters such as `charset` when comparing — which is what makes the `; charset=utf-8` permission in the table above coherent. **Those three bind every version**: none adds a rejection, and the first two restate rules this registry and RFC-ACDP-0001 §5.1 already carried.
+
+*(0.5.0)* What the 0.5.0 line adds is the rejection itself: a registry advertising `acdp_version` ≥ `0.5.0` answers a type outside its accept-set with `unsupported_media_type` (HTTP 415, [`error-codes.md`](error-codes.md)) without parsing the body. Earlier registries MUST NOT emit that code and have no specified behavior here. Full rule, including the absent-`Content-Type` case and why 405 is out of scope: [RFC-ACDP-0007 §4.1](../rfcs/RFC-ACDP-0007-capabilities.md).
+
 ## Versioning
 
 Protocol version is carried in JSON, not in the Content-Type header. The authoritative version sources are `acdp_version` on the capabilities document (RFC-ACDP-0007 §3) and the optional `body.acdp_version` on a context body (RFC-ACDP-0001 §6). The media type does NOT carry a `version` parameter; doing so would create two competing version sources and is forbidden.

@@ -4,13 +4,13 @@ This directory contains the normative RFCs that define the Agent Context Distrib
 
 | RFC | Title | Status |
 |---|---|---|
-| [RFC-ACDP-0001](RFC-ACDP-0001-core.md) | Core — identifiers, JCS, hashing, signatures | Final (0.1.0; 0.2.0/0.3.0 amendments Final) |
+| [RFC-ACDP-0001](RFC-ACDP-0001-core.md) | Core — identifiers, JCS, hashing, signatures | Final (0.1.0; 0.2.0/0.3.0 amendments Final; **§5.1's request-media-type sentence is *(0.5.0)* Draft**) |
 | [RFC-ACDP-0002](RFC-ACDP-0002-context-body.md) | Context Body | Final (0.1.0; 0.3.0 amendment Final) |
-| [RFC-ACDP-0003](RFC-ACDP-0003-publish.md) | Publish & Supersession | Final (0.1.0; 0.2.0/0.3.0 amendments Final) |
+| [RFC-ACDP-0003](RFC-ACDP-0003-publish.md) | Publish & Supersession | Final (0.1.0; 0.2.0/0.3.0 amendments Final; **§2.1's media-type pre-step is *(0.5.0)* Draft**) |
 | [RFC-ACDP-0004](RFC-ACDP-0004-retrieval.md) | Retrieval & Lineage | Final (0.1.0; 0.2.0/0.3.0 amendments Final) |
 | [RFC-ACDP-0005](RFC-ACDP-0005-discovery.md) | Discovery (keyword search) | Final (0.1.0; 0.3.0 amendment Final) |
 | [RFC-ACDP-0006](RFC-ACDP-0006-cross-registry.md) | Cross-Registry References | Final |
-| [RFC-ACDP-0007](RFC-ACDP-0007-capabilities.md) | Capabilities & Errors | Final (0.1.0; 0.2.0/0.3.0 amendments Final) |
+| [RFC-ACDP-0007](RFC-ACDP-0007-capabilities.md) | Capabilities & Errors | Final (0.1.0; 0.2.0/0.3.0/0.4.0 amendments Final; **§4.1 and the `unsupported_media_type` row are *(0.5.0)* Draft**) |
 | [RFC-ACDP-0008](RFC-ACDP-0008-security.md) | Security & Threat Model | Final (0.1.0; 0.2.0/0.3.0 amendments Final) |
 | [RFC-ACDP-0009](RFC-ACDP-0009-extensions.md) | Extensions (attestations, walks, push) | Reserved (§2.7 promoted to RFC-ACDP-0010; §2.1 promoted to RFC-ACDP-0013; §2.11 promoted to RFC-ACDP-0012; §2.12 promoted to RFC-ACDP-0015) |
 | [RFC-ACDP-0010](RFC-ACDP-0010-registry-receipts.md) | Registry Receipts | Final (acdp/0.2.0) |
@@ -21,7 +21,7 @@ This directory contains the normative RFCs that define the Agent Context Distrib
 | [RFC-ACDP-0015](RFC-ACDP-0015-witness-cosigning.md) | Transparency-Log Witness Cosigning | Final (acdp/0.4.0) |
 | [RFC-ACDP-0016](RFC-ACDP-0016-external-anchors.md) | Typed External Anchors | Draft (acdp/0.5.0) |
 
-The acdp/0.2.0 and acdp/0.3.0 lines were promoted from Draft to Final on 2026-07-05, and the acdp/0.4.0 line (RFC-ACDP-0015) on 2026-08-28, each after its conformance pack passed against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md)). The 0.4.0 gate was met by `acdp-rs` (crates.io `acdp 0.8.1`, require-mode conformance at spec `bff3cf3afbdcea619834916e8f0bcac7e82ba658`, [CI run](https://github.com/agentcontextdistributionprotocol/acdp-rs/actions/runs/33232085544/job/99046540516)) and `acdp-verifier-py` (`v0.1.0`, at the same pinned spec SHA, [CI run](https://github.com/agentcontextdistributionprotocol/acdp-verifier-py/actions/runs/33235087345)), each executing `wit-001..004`. In-prose *(0.2.0)* / *(0.3.0)* / *(0.4.0)* markers record the release line that added a passage.
+The acdp/0.2.0 and acdp/0.3.0 lines were promoted from Draft to Final on 2026-07-05, and the acdp/0.4.0 line (RFC-ACDP-0015) on 2026-08-28, each after its conformance pack passed against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md)). The 0.4.0 gate was met by `acdp-rs` (crates.io `acdp 0.8.1`, require-mode conformance at spec `bff3cf3afbdcea619834916e8f0bcac7e82ba658`, [CI run](https://github.com/agentcontextdistributionprotocol/acdp-rs/actions/runs/33232085544/job/99046540516)) and `acdp-verifier-py` (`v0.1.0`, at the same pinned spec SHA, [CI run](https://github.com/agentcontextdistributionprotocol/acdp-verifier-py/actions/runs/33235087345)), each executing `wit-001..004`. In-prose *(0.2.0)* / *(0.3.0)* / *(0.4.0)* markers record the release line that added a passage; all three lines are Final, so those passages are Final too. An in-prose ***(0.5.0)*** marker is different in kind: the 0.5.0 line is still **Draft**, so such a passage is open to substantive change and is **not** frozen even when it appears inside an otherwise-Final RFC. Each affected RFC says so in its own §1.
 
 ## Reading order
 

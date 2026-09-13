@@ -274,6 +274,7 @@ A full wire-shape example of such a context is [examples/visibility/private-with
 | `superseded_target` | Supersession constraints failed | Check `details.reason` — common values: `not_found`, `lineage_mismatch`, `version_mismatch`, `already_superseded`. |
 | `unsupported_algorithm` | You used a non-ed25519 algorithm | Either use ed25519 or check the registry's `supported_signature_algorithms`. |
 | `embedded_too_large` | Embedded data > 64 KB | Switch to `location` form. |
+| `unsupported_media_type` *(0.5.0)* | Request `Content-Type` is outside the registry's accept-set on a body-bearing method | Send `Content-Type: application/acdp+json`. A `charset` parameter is ignored, so `; charset=utf-8` is fine. `application/json` is accepted only if that registry chooses to; do not rely on it. Your body was never parsed, so this says nothing about its contents — resend it unchanged under an accepted type. Only registries advertising `acdp_version` ≥ 0.5.0 emit this. |
 | `duplicate_publish` | Retried an `Idempotency-Key` with different content | Same key = same logical publish. Generate a fresh key for new content; reuse the key only for byte-identical retries (RFC-ACDP-0003 §6.2). |
 
 ---

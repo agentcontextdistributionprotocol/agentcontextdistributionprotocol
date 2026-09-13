@@ -350,6 +350,7 @@ These fixtures are required for `acdp-registry-federated` profile conformance (r
 | ID | Description | Outcome |
 |---|---|---|
 | `err-001` | 500 Internal Error returns the standard envelope with `internal_error` code | failure: HTTP 500, envelope-conformant |
+| `err-002` | *(0.5.0)* Request `Content-Type` outside the registry's accept-set on a body-bearing method — canonical type and `charset` parameter accepted; unaccepted type rejected before the body is parsed; `application/json` and absent header are registry choice | failure: HTTP 415, `unsupported_media_type` (scenarios A/B success, D/E either) |
 
 ### Capabilities document (RFC-ACDP-0007 §3.5)
 

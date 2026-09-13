@@ -1,0 +1,10 @@
+{
+  "error": {
+    "code": "unsupported_media_type",
+    "message": "Content-Type 'text/plain' is not accepted; use application/acdp+json.",
+    "details": {
+      "received": "text/plain",
+      "accepted": ["application/acdp+json", "application/json"]
+    }
+  }
+}

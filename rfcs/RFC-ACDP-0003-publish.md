@@ -19,6 +19,8 @@ Passages marked *(0.3.0)* are amendments from the acdp/0.3.0 core-profile revisi
 
 Both amendment lines are **Final** as of 2026-07-05, promoted after their conformance packs passed against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md)); the markers record provenance, not status. Everything not so marked remains Final and wire-frozen for acdp/0.1.0.
 
+> **Markers and status — read this before relying on a marked passage.** A parenthetical version marker records *which release line introduced a passage*, not that the passage is Final. Passages marked *(0.2.0)*, *(0.3.0)* and *(0.4.0)* belong to **Final** lines. Passages marked ***(0.5.0)*** belong to the **0.5.0 line, which is still `Draft`** ([VERSIONING.md](../VERSIONING.md)) — they are open to substantive change until that line is promoted, and an implementation MUST NOT treat them as frozen. Everything not marked at all is Final and wire-frozen for acdp/0.1.0. The document-level status above describes the unmarked body of this RFC and its Final-line amendments; it does not extend to *(0.5.0)* passages.
+
 The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **SHOULD**, **SHOULD NOT**, **RECOMMENDED**, **MAY**, and **OPTIONAL** in this document are to be interpreted as described in BCP 14 ([RFC 2119](https://datatracker.ietf.org/doc/html/rfc2119), [RFC 8174](https://datatracker.ietf.org/doc/html/rfc8174)) when, and only when, they appear in all capitals — the conventions of [RFC-ACDP-0001 §2](RFC-ACDP-0001-core.md#2-conventions-and-terminology).
 
 ---
@@ -35,6 +37,8 @@ The request body conforms to [`schemas/json/acdp-publish-request.schema.json`](.
 > **Implementer note: schema-valid ≠ publish-valid.** Passing `acdp-publish-request.schema.json` validation is necessary but NOT sufficient for a publish to succeed. The schema enforces structural validity only. Cryptographic correctness (`hash_mismatch`, `invalid_signature`), key resolution (`key_resolution_failed`, `key_not_authorized`), supersession races (`superseded_target` with `version_mismatch` / `already_superseded`), unsupported algorithms or DID methods, and rate limits are all checked at runtime by the registry per §2.1. A schema-valid request MAY still be rejected with any of these codes.
 
 ### 2.1 Registry processing
+
+*(0.5.0)* **Pre-step — request media type.** Before step 1, a registry advertising `acdp_version` ≥ `0.5.0` MUST verify the request `Content-Type` against its accept-set per RFC-ACDP-0007 §4.1, and on a type it does not accept return `unsupported_media_type` (HTTP 415) **without parsing the body**. This is deliberately numbered as a pre-step rather than as step 1: the numbered steps below are referenced as "§2.1 step N" throughout the spec (`registries/error-codes.md`, RFC-ACDP-0007 §5, `registries/profiles.md`), and renumbering them would invalidate every such citation. Registries advertising `acdp_version` < `0.5.0` skip this pre-step entirely and begin at step 1, exactly as before.
 
 The registry MUST execute the following steps in order:
 
