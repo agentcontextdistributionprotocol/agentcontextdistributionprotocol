@@ -131,6 +131,12 @@
           "capability_match": ">=0.3.0"
         },
         {
+          "fixtures": ["err-002-unsupported-media-type"],
+          "required_when": "acdp_version >= 0.5.0 (0.5.0) — the request-media-type rule of RFC-ACDP-0007 §4.1: accept application/acdp+json (mandatory) and ignore media-type parameters such as charset; reject a Content-Type outside the accept-set on a body-bearing method with unsupported_media_type (HTTP 415) without parsing the body. Conditional rather than unconditional because a registry advertising < 0.5.0 MUST NOT emit this code at all (RFC-ACDP-0007 §5), so the rejection cannot be asserted against one. Scenarios D (application/json) and E (absent Content-Type) pin registry latitude, not behavior — a harness MUST NOT assert either outcome.",
+          "capability_key": "acdp_version",
+          "capability_match": ">=0.5.0"
+        },
+        {
           "fixtures": ["rev-001-revocation-context-golden"],
           "required_when": "acdp_version >= 0.3.0 (0.3.0) — the registry side of RFC-ACDP-0014 §4/§5: accept a well-formed key-revocation publish; reject shape violations (missing/malformed revoked_key_fingerprint or compromised_since, non-public visibility) with schema_violation; reject a revocation self-signed by the revoked key with key_not_authorized",
           "capability_key": "acdp_version",

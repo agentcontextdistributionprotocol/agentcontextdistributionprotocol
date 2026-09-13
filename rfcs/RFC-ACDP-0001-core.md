@@ -32,6 +32,8 @@ This document is a **Final** ACDP specification (first published Final for acdp/
 
 This revision additionally carries the **acdp/0.2.0 Trust & Hardening amendments** (registry receipts — RFC-ACDP-0010; `did:key` producers; explicit `acdp_version`; lineage anchoring; historical key retention) and the **acdp/0.3.0 profile additions** (the §9.1 profile definitions for RFC-ACDP-0011/0012/0013). Amended or added passages are marked *(0.2.0)* or *(0.3.0)* to record the release line that introduced them; both lines are **Final** as of 2026-07-05, promoted after their conformance packs passed against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md)). No amendment changes any v0.1.0 body field, JCS rule, content-hash semantic, or signature semantic — every existing v0.1.0 body, signature, and `content_hash` remains valid.
 
+> **Markers and status — read this before relying on a marked passage.** A parenthetical version marker records *which release line introduced a passage*, not that the passage is Final. Passages marked *(0.2.0)*, *(0.3.0)* and *(0.4.0)* belong to **Final** lines. Passages marked ***(0.5.0)*** belong to the **0.5.0 line, which is still `Draft`** ([VERSIONING.md](../VERSIONING.md)) — they are open to substantive change until that line is promoted, and an implementation MUST NOT treat them as frozen. Everything not marked at all is Final and wire-frozen for acdp/0.1.0. The document-level status above describes the unmarked body of this RFC and its Final-line amendments; it does not extend to *(0.5.0)* passages.
+
 ACDP `0.1.0` is the **first published Final version** of the protocol; the numbering scheme treats `acdp/0.1.0` as the inaugural release. The `0.0.1` identifier was used only for internal pre-release drafts and was never promoted to a Release Candidate or Final status. `0.1.0` is wire-compatible with those drafts — the body format, JCS canonicalization, content-hash, and signature semantics are unchanged.
 
 ---
@@ -123,7 +125,7 @@ Verification is **stateless and local** for the consumer: to check a context, a 
 
 All ACDP messages on the wire are JSON ([RFC 8259]) objects encoded as UTF-8 ([RFC 3629]). Implementations MUST emit valid UTF-8 and MUST accept any valid UTF-8.
 
-The HTTP `Content-Type` for ACDP bodies is `application/acdp+json`. Implementations MAY also accept `application/json` for compatibility but SHOULD emit `application/acdp+json`. See [`registries/media-types.md`](../registries/media-types.md).
+The HTTP `Content-Type` for ACDP bodies is `application/acdp+json`. Implementations MAY also accept `application/json` for compatibility but SHOULD emit `application/acdp+json`. See [`registries/media-types.md`](../registries/media-types.md). The MAY in the preceding sentence is unchanged and remains a registry's own choice. Media-type **parameters** (notably `charset`) MUST be ignored when comparing a request's `Content-Type` against what a registry accepts — this binds every version and adds no rejection; it forbids one, and makes coherent the permission `registries/media-types.md` already grants to send `; charset=utf-8`. *(0.5.0)* What 0.5.0 adds is only what happens for a type a registry does **not** accept: RFC-ACDP-0007 §4.1 requires registries advertising `acdp_version` ≥ `0.5.0` to answer `unsupported_media_type` (HTTP 415) in that case.
 
 ### 5.2 Canonicalization
 
