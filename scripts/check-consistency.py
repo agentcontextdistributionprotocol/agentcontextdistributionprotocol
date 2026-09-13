@@ -226,6 +226,15 @@ def registered_error_codes():
     return _first_cell_tokens(text)
 
 
+# Fixture keys whose value is a wire error code. `alternative_error_code` carries the
+# tolerated second code some fixtures permit (the pub-008 idiom, also used by dk-002/dk-004);
+# it went unvalidated until 2026-09-13, so a typo there shipped silently.
+# The value pattern admits digits even though no registered code contains one: it is a
+# skip-filter, so a narrower class would silently drop a future digit-bearing code from
+# validation rather than reject it. Same reasoning as _first_cell_tokens.
+ERROR_CODE_KEYS = ("error_code", "code", "alternative_error_code")
+
+
 def check_error_codes(fixtures):
     codes = registered_error_codes()
     if not codes:
@@ -238,7 +247,7 @@ def check_error_codes(fixtures):
         def walk(o):
             if isinstance(o, dict):
                 for k, v in o.items():
-                    if k in ("error_code", "code") and isinstance(v, str) and re.fullmatch(r"[a-z_]+", v):
+                    if k in ERROR_CODE_KEYS and isinstance(v, str) and re.fullmatch(r"[a-z0-9_]+", v):
                         used.add(v)
                     walk(v)
             elif isinstance(o, list):

@@ -13,6 +13,9 @@
     "outcome": "failure",
     "error_code": "key_resolution_failed",
     "http_status": 400,
+    "alternative_error_code": "schema_violation",
+    "alternative_status": 400,
+    "rationale": "key_resolution_failed is the REQUIRED code: §5.11.1 step 1 assigns it, mirroring the did:web missing-fragment rule (RFC-ACDP-0001 §5.11), and the canonical acdp-common did_url pattern does not express this constraint so a schema-conformant validator cannot reject it. schema_violation is conformant ONLY for a registry whose request validation enforces a stricter did:key grammar than that pattern and catches the mismatch lexically before entering the resolver — this case faults the ENCODING of the identifier (fragment vs method-specific identifier), which is what §5.11.1 grants the carve-out for. NOT key_not_authorized either — that is the separate, earlier agent_id vs key_id DID-portion binding, and here they agree. Either response code is conformant; no other code is.",
     "behavior": "Step 1 of §5.11.1: fragment ≠ method-specific identifier → key_resolution_failed (permanent). The resolver MUST compare byte-for-byte and MUST NOT resolve 'whichever of the two keys verifies'. A missing fragment fails the same step with the same code (mirroring the did:web missing-fragment rule, RFC-ACDP-0001 §5.11 step 1). Note the agent_id ↔ key_id DID-portion binding is a separate, earlier check that returns key_not_authorized on mismatch — unchanged from did:web."
   }
 }
