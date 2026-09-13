@@ -190,7 +190,7 @@ All errors use the envelope defined in RFC-ACDP-0007 §4 with codes from the reg
 | Body fails schema validation | `schema_violation` | 400 |
 | Signature failed verification | `invalid_signature` | 400 |
 | Recomputed body hash ≠ `content_hash` | `hash_mismatch` | 400 |
-| Embedded `data_ref.content_hash` ≠ decoded bytes | `data_ref_hash_mismatch` | 400 |
+| `embedded.content_hash` (RFC-ACDP-0002 §6.3, inside `embedded` — not the DataRef-root `content_hash` of §6.1) ≠ decoded bytes | `data_ref_hash_mismatch` | 400 |
 | Algorithm not supported | `unsupported_algorithm` | 400 |
 | Key resolution failed (permanent) | `key_resolution_failed` | 400 |
 | Key resolution unreachable (transient) | `key_resolution_unreachable` | 502 |

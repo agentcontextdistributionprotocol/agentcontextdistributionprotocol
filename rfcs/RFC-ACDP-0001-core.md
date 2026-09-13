@@ -426,7 +426,7 @@ Because resolution is pure, every SSRF consideration of RFC-ACDP-0008 §4.8 is v
 2. Run full body schema validation (`acdp-context-body.schema.json`) **before** any cryptographic step — a structurally invalid body MUST NOT reach hash recomputation or signature verification.
 3. Recompute `content_hash` over ProducerContent and verify it before checking the signature (§5.7, §5.8).
 4. Verify the producer signature per the resolution algorithm above.
-5. Verify every embedded `data_ref.content_hash` against its decoded `embedded.content` (RFC-ACDP-0002 §6.3); on mismatch, report `data_ref_hash_mismatch` (RFC-ACDP-0007 §5).
+5. Verify every `embedded.content_hash` — the optional member *inside* the closed `embedded` sub-object (RFC-ACDP-0002 §6.3), not the DataRef-root `content_hash` of §6.1 — against its decoded `embedded.content` (RFC-ACDP-0002 §6.3); on mismatch, report `data_ref_hash_mismatch` (RFC-ACDP-0007 §5). A DataRef MAY carry both fields.
 
 Library authors MAY expose configuration to relax these requirements (e.g. for test environments, compatibility bridges, or future protocol versions), but any relaxed mode MUST be explicitly labeled as **non-conformant with v0.1.0** and MUST NOT be the default. The RECOMMENDED API shape is a strict default that cannot be loosened without an explicit, named opt-in — e.g. a `VerificationPolicy::strict_v0_1_0()` (Rust) / `VerificationPolicy.strict_v0_1_0()` (Python/TypeScript) constructor as the default, with any other mode reachable only through a separately-named constructor. This strict default is the `StrictV010` verification profile of §9.2. Implementations MUST document that only the strict mode is covered by the `acdp-consumer` conformance profile.
 
@@ -639,7 +639,7 @@ v0.1.0 verification is always strict for any conformance claim — §5.11 ("v0.1
 
 | Profile name | What it verifies | Conformant for v0.1.0? |
 |---|---|---|
-| `StrictV010` | The full §5.11 strict pipeline: schema validation, `content_hash` recomputation, `did:web` resolution, signature verification, and embedded `data_ref.content_hash` verification. Returns on the first failure. | **Yes** — the only mode covered by the `acdp-consumer` conformance profile. |
+| `StrictV010` | The full §5.11 strict pipeline: schema validation, `content_hash` recomputation, `did:web` resolution, signature verification, and `embedded.content_hash` verification (the field inside `embedded`, RFC-ACDP-0002 §6.3 — not the DataRef-root `content_hash` of §6.1, which this pipeline does not verify: for `location`-form data its check needs a fetch, and for embedded data RFC-ACDP-0002 §6.6 leaves it to the registry rather than this consumer pipeline). Returns on the first failure. | **Yes** — the only mode covered by the `acdp-consumer` conformance profile. |
 | `Diagnostic` | Runs every strict-pipeline stage but records each stage's outcome rather than returning on the first failure, producing a per-stage report (the §5.11 "verification report stage names"). | **No** — debugging only. A `Diagnostic` run that reports any stage failure MUST be treated as an overall verification failure. |
 | `UnsafeForTests` | May skip DID resolution, signature verification, or schema validation (e.g. to exercise fixtures offline). | **No** — test harness only. |
 

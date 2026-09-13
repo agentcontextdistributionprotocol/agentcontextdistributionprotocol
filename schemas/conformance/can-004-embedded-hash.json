@@ -33,7 +33,7 @@
         "Inside data_refs[0]: input order is type, embedded, format; canonical order is embedded, format, type (alphabetical).",
         "Inside data_refs[0].embedded: input order is encoding, content; canonical order is content, encoding.",
         "data_refs is an array; array order is preserved. Producers MUST establish a stable array order before signing.",
-        "When encoding=json, the embedded content is canonicalized as part of the parent body. When encoding=base64 or utf8, the content is a string and is not re-canonicalized; the data_ref's own content_hash (if present) is computed over the decoded bytes per RFC-ACDP-0002 §6.3."
+        "When encoding=json, the embedded content is canonicalized as part of the parent body. When encoding=base64 or utf8, the content is a string and is not re-canonicalized; `embedded.content_hash` (if present) — the optional member inside `embedded` (RFC-ACDP-0002 §6.3), NOT the DataRef-root `content_hash` of §6.1 — is computed over the decoded bytes per RFC-ACDP-0002 §6.3."
       ]
     }
   ]

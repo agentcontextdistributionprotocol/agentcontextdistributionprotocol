@@ -157,7 +157,7 @@ Rate-limit triggering depends on registry policy (window, bucket, threshold), so
 | `data-ref-004` | Structured location object missing `scheme` field | failure: `schema_violation` |
 | `data-ref-005` | Embedded decoded size > 65536 bytes | failure: `embedded_too_large` |
 | `data-ref-006` | `embedded.encoding` is `utf8` or `base64` but `content` is not a string | failure: `schema_violation` |
-| `data-ref-007` | `embedded.content_hash` present but does not match decoded bytes | failure: `data_ref_hash_mismatch` |
+| `data-ref-007` | `embedded.content_hash` (the member *inside* `embedded`, not the DataRef-root `content_hash`) present but does not match decoded bytes — an implementation whose `embedded` model omits the member rejects this at parse with `schema_violation` and never reaches check 8, which is a conformance failure, not a pass | failure: `data_ref_hash_mismatch` |
 | `data-ref-008` | External `data_ref.location` whose fetched bytes do not match `data_ref.content_hash` — consumer-side fetch-time check; the body signature and body `content_hash` stay valid | failure: `data_ref_hash_mismatch` (body still verified) |
 
 ### DataRef location SSRF (RFC-ACDP-0008 §4.9)
