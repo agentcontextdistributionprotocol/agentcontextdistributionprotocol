@@ -46,7 +46,76 @@
       "created_at_by_scenario": {
         "A": "2026-04-16T10:30:15.123Z",
         "B": "2026-05-03T09:00:00.000Z",
-        "C": null
+        "C": null,
+        "E": "2026-05-20T12:00:00.000Z",
+        "F": "2026-05-20T12:00:00.000Z",
+        "G": "2026-05-20T12:00:00.000Z"
+      },
+      "note_on_efg": "Scenarios E, F and G reuse one publish time chosen to sit STRICTLY BETWEEN the two boundaries in the lineage: T1 = 2026-05-01 <= 2026-05-20 < T2 = 2026-06-15. That placement is what makes a wrong fold observable rather than merely wrong internally — folding to the earliest T (correct) puts the body at or after the boundary and fails closed, while folding to the head's T (or to no T at all) puts it before the boundary and returns the same success verdict as scenario A. The two implementations disagree on the VERDICT, not just on an intermediate value."
+    },
+    "revocation_lineage": {
+      "note": "Two SEPARATE revocation lineages, not one. RFC-ACDP-0003 §3.1 steps 5 and 6 make a lineage strictly linear — version must be previous.version + 1, and only the first body to supersede a given predecessor is accepted (the second gets superseded_target, HTTP 409) — so R2 and X could never both supersede R1 in a single lineage against a conformant registry. Scenarios E and F use lineage L1; scenario G uses lineage L2. Both are obtained by walking GET /lineages/{lineage_id} (RFC-ACDP-0004 §5.1), which returns every version ordered by version ascending with its own registry_state.",
+      "fixture_ref": "rev-001",
+      "L1": {
+        "used_by_scenarios": ["E", "F"],
+        "note": "A revocation superseded by a LATER-boundary revocation of the same signer class — the §4 supersedes row's permitted case.",
+        "members": [
+          {
+            "label": "R1",
+            "version": 1,
+            "supersedes": null,
+            "type": "key-revocation",
+            "signer_class": "producer-signed",
+            "revoked_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+            "compromised_since": "2026-05-01T00:00:00.000Z",
+            "registry_state_status": "superseded",
+            "note": "The rev-001 context. T1 — the EARLIEST boundary in the lineage, and therefore the effective one."
+          },
+          {
+            "label": "R2",
+            "version": 2,
+            "supersedes": "R1",
+            "type": "key-revocation",
+            "signer_class": "producer-signed",
+            "revoked_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+            "compromised_since": "2026-06-15T00:00:00.000Z",
+            "registry_state_status": "active",
+            "note": "A later, NARROWER boundary (T2 > T1). The publish is conformant — §4 permits a revocation to be superseded by another of the same signer class, and §3.1 step 3's agent_id equality is satisfied — but §4's earliest-T rule means it cannot shrink the effective window. A producer correcting a mistaken revocation this way annotates the record; it does not change any consumer's verdict."
+          }
+        ],
+        "retraction_for_scenario_F": {
+          "note": "Scenario F only. R1 is retracted per RFC-ACDP-0013 §6 after R2 supersedes it. The body stays retrievable and byte-identical (RFC-ACDP-0013 §8.1) and GET /lineages/{lineage_id} still includes it. Requires a registry advertising acdp-registry-lifecycle; a registry that does not advertise it cannot emit the retracted status at all (RFC-ACDP-0013 §6), so the scenario simply does not arise there.",
+          "retracted_member": "R1",
+          "event_type": "retracted",
+          "occurred_at": "2026-07-01T12:00:00.000Z",
+          "registry_state_status_after": "retracted"
+        }
+      },
+      "L2": {
+        "used_by_scenarios": ["G"],
+        "note": "A revocation superseded by a context that is NOT a revocation. Distinct lineage_id from L1; R1-prime is an independent publication of the same revocation statement, so its own T is again T1.",
+        "members": [
+          {
+            "label": "R1-prime",
+            "version": 1,
+            "supersedes": null,
+            "type": "key-revocation",
+            "signer_class": "producer-signed",
+            "revoked_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+            "compromised_since": "2026-05-01T00:00:00.000Z",
+            "registry_state_status": "superseded",
+            "note": "T1 — the only boundary in this lineage, and still the effective one after X supersedes it."
+          },
+          {
+            "label": "X",
+            "version": 2,
+            "supersedes": "R1-prime",
+            "type": "analysis",
+            "signer_class": "producer-signed",
+            "registry_state_status": "active",
+            "note": "A NON-revocation superseding a revocation, published under the same agent_id. RFC-ACDP-0003 §3.1 constrains supersession by existence, cross-registry, agent_id (step 3), lineage_id (step 4), version (step 5) and first-to-supersede (step 6) — but NOT by type, so registries accept this publish today. Scenario G is the consumer-side defence, which binds regardless of what any registry does."
+          }
+        ]
       }
     }
   },
@@ -79,7 +148,28 @@
         "outcome": "success",
         "behavior": "The same revocation statement arriving as a registry-attested context (agent_id = the registry's DID, metadata.revoked_key_controller = the producer DID — RFC-ACDP-0014 §6) MUST be classified 'registry-attested', distinguishable from 'producer-signed', and MUST NOT be silently collapsed into it: strict-profile default applies §7 for contexts served/receipted by that same registry and seeks corroboration before global application. A 'revocation' signed by K1 itself MUST be treated as unverified (§5 step 2) and triggers none of the §7 semantics."
       }
+    },
+    {
+      "name": "E — earliest compromised_since across a superseding lineage is effective",
+      "expected": {
+        "outcome": "failure",
+        "behavior": "Lineage L1, body_under_test receipt-attested at 2026-05-20T12:00:00.000Z. The effective boundary is T1 = 2026-05-01 (R1), NOT T2 = 2026-06-15 (R2, the head): RFC-ACDP-0014 §4's supersedes row and §7 both require the earliest compromised_since across a revocation lineage to be effective, so the fold is a MINIMUM over every member, not a lookup of the current one. 2026-05-20 >= T1, so verification MUST fail closed exactly as in scenario B. A consumer that folds to the head's boundary instead computes 2026-05-20 < T2 and returns scenario A's success verdict — accepting a signature the producer has disavowed, and doing so silently. That divergence in the VERDICT, not merely in an intermediate value, is what this scenario pins."
+      }
+    },
+    {
+      "name": "F — a retracted revocation still counts in the fold",
+      "expected": {
+        "outcome": "failure",
+        "behavior": "Lineage L1 again, with R1 additionally retracted (RFC-ACDP-0013 §6) after being superseded. The effective boundary is STILL T1 and the verdict is STILL fail-closed. Retraction is a reliance signal on the record, not an un-revocation — RFC-ACDP-0014 §4 is explicit that there is no un-revoking a key, and RFC-ACDP-0013 §8.1 keeps the body retrievable and byte-identical — so a consumer MUST NOT drop R1 from its cache or exclude it from the fold because it was retracted. Note precisely what the retraction does and does not do here: R1 is already absent from /current because it is SUPERSEDED, so the retraction is not what hides it from a /current-based fold. The hazards the retraction does introduce are cache eviction on the retracted event and an explicit 'skip retracted members' filter over the lineage array — both of which narrow the window to T2 and flip this scenario to a false success. (Retracting the HEAD, R2, is the variant where /current itself breaks down: every member is then superseded or retracted and the endpoint returns 404 per RFC-ACDP-0013 §8.3, leaving a /current-based fold with no revocation at all.)"
+      }
+    },
+    {
+      "name": "G — a non-revocation supersession does not disarm the revocation",
+      "expected": {
+        "outcome": "failure",
+        "behavior": "Lineage L2: X (type 'analysis') supersedes R1-prime under the same agent_id. The revocation remains effective, the boundary remains T1, and the verdict is fail-closed. Per RFC-ACDP-0014 §7, a superseding context that is not itself a key-revocation of the same signer class (§2) MUST be disregarded for revocation-effectiveness. A consumer that folds by reading the head, or that treats 'superseded' as 'withdrawn', sees an innocuous analysis context, applies no boundary at all, and returns plain success — which is how an attacker holding the producer's current key neutralizes a safety broadcast without ever forging anything. This defence is deliberately consumer-side: it binds on upgrade alone and needs no registry cooperation, whereas any registry-side rejection reaches only the registries that adopt it. A consumer MUST NOT assume a registry filtered such a supersession out."
+      }
     }
   ],
-  "notes": "Alignment with rot-001: scenario A here refines rot-001 A (revocation present, boundary respected → pre-compromise variant of historically-authorized); rot-001 B (no receipt, no revocation → fail closed strict) and rot-001 C (K1 removed from verificationMethod → total kill, fail closed regardless of receipts or boundaries) are UNCHANGED by RFC-ACDP-0014. The earliest compromised_since across a superseding revocation lineage is effective (RFC-ACDP-0014 §4) — a supersession can widen but never quietly shrink the window."
+  "notes": "Alignment with rot-001: scenario A here refines rot-001 A (revocation present, boundary respected → pre-compromise variant of historically-authorized); rot-001 B (no receipt, no revocation → fail closed strict) and rot-001 C (K1 removed from verificationMethod → total kill, fail closed regardless of receipts or boundaries) are UNCHANGED by RFC-ACDP-0014. The earliest compromised_since across a superseding revocation lineage is effective (RFC-ACDP-0014 §4) — a supersession can widen but never quietly shrink the window. Scenarios E, F and G pin that end to end against a single publish time (2026-05-20, between T1 and T2), so each of the three ways a head-based fold goes wrong — reading the head's boundary, dropping a retracted member, or seeing a non-revocation at the head — produces an observably different VERDICT, not just a different internal number. No test_keypair: this fixture is behavioral end to end, and scripts/conformance-runner.py dispatches rev-* to arithmetic execution on that marker."
 }

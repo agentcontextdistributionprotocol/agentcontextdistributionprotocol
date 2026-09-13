@@ -127,3 +127,33 @@ published tree. Each entry below is written to stand on its own without them.
   non-conformant under a rule that was already a MUST on `main`, so this narrows nothing new. If the
   encoding-vs-key-material line is later judged arbitrary, the fix is fixture metadata and prose.
 - **Status:** UNCONFIRMED
+
+## Phase 5 — the anti-disarm rule binds at 0.3.0, consumer-side, rather than riding 0.5.0
+
+- **Plan:** open-issues-2026-09 (local planning doc; `plans/` is gitignored and not part of the published tree)
+- **Assumed:** Adding "a superseding context that is not itself a same-signer-class `key-revocation`
+  MUST be disregarded for revocation-effectiveness" to RFC-ACDP-0014 §7 — a **Final** 0.3.0
+  document — is a permitted clarification, not a Final-line tightening that needs a version gate.
+- **Chose:** Unconditional at 0.3.0. It is directed at consumers only and adds no registry
+  obligation, which is the governing principle this plan settled: a Final-line clarification may add
+  consumer-side verification obligations and may loosen registry latitude, but may never add a
+  registry-side publish rejection. It also closes the hole *now*, on consumer upgrade, without
+  needing any registry to adopt anything — whereas the registry-side companion (Phase 7, gated at
+  `acdp_version` ≥ 0.5.0) reaches only registries that adopt it. §4 already required the earliest-T
+  fold; what was missing was how to obtain the lineage, and three ways the obvious implementation
+  fails open.
+- **Alternatives:** Gate the whole rule at 0.5.0 (leaves the hole open on every deployed 0.3.0/0.4.0
+  consumer, for a rule that costs a registry nothing); state it non-normatively (a SHOULD is not
+  enough for a defence whose failure mode is an attacker silently neutralizing a safety broadcast).
+- **Tension worth naming:** a consumer that was conformant at 0.3.0 and folded by reading the head
+  is non-conformant under the new text. That is a genuine tightening — but of a *verification*
+  obligation, which the governing principle explicitly permits, and §4's earliest-T MUST arguably
+  already required it. The new text says how, not whether.
+- **Empirical hedge:** RFC-ACDP-0014 §7 and `rev-002`'s L2 note say such a supersession "is accepted
+  by registries today", meaning the spec requires no rejection. At least one implementation
+  (`acdp-rs`, per issue #61) already rejects it. Both texts carry the hedge that a consumer MUST NOT
+  assume a registry filtered it out, so the claim is load-bearing only as "the spec does not require
+  rejection" — which is true.
+- **Blast radius if wrong:** Prose in one RFC section plus three behavioral scenarios. No schema, no
+  wire, no fixture wiring. Reversible by moving the paragraph behind a version marker.
+- **Status:** UNCONFIRMED
