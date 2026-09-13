@@ -52,6 +52,18 @@
         "size_bytes": 4194304,
         "format": "binary",
         "content_hash": "sha256:fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+      },
+      {
+        "type": "supporting_info",
+        "embedded": {
+          "encoding": "utf8",
+          "content": "latency_p99=2147ms baseline=310ms window=2026-04-16T10:28:00Z/10:30:15Z",
+          "content_hash": "sha256:4e15cd04d7f2c58245390c7058853ea5e31ce44677416ab390a60379f90069e4"
+        },
+        "description": "Trigger measurement. Carries embedded.content_hash (RFC-ACDP-0002 §6.3 — the member inside `embedded`, checked by the registry at publish time per §6.6 check 8) alongside the DataRef-root content_hash (§6.1); a DataRef MAY carry both, and for embedded data both cover the same decoded bytes. NOTE TO MAINTAINERS: unlike the placeholder digests elsewhere in this file, these two are a genuine SHA-256 of the decoded UTF-8 bytes — recompute if the content changes, because make validate checks digest shape, never digest correctness.",
+        "size_bytes": 71,
+        "format": "text",
+        "content_hash": "sha256:4e15cd04d7f2c58245390c7058853ea5e31ce44677416ab390a60379f90069e4"
       }
     ],
     "derived_from": [],

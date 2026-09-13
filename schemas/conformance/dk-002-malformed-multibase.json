@@ -1,6 +1,6 @@
 {
   "id": "dk-002",
-  "description": "did:key resolution MUST reject malformed multibase with key_resolution_failed (RFC-ACDP-0001 §5.11.1 step 2): a method-specific identifier that does not start with the 'z' (base58-btc) multibase prefix, or whose payload contains characters outside the base58-btc alphabet (which excludes 0, O, I, l), or whose decoded payload is too short to carry a multicodec prefix plus key.",
+  "description": "did:key resolution MUST reject malformed multibase with key_resolution_failed (RFC-ACDP-0001 §5.11.1 step 2): a method-specific identifier that does not start with the 'z' (base58-btc) multibase prefix, or whose payload contains characters outside the base58-btc alphabet (which excludes 0, O, I, l), or (case 3) z6Mk. Case 3 is NOT a step-2 failure despite this fixture's family name: its payload decodes cleanly to 2 bytes (0x4667), so it passes step 2 and is rejected at step 3 for a prefix that is neither 0xed01 nor 0x8024. It therefore takes no schema_violation carve-out.",
   "tags": ["did-key", "failure", "key-resolution"],
   "applies_to_profiles": ["acdp-registry-core", "acdp-consumer"],
   "input": {
@@ -27,6 +27,10 @@
     "outcome": "failure",
     "error_code": "key_resolution_failed",
     "http_status": 400,
-    "behavior": "Every case MUST be rejected with key_resolution_failed (permanent, producer-caused). Registries MAY reject case-by-case at schema validation with schema_violation if their did pattern catches it first, but the pinned code for a decode failure inside the resolver is key_resolution_failed — mirroring the did:web rule that a malformed DID document is a permanent resolution failure (RFC-ACDP-0001 §5.11 step 3)."
+    "alternative_error_code": "schema_violation",
+    "alternative_status": 400,
+    "alternative_applies_to_cases": [1, 2],
+    "rationale": "key_resolution_failed is the REQUIRED code for all three cases. The alternative_error_code applies to CASES 1 AND 2 ONLY (non-base58btc character; multibase prefix other than z): those fault the ENCODING of the identifier and fail §5.11.1 step 2, which is what §5.11.1 grants the carve-out for, so schema_violation is conformant there for a registry whose request validation enforces a stricter did:key grammar than the deliberately loose acdp-common did pattern and catches them first. CASE 3 (z6Mk) IS DIFFERENT and takes no alternative: its payload decodes cleanly to 2 bytes (0x4667), so it PASSES step 2 and is rejected at step 3 for a prefix that is neither 0xed01 nor 0x8024 — and §5.11.1 forbids reporting schema_violation for a step 3 or step 4 verdict. Case 3 is therefore key_resolution_failed only, on the same footing as dk-001. For cases 1 and 2, either response code is conformant; no other code is.",
+    "behavior": "Every case MUST be rejected with key_resolution_failed (permanent, producer-caused). Registries MAY reject CASES 1 AND 2 ONLY at schema validation with schema_violation if their did pattern catches them first (case 3 reaches step 3, where RFC-ACDP-0001 §5.11.1 forbids schema_violation), but the pinned code for a decode failure inside the resolver is key_resolution_failed — mirroring the did:web rule that a malformed DID document is a permanent resolution failure (RFC-ACDP-0001 §5.11 step 3)."
   }
 }

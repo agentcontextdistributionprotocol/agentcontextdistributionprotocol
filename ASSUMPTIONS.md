@@ -90,3 +90,40 @@ published tree. Each entry below is written to stand on its own without them.
   the fix is fixture-local — split D/E into their own fixture, or re-express as prose-only
   scenarios. No wire or schema impact; conformance fixtures are syntax-checked only.
 - **Status:** UNCONFIRMED
+
+## Phase 3 — RFC-ACDP-0002 §6.6 gains a NORMATIVE scoping paragraph on a Final line
+
+- **Plan:** open-issues-2026-09 (local planning doc; `plans/` is gitignored and not part of the published tree)
+- **Assumed:** Naming each site precisely exposed a question the vaguer wording had hidden — what a
+  registry does with a DataRef-root `content_hash` on an *embedded* DataRef — and leaving it open
+  was worse than answering it, because the same phase adds an example of exactly that shape.
+- **Chose:** A NORMATIVE paragraph scoping check 8 to `embedded.content_hash`: no publish-time
+  obligation for the root field, a MAY to verify it anyway, and a MUST NOT reject merely because
+  both are present. Every arm either removes an obligation or forbids a rejection, so it is a
+  Final-line loosening, which the plan's governing principle permits.
+- **Alternatives:** Silence (leaves an implementer to guess, and the new example makes the question
+  unavoidable); a MUST to verify the root field (a new registry obligation on a Final line —
+  forbidden outright).
+- **Blast radius if wrong:** The MAY arm blesses an A-accepts/B-rejects divergence, but only for
+  bodies already self-inconsistent under §6.1 (root and embedded hashes disagreeing over the same
+  decoded bytes). No honest producer is caught. Reversible as prose.
+- **Status:** UNCONFIRMED
+
+## Phase 4 — `dk-001` keeps no tolerated alternative
+
+- **Plan:** open-issues-2026-09 (local planning doc; `plans/` is gitignored and not part of the published tree)
+- **Assumed:** A fixture that accepts any rejection stops verifying the thing it exists to verify.
+- **Chose:** `dk-002` (cases 1-2) and `dk-004` gain `alternative_error_code`; `dk-001` does not. The
+  discriminator is what the fault is *about* — steps 1-2 are stated wholly over characters of the
+  identifier, steps 3-4 cannot be stated without the decoded bytes and a curve parameter — **not**
+  detectability, which was the first draft's basis and is empirically false (a curve-allowlist
+  grammar catches `dk-001` lexically, since `0xed01` keys always render `z6Mk…` and `0xe701` keys
+  `z6Dt…`).
+- **Alternatives:** Widen `dk-001` too (leaves nothing verifying an implementation distinguishes
+  `0xe701` from `0xed01`); widen nothing (would revoke `dk-002`'s pre-existing prose carve-out — a
+  Final-line tightening).
+- **Partial revocation, stated:** scoping `dk-002`'s carve-out to cases 1-2 *does* revoke it for case 3, which `main`'s unscoped prose had granted. Listed here because the same entry rejects "widen nothing" as a Final-line tightening — the chosen path performs a narrow one. Justified because `main` was self-contradictory there (§5.11.1 step 3 already required `key_resolution_failed` for a bad multicodec prefix, which is what `z6Mk` is), so this resolves a conflict rather than tightening a settled rule.
+- **Blast radius if wrong:** An implementation rejecting `dk-001` with `schema_violation` is
+  non-conformant under a rule that was already a MUST on `main`, so this narrows nothing new. If the
+  encoding-vs-key-material line is later judged arbitrary, the fix is fixture metadata and prose.
+- **Status:** UNCONFIRMED
