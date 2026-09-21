@@ -49,14 +49,17 @@ These codes are NOT in the v0.1.0 wire schema enum. They are reserved for future
 
 When returning `superseded_target`, registries SHOULD include `details.reason` to disambiguate. Defined values:
 
-| `details.reason` | Meaning |
-|---|---|
-| `not_found` | The `supersedes` target does not exist. |
-| `lineage_mismatch` | The new context's computed `lineage_id` ≠ the superseded context's `lineage_id`. |
-| `version_mismatch` | The new context's `version` ≠ `previous.version + 1`. |
-| `already_superseded` | Another context already supersedes the target. |
-| `cross_registry_supersession_unsupported` | Registry does not support cross-registry supersession. |
-| `lineage_walk_failed` | The registry could not retrieve an intermediate context while walking back through `supersedes` to compute `lineage_id`. See [RFC-ACDP-0001 §5.6.1](../rfcs/RFC-ACDP-0001-core.md#561-lineage-walk-failure). |
+| `details.reason` | Status | Meaning |
+|---|---|---|
+| `not_found` | Stable | The `supersedes` target does not exist. |
+| `lineage_mismatch` | Stable | The new context's computed `lineage_id` ≠ the superseded context's `lineage_id`. |
+| `version_mismatch` | Stable | The new context's `version` ≠ `previous.version + 1`. |
+| `already_superseded` | Stable | Another context already supersedes the target. |
+| `cross_registry_supersession_unsupported` | Stable | Registry does not support cross-registry supersession. |
+| `lineage_walk_failed` | Stable | The registry could not retrieve an intermediate context while walking back through `supersedes` to compute `lineage_id`. See [RFC-ACDP-0001 §5.6.1](../rfcs/RFC-ACDP-0001-core.md#561-lineage-walk-failure). |
+| `revocation_type_mismatch` *(0.5.0)* | Provisional | The `supersedes` target resolves to a `key-revocation` context (or the RFC-ACDP-0014 §10 interim `acdp:key-revocation`), and the incoming body's own `type` is not likewise a revocation. Predecessor-keyed: it is the *target's* type that triggers the check, not the incoming body's. Registries advertising `acdp_version` ≥ `0.5.0` MUST reject; this is a new registry obligation on the 0.5.0 Draft line and MUST NOT be emitted by implementations declaring `acdp_version` < `0.5.0`. Fixture `rev-003` (scenarios O, P). See [RFC-ACDP-0014 §4](../rfcs/RFC-ACDP-0014-key-revocation.md#4-the-key-revocation-context-type). |
+
+`Provisional` here follows the same convention as the main table's version-marked entries (e.g. `unsupported_media_type` *(0.5.0)*): a reason token introduced on the still-`Draft` 0.5.0 line is `Provisional` until that line promotes to `Final`, at which point it becomes `Stable` like its six pre-existing siblings.
 
 ## Adding a code
 

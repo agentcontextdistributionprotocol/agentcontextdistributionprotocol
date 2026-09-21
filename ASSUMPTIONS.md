@@ -157,3 +157,52 @@ published tree. Each entry below is written to stand on its own without them.
 - **Blast radius if wrong:** Prose in one RFC section plus three behavioral scenarios. No schema, no
   wire, no fixture wiring. Reversible by moving the paragraph behind a version marker.
 - **Status:** UNCONFIRMED
+
+## Phase 7 — `rev-003`'s shared `registry_capabilities` bumped to 0.5.0 rather than given per-scenario overrides
+
+- **Plan:** open-issues-2026-09 (local planning doc; `plans/` is gitignored and not part of the published tree)
+- **Assumed:** `rev-003`'s new scenarios O–R pin obligations that bind only at `acdp_version` ≥ 0.5.0, while
+  scenarios A–N's obligations bind from 0.3.0 — two genuinely different version gates inside one fixture file.
+- **Chose:** Bump the fixture-level `input.registry_capabilities.acdp_version` from `0.3.0` to `0.5.0` (one
+  shared declaration for the whole file) rather than giving O–R their own scenario-level
+  `registry_capabilities` override. This is sound because 0.5.0 obligations are a superset of 0.3.0's — a
+  registry advertising 0.5.0 is still bound by every A–N rule — so raising the shared declaration does not
+  weaken A–N's requirement, only adds context for O–R. Added a new per-scenario `applies_when` string
+  (documented in `schemas/conformance/README.md`'s Fixture Format section, parallel to `harness` and
+  `control`/`differs_from_control`) on O–R so a registry conformance-testing below 0.5.0 does not misread
+  them as demanding a rejection it is forbidden to perform.
+- **Alternatives:** A scenario-level `registry_capabilities` override object on O–R only — rejected as a
+  heavier, unprecedented structural addition for a problem the shared-bump-plus-`applies_when` combination
+  already solves cleanly; a new sibling fixture file (`rev-004`) for the 0.5.0-only scenarios — rejected
+  because the plan's own Phase 7 "Files" list specifies extending `rev-003`, and `CLAUDE.md`'s "consistency
+  tracks fixture files, not scenarios" convention makes in-file extension the established pattern (Phase 5
+  used it for `rev-002`'s scenarios E/F/G).
+- **Blast radius if wrong:** Fixture-local JSON plus two prose paragraphs (this file's notes, and
+  `schemas/conformance/README.md`'s Fixture Format section). No schema, wire, or profiles.json structural
+  change beyond the new conditional_fixtures entry, which is independently correct regardless of this
+  choice. Reversible by splitting O–R into their own file later.
+- **Status:** UNCONFIRMED
+
+## Phase 7 — `revocation_type_mismatch` is a `superseded_target` reason token, not a new wire error code
+
+- **Plan:** open-issues-2026-09 (local planning doc; `plans/` is gitignored and not part of the published tree)
+- **Assumed:** The registry-side predecessor-keyed supersession rejection needs a machine-readable
+  discriminator, but RFC-ACDP-0014 §10's "No new wire error code" bullet constrains how it can be minted.
+- **Chose:** A new row in the `superseded_target` reason-code table (`registries/error-codes.md`), returned
+  as `details.reason: "revocation_type_mismatch"` alongside the existing `error_code: "superseded_target"`.
+  Verified this does not trip `scripts/check-consistency.py`'s `check_error_code_registry_sync` guard (added
+  Phase 1, 2026-09-13): that guard scopes to RFC-ACDP-0007 §5's table and `error-codes.md`'s *main* v0.1.0
+  codes section only, both of which stop scanning at the next `##` heading — the reason-code table sits
+  under its own `##` heading and is out of both scopes. Ran `make consistency` after the edit to confirm
+  empirically rather than relying on reading the guard's source alone.
+- **Alternatives:** `schema_violation` — considered and rejected in the plan itself (the incoming body is
+  structurally valid; what fails is its relationship to the supersession target, which `schema_violation`'s
+  own definition — "failed *structural* validation" — does not cover, and using it would be exactly the
+  code-overloading `error-codes.md`'s "Adding a code" section forbids); a genuinely new top-level wire error
+  code — rejected as contradicting RFC-ACDP-0014 §10's "No new wire error code" bullet outright, which this
+  rule's own placement in §4 (not §10) does not exempt it from, since that bullet is a whole-RFC statement
+  about the wire surface, not scoped to the section it happens to sit in.
+- **Blast radius if wrong:** A registry-table row and a schema-enum-adjacent (but not enum-member) string
+  literal. Reversible: renaming or removing the reason token touches one table row, one fixture's
+  `details.reason` values (two scenarios, O and P), and the RFC-0014 §4 paragraph that names it.
+- **Status:** UNCONFIRMED
