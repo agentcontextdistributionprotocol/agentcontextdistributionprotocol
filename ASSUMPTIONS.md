@@ -206,3 +206,81 @@ published tree. Each entry below is written to stand on its own without them.
   literal. Reversible: renaming or removing the reason token touches one table row, one fixture's
   `details.reason` values (two scenarios, O and P), and the RFC-0014 §4 paragraph that names it.
 - **Status:** UNCONFIRMED
+
+## Finalization (Phases 5+6+7) — RFC-ACDP-0014 §7's "not itself a key-revocation" broadened to include the §10 interim form, as an unmarked Final clarification
+
+- **Plan:** open-issues-2026-09 (local planning doc; `plans/` is gitignored and not part of the published tree)
+- **Assumed:** The finalization-pass cross-phase verifier (fresh Opus, over the cumulative Phases 5+6+7
+  diff) found a genuine ambiguity Phase 5's own per-phase verifier could not have seen, because it only had
+  Phase 5's diff: §7's consumer-side disarm rule ("a superseding context that is not itself a
+  `key-revocation`... MUST be disregarded") used a literal-string definition of "key-revocation" that
+  predates Phase 7's §4 amendment, which explicitly broadens the same comparison to include the §10 interim
+  `acdp:key-revocation` form. Left unfixed, a consumer implementing §7 by literal string match would treat
+  an interim-typed **widening** successor as a disarming non-revocation and fall back to the superseded
+  (later, less protective) boundary — a genuine fail-open, not merely inconsistent prose.
+- **Chose:** Mirrored §4's broadening into §7's clause ("for this comparison, 'a revocation' means
+  `key-revocation` **or** the §10 interim `acdp:key-revocation`"), and added `rev-002` scenario H pinning
+  the divergent-verdict case, following the same publish-time-between-two-boundaries methodology E/F/G
+  already established. **First-round mistake, caught by round-2 re-verification and corrected:** the initial
+  fix marked this change *(0.5.0)* and gated scenario H at `acdp_version >= 0.5.0`, treating it as a new
+  Draft-line obligation parallel to §4/§10's genuinely new registry rejections. A round-2 fresh-Opus verifier
+  flagged this as inconsistent with RFC-ACDP-0014 §10's own pre-existing (Final, unmarked, binding since
+  0.3.0's promotion) sentence: "0.3.0 consumers MUST treat `acdp:key-revocation` as equivalent to
+  `key-revocation` when it satisfies §4–§5." That sentence already required full equivalence for every
+  consumer-side purpose, including §7's fold — so the disarm-clause fix is a **Final-line precision fix**
+  clarifying an obligation that already existed, not a new one. Corrected: removed the *(0.5.0)* marker and
+  every version-gate reference from §7's clause, `rev-002`'s description/tags/scenario-H text, and every
+  wiring artifact (§1, VERSIONING.md, README.md, profiles.md) that had inherited the wrong framing; scenario
+  H is now wired as an unconditional 0.3.0 obligation, exactly like A-G.
+- **Why this is decidable, not a Fable-routed one-way door:** it is a narrow clarification of what an
+  existing, unambiguous Final sentence (§10's equivalence rule) already required, in the same category as
+  other Final-line precision fixes already in `CHANGELOG.md` (e.g. the `embedded.content_hash`
+  disambiguation sweep) — not a new wire obligation, and not itself a version-gated Draft amendment. The
+  disarm rule's outcome for every non-interim case (scenarios A-G) is byte-for-byte unchanged.
+- **Alternatives:** Leave §7 unmarked and narrow, relying on §10's blanket equivalence sentence to rescue a
+  careful reader without spelling out the disarm-clause case — rejected for the reason above (a normative
+  clause should not depend on a reader independently cross-applying a sentence from elsewhere). Gate the fix
+  at `>=0.5.0` as a new Draft-line amendment (the first-round choice) — rejected on round-2 review as
+  factually wrong: it would have left every 0.3.0/0.4.0 consumer non-conformant to an obligation §10 already
+  imposed on it, with no fixture to catch it, for the entire time before 0.5.0 promotes.
+- **Blast radius if wrong:** One RFC paragraph (§7) plus one new fixture scenario (`rev-002` H) and its
+  lineage/receipt scaffolding, now unconditional rather than 0.5.0-gated. No schema or wire change either
+  way. If the "already-Final" reading is itself wrong (i.e. §10's equivalence sentence was not intended to
+  reach this far), the fix would need to become version-gated after all — a one-file, one-scenario reversal,
+  not a wire change.
+- **Status:** UNCONFIRMED
+
+## Finalization (Phases 5+6+7) — new `rev-004` fixture for the retrieval-continuity half of §10's interim-form retirement
+
+- **Plan:** open-issues-2026-09 (local planning doc; `plans/` is gitignored and not part of the published tree)
+- **Assumed:** The same finalization-pass verifier found that RFC-ACDP-0014 §10's explicit statement that a
+  ≥0.5.0 registry "continues serving [an existing interim-form body] unchanged" — required by the plan's own
+  Phase 7 acceptance criterion 2 ("explicitly preserves retrieval and consumer-equivalence for existing
+  ones") — had no conformance fixture pinning it: `rev-003` Q pins only the *publish-time* rejection of a
+  *new* interim-form publish, leaving the retrieval-time half asserted in prose only.
+- **Chose:** A new fixture, `rev-004-interim-form-retrieval-unaffected`, with three black-box scenarios
+  (direct `GET`, search, lineage-walk) against a pre-existing interim-typed body on a ≥0.5.0 registry, all
+  expecting unfiltered success — wired into `profiles.json`/`profiles.md` as a fourth `acdp-registry-core`
+  conditional entry (`>=0.5.0`) alongside `rev-003`'s O–R entry, and into the README fixture index and §12's
+  RFC-ACDP-0014 table.
+- **Why a new file, not a `rev-003` extension (distinct from the O–R decision above):** `rev-003`'s own
+  title and every existing scenario are publish-request-shaped (`POST /contexts`); this concern is about
+  retrieval (`GET`), a different request shape and a different obligation axis (what the registry must NOT
+  do, at a different endpoint, to something already on the record) — folding it into a file named
+  "publish-rejects" would be a scope mismatch that a future reader would have to untangle. This does not
+  reopen the earlier decision to keep O–R inside `rev-003` rather than splitting them into their own file:
+  that decision was about scenarios sharing `rev-003`'s existing publish-request shape and obligation axis;
+  this one is not.
+- **Round-2 correction:** the first-round scenario B (search) asserted an unconditional `200`/success —
+  round-2 fresh-Opus re-verification flagged that `GET /contexts/search` is a discovery-profile endpoint,
+  and `acdp-registry-core`'s own `not_implemented_permitted_on` allowance lets a core-only registry answer
+  it with `not_implemented` (501), which B's original wording would have wrongly failed. Fixed with a
+  per-scenario `applies_when` field on B (mirroring `rev-003` O–R's own use of that field for a different
+  kind of scenario-level conditionality) stating B binds only when `acdp-registry-discovery` is additionally
+  advertised, and that a core-only registry's `501` trivially satisfies it. Scenarios A (direct GET) and C
+  (lineage walk) are unaffected — both use core-only endpoints and remain unconditional at `>=0.5.0`.
+- **Blast radius if wrong:** One new fixture file plus four wiring-point additions (`profiles.json`,
+  `profiles.md`, README index + prose, RFC-ACDP-0014 §12 table row), plus one `applies_when` field on
+  scenario B. No schema or wire change. Reversible: removing the fixture and its wiring entries cleanly
+  un-pins the retrieval-continuity claim back to prose-only, with no effect on `rev-001`/`002`/`003`.
+- **Status:** UNCONFIRMED

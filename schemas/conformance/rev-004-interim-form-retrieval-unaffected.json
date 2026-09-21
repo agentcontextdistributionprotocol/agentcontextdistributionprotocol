@@ -1,0 +1,80 @@
+{
+  "id": "rev-004",
+  "description": "(0.5.0) A registry advertising acdp_version >= 0.5.0 MUST continue serving, unfiltered and byte-identical, a body published under the RFC-ACDP-0014 §10 interim acdp:key-revocation form before the registry adopted §10's (0.5.0) retirement rule. §10's rule binds PUBLISH time only ('MUST reject a NEW publication... though it continues serving bodies already published under it') and creates no retroactive retrieval-time obligation. Complements rev-003 Q, which pins the publish-time rejection of a NEW interim-form publish on the same >=0.5.0 registry — together the two fixtures pin both halves of §10's retirement rule (reject new, keep serving existing), where previously only the publish-time half had conformance coverage.",
+  "tags": ["revocation", "retrieval", "compatibility", "0.5.0"],
+  "applies_to_profiles": ["acdp-registry-core"],
+  "input": {
+    "registry_capabilities": {
+      "acdp_version": "0.5.0",
+      "_note": "The registry under test now advertises 0.5.0 — the body below was published earlier, while this same registry (or a predecessor generation whose state it inherited) advertised below 0.3.0, before the standard key-revocation type existed. The registry has since upgraded through 0.3.0 to 0.5.0; the body was never republished or altered."
+    },
+    "existing_context": {
+      "ctx_id": "acdp://registry.example.com/66666666-6666-4666-8666-666666666666",
+      "version": 1,
+      "supersedes": null,
+      "agent_id": "did:web:agents.example.com:test-producer",
+      "contributors": [],
+      "title": "Key revocation — key-1 compromised",
+      "summary": "Revocation of the Ed25519 key did:web:agents.example.com:test-producer#key-1, compromised since 2026-01-15T00:00:00.000Z.",
+      "type": "acdp:key-revocation",
+      "data_refs": [],
+      "derived_from": [],
+      "visibility": "public",
+      "metadata": {
+        "revoked_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+        "compromised_since": "2026-01-15T00:00:00.000Z"
+      },
+      "acdp_version": "0.2.0",
+      "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "signature": {
+        "algorithm": "ed25519",
+        "key_id": "did:web:agents.example.com:test-producer#key-2",
+        "value": "<valid signature by K2 over this body's content_hash>"
+      },
+      "lineage_id": "lin:sha256:6666666666666666666666666666666666666666666666666666666666666666",
+      "origin_registry": "registry.example.com",
+      "created_at": "2026-01-15T00:05:00.000Z",
+      "note": "acdp_version 0.2.0 on the stored body reflects what the producer's registry advertised at original publish time (pre-0.3.0, before the standard key-revocation type existed) — the body is never rewritten on registry upgrade, so this field stays 0.2.0 forever regardless of what the serving registry advertises today."
+    }
+  },
+  "scenarios": [
+    {
+      "name": "A — direct retrieval succeeds, unchanged",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/acdp://registry.example.com/66666666-6666-4666-8666-666666666666"
+      },
+      "expected": {
+        "outcome": "success",
+        "http_status": 200,
+        "behavior": "MUST return the stored body byte-identical to how it was published — same type (acdp:key-revocation, not rewritten to key-revocation or rejected), same content_hash, same signature. RFC-ACDP-0014 §10's (0.5.0) retirement rule creates no retroactive obligation to filter, reject, or alter retrieval of a body that already exists on the record. A registry that additionally blocks or rewrites GET responses for acdp:key-revocation-typed bodies once it advertises >=0.5.0 violates §10 exactly as much as one that fails to reject a NEW publish under the same form (rev-003 Q) — both are the same retirement rule, misapplied to the wrong axis (retrieval vs. publish)."
+      }
+    },
+    {
+      "name": "B — discoverable via search on its actual type string, not filtered",
+      "applies_when": "registry advertises acdp-registry-discovery. GET /contexts/search is not a core endpoint — acdp-registry-core's own not_implemented_permitted_on allowance lets a core-only registry answer it with not_implemented (501) regardless of this scenario, and that answer trivially satisfies this scenario's intent (there is no search surface to have filtered anything from). Scenarios A and C use core-only endpoints and carry no such caveat.",
+      "request": {
+        "method": "GET",
+        "path": "/contexts/search?type=acdp:key-revocation&agent_id=did:web:agents.example.com:test-producer"
+      },
+      "expected": {
+        "outcome": "success",
+        "http_status": 200,
+        "behavior": "For a registry advertising acdp-registry-discovery: MUST include the body in search results keyed on its actual type string (acdp:key-revocation), unfiltered by the >=0.5.0 registry's rejection of NEW publications under that same string. RFC-ACDP-0014 §8's discovery guidance already directs a consumer to search type=key-revocation for the standard form; a consumer aware of a mixed-version producer history additionally searches the interim string on registries where it might still appear. A registry MUST NOT hide a body from this query merely because that type string is no longer accepted for new publications — the accept-vs-serve distinction is the same one scenario A pins for direct GET. A core-only registry (no acdp-registry-discovery) MAY instead answer not_implemented (501), per acdp-registry-core's own allowance, and is not exercised by this scenario at all."
+      }
+    },
+    {
+      "name": "C — included in a lineage walk, not skipped",
+      "request": {
+        "method": "GET",
+        "path": "/lineages/lin:sha256:6666666666666666666666666666666666666666666666666666666666666666"
+      },
+      "expected": {
+        "outcome": "success",
+        "http_status": 200,
+        "behavior": "MUST include this version in the lineage's version list, with its stored type (acdp:key-revocation) and registry_state unchanged. This is the property RFC-ACDP-0014 §7's (NORMATIVE) 'Assembling the lineage' paragraph and rev-002 scenario H both depend on silently: a consumer folding a revocation lineage per RFC-ACDP-0004 §5 can only count an interim-typed member's compromised_since (rev-002 H) if the registry's lineage walk actually returns that member in the first place. A registry that omits acdp:key-revocation-typed versions from GET /lineages/{lineage_id} once it advertises >=0.5.0 would make rev-002 H's correct fold impossible to compute from that registry's own data, independent of any consumer-side bug."
+      }
+    }
+  ],
+  "notes": "Registry-side companion to rev-002 scenario H and rev-003 scenario Q. Q pins that a >=0.5.0 registry rejects a NEW publish under the §10 interim form; this fixture pins the other, easily-overlooked half of the same retirement rule — that nothing about adopting the >=0.5.0 rejection licenses a registry to treat pre-existing interim-form bodies any differently at retrieval time, across all three retrieval surfaces a consumer or auditor might use (direct GET, search, lineage walk). Acceptance criterion 2 of the plan phase that added RFC-ACDP-0014 §10's retirement rule required the RFC to state this explicitly; this fixture is what makes the statement conformance-testable rather than aspirational. Scenario B (search) is the one scenario that is not black-box-testable against every acdp-registry-core registry unconditionally: GET /contexts/search is a discovery-profile endpoint, and acdp-registry-core's own not_implemented_permitted_on allowance lets a core-only registry answer it with not_implemented (501) — which trivially satisfies B's intent without any interim-form-specific handling, since there is then no search surface to have filtered anything from. Scenarios A and C use core-only endpoints (direct retrieval, lineage walk) and bind unconditionally on every >=0.5.0 acdp-registry-core registry. No test_keypair: behavioral end to end, like rev-002 and rev-003."
+}

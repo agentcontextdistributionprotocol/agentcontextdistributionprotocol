@@ -147,6 +147,12 @@
           "required_when": "acdp_version >= 0.5.0 (0.5.0) — RFC-ACDP-0014 §4's predecessor-keyed supersession amendment and §10's interim-form retirement: having resolved a supersedes target that is a key-revocation (or the §10 interim acdp:key-revocation), reject an incoming body whose own type is not likewise a revocation with superseded_target/revocation_type_mismatch; reject a NEW publish under the interim acdp:key-revocation type with schema_violation. rev-003 scenarios O-R pin these — O, P and Q are the rejections and R the positive control showing a key-revocation legitimately superseding a key-revocation is still accepted. Conditional rather than folded into the >=0.3.0 entry above because these are genuinely new registry rejections a 0.3.0/0.4.0-advertising registry MUST NOT be required to perform. All four scenarios are black-box testable (no self-test marker).",
           "capability_key": "acdp_version",
           "capability_match": ">=0.5.0"
+        },
+        {
+          "fixtures": ["rev-004-interim-form-retrieval-unaffected"],
+          "required_when": "acdp_version >= 0.5.0 (0.5.0) — the other half of RFC-ACDP-0014 §10's interim-form retirement: a body already published under the §10 interim acdp:key-revocation form MUST continue to be served unfiltered and byte-identical across direct GET and lineage-walk retrieval (scenarios A, C — unconditional on every >=0.5.0 acdp-registry-core registry), and via search where the registry additionally advertises acdp-registry-discovery (scenario B — a core-only registry MAY answer GET /contexts/search with not_implemented per the not_implemented_permitted_on allowance below, which trivially satisfies B). §10's rejection of NEW publications under the interim form (rev-003 Q) creates no retroactive retrieval-time obligation. All three scenarios are black-box testable (no self-test marker).",
+          "capability_key": "acdp_version",
+          "capability_match": ">=0.5.0"
         }
       ],
       "tolerated_outcomes": ["idem-006-race-concurrent"],
