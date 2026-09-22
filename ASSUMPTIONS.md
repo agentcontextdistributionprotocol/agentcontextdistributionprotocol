@@ -23,7 +23,7 @@ published tree. Each entry below is written to stand on its own without them.
   only emit the code from 0.5.0, contradicting the shipped 0.4.0 gate).
 - **Blast radius if wrong:** A CHANGELOG heading under the wrong version line. Cosmetic;
   one-line fix.
-- **Status:** UNCONFIRMED
+- **Status:** CONFIRMED (2026-09-21) — see `DECISIONS.md`
 
 ## Phase 1 — RFC §5 Meaning cell condensed rather than copied verbatim
 
@@ -40,7 +40,7 @@ published tree. Each entry below is written to stand on its own without them.
   sentence that the blockquote already carries, and introduced a fixture citation the table has
   no precedent for.
 - **Blast radius if wrong:** Prose-only; the three-way guard compares code *names*, not cell text.
-- **Status:** UNCONFIRMED
+- **Status:** CONFIRMED (2026-09-21) — see `DECISIONS.md`
 
 ## Phase 2 — `unsupported_media_type` lands on the 0.5.0 Draft line
 
@@ -59,7 +59,7 @@ published tree. Each entry below is written to stand on its own without them.
 - **Blast radius if wrong:** Minting a wire code is effectively irreversible once emitted. But
   the *choice of line* is not: nothing in a Draft line has shipped, so re-splitting to a later
   line before 0.5.0 promotion is cheap.
-- **Status:** UNCONFIRMED
+- **Status:** CONFIRMED (2026-09-21) — see `DECISIONS.md`
 
 ## Phase 2 — 415 scoped to body-bearing methods; 405 explicitly out of scope
 
@@ -73,7 +73,7 @@ published tree. Each entry below is written to stand on its own without them.
 - **Alternatives:** Silence on 405 — would leave the same ambiguity one layer over; minting 405
   too — no registry, no rule to violate, pure scope creep.
 - **Blast radius if wrong:** If 405 is later wanted, this paragraph must be revised — prose-only.
-- **Status:** UNCONFIRMED
+- **Status:** CONFIRMED (2026-09-21) — see `DECISIONS.md`
 
 ## Phase 2 — `"outcome": "either"` for registry-latitude scenarios in `err-002`
 
@@ -89,7 +89,7 @@ published tree. Each entry below is written to stand on its own without them.
 - **Blast radius if wrong:** If `"either"` is judged a novel vocabulary the repo should not grow,
   the fix is fixture-local — split D/E into their own fixture, or re-express as prose-only
   scenarios. No wire or schema impact; conformance fixtures are syntax-checked only.
-- **Status:** UNCONFIRMED
+- **Status:** CONFIRMED (2026-09-21) — see `DECISIONS.md`
 
 ## Phase 3 — RFC-ACDP-0002 §6.6 gains a NORMATIVE scoping paragraph on a Final line
 
@@ -107,7 +107,7 @@ published tree. Each entry below is written to stand on its own without them.
 - **Blast radius if wrong:** The MAY arm blesses an A-accepts/B-rejects divergence, but only for
   bodies already self-inconsistent under §6.1 (root and embedded hashes disagreeing over the same
   decoded bytes). No honest producer is caught. Reversible as prose.
-- **Status:** UNCONFIRMED
+- **Status:** CONFIRMED (2026-09-21) — see `DECISIONS.md`
 
 ## Phase 4 — `dk-001` keeps no tolerated alternative
 
@@ -126,7 +126,7 @@ published tree. Each entry below is written to stand on its own without them.
 - **Blast radius if wrong:** An implementation rejecting `dk-001` with `schema_violation` is
   non-conformant under a rule that was already a MUST on `main`, so this narrows nothing new. If the
   encoding-vs-key-material line is later judged arbitrary, the fix is fixture metadata and prose.
-- **Status:** UNCONFIRMED
+- **Status:** CONFIRMED (2026-09-21) — see `DECISIONS.md`
 
 ## Phase 5 — the anti-disarm rule binds at 0.3.0, consumer-side, rather than riding 0.5.0
 
@@ -156,7 +156,7 @@ published tree. Each entry below is written to stand on its own without them.
   rejection" — which is true.
 - **Blast radius if wrong:** Prose in one RFC section plus three behavioral scenarios. No schema, no
   wire, no fixture wiring. Reversible by moving the paragraph behind a version marker.
-- **Status:** UNCONFIRMED
+- **Status:** CONFIRMED (2026-09-21) — see `DECISIONS.md`
 
 ## Phase 7 — `rev-003`'s shared `registry_capabilities` bumped to 0.5.0 rather than given per-scenario overrides
 
@@ -181,7 +181,7 @@ published tree. Each entry below is written to stand on its own without them.
   `schemas/conformance/README.md`'s Fixture Format section). No schema, wire, or profiles.json structural
   change beyond the new conditional_fixtures entry, which is independently correct regardless of this
   choice. Reversible by splitting O–R into their own file later.
-- **Status:** UNCONFIRMED
+- **Status:** CONFIRMED (2026-09-21) — see `DECISIONS.md`
 
 ## Phase 7 — `revocation_type_mismatch` is a `superseded_target` reason token, not a new wire error code
 
@@ -205,7 +205,7 @@ published tree. Each entry below is written to stand on its own without them.
 - **Blast radius if wrong:** A registry-table row and a schema-enum-adjacent (but not enum-member) string
   literal. Reversible: renaming or removing the reason token touches one table row, one fixture's
   `details.reason` values (two scenarios, O and P), and the RFC-0014 §4 paragraph that names it.
-- **Status:** UNCONFIRMED
+- **Status:** CONFIRMED (2026-09-21) — see `DECISIONS.md`
 
 ## Finalization (Phases 5+6+7) — RFC-ACDP-0014 §7's "not itself a key-revocation" broadened to include the §10 interim form, as an unmarked Final clarification
 
@@ -248,7 +248,7 @@ published tree. Each entry below is written to stand on its own without them.
   way. If the "already-Final" reading is itself wrong (i.e. §10's equivalence sentence was not intended to
   reach this far), the fix would need to become version-gated after all — a one-file, one-scenario reversal,
   not a wire change.
-- **Status:** UNCONFIRMED
+- **Status:** CONFIRMED (2026-09-21) — see `DECISIONS.md`
 
 ## Finalization (Phases 5+6+7) — new `rev-004` fixture for the retrieval-continuity half of §10's interim-form retirement
 
@@ -283,4 +283,4 @@ published tree. Each entry below is written to stand on its own without them.
   `profiles.md`, README index + prose, RFC-ACDP-0014 §12 table row), plus one `applies_when` field on
   scenario B. No schema or wire change. Reversible: removing the fixture and its wiring entries cleanly
   un-pins the retrieval-continuity claim back to prose-only, with no effect on `rev-001`/`002`/`003`.
-- **Status:** UNCONFIRMED
+- **Status:** CONFIRMED (2026-09-21) — see `DECISIONS.md`
