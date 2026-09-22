@@ -17,7 +17,7 @@ This directory contains the normative RFCs that define the Agent Context Distrib
 | [RFC-ACDP-0011](RFC-ACDP-0011-lineage-head-receipts.md) | Lineage-Head Receipts | Final (acdp/0.3.0) |
 | [RFC-ACDP-0012](RFC-ACDP-0012-transparency-log.md) | Registry Transparency Log | Final (acdp/0.3.0) |
 | [RFC-ACDP-0013](RFC-ACDP-0013-lifecycle-events.md) | Lifecycle Events & Retraction | Final (acdp/0.3.0) |
-| [RFC-ACDP-0014](RFC-ACDP-0014-key-revocation.md) | Producer Key-Revocation Signal | Final (acdp/0.3.0) |
+| [RFC-ACDP-0014](RFC-ACDP-0014-key-revocation.md) | Producer Key-Revocation Signal | Final (acdp/0.3.0; **§4's predecessor-keyed enforcement and §10's interim-form retirement are *(0.5.0)* Draft**) |
 | [RFC-ACDP-0015](RFC-ACDP-0015-witness-cosigning.md) | Transparency-Log Witness Cosigning | Final (acdp/0.4.0) |
 | [RFC-ACDP-0016](RFC-ACDP-0016-external-anchors.md) | Typed External Anchors | Draft (acdp/0.5.0) |
 

@@ -22,7 +22,7 @@ conformance/
 ├── log-*.json      Registry transparency log — Merkle golden vectors + verification failures (RFC-ACDP-0012, 0.3.0)
 ├── wit-*.json      Transparency-log witness cosignatures — cosignature golden vector, consistency refusal, N-witnessed quorum + verification failures (RFC-ACDP-0015, 0.4.0)
 ├── lc-*.json       Lifecycle events & retraction scenarios (RFC-ACDP-0013, 0.3.0)
-├── rev-*.json      Producer key revocation — golden vector + boundary semantics (RFC-ACDP-0014, 0.3.0)
+├── rev-*.json      Producer key revocation — golden vector, consumer boundary/lineage-fold semantics, publish-rejection matrix (RFC-ACDP-0014, 0.3.0)
 ├── anc-*.json      Typed external anchors — content-hash golden vector + schema/tolerance scenarios (RFC-ACDP-0016, 0.5.0)
 ├── fp-*.json       Key-fingerprint encoding vectors (RFC-ACDP-0010 §6, 0.2.0)
 ├── rot-*.json      Historical producer-key verification with receipts (RFC-ACDP-0010 §10, 0.2.0)
@@ -57,7 +57,7 @@ conformance/
 - `fp-*.json` — key-fingerprint encoding vectors (RFC-ACDP-0010 §6)
 - `anc-*.json` carrying a top-level `vectors` array (i.e. `anc-004`) — `content_hash` over a body carrying `anchors`, verified by the same canonicalization/hash check as `can-*` (RFC-ACDP-0016 §5)
 
-**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `schema-*`, `dk-*`, `rot-*`, `lc-*`, `rcpt-002`..`rcpt-004`, `lhr-002`..`lhr-004`, `rev-002`, `anc-001`..`anc-003`, `anc-005`, …). Those fixtures define request/response scenarios that require a running registry or consumer to execute. They are machine-readable specifications for implementers to validate against their implementation. The runner's summary line reports how many behavioral fixtures were left to live implementations.
+**It does not execute behavioral fixtures** (`pub-*`, `vis-*`, `ret-*`, `err-*`, `cur-*`, `did-ssrf-*`, `data-ref-ssrf-*`, `schema-*`, `dk-*`, `rot-*`, `lc-*`, `rcpt-002`..`rcpt-004`, `lhr-002`..`lhr-004`, `rev-002`, `rev-003`, `rev-004`, `anc-001`..`anc-003`, `anc-005`, …). Those fixtures define request/response scenarios that require a running registry or consumer to execute. They are machine-readable specifications for implementers to validate against their implementation. The runner's summary line reports how many behavioral fixtures were left to live implementations.
 
 Runner guards: a fixture whose `id` prefix matches no family declared in `registries/profiles.json` `fixture_families` is a **failure**, not a silent skip; so is an executable-family fixture with an empty `vectors` list. `--only <id-or-prefix>` (e.g. `--only sig-002`, `--only can`) runs a subset while iterating on a fixture. The companion `scripts/check-consistency.py` (`make consistency`) verifies every fixture is wired into `registries/profiles.json`, `registries/profiles.md`, and this README's index, and that every asserted error code is registered.
 
@@ -81,6 +81,34 @@ To claim full conformance a registry MUST:
   }
 }
 ```
+
+Multi-case fixtures have no single house style — cases appear as `vectors`, a `scenarios` array,
+`input.cases`, `reject_variants`, `negative_examples`, or `expected.tolerated_outcomes`. Read each
+fixture's own shape rather than assuming one, and see **What the bundled conformance runner
+verifies** above for which shapes the runner executes and on what it dispatches.
+
+Within a `scenarios` array, a scenario MAY carry a **`harness`** string: prose marking that scenario as **self-test only** — not runnable by an
+external black-box harness — with the reason. It is the per-scenario counterpart of the
+whole-fixture `self_test_only` list in `registries/profiles.json` (used for `rate-001`), and exists
+because a fixture can be mostly black-box testable with one or two cases that are not: `rev-003`
+scenarios H and M are published by the registry under its own DID, so a harness's own signature
+would fail verification long before the check under test is reached.
+
+A rejection scenario MAY also carry **`control`** and **`differs_from_control`** — the scenario it is
+derived from, and the body paths on which it differs. `rev-003` uses both so that "this body differs
+from a valid one in exactly one respect" is a derived, recomputable fact rather than a prose claim
+that drifts as the fixture is edited.
+
+A scenario MAY carry **`applies_when`**: a short string naming the exact capability gate under which
+that scenario's expected outcome binds. It exists for a fixture that mixes gates — some scenarios bind
+at one `acdp_version` (or other capability condition) and others at a different one — so that no single
+fixture-level `input.registry_capabilities` (or equivalent) declaration can state all of them at once.
+`rev-003` is such a fixture: its shared `input.registry_capabilities` declares `acdp_version: "0.5.0"`
+(the highest value any scenario needs), but scenarios A–N's obligations actually bind starting at
+`acdp_version` ≥ `0.3.0` — a *lower* gate than the shared declaration states. `applies_when` on
+scenarios O–R additionally states their own gate (`acdp_version >= 0.5.0`) explicitly, so that neither
+tier is left to be inferred solely from the one shared declaration; a registry conformance-testing below
+0.5.0 still MUST pass A–N and has no obligation for O–R.
 
 ---
 
@@ -300,9 +328,11 @@ All `lc-*` fixtures are behavioral. Required for `acdp-registry-lifecycle`; `lc-
 | ID | Description | Outcome |
 |---|---|---|
 | `rev-001` | Key-revocation context golden vector: producer-signed `key-revocation` body revoking K1 (the `sig-001` key; fingerprint as in `fp-001`/`rot-001`), signed by current key K2 (the `sig-003` seed — `rot-001`'s K2). Canonical form, `content_hash`, Ed25519 signature over the ASCII `content_hash` string; §4 shape (public visibility, §6-encoded fingerprint, canonical-ms `compromised_since`); §5 not-self-signed rule. Executed by the runner. | success: byte-exact reproduction end-to-end |
-| `rev-002` | Compromise-boundary semantics (RFC-ACDP-0014 §7), completing `rot-001`: receipt-attested publish time strictly before `compromised_since` → *historically authorized (pre-compromise, receipt-attested)*; at/after → fail closed despite a valid receipt; no receipt (publish time unverifiable) → fail closed under the strict profile; producer-signed vs registry-attested trust classes distinguishable | mixed (per-scenario) |
+| `rev-002` | Compromise-boundary semantics (RFC-ACDP-0014 §7), completing `rot-001`: receipt-attested publish time strictly before `compromised_since` → *historically authorized (pre-compromise, receipt-attested)*; at/after → fail closed despite a valid receipt; no receipt (publish time unverifiable) → fail closed under the strict profile; producer-signed vs registry-attested trust classes distinguishable. Scenarios E–G extend the same fixture to a revocation *lineage*: the earliest `compromised_since` across all members is effective (E), a retracted revocation still counts in that fold (F), and a non-revocation superseding a revocation does not disarm it (G) — so the lineage MUST be assembled via `GET /lineages/{lineage_id}`, never `/current`. Scenario H extends the same defence to a **widening** successor published under the §10 interim `acdp:key-revocation` form: it IS a revocation, just spelled the pre-0.3.0 way, so the fold's disregard test MUST NOT treat it as a disarming non-revocation the way it correctly treats G's `analysis` successor — an unconditional 0.3.0 obligation like E–G, since RFC-ACDP-0014 §10 already requires 0.3.0 consumers to treat the interim form as fully equivalent to the standard type | mixed (per-scenario) |
+| `rev-003` | Publish-time rejection matrix for the RFC-ACDP-0014 §4/§5 registry obligations (scenarios A–N, ≥0.3.0): non-public `visibility`, absent/malformed `revoked_key_fingerprint`, absent/non-canonical `compromised_since`, `reason` over 1024 characters, and the `revoked_key_controller` binding in both directions → `schema_violation` (400); revocation signed by the very key it revokes → `key_not_authorized` (403), over `did:web` and — where the registry advertises the method — `did:key`. Four positive controls (producer-signed controller-absent, controller-present-and-equal, §6 registry-attested, `reason` of exactly 1024 characters) pin the accept side. Scenarios H and M are self-test only — the registry publishes them under its own DID. *(0.5.0)* Scenarios O–R extend the matrix to RFC-ACDP-0014 §4/§10's registry amendments, required only at ≥0.5.0: a non-revocation superseding a `key-revocation` or interim `acdp:key-revocation` target → `superseded_target`/`revocation_type_mismatch` (O, P); a new publish under the interim type → `schema_violation` (Q); a `key-revocation` properly superseding one → success (R, positive control) | behavioral |
+| `rev-004` | *(0.5.0)* The retrieval-time half of RFC-ACDP-0014 §10's interim-form retirement, required only at ≥0.5.0: a body already published under the §10 interim `acdp:key-revocation` form MUST continue to be served unfiltered and byte-identical across direct `GET` (A), search (B), and lineage-walk (C) retrieval — rejecting *new* publications under that form (`rev-003` Q) creates no retroactive retrieval-time obligation | behavioral |
 
-`rev-001` is executed arithmetically by `scripts/conformance-runner.py`; `rev-002` is behavioral. Both are required for 0.3.0 `acdp-consumer` implementations; `rev-001`'s registry-side rejections (shape → `schema_violation`; self-signed-by-revoked-key → `key_not_authorized`) bind to `acdp-registry-core` at `acdp_version` ≥ 0.3.0. No new wire error code and no profile: revocation rides existing surfaces (RFC-ACDP-0014 §10).
+`rev-001` is executed arithmetically by `scripts/conformance-runner.py`; `rev-002`, `rev-003`, and `rev-004` are behavioral. `rev-001` and `rev-002` are required for 0.3.0 `acdp-consumer` implementations; `rev-003` and `rev-004` are **registry-side only** (`acdp-registry-core`) and carry no consumer obligation. Scenarios A–N are conditional on `acdp_version` ≥ 0.3.0 and make checkable the §4/§5 publish-time rejections, introducing no obligation of their own — every outcome they assert comes from RFC-ACDP-0014 §4 (the metadata table plus the MUST-reject paragraph immediately following it) and §5 step 2. Two of those fourteen (H and M, the §6 registry-attested pair) are **self-test only**: the registry publishes them under its own DID, so an external harness cannot submit them. *(0.5.0)* Scenarios O–R are additionally conditional on `acdp_version` ≥ 0.5.0: O and P pin RFC-ACDP-0014 §4's predecessor-keyed amendment (`superseded_target`/`revocation_type_mismatch` — a **new** reason token, not a new error code), Q pins §10's retirement of the interim form for new publications (`schema_violation`), and R is the positive control; all four are black-box testable. `rev-002`'s scenario H is **not** version-gated, unlike O–R: it is an unconditional 0.3.0 `acdp-consumer` obligation exactly like A–G, because RFC-ACDP-0014 §10 has required 0.3.0 consumers to treat the interim form as fully equivalent to the standard type since 0.3.0's own promotion — H makes an existing obligation checkable rather than adding one, so it stays inside `rev-002`'s unconditional entry rather than needing a new conditional block. (The interim-typed lineage H exercises can itself arise on any registry below 0.5.0, or on a ≥0.5.0 registry still serving a pre-existing interim-form body per `rev-004` below — it is not confined to ≥0.5.0 registries either.) *(0.5.0)* `rev-004`, entirely new at this line, **is** conditional on `acdp_version` ≥ 0.5.0 and pins the retrieval-time half of §10's retirement that O–R's publish-time focus does not reach: existing interim-form bodies keep being served, found by search, and included in lineage walks, unaffected by the new-publish rejection landing alongside it. Its scenario B (search) additionally binds only when the registry advertises `acdp-registry-discovery`: `acdp-registry-core`'s own `not_implemented_permitted_on` allowance already permits a core-only registry to answer `GET /contexts/search` with `not_implemented` (501), and that answer trivially satisfies B without any interim-form-specific handling — B's positive assertion (the body **is** found) simply does not apply to a registry that need not implement search at all. Scenarios A (direct retrieval) and C (lineage walk) use core-only endpoints and carry no such caveat. No new wire error code and no profile: revocation rides existing surfaces (RFC-ACDP-0014 §10).
 
 ### Typed external anchors (RFC-ACDP-0016, 0.5.0)
 

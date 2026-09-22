@@ -123,6 +123,8 @@ For a publish request with `supersedes = <prev_ctx_id>`, the registry MUST:
 5. Verify `version = previous.version + 1`. If not, return `superseded_target` with `details.reason = "version_mismatch"` (HTTP 409 Conflict — race condition between two producers attempting to supersede the same version).
 6. Verify the new context is the first to supersede `<prev_ctx_id>`. If another context already supersedes it, return `superseded_target` with `details.reason = "already_superseded"` (HTTP 409 Conflict — race condition). This makes lineages strictly linear.
 
+*(0.5.0)* A seventh, type-conditional constraint is layered on top of steps 1–6 rather than added as a numbered step (renumbering would invalidate the "§3.1 step N" citations used throughout the spec, per the precedent set by the §2.1 pre-step above): [RFC-ACDP-0014 §4](RFC-ACDP-0014-key-revocation.md#4-the-key-revocation-context-type) requires a registry advertising `acdp_version` ≥ `0.5.0` to additionally inspect, once step 1 has resolved `<prev_ctx_id>`, whether the resolved target's `type` is `key-revocation` (or the RFC-ACDP-0014 §10 interim `acdp:key-revocation`) — and if so, reject an incoming body whose own `type` is not likewise a revocation with `superseded_target` and `details.reason = "revocation_type_mismatch"` ([`registries/error-codes.md`](../registries/error-codes.md)). Registries advertising `acdp_version` < `0.5.0` have no such obligation.
+
 ### 3.2 Effect on prior version
 
 The previous version's body is unchanged. The previous version's derived `status` becomes `superseded` (RFC-ACDP-0004 §4) — automatically, on the next status query. Registries MAY cache `status` but MUST recompute on supersession events.

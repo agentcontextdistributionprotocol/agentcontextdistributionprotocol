@@ -1,0 +1,747 @@
+{
+  "id": "rev-003",
+  "description": "Publish-time rejection matrix for key-revocation contexts — the registry-side obligations RFC-ACDP-0014 §4 and §5 ALREADY impose on registries advertising acdp_version >= 0.3.0, extended by scenarios O-R to the (0.5.0) predecessor-keyed supersession and interim-form amendments of §4/§10. §4 shape violations (non-public visibility, missing/malformed revoked_key_fingerprint, missing/non-canonical compromised_since, over-long reason, controller binding) MUST be rejected with schema_violation (400); a revocation signed by the very key it revokes MUST be rejected with key_not_authorized (403) per §5 step 2. Four positive controls (K, L, M, N) pin the accept side of the 0.3.0 matrix, so it cannot be passed by rejecting every revocation. Scenarios A-N add NO new normative requirement over 0.3.0: they make checkable what rev-001's verification_steps 4 and 5 and the profiles.json required_when string previously stated only as free text alongside a happy-path vector. Scenarios O-R (0.5.0) pin genuinely new registry obligations gated at acdp_version >= 0.5.0: a non-revocation superseding a revocation target MUST be rejected with superseded_target/revocation_type_mismatch (O, P), and a new publish under the §10 interim acdp:key-revocation type MUST be rejected with schema_violation (Q); R is the positive control pinning that a key-revocation properly superseding a key-revocation is still accepted.",
+  "tags": ["failure", "publish", "key-revocation", "4xx", "0.3.0", "0.5.0"],
+  "applies_to_profiles": ["acdp-registry-core"],
+  "input": {
+    "endpoint": "POST /contexts",
+    "note": "Every rejection scenario names its control in a `control` field and lists the body paths on which it differs in `differs_from_control`. Both are DERIVED from the bodies rather than asserted in prose, so they cannot drift: `differs_from_control` is exactly the set of paths whose values differ between that scenario and its control, recomputable by a harness — flattening objects into dotted paths and treating ARRAYS AS LEAVES (so scenario A lists `audience`, never `audience[0]`), comparing values structurally. Ten rejections take scenario K (the producer-signed control) — A-G, I, J, and Q; H takes scenario M (the registry-attested control), because H tests a §6 requirement that has no meaning against a producer-signed body. Each differs from its control in exactly ONE semantic respect, so a rejection is attributable to that respect alone. Three entries list more than one path for mechanical reasons rather than semantic ones, and a harness MUST NOT read them as compound tests — A: `audience` is schema-REQUIRED whenever `visibility` is `restricted`, so it cannot be varied independently; I: a signature by a different key necessarily changes both `key_id` and `value`; J: for did:key the identity IS the key, so re-expressing K under a did:key producer forces `agent_id`, the `signature` pair and `metadata.revoked_key_fingerprint` together, plus `title`/`summary`, which are descriptive only and load-bearing in no assertion. This convention covers A-J and Q — O and P are of a different shape (a supersession relationship to an out-of-band target, not a metadata variation) and are pinned instead by `preconditions.existing_context`, following the `pub-003` convention; O's control is R (differs_from_control: [\"type\"]), P's control is O (differs_from_control: [\"supersedes\"]). Registry-assigned fields (ctx_id, lineage_id, origin_registry, created_at) are absent from every request body per RFC-ACDP-0001 §5.7 and RFC-ACDP-0003 §2.1; O and P's `supersedes` values are themselves producer-supplied references to a prior ctx_id and are not registry-assigned. content_hash and signature.value are PLACEHOLDERS: this fixture is behavioral and is not executed by scripts/conformance-runner.py — the executable golden vector is rev-001. A harness computes the real content_hash over the JCS-canonicalized producer content and signs with its own keypairs. In EVERY scenario the signature MUST genuinely verify: for I and J because the whole point is that a verifying signature is still not authorization, and for the shape scenarios so that the rejection is attributable to §4 rather than to signature verification failing first. A property of the fixture as a whole, verified against the schemas and worth stating outright: ALL EIGHTEEN request bodies (A-R) are valid against acdp-publish-request.schema.json once the placeholders are filled in — every rejection among them included. Not one of the rejections A-J asserts is reachable by schema validation, because every §4 constraint is type-conditional semantics layered ON TOP of the schema (the same arrangement as the DataRef invariants of RFC-ACDP-0002 §6.6); O, P and Q are likewise schema-valid bodies rejected on relationship-to-target or type-specific grounds, never on shape. A registry whose key-revocation handling is 'validate against the schema' passes zero of A-J and O-Q while returning 201 on all of them.",
+    "registry_capabilities": {
+      "acdp_version": "0.5.0",
+      "registry_did": "did:web:registry.example.com",
+      "supported_did_methods": ["did:web", "did:key"],
+      "_note": "Bumped from 0.3.0 (the value this fixture carried before the 0.5.0 Phase 7 amendment) so scenarios O-R, which pin >=0.5.0-only obligations, share one consistent declared registry. This does NOT narrow scenarios A-N: a registry advertising 0.5.0 is also >=0.3.0, so every A-N obligation still binds and still MUST be exercised. A registry conformance-testing at exactly 0.3.0 or 0.4.0 still MUST pass A-N and simply has nothing in this fixture to exercise for O-R, per RFC-ACDP-0014 §4/§10's version gates."
+    },
+    "keys": {
+      "K1": {
+        "fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+        "role": "the revoked key — the sig-001 / fp-001 / rot-001 / rev-001 K1. Its assertionMethod membership VARIES BY SCENARIO and is load-bearing in exactly one: see scenario I."
+      },
+      "K2": {
+        "fingerprint": "sha256:3097e2dee2cb4a34b53840cdb705aed71067c36f68db0e0f559c3f3fa043315f",
+        "role": "the producer's current, non-revoked signing key — rev-001's signer. The sig-003 did:key identifier encodes this same key, which is why scenario J can revoke it offline."
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "name": "A — visibility is not public",
+      "request": {
+        "method": "POST",
+        "path": "/contexts",
+        "body": {
+          "version": 1,
+          "supersedes": null,
+          "agent_id": "did:web:agents.example.com:test-producer",
+          "contributors": [],
+          "title": "Key revocation — key-1 compromised",
+          "summary": "Revocation of the Ed25519 key did:web:agents.example.com:test-producer#key-1, compromised since 2026-05-01T00:00:00.000Z.",
+          "type": "key-revocation",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "restricted",
+          "metadata": {
+            "revoked_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+            "compromised_since": "2026-05-01T00:00:00.000Z"
+          },
+          "acdp_version": "0.3.0",
+          "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:web:agents.example.com:test-producer#key-2",
+            "value": "<valid signature by K2 over this body's content_hash>"
+          },
+          "audience": [
+            "did:web:consumers.example.com:ops-team"
+          ]
+        }
+      },
+      "control": "K",
+      "differs_from_control": ["audience", "visibility"],
+      "expected": {
+        "outcome": "failure",
+        "http_status": 400,
+        "error_code": "schema_violation",
+        "behavior": "MUST be rejected. RFC-ACDP-0014 §4 fixes visibility to public and names the rejection code in the table itself: a revocation is a safety broadcast, and an audience-restricted one protects nobody outside the audience. Note what makes this one easy to miss: unlike scenarios B-F, whose fields live in the OPEN metadata object, visibility is a first-class body field with a schema-defined enum — so 'the schema validated it' is most tempting precisely here, and most wrong. The generic schema accepts this body: visibility 'restricted' with a non-empty audience satisfies acdp-publish-request.schema.json in full. Every §4 constraint in this fixture is type-conditional prose that a registry must enforce on top of schema validation, never instead of it."
+      }
+    },
+    {
+      "name": "B — metadata.revoked_key_fingerprint absent",
+      "request": {
+        "method": "POST",
+        "path": "/contexts",
+        "body": {
+          "version": 1,
+          "supersedes": null,
+          "agent_id": "did:web:agents.example.com:test-producer",
+          "contributors": [],
+          "title": "Key revocation — key-1 compromised",
+          "summary": "Revocation of the Ed25519 key did:web:agents.example.com:test-producer#key-1, compromised since 2026-05-01T00:00:00.000Z.",
+          "type": "key-revocation",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public",
+          "metadata": {
+            "compromised_since": "2026-05-01T00:00:00.000Z"
+          },
+          "acdp_version": "0.3.0",
+          "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:web:agents.example.com:test-producer#key-2",
+            "value": "<valid signature by K2 over this body's content_hash>"
+          }
+        }
+      },
+      "control": "K",
+      "differs_from_control": ["metadata.revoked_key_fingerprint"],
+      "expected": {
+        "outcome": "failure",
+        "http_status": 400,
+        "error_code": "schema_violation",
+        "behavior": "MUST be rejected. REQUIRED by RFC-ACDP-0014 §4. Note that metadata is an open object in acdp-context-body.schema.json, so no generic schema check catches this: the requirement is type-conditional and enforced only by a registry that branches on type == 'key-revocation'. A registry that never branches passes this body straight through — which is precisely what this scenario detects."
+      }
+    },
+    {
+      "name": "C — metadata.revoked_key_fingerprint malformed",
+      "request": {
+        "method": "POST",
+        "path": "/contexts",
+        "body": {
+          "version": 1,
+          "supersedes": null,
+          "agent_id": "did:web:agents.example.com:test-producer",
+          "contributors": [],
+          "title": "Key revocation — key-1 compromised",
+          "summary": "Revocation of the Ed25519 key did:web:agents.example.com:test-producer#key-1, compromised since 2026-05-01T00:00:00.000Z.",
+          "type": "key-revocation",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public",
+          "metadata": {
+            "revoked_key_fingerprint": "sha256:139E3940E64B5491",
+            "compromised_since": "2026-05-01T00:00:00.000Z"
+          },
+          "acdp_version": "0.3.0",
+          "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:web:agents.example.com:test-producer#key-2",
+            "value": "<valid signature by K2 over this body's content_hash>"
+          }
+        }
+      },
+      "control": "K",
+      "differs_from_control": ["metadata.revoked_key_fingerprint"],
+      "expected": {
+        "outcome": "failure",
+        "http_status": 400,
+        "error_code": "schema_violation",
+        "behavior": "MUST be rejected on two independent counts: the hex is truncated (not 64 characters) and it is uppercase. RFC-ACDP-0014 §4 requires the RFC-ACDP-0010 §6 encoding byte-for-byte — 'sha256:' + lowercase hex of SHA-256 over the raw public key bytes. Case is load-bearing because the fingerprint is compared byte-for-byte against the value receipts record (§4); a case-insensitive comparison diverges from the receipts silently."
+      }
+    },
+    {
+      "name": "D — metadata.compromised_since absent",
+      "request": {
+        "method": "POST",
+        "path": "/contexts",
+        "body": {
+          "version": 1,
+          "supersedes": null,
+          "agent_id": "did:web:agents.example.com:test-producer",
+          "contributors": [],
+          "title": "Key revocation — key-1 compromised",
+          "summary": "Revocation of the Ed25519 key did:web:agents.example.com:test-producer#key-1, compromised since 2026-05-01T00:00:00.000Z.",
+          "type": "key-revocation",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public",
+          "metadata": {
+            "revoked_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070"
+          },
+          "acdp_version": "0.3.0",
+          "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:web:agents.example.com:test-producer#key-2",
+            "value": "<valid signature by K2 over this body's content_hash>"
+          }
+        }
+      },
+      "control": "K",
+      "differs_from_control": ["metadata.compromised_since"],
+      "expected": {
+        "outcome": "failure",
+        "http_status": 400,
+        "error_code": "schema_violation",
+        "behavior": "MUST be rejected. REQUIRED by RFC-ACDP-0014 §4, with no default: without T the §7 boundary is uncomputable, so a revocation missing it cannot be acted on at all — it names a key but says nothing about when that key's signatures stop being attributable to the producer."
+      }
+    },
+    {
+      "name": "E — metadata.compromised_since is not canonical millisecond RFC 3339 UTC",
+      "request": {
+        "method": "POST",
+        "path": "/contexts",
+        "body": {
+          "version": 1,
+          "supersedes": null,
+          "agent_id": "did:web:agents.example.com:test-producer",
+          "contributors": [],
+          "title": "Key revocation — key-1 compromised",
+          "summary": "Revocation of the Ed25519 key did:web:agents.example.com:test-producer#key-1, compromised since 2026-05-01T00:00:00.000Z.",
+          "type": "key-revocation",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public",
+          "metadata": {
+            "revoked_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+            "compromised_since": "2026-05-01T00:00:00Z"
+          },
+          "acdp_version": "0.3.0",
+          "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:web:agents.example.com:test-producer#key-2",
+            "value": "<valid signature by K2 over this body's content_hash>"
+          }
+        }
+      },
+      "control": "K",
+      "differs_from_control": ["metadata.compromised_since"],
+      "expected": {
+        "outcome": "failure",
+        "http_status": 400,
+        "error_code": "schema_violation",
+        "behavior": "MUST be rejected. RFC-ACDP-0014 §4's metadata.compromised_since row requires the canonical millisecond RFC 3339 UTC form of RFC-ACDP-0001 §5.3 — exactly three fractional digits and a literal 'Z' — and the paragraph immediately following §4's table makes violations a schema_violation. This value is second-precision. NOTE the interaction, which is easy to get wrong in either direction: RFC-ACDP-0001 §5.3 requires implementations to ACCEPT any valid RFC 3339 date-time on input, including second, microsecond and nanosecond precision, and only SHOULDs normalization. §4 is a type-specific OVERRIDE of that leniency for this one field, not an application of it — so '2026-05-01T00:00:00.000000Z' MUST also be rejected here even though §5.3 accepts microsecond precision anywhere else. '2026-05-01T00:00:00.000+00:00' MUST likewise be rejected, but for an ORDINARY reason rather than by this override: §5.3 requires the explicit 'Z' suffix everywhere (RFC-ACDP-0001 §5.3 opening sentence), and the acdp-common.schema.json timestamp pattern already ends in 'Z', so a numeric offset was never acceptable anywhere in ACDP. Tolerating a non-canonical T forces every consumer to re-normalize before comparing it against a receipt-attested created_at, and §7's boundary is a strict inequality — a millisecond of drift flips the verdict for signatures made in that millisecond."
+      }
+    },
+    {
+      "name": "F — metadata.reason exceeds 1024 characters",
+      "request": {
+        "method": "POST",
+        "path": "/contexts",
+        "body": {
+          "version": 1,
+          "supersedes": null,
+          "agent_id": "did:web:agents.example.com:test-producer",
+          "contributors": [],
+          "title": "Key revocation — key-1 compromised",
+          "summary": "Revocation of the Ed25519 key did:web:agents.example.com:test-producer#key-1, compromised since 2026-05-01T00:00:00.000Z.",
+          "type": "key-revocation",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public",
+          "metadata": {
+            "revoked_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+            "compromised_since": "2026-05-01T00:00:00.000Z",
+            "reason": "<a string of 1025 characters>"
+          },
+          "acdp_version": "0.3.0",
+          "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:web:agents.example.com:test-producer#key-2",
+            "value": "<valid signature by K2 over this body's content_hash>"
+          }
+        }
+      },
+      "control": "K",
+      "differs_from_control": ["metadata.reason"],
+      "expected": {
+        "outcome": "failure",
+        "http_status": 400,
+        "error_code": "schema_violation",
+        "behavior": "MUST be rejected. RFC-ACDP-0014 §4 caps reason at 1024 characters. The bound is INCLUSIVE — a reason of exactly 1024 characters MUST be accepted, which scenario N pins as its own positive control, because off-by-one is the likely defect and a registry using '>= 1024' passes this scenario while failing N. The cap is on characters, not bytes: a conformant 1024-character reason of non-ASCII text may encode to considerably more bytes, and a registry capping bytes rejects bodies RFC-ACDP-0014 permits."
+      }
+    },
+    {
+      "name": "G — metadata.revoked_key_controller present and unequal to agent_id (producer-signed)",
+      "request": {
+        "method": "POST",
+        "path": "/contexts",
+        "body": {
+          "version": 1,
+          "supersedes": null,
+          "agent_id": "did:web:agents.example.com:test-producer",
+          "contributors": [],
+          "title": "Key revocation — key-1 compromised",
+          "summary": "Revocation of the Ed25519 key did:web:agents.example.com:test-producer#key-1, compromised since 2026-05-01T00:00:00.000Z.",
+          "type": "key-revocation",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public",
+          "metadata": {
+            "revoked_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+            "compromised_since": "2026-05-01T00:00:00.000Z",
+            "revoked_key_controller": "did:web:agents.example.com:other-producer"
+          },
+          "acdp_version": "0.3.0",
+          "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:web:agents.example.com:test-producer#key-2",
+            "value": "<valid signature by K2 over this body's content_hash>"
+          }
+        }
+      },
+      "control": "K",
+      "differs_from_control": ["metadata.revoked_key_controller"],
+      "expected": {
+        "outcome": "failure",
+        "http_status": 400,
+        "error_code": "schema_violation",
+        "behavior": "MUST be rejected. RFC-ACDP-0014 §4 and §5 step 3: on a producer-signed revocation the controller is OPTIONAL, but if present it MUST equal body.agent_id. One producer cannot revoke another producer's key — that claim, if accepted, is an unauthenticated denial-of-service against the named producer's post-T history (§13, 'revocation as a weapon'). See scenario H for why this check MUST NOT be applied uniformly."
+      }
+    },
+    {
+      "name": "H — metadata.revoked_key_controller absent on a registry-attested revocation",
+      "request": {
+        "method": "POST",
+        "path": "/contexts",
+        "body": {
+          "version": 1,
+          "supersedes": null,
+          "agent_id": "did:web:registry.example.com",
+          "contributors": [],
+          "title": "Registry-attested key revocation — did:web:agents.example.com:test-producer key-1",
+          "summary": "Registry attestation that did:web:agents.example.com:test-producer's key-1 is compromised.",
+          "type": "key-revocation",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public",
+          "metadata": {
+            "revoked_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+            "compromised_since": "2026-05-01T00:00:00.000Z",
+            "reason": "Producer identity re-verified out of band; producer holds no remaining authorized key."
+          },
+          "acdp_version": "0.3.0",
+          "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:web:registry.example.com#receipt-key-1",
+            "value": "<valid signature by the registry's receipt signing key>"
+          }
+        }
+      },
+      "control": "M",
+      "differs_from_control": ["metadata.revoked_key_controller"],
+      "harness": "SELF-TEST ONLY. The body is published by the registry under its OWN DID, so an external black-box harness cannot submit it — any request it signs fails signature verification before the §4/§6 check under test is ever reached. Registry implementers MUST exercise this scenario from inside, via whatever path their registry-attested revocation flow uses (RFC-ACDP-0014 §6 step 2), the same way rate-001 is self-tested. A registry that does not offer registry-attested revocation at all is conformant and has nothing to exercise here.",
+      "expected": {
+        "outcome": "failure",
+        "http_status": 400,
+        "error_code": "schema_violation",
+        "behavior": "MUST be rejected. RFC-ACDP-0014 §4's metadata.revoked_key_controller row makes it REQUIRED on registry-attested revocations and the paragraph immediately following §4's table is the MUST-reject-with-schema_violation rule; §6 step 2 is where the requirement is motivated. It is REQUIRED there because body.agent_id is the registry and nothing else in the body names the affected producer — without it the revocation identifies no subject at all. This is the mirror of scenario G and the reason the controller rule cannot be one uniform comparison; see the notes."
+      }
+    },
+    {
+      "name": "I — revocation self-signed by the revoked key (did:web producer)",
+      "request": {
+        "method": "POST",
+        "path": "/contexts",
+        "body": {
+          "version": 1,
+          "supersedes": null,
+          "agent_id": "did:web:agents.example.com:test-producer",
+          "contributors": [],
+          "title": "Key revocation — key-1 compromised",
+          "summary": "Revocation of the Ed25519 key did:web:agents.example.com:test-producer#key-1, compromised since 2026-05-01T00:00:00.000Z.",
+          "type": "key-revocation",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public",
+          "metadata": {
+            "revoked_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+            "compromised_since": "2026-05-01T00:00:00.000Z"
+          },
+          "acdp_version": "0.3.0",
+          "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:web:agents.example.com:test-producer#key-1",
+            "value": "<valid signature by K1 — the very key this body revokes>"
+          }
+        }
+      },
+      "control": "K",
+      "differs_from_control": ["signature.key_id", "signature.value"],
+      "expected": {
+        "outcome": "failure",
+        "http_status": 403,
+        "error_code": "key_not_authorized",
+        "behavior": "MUST be rejected with key_not_authorized (403), NOT schema_violation: the body's shape is correct and the signature genuinely verifies — what fails is authorization for this particular statement. RFC-ACDP-0014 §5 step 2: the RFC-ACDP-0010 §6 fingerprint of the RESOLVED signing key (K1, sha256:139e3940…) equals metadata.revoked_key_fingerprint. Such a signature proves only possession of a key that is by hypothesis attacker-held, so whoever holds it could mint or suppress these statements at will. PRECONDITION — this is the whole point of the scenario: K1 is STILL IN assertionMethod at the time of this publish, which is the realistic just-stolen-key case (the producer has not yet edited its DID document; that is why it is publishing a revocation). Without that precondition the scenario is not discriminating: RFC-ACDP-0003 §2.1 step 6 already answers key_not_authorized (403) for a key absent from assertionMethod, so a registry that never implements §5 step 2 would pass on the generic authorization check and the fixture would report coverage it does not have. With K1 authorized, the generic check PASSES and only the §5 step 2 fingerprint comparison can reject — which is what this scenario measures. Detecting it requires resolving the did:web document and fingerprinting the resolved verification method; the fingerprint is not derivable from the key_id string. A consumer encountering one anyway MUST treat it as unverified (§5 step 2)."
+      }
+    },
+    {
+      "name": "J — revocation self-signed by the revoked key (did:key producer)",
+      "request": {
+        "method": "POST",
+        "path": "/contexts",
+        "body": {
+          "version": 1,
+          "supersedes": null,
+          "agent_id": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
+          "contributors": [],
+          "title": "Key revocation — did:key identity key compromised",
+          "summary": "Revocation of the Ed25519 key encoded in did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3.",
+          "type": "key-revocation",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public",
+          "metadata": {
+            "revoked_key_fingerprint": "sha256:3097e2dee2cb4a34b53840cdb705aed71067c36f68db0e0f559c3f3fa043315f",
+            "compromised_since": "2026-05-01T00:00:00.000Z"
+          },
+          "acdp_version": "0.3.0",
+          "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3#z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
+            "value": "<valid signature by the key the did:key identifier encodes>"
+          }
+        }
+      },
+      "control": "K",
+      "differs_from_control": ["agent_id", "metadata.revoked_key_fingerprint", "signature.key_id", "signature.value", "summary", "title"],
+      "expected": {
+        "outcome": "failure",
+        "http_status": 403,
+        "error_code": "key_not_authorized",
+        "behavior": "MUST be rejected with key_not_authorized (403) — the same §5 step 2 rule as scenario I, reached by a different code path. did:key resolution is pure and offline (RFC-ACDP-0001 §5.11.1), so the revoked fingerprint is derivable from the identifier itself with no network resolution: this identifier is the sig-003 golden key, whose RFC-ACDP-0010 §6 fingerprint is sha256:3097e2de… — byte-identical to metadata.revoked_key_fingerprint here. Implementations commonly special-case did:key and skip the fingerprint comparison on that branch, which is why both DID methods are exercised. CONDITIONAL: this scenario applies only to a registry advertising did:key in supported_did_methods, as input.registry_capabilities does. A registry that does not advertise did:key MUST reject this publish with key_resolution_failed (400) at RFC-ACDP-0001 §5.4 — before §5 step 2 is ever reached — which is the separate obligation dk-003 pins; asserting key_not_authorized against such a registry would contradict dk-003. Note the deeper point RFC-ACDP-0014 §5 makes: a did:key producer can NEVER issue a producer-signed revocation for its own identity, because the key IS the identity — so for did:key this is not one failure mode among several but the only shape such a publish can take, and the recovery path is §6 or out of band."
+      }
+    },
+    {
+      "name": "K — positive control: valid producer-signed revocation, controller absent",
+      "request": {
+        "method": "POST",
+        "path": "/contexts",
+        "body": {
+          "version": 1,
+          "supersedes": null,
+          "agent_id": "did:web:agents.example.com:test-producer",
+          "contributors": [],
+          "title": "Key revocation — key-1 compromised",
+          "summary": "Revocation of the Ed25519 key did:web:agents.example.com:test-producer#key-1, compromised since 2026-05-01T00:00:00.000Z.",
+          "type": "key-revocation",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public",
+          "metadata": {
+            "revoked_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+            "compromised_since": "2026-05-01T00:00:00.000Z"
+          },
+          "acdp_version": "0.3.0",
+          "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:web:agents.example.com:test-producer#key-2",
+            "value": "<valid signature by K2 over this body's content_hash>"
+          }
+        }
+      },
+      "expected": {
+        "outcome": "success",
+        "http_status": 201,
+        "behavior": "MUST be accepted (201). Every §4 constraint is satisfied and revoked_key_controller is absent, which is conformant on a producer-signed revocation (§4: OPTIONAL, defaulting to body.agent_id). Without this control, a registry that rejects every key-revocation publish outright passes all ten rejection scenarios above and demonstrates nothing."
+      }
+    },
+    {
+      "name": "L — positive control: valid producer-signed revocation, controller present and equal",
+      "request": {
+        "method": "POST",
+        "path": "/contexts",
+        "body": {
+          "version": 1,
+          "supersedes": null,
+          "agent_id": "did:web:agents.example.com:test-producer",
+          "contributors": [],
+          "title": "Key revocation — key-1 compromised",
+          "summary": "Revocation of the Ed25519 key did:web:agents.example.com:test-producer#key-1, compromised since 2026-05-01T00:00:00.000Z.",
+          "type": "key-revocation",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public",
+          "metadata": {
+            "revoked_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+            "compromised_since": "2026-05-01T00:00:00.000Z",
+            "revoked_key_controller": "did:web:agents.example.com:test-producer",
+            "revoked_key_id": "did:web:agents.example.com:test-producer#key-1",
+            "reason": "laptop theft; private key material presumed exfiltrated"
+          },
+          "acdp_version": "0.3.0",
+          "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:web:agents.example.com:test-producer#key-2",
+            "value": "<valid signature by K2 over this body's content_hash>"
+          }
+        }
+      },
+      "expected": {
+        "outcome": "success",
+        "http_status": 201,
+        "behavior": "MUST be accepted (201). The controller is present and equals body.agent_id (§5 step 3), and the OPTIONAL revoked_key_id and reason are populated. Paired with scenario G this pins that the check is EQUALITY, not presence: an implementation rejecting any present controller passes G for the wrong reason and fails here, and the pair is what separates the two."
+      }
+    },
+    {
+      "name": "M — positive control: valid registry-attested revocation",
+      "request": {
+        "method": "POST",
+        "path": "/contexts",
+        "body": {
+          "version": 1,
+          "supersedes": null,
+          "agent_id": "did:web:registry.example.com",
+          "contributors": [],
+          "title": "Registry-attested key revocation — did:web:agents.example.com:test-producer key-1",
+          "summary": "Registry attestation that did:web:agents.example.com:test-producer's key-1 is compromised.",
+          "type": "key-revocation",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public",
+          "metadata": {
+            "revoked_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+            "compromised_since": "2026-05-01T00:00:00.000Z",
+            "revoked_key_controller": "did:web:agents.example.com:test-producer",
+            "reason": "Producer identity re-verified out of band; producer holds no remaining authorized key."
+          },
+          "acdp_version": "0.3.0",
+          "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:web:registry.example.com#receipt-key-1",
+            "value": "<valid signature by the registry's receipt signing key>"
+          }
+        }
+      },
+      "harness": "SELF-TEST ONLY. The body is published by the registry under its OWN DID, so an external black-box harness cannot submit it — any request it signs fails signature verification before the §4/§6 check under test is ever reached. Registry implementers MUST exercise this scenario from inside, via whatever path their registry-attested revocation flow uses (RFC-ACDP-0014 §6 step 2), the same way rate-001 is self-tested. A registry that does not offer registry-attested revocation at all is conformant and has nothing to exercise here.",
+      "expected": {
+        "outcome": "success",
+        "http_status": 201,
+        "behavior": "MUST be accepted (201). RFC-ACDP-0014 §6: body.agent_id is the registry's own DID (capabilities.registry_did), the signature is under the registry's receipt signing key — already required to be in its assertionMethod by RFC-ACDP-0010 §9, so no new key role — and revoked_key_controller names the affected producer and is DELIBERATELY unequal to body.agent_id. This is the scenario a naive uniform controller check rejects, silently disabling the §6 recovery path; see the notes."
+      }
+    },
+    {
+      "name": "N — positive control: metadata.reason of exactly 1024 characters",
+      "request": {
+        "method": "POST",
+        "path": "/contexts",
+        "body": {
+          "version": 1,
+          "supersedes": null,
+          "agent_id": "did:web:agents.example.com:test-producer",
+          "contributors": [],
+          "title": "Key revocation — key-1 compromised",
+          "summary": "Revocation of the Ed25519 key did:web:agents.example.com:test-producer#key-1, compromised since 2026-05-01T00:00:00.000Z.",
+          "type": "key-revocation",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public",
+          "metadata": {
+            "revoked_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+            "compromised_since": "2026-05-01T00:00:00.000Z",
+            "reason": "<a string of EXACTLY 1024 characters>"
+          },
+          "acdp_version": "0.3.0",
+          "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:web:agents.example.com:test-producer#key-2",
+            "value": "<valid signature by K2 over this body's content_hash>"
+          }
+        }
+      },
+      "expected": {
+        "outcome": "success",
+        "http_status": 201,
+        "behavior": "MUST be accepted (201). RFC-ACDP-0014 §4 caps reason at 1024 characters and the bound is INCLUSIVE, so 1024 is the largest conformant value and 1025 (scenario F) the smallest non-conformant one. The pair exists because off-by-one is the likely defect and neither scenario catches it alone: a registry using '>= 1024' rejects here while still passing F. Note also that the cap is on CHARACTERS, not bytes — a harness SHOULD use non-ASCII text for this scenario, since a registry capping bytes accepts a 1024-character ASCII reason and rejects a 1024-character non-ASCII one that RFC-ACDP-0014 permits."
+      }
+    },
+    {
+      "name": "O — (0.5.0) non-revocation supersedes a key-revocation target",
+      "applies_when": "acdp_version >= 0.5.0 — RFC-ACDP-0014 §4's (0.5.0) predecessor-keyed amendment. A registry declaring < 0.5.0 has no obligation here and MUST NOT be asked to reject this publish on this ground.",
+      "preconditions": {
+        "existing_context": {
+          "ctx_id": "acdp://registry.example.com/44444444-4444-4444-8444-444444444444",
+          "version": 1,
+          "type": "key-revocation",
+          "agent_id": "did:web:agents.example.com:test-producer",
+          "note": "The predecessor this scenario supersedes: an already-published, verified key-revocation context (the rev-001 shape) for the same producer. Its own metadata/signature are immaterial to this scenario — only its type and agent_id are inspected by the rule under test. lineage_id is omitted here because the request body below omits it too (RFC-ACDP-0003 §3.1 step 4 has the registry compute it from the supersedes chain; a producer-supplied value is OPTIONAL per acdp-publish-request.schema.json)."
+        }
+      },
+      "request": {
+        "method": "POST",
+        "path": "/contexts",
+        "body": {
+          "version": 2,
+          "supersedes": "acdp://registry.example.com/44444444-4444-4444-8444-444444444444",
+          "agent_id": "did:web:agents.example.com:test-producer",
+          "contributors": [],
+          "title": "Key revocation — key-1 compromised (widened)",
+          "summary": "Corrected revocation of the Ed25519 key did:web:agents.example.com:test-producer#key-1, widening the compromise boundary to an earlier time.",
+          "type": "analysis",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public",
+          "metadata": {
+            "revoked_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+            "compromised_since": "2026-04-01T00:00:00.000Z"
+          },
+          "acdp_version": "0.5.0",
+          "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:web:agents.example.com:test-producer#key-2",
+            "value": "<valid signature by K2 over this body's content_hash>"
+          }
+        }
+      },
+      "control": "R",
+      "differs_from_control": ["type"],
+      "expected": {
+        "outcome": "failure",
+        "http_status": 400,
+        "error_code": "superseded_target",
+        "details": {
+          "reason": "revocation_type_mismatch"
+        },
+        "behavior": "MUST be rejected. RFC-ACDP-0014 §4's (0.5.0) predecessor-keyed rule: the resolved supersedes target's type is key-revocation, and the incoming body's own type ('analysis') is not likewise a revocation. NOT schema_violation — the body is structurally valid (an ordinary analysis context is well-formed on its own) and RFC-ACDP-0003 §3.1's agent_id/lineage_id/version checks all pass; what fails is the relationship between this body and the target it names in supersedes, exactly the category superseded_target already covers for lineage_mismatch/version_mismatch/etc. Compare scenario R: identical request except type, and R MUST be accepted — the discriminator is the incoming type alone. This closes, at the registry, the same gap RFC-ACDP-0014 §7's consumer-side rule closes for every upgraded consumer regardless of what any registry does: without either, an attacker holding the producer's current key can neutralize a revocation by superseding it with an unrelated context type (RFC-ACDP-0003 §3.1 constrains supersession by agent_id/lineage_id/version/first-to-supersede but not by type)."
+      }
+    },
+    {
+      "name": "P — (0.5.0) non-revocation supersedes an interim-form acdp:key-revocation target",
+      "applies_when": "acdp_version >= 0.5.0 — RFC-ACDP-0014 §4's (0.5.0) predecessor-keyed amendment, extended to the §10 interim form. A registry declaring < 0.5.0 has no obligation here.",
+      "preconditions": {
+        "existing_context": {
+          "ctx_id": "acdp://registry.example.com/55555555-5555-4555-8555-555555555555",
+          "version": 1,
+          "type": "acdp:key-revocation",
+          "agent_id": "did:web:agents.example.com:test-producer",
+          "note": "The predecessor is published under the RFC-ACDP-0014 §10 interim custom type rather than the standard key-revocation type — plausible on a registry that only began advertising 0.5.0 after the predecessor was published under the interim form on an earlier (< 0.3.0) registry generation, or received via cross-registry history. The rule under test explicitly covers this shape: §4 names 'key-revocation (or the §10 interim acdp:key-revocation)' as triggering types."
+        }
+      },
+      "request": {
+        "method": "POST",
+        "path": "/contexts",
+        "body": {
+          "version": 2,
+          "supersedes": "acdp://registry.example.com/55555555-5555-4555-8555-555555555555",
+          "agent_id": "did:web:agents.example.com:test-producer",
+          "contributors": [],
+          "title": "Key revocation — key-1 compromised (widened)",
+          "summary": "Corrected revocation of the Ed25519 key did:web:agents.example.com:test-producer#key-1, widening the compromise boundary to an earlier time.",
+          "type": "analysis",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public",
+          "metadata": {
+            "revoked_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+            "compromised_since": "2026-04-01T00:00:00.000Z"
+          },
+          "acdp_version": "0.5.0",
+          "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:web:agents.example.com:test-producer#key-2",
+            "value": "<valid signature by K2 over this body's content_hash>"
+          }
+        }
+      },
+      "control": "O",
+      "differs_from_control": ["supersedes"],
+      "expected": {
+        "outcome": "failure",
+        "http_status": 400,
+        "error_code": "superseded_target",
+        "details": {
+          "reason": "revocation_type_mismatch"
+        },
+        "behavior": "MUST be rejected, for the same reason as scenario O — the request body is byte-for-byte identical to O except for the supersedes target. RFC-ACDP-0014 §4's (0.5.0) rule explicitly names the §10 interim acdp:key-revocation alongside the standard key-revocation as a triggering predecessor type: an implementation that special-cases the standard type string and misses the interim one passes O while failing here, which is exactly what this scenario is for. Both O and P share control R (a key-revocation properly superseding a key-revocation) as the positive baseline; there is no separate positive control pairing the interim-form predecessor, because §4's rule treats the two predecessor types identically — R already demonstrates the type-check accepts a matching revocation type, and nothing about the interim-vs-standard distinction changes that acceptance logic."
+      }
+    },
+    {
+      "name": "Q — (0.5.0) new publish under the interim acdp:key-revocation type",
+      "applies_when": "acdp_version >= 0.5.0 — RFC-ACDP-0014 §10's (0.5.0) retirement of the interim form for new publications. A registry declaring acdp_version in [0.3.0, 0.5.0) MUST NOT reject this publish: §10 neither requires nor forbids §4-validating the interim form there, and RFC-ACDP-0014 §4/§5's obligations bind only to bodies with type == 'key-revocation' (exactly, not the interim string), so a body of this shape is an ordinary custom-typed publish on such a registry, accepted like any other.",
+      "request": {
+        "method": "POST",
+        "path": "/contexts",
+        "body": {
+          "version": 1,
+          "supersedes": null,
+          "agent_id": "did:web:agents.example.com:test-producer",
+          "contributors": [],
+          "title": "Key revocation — key-1 compromised",
+          "summary": "Revocation of the Ed25519 key did:web:agents.example.com:test-producer#key-1, compromised since 2026-05-01T00:00:00.000Z.",
+          "type": "acdp:key-revocation",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public",
+          "metadata": {
+            "revoked_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+            "compromised_since": "2026-05-01T00:00:00.000Z"
+          },
+          "acdp_version": "0.3.0",
+          "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:web:agents.example.com:test-producer#key-2",
+            "value": "<valid signature by K2 over this body's content_hash>"
+          }
+        }
+      },
+      "control": "K",
+      "differs_from_control": ["type"],
+      "expected": {
+        "outcome": "failure",
+        "http_status": 400,
+        "error_code": "schema_violation",
+        "behavior": "MUST be rejected. RFC-ACDP-0014 §10's (0.5.0) rule: a registry advertising acdp_version >= 0.5.0 MUST reject a NEW publication using the interim acdp:key-revocation type. This request is scenario K (the standard-form positive control) with only type changed — everything else, including the §4-shaped metadata, is identical and irrelevant to this rejection: the rejection fires on the type string alone, before any §4 metadata inspection would occur, because a >=0.5.0 registry no longer accepts the workaround the standard type has superseded since 0.3.0. Note precisely what this does NOT do: it takes no position on bodies already published under the interim form (permanent and immutable, still served) and does not extend §4's shape validation to custom types in general — 'acdp:key-revocation' is rejected by name, specifically, not because it is a namespaced custom type."
+      }
+    },
+    {
+      "name": "R — (0.5.0) positive control: key-revocation properly supersedes a key-revocation target",
+      "applies_when": "acdp_version >= 0.5.0. Demonstrates the (0.5.0) predecessor-keyed rule does not over-reject the legitimate case §4's supersedes row already permits (same signer class, widening T).",
+      "preconditions": {
+        "existing_context": {
+          "ctx_id": "acdp://registry.example.com/44444444-4444-4444-8444-444444444444",
+          "version": 1,
+          "type": "key-revocation",
+          "agent_id": "did:web:agents.example.com:test-producer",
+          "note": "Same predecessor as scenario O."
+        }
+      },
+      "request": {
+        "method": "POST",
+        "path": "/contexts",
+        "body": {
+          "version": 2,
+          "supersedes": "acdp://registry.example.com/44444444-4444-4444-8444-444444444444",
+          "agent_id": "did:web:agents.example.com:test-producer",
+          "contributors": [],
+          "title": "Key revocation — key-1 compromised (widened)",
+          "summary": "Corrected revocation of the Ed25519 key did:web:agents.example.com:test-producer#key-1, widening the compromise boundary to an earlier time.",
+          "type": "key-revocation",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public",
+          "metadata": {
+            "revoked_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+            "compromised_since": "2026-04-01T00:00:00.000Z"
+          },
+          "acdp_version": "0.5.0",
+          "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:web:agents.example.com:test-producer#key-2",
+            "value": "<valid signature by K2 over this body's content_hash>"
+          }
+        }
+      },
+      "expected": {
+        "outcome": "success",
+        "http_status": 201,
+        "behavior": "MUST be accepted (201). The incoming type (key-revocation) matches the resolved target's type, so RFC-ACDP-0014 §4's (0.5.0) predecessor-keyed rule does not apply; §4's pre-existing supersedes row permits a revocation to be superseded by another of the same signer class (both producer-signed here, same agent_id), and this body independently satisfies every §4 shape constraint and §5 step 2 (signed by K2, not the revoked K1). Without this control, a registry that rejects every supersession of a key-revocation target — not just non-revocation ones — would pass O and P for the wrong reason: over-rejection, not the type-check this fixture exists to verify."
+      }
+    }
+  ],
+  "notes": "The controller rule is the one branch in RFC-ACDP-0014 that is easy to implement BACKWARDS, which is why scenarios G, H and M exist as a set: no single comparison satisfies all three. The discriminator is whether body.agent_id equals capabilities.registry_did. §4's metadata.revoked_key_controller row does gesture at it — 'REQUIRED on registry-attested revocations (§6), where body.agent_id is the registry' — but only §6 step 2 ties it to capabilities.registry_did, the value an implementation can actually compare against:\n  - producer-signed (body.agent_id != registry_did): revoked_key_controller is OPTIONAL; if present it MUST equal body.agent_id (§4, §5 step 3). Scenario G rejects; K and L accept.\n  - registry-attested (body.agent_id == registry_did): revoked_key_controller is REQUIRED and names the affected producer, so it does NOT equal body.agent_id — the registry is not the subject of its own attestation (§6 step 2). Scenario H rejects; M accepts.\nA registry applying 'if present, MUST equal agent_id' uniformly rejects every legitimate registry-attested revocation (M), silently disabling the one recovery path §6 provides for a producer that has lost every key — and disabling it exactly when it is needed.\n\nThe error code is load-bearing and the two are not interchangeable. A-H are schema_violation (400): the request is malformed and the remedy is to fix the request. I and J are key_not_authorized (403): the request is well-formed and the signature verifies, and the remedy is to sign with a different key. A registry answering schema_violation for I or J tells the producer to fix a body that has nothing wrong with it.\n\nScenarios H and M carry a 'harness' field marking them SELF-TEST ONLY: both are published by the registry under its own DID, so an external harness cannot submit them — its signature would fail verification long before the check under test. Same situation as rate-001, and handled the same way. The other sixteen (of eighteen total) are black-box testable.\n\n(0.5.0) Scenarios O-R, added in the RFC-ACDP-0014 §4/§10 registry-amendment phase, pin the two new >=0.5.0-only registry obligations: O and P reject a non-revocation superseding a key-revocation (O) or interim acdp:key-revocation (P) target with superseded_target/revocation_type_mismatch — deliberately NOT schema_violation, because the incoming body is structurally valid and what fails is its relationship to the resolved supersession target, the same category superseded_target already covers for lineage_mismatch/version_mismatch/already_superseded; Q rejects a NEW publish under the interim type with schema_violation; R is the positive control showing a key-revocation legitimately superseding a key-revocation is still accepted, so O/P cannot be passed by rejecting every supersession of a revocation target. Each of the four carries an `applies_when` string — new fixture vocabulary for this file, parallel to `harness` and `control`/`differs_from_control` — stating its own gate (acdp_version >= 0.5.0) explicitly: the fixture-level `input.registry_capabilities` was raised to 0.5.0 to accommodate O-R (the highest gate any scenario needs), which means it now OVERSTATES A-N's actual gate (>= 0.3.0, unchanged) rather than understating O-R's — `applies_when` on O-R prevents a reader from inferring the wrong thing in the other direction, and A-N's own >= 0.3.0 gate remains stated in this fixture's `description` and in `registries/profiles.json`/`.md`. A registry conformance-testing below 0.5.0 still MUST pass A-N in full and has no obligation for O-R. O and P are supersession-relationship scenarios rather than metadata variations, so they carry `preconditions.existing_context` (the pub-003 convention) instead of relying solely on control/differs_from_control for their full specification; Q is an ordinary metadata-shaped scenario and uses control/differs_from_control alone, like A-N.\n\nBehavioral fixture — scripts/conformance-runner.py does not execute it. It carries no test_keypair, which is the data-shape marker the runner dispatches rev-* on; adding one would make the runner attempt to verify arithmetically a set of deliberately invalid bodies. Scenarios A-N are conditional on acdp_version >= 0.3.0 because pre-0.3.0 registries cannot validate these constraints at all — their context_type vocabulary predates the type, and §10 gives them the interim acdp:key-revocation form instead. Scenarios O-R are additionally conditional on acdp_version >= 0.5.0 (RFC-ACDP-0014 §4/§10's (0.5.0) amendments); registries advertising acdp_version in [0.3.0, 0.5.0) still MUST pass A-N in full and have no obligation for O-R. rev-001 pins the happy path arithmetically; rev-002 pins the consumer-side boundary and lineage-fold semantics."
+}
