@@ -51,7 +51,7 @@ producer DID document. Verification is local and stateless
 (no third-party call required after the producer DID is resolved).
 ```
 
-Registries advertising the optional trust profiles attach additional top-level members to the retrieval envelope — `registry_receipt` (0.2.0), `lineage_head_receipt` on `/current` (0.3.0), `log_inclusion` (0.3.0), `witness_signatures` (0.4.0). Each carries its own verification procedure and its verdict is reported separately from the body verdict; a consumer that ignores them under the RFC-ACDP-0001 §6 unknown-field rule is unaffected. See §2.6.
+Registries advertising the optional trust profiles attach additional top-level members to the retrieval envelope — `registry_receipt` (0.2.0), `lineage_head_receipt` on `/current` (0.3.0), `log_inclusion` (0.3.0), `witness_signatures` (0.4.0). Each carries its own verification procedure and its verdict is reported separately from the body verdict; a consumer that ignores them under the RFC-ACDP-0001 §6 unknown-field rule is unaffected. See §2.6. *(v0.1.0 erratum, Final)* A consumer retrieving directly MUST bind the resolved identity — check `body.ctx_id` against the requested one — because `ctx_id` is outside both the signature and `content_hash` (RFC-ACDP-0004 §2.1).
 
 ### 2.3 Cross-registry lineage walk
 
@@ -105,7 +105,7 @@ In v0.1.0 the producer signature covers ProducerContent only; the registry-assig
 | Transparency log | `acdp-registry-transparency-log` | The registry's publish history is append-only: Merkle inclusion proofs per context, consistency proofs between signed checkpoints. | RFC-ACDP-0012 (0.3.0) |
 | Witness cosignatures | `acdp-log-witness` | Independent parties (not registries) verified a checkpoint's signature and consistency and cosigned it with **their own** keys — split-view protection. | RFC-ACDP-0015 (0.4.0) |
 
-All four ride the frozen v0.1.0 wire as additional envelope members; none changes a body, a signature, or a `content_hash`. Alongside them, `acdp-registry-lifecycle` (RFC-ACDP-0013, 0.3.0) adds signed retraction/republication events (mark-not-delete), and RFC-ACDP-0014 (0.3.0) defines the `key-revocation` context type with fail-closed verification against receipt-attested publish times.
+All four ride the frozen v0.1.0 wire as additional envelope members; none changes a body, a signature, or a `content_hash`. Alongside them, `acdp-registry-lifecycle` (RFC-ACDP-0013, 0.3.0) adds signed retraction/republication events (mark-not-delete), and RFC-ACDP-0014 (0.3.0) defines the `key-revocation` context type with fail-closed verification against receipt-attested publish times. *(0.5.0, Draft)* RFC-ACDP-0014 §4/§10 add registry-side rejections for a non-revocation superseding a revocation and for new publishes under the retired interim type; RFC-ACDP-0016 adds the optional producer-signed `anchors` field. See [CHANGELOG.md](../CHANGELOG.md) for the dated entries.
 
 ## 3. The transport
 
@@ -167,3 +167,4 @@ Then, for the optional profiles you plan to advertise (all additive on the froze
 12. [RFC-ACDP-0013 Lifecycle Events](../rfcs/RFC-ACDP-0013-lifecycle-events.md) (0.3.0) — retraction/republication.
 13. [RFC-ACDP-0014 Key Revocation](../rfcs/RFC-ACDP-0014-key-revocation.md) (0.3.0).
 14. [RFC-ACDP-0015 Witness Cosigning](../rfcs/RFC-ACDP-0015-witness-cosigning.md) (0.4.0).
+15. [RFC-ACDP-0016 External Anchors](../rfcs/RFC-ACDP-0016-external-anchors.md) (0.5.0, Draft).

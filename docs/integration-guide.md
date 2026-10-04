@@ -45,6 +45,8 @@ body = {
 }
 ```
 
+*(0.5.0, Draft)* To genesis-link the body to a non-ACDP, content-addressed artifact, add the optional `anchors` array before hashing — it is producer-signed like any other field. Shape, limits, and the registry gate are in RFC-ACDP-0016 and [registries/anchor-schemes.md](../registries/anchor-schemes.md); a body carrying it MUST declare `acdp_version` ≥ 0.5.0 and be published only to a registry that also advertises ≥ 0.5.0, or it is rejected with `schema_violation` (RFC-ACDP-0016 §10, §14).
+
 ### Step 2: Compute content_hash
 
 Canonicalize the body using JCS (RFC 8785), compute SHA-256, and prepend the `sha256:` algorithm prefix.
@@ -284,4 +286,5 @@ A full wire-shape example of such a context is [examples/visibility/private-with
 - [Architecture overview](architecture.md)
 - [RFC-ACDP-0001 Core](../rfcs/RFC-ACDP-0001-core.md)
 - [RFC-ACDP-0003 Publish](../rfcs/RFC-ACDP-0003-publish.md)
+- SDK usage: [`acdp-rs` docs](https://github.com/agentcontextdistributionprotocol/acdp-rs/tree/main/docs) (producing, consuming, errors); registry operation: [`acdp-registry-rs` docs](https://github.com/agentcontextdistributionprotocol/acdp-registry-rs/tree/main/docs)
 - [Examples](../examples/)
