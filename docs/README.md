@@ -17,7 +17,7 @@ Everything in this directory is **non-normative** — the authoritative document
 | [architecture.md](architecture.md) | The implementer's map: roles, flows, the 0.2.0–0.4.0 trust arc, where state lives. |
 | [integration-guide.md](integration-guide.md) | Working producer/consumer code: hash, sign, publish, verify, walk lineage, verify trust artifacts. |
 | [discovery.md](discovery.md) | How agents first find a registry (bootstrap patterns; deliberately out of protocol scope). |
-| [version-matrix.md](version-matrix.md) | Which spec version each known implementation tracks. |
+| [version-matrix.md](version-matrix.md) | Which spec version each known implementation tracks (including the open 0.5.0 Draft line). |
 
 ## Boundaries and security
 

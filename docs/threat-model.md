@@ -25,7 +25,7 @@ The full normative threat model is [RFC-ACDP-0008 Security](../rfcs/RFC-ACDP-000
 | Gap | Mitigation |
 |---|---|
 | No retraction | Use supersession; RFC-ACDP-0009 reserves a formal lifecycle-events mechanism. *(0.3.0)* Closed on registries advertising `acdp-registry-lifecycle`: RFC-ACDP-0013 specifies signed retraction/republication events, `status: retracted`, mark-not-delete. |
-| No real-time key revocation push | Pull-based; consumers consult DID documents on retrieval. *(0.3.0)* RFC-ACDP-0014 makes the "this key is compromised" context normative (`key-revocation` type, time-scoped fail-closed semantics against receipt-attested publish times); still pull-based — a hiding registry remains detectable only where the RFC-ACDP-0012 transparency log is advertised. |
+| No real-time key revocation push | Pull-based; consumers consult DID documents on retrieval. *(0.3.0)* RFC-ACDP-0014 makes the "this key is compromised" context normative (`key-revocation` type, time-scoped fail-closed semantics against receipt-attested publish times); still pull-based — a hiding registry remains detectable only where the RFC-ACDP-0012 transparency log is advertised. A non-revocation superseding a revocation is disregarded by consumers for revocation-effectiveness (*(0.3.0)*, RFC-ACDP-0014 §7); *(0.5.0, Draft)* registries advertising `acdp_version` ≥ 0.5.0 also reject it at publish (§4). |
 | No third-party attestations | RFC-ACDP-0009 reserves `attestations` in registry state. |
 | No third-party `builds_on` claims | `derived_from` is producer-only. |
 | No push subscriptions | Polling only; RFC-ACDP-0009 reserves push semantics. |
