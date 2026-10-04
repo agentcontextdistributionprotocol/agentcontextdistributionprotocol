@@ -69,7 +69,7 @@ A context body is JCS-canonicalized, SHA-256 hashed, and signed by the producer.
 
 The open **0.5.0 Draft line** also carries small *(0.5.0)*-marked amendments inside otherwise-Final RFCs — the request media type and `unsupported_media_type` (RFC-ACDP-0007 §4.1), registry-side key-revocation enforcement (RFC-ACDP-0014 §4/§10). These are not frozen; [CHANGELOG.md](../CHANGELOG.md) has the dated record and the RFC-ACDP-0007/0014/0016 §1 sections say which passages are Draft. (Binding the resolved `ctx_id` on direct retrieval, RFC-ACDP-0004 §2.1 / RFC-ACDP-0006 §4.1, is a Final v0.1.0 erratum, not a Draft item.)
 
-Everything past 0008 is an **OPTIONAL profile layered on the frozen v0.1.0 core** — a registry advertises what it implements in `/.well-known/acdp.json`, and existing bodies, signatures, and `content_hash` values remain valid throughout.
+Everything past 0008 is an **OPTIONAL, additive layer (profile-gated where a server surface exists) on the frozen v0.1.0 core** — a registry advertises what it implements in `/.well-known/acdp.json`, and existing bodies, signatures, and `content_hash` values remain valid throughout.
 
 ---
 
