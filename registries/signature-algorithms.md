@@ -17,6 +17,17 @@ ECDSA-P256 signatures MUST use the **IEEE 1363 (r‖s)** wire form: the 32-byte 
 
 ECDSA-P256 is non-deterministic by default. Implementers SHOULD use **RFC 6979 deterministic ECDSA** (with SHA-256 as the hash) so that test vectors and signatures are reproducible across implementations. Random-k ECDSA is permitted at runtime but precludes byte-exact reproduction of golden vectors.
 
+## `ecdsa-p256` signature non-uniqueness (NORMATIVE)
+
+An ECDSA signature is **not unique** for a given key and message, and is **malleable**: for any valid `(r, s)`, the pair `(r, n − s)` (`n` the P-256 group order) also verifies. A third party who sees a signature can therefore produce a different, equally valid `signature.value` without the private key. Consequently:
+
+- Producers SHOULD emit **low-S** signatures (`s <= n/2`), normalizing `s := n − s` when `s > n/2`. RFC 6979 deterministic signing does not by itself guarantee low-S.
+- Verifiers MUST **accept** high-S signatures. Rejecting them would invalidate existing, validly produced signatures and is a wire change; low-S is a producer-side hygiene rule only.
+- Signature bytes MUST NOT be used as an identifier, deduplication key, or cache key for a body or event. Identity is `content_hash` (bodies) or `event_id` (lifecycle events). This is also why `ctx_id`, `lineage_id`, receipts, and log leaves never bind signature bytes.
+- Registries MUST NOT treat a high-S/low-S pair as evidence of two distinct publications. The `content_hash` is identical, and the signature of the first accepted submission is the stored one (bodies are immutable).
+
+`ed25519` strict verification (small-order keys and `R`) is specified in RFC-ACDP-0001 §5.10.
+
 ## `ecdsa-p256` key material (NORMATIVE)
 
 For `ecdsa-p256`, the producer's DID document verification method MUST publish the public key as a JWK with:

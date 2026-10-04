@@ -366,6 +366,72 @@ def check_ecdsa_p256_vector(fixture, fixture_data, vector):
     return _check_lineage(fixture, name, vector)
 
 
+_ED_P = 2**255 - 19
+_ED_L = 2**252 + 27742317777372353535851937790883648493
+_ED_D = (-121665 * pow(121666, -1, _ED_P)) % _ED_P
+
+
+def _ed_decode(b):
+    y = int.from_bytes(b, "little")
+    sign, y = y >> 255, y & ((1 << 255) - 1)
+    x2 = (y * y - 1) * pow(_ED_D * y * y + 1, -1, _ED_P) % _ED_P
+    x = pow(x2, (_ED_P + 3) // 8, _ED_P)
+    if (x * x - x2) % _ED_P:
+        x = x * pow(2, (_ED_P - 1) // 4, _ED_P) % _ED_P
+    if (x * x - x2) % _ED_P:
+        raise ValueError("not a curve point")
+    return ((-x) % _ED_P if x & 1 != sign else x), y
+
+
+def _ed_add(P, Q):
+    t = _ED_D * P[0] * Q[0] * P[1] * Q[1] % _ED_P
+    return ((P[0] * Q[1] + Q[0] * P[1]) * pow(1 + t, -1, _ED_P) % _ED_P,
+            (P[1] * Q[1] + P[0] * Q[0]) * pow(1 - t, -1, _ED_P) % _ED_P)
+
+
+def _ed_mul(k, P):
+    R = (0, 1)
+    while k:
+        if k & 1:
+            R = _ed_add(R, P)
+        P = _ed_add(P, P)
+        k >>= 1
+    return R
+
+
+def check_ed25519_strict_negative(fixture, fixture_data, vector):
+    """sig-004: pure-arithmetic check of the strict-verification negative vector
+    (RFC-ACDP-0001 §5.10). Confirms the cofactorless equation [s]B = R + [k]A holds
+    (so a non-strict verifier accepts) while A and R are small-order (so a strict
+    verifier MUST reject). Uses no crypto library: OpenSSL's verdict is not the oracle."""
+    name = vector.get("name", "?")
+    import hashlib
+    exp = vector.get("expected", {})
+    if exp.get("strict_result") != "reject" or exp.get("error") != "invalid_signature":
+        fail(fixture, name, "negative vector MUST pin strict_result=reject / error=invalid_signature")
+        return False
+    sig = bytes.fromhex(vector["signature_value_hex"])
+    a_enc, r_enc, s = bytes.fromhex(vector["public_key_hex"]), sig[:32], int.from_bytes(sig[32:], "little")
+    A, R = _ed_decode(a_enc), _ed_decode(r_enc)
+    B = _ed_decode((4 * pow(5, -1, _ED_P) % _ED_P).to_bytes(32, "little"))
+    k = int.from_bytes(hashlib.sha512(r_enc + a_enc + vector["signature_input"].encode("ascii")).digest(), "little") % _ED_L
+    if s >= _ED_L:
+        fail(fixture, name, "s >= L: this vector must isolate the small-order defect, not malleable s")
+        return False
+    holds = _ed_mul(s, B) == _ed_add(R, _ed_mul(k, A))
+    small = lambda P: _ed_mul(8, P) == (0, 1)
+    got = {"loose_equation_holds": holds, "public_key_small_order": small(A), "r_small_order": small(R)}
+    for key, val in got.items():
+        if exp.get(key) is not val:
+            fail(fixture, name, f"{key}: expected {exp.get(key)!r}, computed {val!r}")
+            return False
+    for pt in fixture_data.get("small_order_points", []):
+        if not small(_ed_decode(bytes.fromhex(pt["encoding_hex"]))):
+            fail(fixture, name, f"listed small-order encoding is not small-order: {pt['encoding_hex']}")
+            return False
+    return True
+
+
 def check_signature_vector(fixture, fixture_data, vector):
     keypair = fixture_data.get("test_keypair", {})
     algorithm = keypair.get("algorithm")
@@ -1093,7 +1159,11 @@ for path in sorted(CONFORMANCE.glob("*.json")):
             # result is None → descriptive vector, skipped silently
     elif fixture_id.startswith("sig-"):
         for v in _vectors(data, fixture_id):
-            if check_signature_vector(fixture_id, data, v):
+            if v.get("negative"):
+                ok = check_ed25519_strict_negative(fixture_id, data, v)
+            else:
+                ok = check_signature_vector(fixture_id, data, v)
+            if ok:
                 passes += 1
     elif fixture_id.startswith("rev-") and "test_keypair" in data:
         # rev golden vectors (rev-001) are executed; rev-002 is behavioral

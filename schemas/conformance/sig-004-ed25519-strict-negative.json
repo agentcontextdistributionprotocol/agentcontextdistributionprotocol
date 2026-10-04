@@ -1,0 +1,60 @@
+{
+  "id": "sig-004",
+  "description": "Ed25519 strict-verification negative vector (RFC-ACDP-0001 \u00a75.10, acdp-rs#342). A signature whose public key A and nonce point R are small-order satisfies the cofactorless verification equation [s]B = R + [k]A for EVERY message, so a non-strict verifier (e.g. ed25519-dalek `verify`, OpenSSL) accepts it. A conformant verifier MUST reject it with invalid_signature. The runner checks the arithmetic (equation holds, A and R are small-order); the rejection itself is verified by implementations.",
+  "tags": [
+    "signature",
+    "negative",
+    "ed25519",
+    "strict-verification"
+  ],
+  "small_order_points": [
+    {
+      "order": 1,
+      "encoding_hex": "0100000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "order": 2,
+      "encoding_hex": "ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f"
+    },
+    {
+      "order": 4,
+      "encoding_hex": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "order": 4,
+      "encoding_hex": "0000000000000000000000000000000000000000000000000000000000000080"
+    },
+    {
+      "order": 8,
+      "encoding_hex": "26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc05"
+    },
+    {
+      "order": 8,
+      "encoding_hex": "26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc85"
+    },
+    {
+      "order": 8,
+      "encoding_hex": "c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac037a"
+    },
+    {
+      "order": 8,
+      "encoding_hex": "c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac03fa"
+    }
+  ],
+  "vectors": [
+    {
+      "name": "Identity public key and identity R, s = 0: forges for any message",
+      "negative": true,
+      "public_key_hex": "0100000000000000000000000000000000000000000000000000000000000000",
+      "signature_input": "sha256:ccd2641662848a5168095e629c2c90336441bc0d61464e3d8066ea3c147fbaea",
+      "signature_value_hex": "01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "expected": {
+        "loose_equation_holds": true,
+        "public_key_small_order": true,
+        "r_small_order": true,
+        "strict_result": "reject",
+        "error": "invalid_signature"
+      }
+    }
+  ]
+}
