@@ -2,6 +2,14 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.1.0/v0.5.0 — Clarification: strict Ed25519 verification and ECDSA-P256 signature non-uniqueness (acdp-rs#342, #343) — 2026-10-04
+
+**No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed; every existing body, signature, and `content_hash` remains valid.** Both items came from the acdp-rs #322 crypto audit.
+
+- **RFC-ACDP-0001 §5.10 *(0.5.0)*: strict Ed25519 verification is now normative.** Verifiers MUST reject `s >= L` and small-order `A` or `R` (`invalid_signature`; `verify_strict` in ed25519-dalek). Non-breaking: honest keys are never small-order.
+- **`registries/signature-algorithms.md`: `ecdsa-p256` non-uniqueness documented.** Producers SHOULD emit low-S; verifiers MUST accept high-S; signature bytes are never an identity. RFC-ACDP-0013's retry rule is clarified to keep byte-identical comparison including `signature.value` (a registry MUST NOT ignore signature bytes).
+- **Conformance.** New `sig-004-ed25519-strict-negative` (executed arithmetically by the runner, wired into `acdp-registry-core` and `acdp-consumer`).
+
 ## v0.3.0/v0.5.0 — erratum: close two cross-phase seams in the key-revocation amendments (RFC-ACDP-0014 §7/§10) — 2026-09-21
 
 **Found by a whole-feature review after the individual phases below each passed their own review — no phase in isolation could have seen either gap, since each needed the *other* phase's diff to exist first. No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed; no Final-line (0.1.0–0.4.0) behavior changed for any existing conformance scenario.**

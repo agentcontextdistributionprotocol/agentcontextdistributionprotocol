@@ -48,7 +48,7 @@ conformance/
 
 - `can-*.json` — JCS canonicalization, SHA-256 hashing, lineage_id derivation
 - `lin-*.json` — lineage_id derivation golden vectors
-- `sig-*.json` — Ed25519 / ECDSA-P256 sign/verify golden vectors, plus pure did:key identity derivation for `sig-003` (0.2.0)
+- `sig-*.json` — Ed25519 / ECDSA-P256 sign/verify golden vectors, plus pure did:key identity derivation for `sig-003` (0.2.0) and the `sig-004` strict-verification negative vector
 - `rcpt-*.json` carrying a `registry_test_keypair` (i.e. `rcpt-001`) — full registry-receipt golden cycle: preimage, receipt hash, signature, producer key fingerprint (RFC-ACDP-0010 §5–§6)
 - `lhr-*.json` carrying a `registry_test_keypair` (i.e. `lhr-001`) — full lineage-head-receipt golden cycle: preimage, receipt hash, signature, binding consistency (RFC-ACDP-0011 §5, §7)
 - `log-*.json` carrying a `registry_test_keypair` (i.e. `log-001`, `log-003`) — full transparency-log golden cycle: JCS leaf encodings, `0x00`/`0x01` domain-separated leaf and node hashes, Merkle roots, signed checkpoints, inclusion-proof and consistency-proof generation and verification-algorithm folding (RFC-ACDP-0012 §4–§6, §9)
@@ -263,6 +263,7 @@ All v0.1.0 fixtures listed above are authored. The `can-005` fixture's "absent t
 |---|---|---|
 | `sig-001` | Real Ed25519 keypair (test seed of 32 zero bytes); produce content_hash, sign, verify, derive lineage. | success: byte-exact reproduction of canonical form, content_hash, signature, lineage_id |
 | `sig-002` | Real ECDSA-P256 keypair (private scalar = 1); same producer content as `sig-001`; pinned RFC 6979 deterministic signature in IEEE 1363 r‖s wire form (NOT DER). | success: byte-exact verification of canonical form, content_hash, IEEE 1363 r‖s length (64 bytes), signature verification, lineage_id |
+| `sig-004` | Ed25519 strict-verification **negative** vector (0.5.0 clarification): identity public key + identity R + `s = 0` satisfies the cofactorless equation for every message, so a non-strict verifier accepts it. The runner checks the arithmetic (pure Python, no crypto library) and that A and R are small-order; implementations verify the rejection. Also lists the eight small-order point encodings. | reject: `invalid_signature` |
 | `sig-003` | did:key golden vector (0.2.0): real Ed25519 keypair (test seed of 32 `0x42` bytes); derive `did:key:z…` identity (multicodec `0xed01` + base58-btc), pure resolution (RFC-ACDP-0001 §5.11.1), explicit `acdp_version: "0.2.0"` inside the signed bytes; produce content_hash, sign, verify, derive lineage. | success: byte-exact reproduction of did:key identity, canonical form, content_hash, signature, lineage_id |
 
 The `sig-*` fixtures are checked by `scripts/conformance-runner.py` (CI). A failing `sig-001`, `sig-002`, or `sig-003` indicates an end-to-end pipeline defect: JCS, SHA-256, signing-input framing (full `sha256:` prefix), Ed25519/ECDSA, base64, IEEE 1363 r‖s framing for ECDSA (NOT DER), did:key identity derivation (`sig-003`), or lineage derivation.
