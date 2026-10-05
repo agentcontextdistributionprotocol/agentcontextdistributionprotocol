@@ -2,6 +2,13 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.1.0/v0.5.0 — Clarification: `bearer_jwt` read-authentication method (#72) — 2026-10-05
+
+**No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed.** The `read_authentication_methods` vocabulary is open, so this adds a registry row and one RFC-ACDP-0008 §6.2 bullet *(0.5.0)*.
+
+- **`bearer_jwt` registered** (Optional, Provisional) in `registries/auth-methods.md`: a registry-issued bearer JWT obtained by a DID challenge, with `sub` = the requester's DID. RFC-ACDP-0008 §6.2 gains a fourth bullet with its requirements (registry-signed, `exp`, `aud`-bound, TLS only, reads only); RFC-ACDP-0007's defined-values list is updated.
+- **`did_jwt` deliberately not registered** (it means a self-signed DID JWT elsewhere in the DID ecosystem); `oauth` was rejected as the home for this flow (no RFC 6749 grant).
+
 ## v0.1.0/v0.5.0 — Clarification: strict Ed25519 verification and ECDSA-P256 signature non-uniqueness (acdp-rs#342, #343) — 2026-10-04
 
 **No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed; every existing body, signature, and `content_hash` remains valid.** Both items came from the acdp-rs #322 crypto audit.
