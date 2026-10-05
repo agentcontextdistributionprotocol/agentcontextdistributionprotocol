@@ -56,7 +56,7 @@ Returns the registry's capability declaration. Conforms to [`schemas/json/acdp-c
 
 | Field | Type | Description |
 |---|---|---|
-| `read_authentication_methods` | array of string | Read-authentication methods supported by this registry. At least one MUST be declared if the registry serves any non-public contexts. Defined values: `http_signatures`, `mtls`, `oauth`. See RFC-ACDP-0008 §6.2. |
+| `read_authentication_methods` | array of string | Read-authentication methods supported by this registry. At least one MUST be declared if the registry serves any non-public contexts. Defined values: `http_signatures`, `mtls`, `oauth`, `bearer_jwt` *(0.5.0)*. See RFC-ACDP-0008 §6.2. |
 | `anonymous_public_reads` | boolean | Whether anonymous (unauthenticated) reads are permitted for public contexts. Default `false`. See RFC-ACDP-0008 §6.3. |
 | `supports_idempotency_key` | boolean | Whether this registry honors the `Idempotency-Key` header on `POST /contexts`. Default `false`. See RFC-ACDP-0003 §6. *(0.3.0)* A registry advertising `acdp_version` ≥ 0.3.0 MUST support the header and MUST advertise this field as `true` — the field stays in the document for introspection even though its value is no longer free (RFC-ACDP-0003 §6.4; §3.5 item 10; fixture `idem-007`). |
 | `limits.idempotency_key_ttl_seconds` | integer | How long this registry retains idempotency-key mappings, in seconds. MUST be present when `supports_idempotency_key` is true. Range 86400 (24h) to 604800 (7d). |
