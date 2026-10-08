@@ -2,6 +2,15 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — docs refresh: strict Ed25519, `bearer_jwt`, current sibling versions — 2026-10-08
+
+**Non-normative docs only. No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed.** Catches `docs/` up with the two 2026-10 clarifications below, linking sibling-owned detail rather than copying it.
+
+- `docs/version-matrix.md`: `acdp-rs` / bindings `0.14.3` → `0.14.5` (strict Ed25519 from `0.14.4`); reference registry `0.2.0` → `0.4.x`, with its `bearer_jwt` flow linked; the v0.5.0 row lists strict Ed25519 and `bearer_jwt`; `acdp-verifier-py` is flagged as pre-`sig-004`.
+- `docs/integration-guide.md`: Step 3 now carries a strict-verification precheck (the `cryptography` default is non-strict) and the ECDSA-P256 high-S note; the `unsupported_algorithm` row no longer implies Ed25519 is the only algorithm.
+- `docs/architecture.md`, `docs/threat-model.md`: read authentication including `bearer_jwt`, and a strict-verification row, both marked *(0.5.0, Draft)*.
+- `CONTRIBUTING.md`: `sig-004` (keyless negative vector) and `gen-0.5.0-vectors.py` described accurately.
+
 ## v0.1.0/v0.5.0 — Clarification: `bearer_jwt` read-authentication method (#72) — 2026-10-05
 
 **No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed.** The `read_authentication_methods` vocabulary is open, so this adds a registry row and one RFC-ACDP-0008 §6.2 bullet *(0.5.0)*.
