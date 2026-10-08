@@ -148,6 +148,29 @@ producer_pubkey.verify(sig_bytes, body["content_hash"].encode("ascii"))
 
 If `verify` raises, the body is not authentically from `agent_id`.
 
+> **Strict Ed25519 verification *(0.5.0, Draft)*.** The snippet above uses the `cryptography` package, whose default `verify` is OpenSSL-backed and does **not** apply the strict checks RFC-ACDP-0001 §5.10 requires: reject any signature whose `s` is not in `0 <= s < L`, and any whose public key `A` or nonce point `R` is a small-order point (`invalid_signature`). Without the small-order check, an identity key with `R = identity, s = 0` "verifies" for every message. Add the checks yourself (or use a library with a strict mode, e.g. ed25519-dalek's `verify_strict`):
+>
+> ```python
+> L = 2**252 + 27742317777372353535851937790883648493
+> SMALL_ORDER = {bytes.fromhex(h) for h in (  # the eight encodings pinned in sig-004
+>     "0100000000000000000000000000000000000000000000000000000000000000",
+>     "ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+>     "0000000000000000000000000000000000000000000000000000000000000000",
+>     "0000000000000000000000000000000000000000000000000000000000000080",
+>     "26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc05",
+>     "26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc85",
+>     "c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac037a",
+>     "c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac03fa")}
+>
+> def strict_precheck(pubkey_raw: bytes, sig: bytes) -> bool:
+>     return (len(sig) == 64
+>             and int.from_bytes(sig[32:], "little") < L          # s < L
+>             and pubkey_raw not in SMALL_ORDER                    # A
+>             and sig[:32] not in SMALL_ORDER)                     # R
+> ```
+>
+> Run `strict_precheck(producer_pubkey.public_bytes_raw(), sig_bytes)` before `verify` and treat `False` as `invalid_signature`; the conformance vector is [`sig-004`](../schemas/conformance/sig-004-ed25519-strict-negative.json). The SDKs do this in their core (see the [`acdp-rs` security notes](https://github.com/agentcontextdistributionprotocol/acdp-rs/blob/main/docs/security.md)). Non-canonical point encodings MAY additionally be rejected. `ecdsa-p256` signatures are the opposite case: producers SHOULD emit low-S, but verifiers MUST accept high-S, and signature bytes are never an identity ([registries/signature-algorithms.md](../registries/signature-algorithms.md#ecdsa-p256-signature-non-uniqueness-normative)).
+
 > **SSRF — DID resolution.** `signature.key_id` is producer-controlled, so `resolve_did_key` dereferences a `did:web` host taken verbatim from the body. The resolver MUST apply SSRF protection (RFC-ACDP-0008 §4.8): resolve the host, refuse if any resolved IP is in a private/loopback/link-local/IMDS range, pin the resolved IP for the connection, HTTPS-only, and cap redirects to the same authority. A URL-string check alone is **not** sufficient — DNS rebinding defeats it (RFC-ACDP-0006 §7.1). A producer DID that resolves to a forbidden target is treated as unverifiable.
 
 Steps 1–3 are the **`StrictV010`** verification profile (RFC-ACDP-0001 §9.2, §5.11): schema validation → `content_hash` recomputation → `did:web` resolution → signature verification → `embedded.content_hash` checks (a distinct, independent field from the DataRef-root `content_hash` of RFC-ACDP-0002 §6.1 — see §6.3), returning on the first failure. It is the only verification mode valid for an `acdp-consumer` conformance claim. SDKs MAY expose `Diagnostic` (records every stage) or `UnsafeForTests` (skips steps) modes, but neither may be the default and neither is conformant.
@@ -270,11 +293,11 @@ A full wire-shape example of such a context is [examples/visibility/private-with
 
 | Error code | Cause | Fix |
 |---|---|---|
-| `invalid_signature` | Signature didn't verify | Confirm you signed the bytes of the full `sha256:<hex>` string (not raw digest, not hex without prefix). Check `key_id` resolution and algorithm. |
+| `invalid_signature` | Signature didn't verify | Confirm you signed the bytes of the full `sha256:<hex>` string (not raw digest, not hex without prefix). Check `key_id` resolution and algorithm. *(0.5.0)* Ed25519 verification is strict: a non-canonical `s` or a small-order key or nonce point is rejected here even if a lax library would accept it. |
 | `hash_mismatch` | Body `content_hash` ≠ recomputed | JCS implementation differs. Run `schemas/conformance/can-001-jcs-vector.json`. Common cause: stdlib `json.dumps` not normalizing `-0.0`; use the `jcs` PyPI package. |
 | `data_ref_hash_mismatch` | `embedded.content_hash` (not the DataRef-root `content_hash`, RFC-ACDP-0002 §6.1) ≠ the decoded `embedded.content` | Recompute the data-ref digest per the encoding (RFC-ACDP-0002 §6.3): `base64` → decoded bytes, `utf8` → UTF-8 bytes, `json` → JCS canonical bytes. DataRef-level failure — distinct from `hash_mismatch` (body-level) and `invalid_signature`. |
 | `superseded_target` | Supersession constraints failed | Check `details.reason` — common values: `not_found`, `lineage_mismatch`, `version_mismatch`, `already_superseded`. |
-| `unsupported_algorithm` | You used a non-ed25519 algorithm | Either use ed25519 or check the registry's `supported_signature_algorithms`. |
+| `unsupported_algorithm` | `signature.algorithm` is not one this registry accepts | Ed25519 is always supported; `ecdsa-p256` is optional. Use `ed25519` or check the registry's `supported_signature_algorithms`. |
 | `embedded_too_large` | Embedded data > 64 KB | Switch to `location` form. |
 | `unsupported_media_type` *(0.5.0)* | Request `Content-Type` is outside the registry's accept-set on a body-bearing method | Send `Content-Type: application/acdp+json`. A `charset` parameter is ignored, so `; charset=utf-8` is fine. `application/json` is accepted only if that registry chooses to; do not rely on it. Your body was never parsed, so this says nothing about its contents — resend it unchanged under an accepted type. Only registries advertising `acdp_version` ≥ 0.5.0 emit this. |
 | `duplicate_publish` | Retried an `Idempotency-Key` with different content | Same key = same logical publish. Generate a fresh key for new content; reuse the key only for byte-identical retries (RFC-ACDP-0003 §6.2). |
