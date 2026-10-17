@@ -330,6 +330,10 @@ Append to the last paragraph of **RFC-ACDP-0014 §7** ("Retraction does not un-r
 > - the effective boundary T.
 >
 > The stage MUST distinguish **`pre-compromise`** (step 2), **`revoked`** (step 3) and **`unplaceable`** (step 4). Where several revocations share the earliest T, reporting any one of them satisfies this rule.
+>
+> *(0.5.0)* **Precedence across lookups (NORMATIVE).** When a verification consults more than one discovery (several vantages, trust classes or signer keys), the combined `key_revocation` result is the highest of: **refusal** (`revoked` or `unplaceable`) > **`unknown`** (P1) > **`pre-compromise`** > **`not-revoked`**. A verified revocation that refuses the context does so even when another lookup was `unknown`. An `unknown` lookup is never outweighed by a `pre-compromise` or `not-revoked` result from another one, because the unanswered lookup could hold a revocation with an earlier T.
+>
+> *(0.5.0)* **No new error code.** A revocation-driven refusal stays a verification verdict carried by the `key_revocation` stage (§151 "No new wire error code"), not a wire condition. An SDK that also surfaces the refusal as an error SHOULD reuse `key_not_authorized` (RFC-ACDP-0007 §5) and MUST NOT mint a new code. The attribution above lives in the report.
 
 And in **RFC-ACDP-0014 §13** "Cross-producer revocation", replace *"surfacing which DID issued each acted-upon revocation"* with *"the §7 attribution rule (every acted-upon revocation's signer is reported)"*.
 
@@ -339,6 +343,7 @@ Extend **`rev-002`** behaviorally:
 
 - **Scenario I.** A post-T context fails closed. The report names the revocation's `ctx_id`, its signer, its trust class and T, with outcome `revoked`.
 - **Scenario J.** The context has no receipt. It fails closed with outcome `unplaceable`, distinguishable from scenario I.
+- **Scenario K2 (precedence).** One vantage returns a verified revocation with the context post-T, and a second vantage is `unknown` (truncated). The result is a refusal (`revoked`), not `unknown`. In a second run, one lookup is `pre-compromise` and another is `unknown`. The result is `unknown`.
 
 ## P11. Producer scope of the §7 trigger *(0.5.0)*
 
@@ -414,6 +419,8 @@ This is not a normative change, because RFC-ACDP-0001 §5.7 (L279) is already a 
 
 A typed round-trip loses that spelling. `acdp-rs` 0.14.5 recomputes the hash from `serde_json::to_value(body)` (`crates/acdp-verify/src/lib.rs:96-99`). It types `expires_at` and `data_period.{start,end}` as `chrono::DateTime<Utc>`, and the default serde form re-emits `2026-12-31T23:59:59.000Z` as `2026-12-31T23:59:59Z`. That was reproduced locally with chrono 0.4. The result is a false `hash_mismatch` on a conformant body. It is fail-closed, so there is no trust hole, but it is an interop break.
 
+**Deployment lockstep.** The break also shows up between `acdp-rs` releases. `acdp-rs` 0.15.0 producers emit `.000Z` whole-second timestamps (the canonical §5.3 form), and `acdp-rs` ≤ 0.14.5 *registries* reject those bodies with `hash_mismatch`. When this vector is promoted, its CHANGELOG entry SHOULD carry a compatibility note: the fault is a non-conformant registry verifier, not the producer, and operators upgrade registries before producers (or pin producers to ≤ 0.14.5 until they do).
+
 **`can-013-canonical-zero-millis-timestamp`** (executed arithmetically): a body with `expires_at: "2026-12-31T23:59:59.000Z"` and `data_period: {"start": "2026-01-01T00:00:00.000Z", "end": "2026-12-31T23:59:59.000Z"}`, with its pinned canonical form and `sha256_hex`. Consumers MUST reproduce the hash.
 
 ## Additional conformance vector: DID-document fetch failure classification
@@ -440,8 +447,8 @@ SSRF refusals stay permanent (`did-ssrf-*`) and are unaffected.
 - **No wire, schema, body, hash, signature or receipt change.** All changes are consumer-side verdict semantics and bindings (P7). Every new MUST is marked *(0.5.0)* and binds only consumers claiming the 0.5.0 `acdp-consumer` profile. 0.1.0–0.4.0-pinned consumers are unaffected, following the RFC-ACDP-0014 §10 and RFC-ACDP-0016 precedent.
 - **These are tightenings, not loosenings.** P1–P4 forbid an outcome (`not-revoked`) that some consumers emit today, and P5/P6 add reporting. Per the CHANGELOG precedent (2026-07-05 errata; RFC-ACDP-0007 §4.1), a Final-line tightening is not permitted, which is why everything here is *(0.5.0)*.
 - **Availability.** P1–P3 turn some former `not-revoked` answers into `unknown`. Under a fail-closed discovery policy, verification of contexts from producers whose revocation discovery is unanswerable will fail where it previously passed. That is the intended safety property, and policy remains the deployment's choice (P1: "fail closed, or proceed and report"). P4 adds at most one extra DID fetch per DID per verification operation, and implementations may rate-limit it. A rate-limited refusal gives `unknown`, not a permanent verdict.
-- **Registries:** no new obligation.
-- **Two-implementation gate:** the new vectors join the 0.5.0 consumer manifest and gate 0.5.0 Final alongside `anc-*`. They are `rev-005` (A–K), `rev-006`, `rot-002`, `rcpt-005`, `lin-002`, `body-003`, `can-013` and `did-001`, plus the `rev-002` I/J extension and the `rcpt-004`/`-006` extension. Each one is the usual three-file change: fixture JSON, the `registries/profiles.json` + `profiles.md` `acdp-consumer` row, and the `schemas/conformance/README.md` index.
+- **Registries:** no new obligation. The `can-013` lockstep note above is a pre-existing conformance bug in some registry builds, not a new rule.
+- **Two-implementation gate:** the new vectors join the 0.5.0 consumer manifest and gate 0.5.0 Final alongside `anc-*`. They are `rev-005` (A–K), `rev-006`, `rot-002`, `rcpt-005`, `lin-002`, `body-003`, `can-013` and `did-001`, plus the `rev-002` I/J/K2 extension and the `rcpt-004`/`-006` extension. Each one is the usual three-file change: fixture JSON, the `registries/profiles.json` + `profiles.md` `acdp-consumer` row, and the `schemas/conformance/README.md` index.
 - **P9–P11** are tightenings in the same sense as P1–P4:
   - P9 forbids reusing a cached absence across vantages or indefinitely, which some consumers may do today.
   - P10 promotes an existing SHOULD report to a MUST when a revocation changes a verdict.
@@ -458,6 +465,7 @@ None remain.
 
 - P1: `unknown` gets its own report token, `key_revocation: unknown`, never folded into not-revoked. It carries a reason sub-code: `truncated`, `unanswerable`, `transient` or `unverifiable_candidate`.
 - Reference implementation defaults: the negative-cache freshness is 300 s by default. A verified revocation is never evicted, and is held separately from negative entries. A forced DID refresh happens at most once per hour per DID (configurable). That limit is safe only together with the P4 rule that a rate-limited step-4 absence is transient.
+- From the `acdp-rs` 0.15.0 implementation (acdp-rs#386): P10 gained the cross-lookup precedence rule and the no-new-wire-code statement, and `can-013` gained the registry lockstep note. The RFC-0012 §9.3 and RFC-0015 §8 consumer clarifications go to a separate proposal.
 - P4 (from `acdp-rs` 0.15.0 implementation): a forced re-fetch declined by rate limiting gives a transient verdict, and freshness is scoped per operation. P1: a lineage-walk member without a receipt is re-retrieved by `ctx_id`.
 
 - P12: the anchor carries the sealed record's audit record digest, selected by the record's own `schema_version`. It never carries the commitment digest or the chain checksum. The row stays Provisional until Seam's contract release publishes the clause and golden vector. Seam confirmed (2026-10-16) that an unknown `schema_version` is cannot-verify, never a fallback to the latest version, and asked that the row not list inner fields, including `commitment_hash`.
