@@ -36,6 +36,10 @@ The registry-binding half of the `acdp-rs` observation is **already normative**.
 Append to **RFC-ACDP-0012 §9.1**, after step 6:
 
 > *(0.5.0)* **Precondition: a verified receipt (NORMATIVE).** Step 1 cannot be performed without a receipt that verified per RFC-ACDP-0010 §8. Where the receipt is absent, or failed verification, the consumer MUST report the log verdict as **cannot-verify**. It MUST NOT report the context as logged, MUST NOT substitute an echoed `leaf`, and MUST NOT surface the result as `invalid_log_proof`, which indicts the log. The receipt failure is reported in its own verdict (RFC-ACDP-0010 §8; §9.3 independence). A cannot-verify log verdict is not evidence of a log violation (§3), because the consumer holds no valid receipt to demand inclusion against.
+>
+> *(0.5.0)* **Report token.** The log verdict is reported as `log_inclusion: cannot_verify`, alongside `included` and `invalid_log_proof`. It carries a reason: `receipt_absent`, `receipt_invalid`, or `receipt_not_verified` (the consumer did not verify receipts). This parallels `key_revocation: unknown` (companion proposal, P1).
+>
+> *(0.5.0)* **Require-inclusion policy.** A consumer whose policy requires verified inclusion fails closed on `cannot_verify`. It MUST attribute that failure to the receipt (`invalid_receipt`, RFC-ACDP-0010 §8), never to the log (`invalid_log_proof`), because the log has not been shown to misbehave.
 
 ### Conformance vectors to add
 
@@ -44,6 +48,7 @@ Append to **RFC-ACDP-0012 §9.1**, after step 6:
 - **A.** `registry_receipt` is absent. The log verdict is cannot-verify, not logged and not `invalid_log_proof`.
 - **B.** The receipt is present but fails RFC-ACDP-0010 §8, for example the `rcpt-002` tampering. The result is the same as A, and the receipt verdict is reported separately as `invalid_receipt`.
 - **C.** The served `leaf` member matches the true leaf, but no receipt is served. The result is still cannot-verify: the echo is never trusted.
+- **D.** As A, under a require-inclusion policy. The consumer fails closed with `invalid_receipt`, not `invalid_log_proof`.
 
 ## L2. Witness quorum over an unverified checkpoint *(0.5.0)*
 
@@ -58,12 +63,15 @@ Append to **RFC-ACDP-0012 §9.1**, after step 6:
 Append to **RFC-ACDP-0015 §8**, after the N-witnessed paragraph:
 
 > *(0.5.0)* **Precondition: a verified checkpoint (NORMATIVE).** A consumer that applies a witness quorum policy (§8.1) MUST verify the checkpoint per RFC-ACDP-0012 §9.3 before counting cosignatures, whether or not it otherwise verifies inclusion or consistency proofs. If the checkpoint fails or is not verified, the consumer MUST NOT report it as N-witnessed for any N, and it MUST report the witness verdict as failed. This is a checkpoint failure reported through RFC-ACDP-0012's `invalid_log_proof` semantic, not an `invalid_witness_cosignature` for each cosignature, because the cosignatures themselves may be genuine.
+>
+> *(0.5.0)* Checkpoint verification (RFC-ACDP-0012 §9.3) needs no leaf or receipt. A `log_inclusion: cannot_verify` verdict (RFC-ACDP-0012 §9.1) therefore does not block the quorum: cosignatures are still counted over a checkpoint that verifies. Only a checkpoint that fails, or was not verified, blocks the quorum.
 
 ### Conformance vectors to add
 
 Extend **`wit-003-quorum-verification`** behaviorally:
 
 - **Scenario X.** The consumer's quorum is 1, and log-proof checking is disabled. The checkpoint's `root_hash` was altered after signing (the `log-004` tampering), and a cosignature over the altered triple verifies. Expected: the checkpoint is verified anyway and fails, the result is not 1-witnessed, and the failure is reported via `invalid_log_proof`.
+- **Scenario Y.** The checkpoint verifies, a trusted cosignature over it verifies, and the context's receipt is absent. Expected: the checkpoint is 1-witnessed, and inclusion is reported separately as `cannot_verify`.
 
 ## Compatibility
 
@@ -74,4 +82,9 @@ Extend **`wit-003-quorum-verification`** behaviorally:
 
 ## Open questions
 
-- L1: should cannot-verify have a reserved report token alongside the companion proposal's `key_revocation: unknown`, such as `log_inclusion: cannot_verify`? Or is the name left to SDKs?
+None remain.
+
+**Settled (2026-10-16, with the `acdp-rs` 0.15.0 implementation, acdp-rs#386 commit `58ae0b2`):**
+
+- L1: the `log_inclusion: cannot_verify` token is reserved, with a reason sub-code. A require-inclusion policy fails closed with `invalid_receipt`. Vectors `log-005` A–C are executed in `acdp-rs` `tests/transparency_policy.rs`.
+- L2: a checkpoint is verified on its own, so a cannot-verify inclusion does not block the quorum.
