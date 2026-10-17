@@ -69,6 +69,8 @@ Add to **RFC-ACDP-0014 §8**, after the first bullet:
 >
 > *(0.5.0)* **The §5 step 1 historical arm applies to discovery.** A candidate whose signing key is present in the signer's `verificationMethod` but absent from `assertionMethod` MUST NOT be classified as permanently invalid until the consumer has attempted the RFC-ACDP-0010 §10 receipt-attested historical rule on it. The consumer retrieves the candidate with its `registry_receipt` and verifies that receipt per RFC-ACDP-0010 §8. If the historical rule succeeds, the candidate is a verified revocation. If no receipt is served, or the receipt fails, the candidate is **unverified** and the outcome is `unknown`, not `not-revoked`. A revocation whose signer has rotated out has lost provability, not validity.
 >
+> *(0.5.0)* **Lineage-walk members without a receipt.** RFC-ACDP-0004 §5.1 lineage responses carry `body` + `registry_state` per member and are not required to carry `registry_receipt`. When a candidate reached through a lineage walk needs the historical arm and its lineage entry has no receipt, the consumer SHOULD re-retrieve that member by `ctx_id` on the full-retrieval endpoint (RFC-ACDP-0004 §2.1; the body-only endpoint is receipt-free) and use the receipt served there. The re-retrieved body's `ctx_id` and `content_hash` MUST equal those of the walked member. A mismatch makes the candidate unverifiable, so the outcome is `unknown`. Each re-retrieval counts against the consumer's discovery request budget, and a re-retrieval the budget refuses also gives `unknown` (P2).
+>
 > *(0.5.0)* **Transient candidate failures.** A candidate whose verification fails for a reason RFC-ACDP-0001 §5.11 step 3 classifies as transient (`key_resolution_unreachable`, including any non-2xx DID-document response), or whose retrieval fails transiently (`rate_limited`, `registry_internal`, transport error), makes the outcome `unknown`.
 
 ### Conformance vectors to add (consumer profile)
@@ -141,10 +143,14 @@ A verifier that refreshes only on an undefined subset of failures can hold a cac
 Replace the last sentence of **RFC-ACDP-0001 §5.11 "Caching"** with:
 
 > Implementations MUST refresh on any verification failure that could plausibly be due to key rotation. *(0.5.0)* At minimum, a verifier holding a cached DID document MUST re-fetch it once, bypassing the cache, before it reports `key_resolution_failed` because no `verificationMethod` matches the fragment (step 4) or `key_not_authorized` (step 5), and before it classifies a revocation candidate as permanently invalid (RFC-ACDP-0014 §8). It then re-runs steps 4–7 against the fresh document. The verdict from the fresh document is final for that verification. A verifier MAY rate-limit forced re-fetches per DID.
+>
+> *(0.5.0)* **Rate-limited re-fetch (NORMATIVE).** A verifier that declines a forced re-fetch because of rate limiting MUST NOT report a step-4 absence from the stale cached document as permanent. It MUST report the key as unresolvable, `key_resolution_unreachable` (transient), and a revocation candidate in that state makes the discovery outcome `unknown` (RFC-ACDP-0014 §8). A step-5 failure (key present in `verificationMethod`, absent from `assertionMethod`) MAY be reported from the stale document while rate-limited. For a revocation candidate this is still not a permanent-invalid classification, because the §5 step 1 historical arm applies first (RFC-ACDP-0014 §8).
+>
+> *(0.5.0)* **Freshness is per operation.** A DID document fetched at or after the start of the current verification operation (one verification, or one revocation-discovery run) counts as fresh for the forced-re-fetch rule. A single forced fetch therefore serves every candidate in that operation, and the verifier MUST NOT re-fetch the same DID again within it.
 
 ### Conformance vectors to add
 
-`rev-005` scenario D (above). Also **`rot-002-stale-did-cache`** (behavioral, consumer): the consumer first resolves P's DID with only K1. P then adds K2 and publishes a body signed by K2. Verification MUST succeed after one forced re-fetch, not fail with `key_resolution_failed`.
+`rev-005` scenario D (above). Also **`rot-002-stale-did-cache`** (behavioral, consumer): the consumer first resolves P's DID with only K1. P then adds K2 and publishes a body signed by K2. Verification MUST succeed after one forced re-fetch, not fail with `key_resolution_failed`. Scenario B: the forced re-fetch for P is already used up by the rate limit (for example, an attacker published bodies naming bogus fragments under P), and the K2-signed candidate is a revocation of K1. The verdict MUST be `key_resolution_unreachable` and the discovery outcome `unknown`, never a permanently invalid candidate or `not-revoked`. Scenario C: several candidates in one discovery run name keys missing from P's cached document. Exactly one forced fetch of P's DID happens in that run.
 
 ## P5. Receipt-key status *(0.5.0)*
 
@@ -425,6 +431,7 @@ This is not a normative change either. **RFC-ACDP-0001 §5.11 step 3** (L378) al
 | B | timeout or TLS failure | `key_resolution_unreachable` (transient) |
 | C | 200 with a body that is not JSON | `key_resolution_failed` (permanent) |
 | D | 200, with no `verificationMethod` matching the fragment after one forced re-fetch (P4) | `key_resolution_failed` (permanent) |
+| E | Fragment absent from the stale cached document, and the forced re-fetch was declined by the rate limit (P4) | `key_resolution_unreachable` (transient) |
 
 SSRF refusals stay permanent (`did-ssrf-*`) and are unaffected.
 
@@ -432,7 +439,7 @@ SSRF refusals stay permanent (`did-ssrf-*`) and are unaffected.
 
 - **No wire, schema, body, hash, signature or receipt change.** All changes are consumer-side verdict semantics and bindings (P7). Every new MUST is marked *(0.5.0)* and binds only consumers claiming the 0.5.0 `acdp-consumer` profile. 0.1.0–0.4.0-pinned consumers are unaffected, following the RFC-ACDP-0014 §10 and RFC-ACDP-0016 precedent.
 - **These are tightenings, not loosenings.** P1–P4 forbid an outcome (`not-revoked`) that some consumers emit today, and P5/P6 add reporting. Per the CHANGELOG precedent (2026-07-05 errata; RFC-ACDP-0007 §4.1), a Final-line tightening is not permitted, which is why everything here is *(0.5.0)*.
-- **Availability.** P1–P3 turn some former `not-revoked` answers into `unknown`. Under a fail-closed discovery policy, verification of contexts from producers whose revocation discovery is unanswerable will fail where it previously passed. That is the intended safety property, and policy remains the deployment's choice (P1: "fail closed, or proceed and report"). P4 adds at most one extra DID fetch per failing verification, and implementations may rate-limit it.
+- **Availability.** P1–P3 turn some former `not-revoked` answers into `unknown`. Under a fail-closed discovery policy, verification of contexts from producers whose revocation discovery is unanswerable will fail where it previously passed. That is the intended safety property, and policy remains the deployment's choice (P1: "fail closed, or proceed and report"). P4 adds at most one extra DID fetch per DID per verification operation, and implementations may rate-limit it. A rate-limited refusal gives `unknown`, not a permanent verdict.
 - **Registries:** no new obligation.
 - **Two-implementation gate:** the new vectors join the 0.5.0 consumer manifest and gate 0.5.0 Final alongside `anc-*`. They are `rev-005` (A–K), `rev-006`, `rot-002`, `rcpt-005`, `lin-002`, `body-003`, `can-013` and `did-001`, plus the `rev-002` I/J extension and the `rcpt-004`/`-006` extension. Each one is the usual three-file change: fixture JSON, the `registries/profiles.json` + `profiles.md` `acdp-consumer` row, and the `schemas/conformance/README.md` index.
 - **P9–P11** are tightenings in the same sense as P1–P4:
@@ -450,7 +457,8 @@ None remain.
 **Settled (2026-10-16):**
 
 - P1: `unknown` gets its own report token, `key_revocation: unknown`, never folded into not-revoked. It carries a reason sub-code: `truncated`, `unanswerable`, `transient` or `unverifiable_candidate`.
-- Reference implementation defaults: the negative-cache freshness is 300 s by default. A verified revocation is never evicted, and is held separately from negative entries. A forced DID refresh happens at most once per hour per DID.
+- Reference implementation defaults: the negative-cache freshness is 300 s by default. A verified revocation is never evicted, and is held separately from negative entries. A forced DID refresh happens at most once per hour per DID (configurable). That limit is safe only together with the P4 rule that a rate-limited step-4 absence is transient.
+- P4 (from `acdp-rs` 0.15.0 implementation): a forced re-fetch declined by rate limiting gives a transient verdict, and freshness is scoped per operation. P1: a lineage-walk member without a receipt is re-retrieved by `ctx_id`.
 
 - P12: the anchor carries the sealed record's audit record digest, selected by the record's own `schema_version`. It never carries the commitment digest or the chain checksum. The row above is final pending Seam's published clause.
 
