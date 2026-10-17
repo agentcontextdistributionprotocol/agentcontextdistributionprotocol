@@ -40,9 +40,11 @@
       "expected": {
         "outcome": "success",
         "lineage_binding": "unbound",
-        "behavior": "A failing receipt is treated as absent; same as C."
+        "behavior": "A failing receipt is treated as absent; same as C.",
+        "alternative_outcome": "failure (receipt-requiring policy)",
+        "alternative_error_code": "invalid_receipt"
       }
     }
   ],
-  "notes": "Behavioral; not executed by scripts/conformance-runner.py."
+  "notes": "Behavioral; not executed by scripts/conformance-runner.py. (0.5.0) Stricter policy permitted: the MUST is to report the receipt verdict separately and treat a failing receipt as absent (RFC-ACDP-0010 §8). A consumer whose policy requires a verified receipt MAY instead fail closed with invalid_receipt (the rcpt-002 behaviour); 'success' is the outcome without such a policy. A stricter default is conformant."
 }

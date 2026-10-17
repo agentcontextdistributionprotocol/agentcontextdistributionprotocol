@@ -2,6 +2,10 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Clarification: receipt-requiring consumer policies in `rcpt-006` / `ret-003` — 2026-10-16
+
+**Fixture notes only. No body field, schema `$id`, JCS rule, content-hash, signature semantic, or RFC text changed.** `rcpt-006` scenario A and `ret-003` scenario D expected `success` when a receipt fails RFC-ACDP-0010 §8. The normative requirement is to report the receipt verdict separately and treat a failing receipt as absent. A consumer whose policy requires a verified receipt MAY still fail closed with `invalid_receipt`, as `rcpt-002` does. Both scenarios now carry `alternative_outcome` / `alternative_error_code`, which keeps the `acdp-rs` 0.14.x fail-closed default (`ReceiptPolicy::VerifyIfPresent`) conformant. Raised by the `acdp-rs` 0.15.0 binding of the #79 fixtures (acdp-rs#386).
+
 ## v0.5.0 — Consumer verification amendments: revocation discovery outcomes, DID re-fetch, receipt-key status, log/witness preconditions (#77, #78) — 2026-10-16
 
 **Draft *(0.5.0)* consumer-side amendments. No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and no wire error code was added; every existing body, signature, and `content_hash` remains valid.** Promotes the two pre-Draft proposals of PR #77 (consumer revocation and verification) and PR #78 (log and witness preconditions) into in-prose *(0.5.0)* passages of their target RFCs and drops the proposal files. All items came from the `acdp-rs` 0.15.0 implementation pass (acdp-rs#386). Each affected RFC's §1 now says that its *(0.5.0)* passages are Draft and not frozen.
