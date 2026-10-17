@@ -1,0 +1,50 @@
+{
+  "id": "rcpt-005",
+  "description": "(0.5.0) Receipt-key status (RFC-ACDP-0010 §8 step 1, §9) and its use by RFC-ACDP-0014 §7 step 1. A verifier reports the receipt key as current (in assertionMethod) or historical (verificationMethod only). Under the strict profile, a pre-T placement of a context signed by a revoked key requires a current receipt key.",
+  "tags": [
+    "receipt",
+    "key-rotation",
+    "revocation",
+    "consumer",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer"
+  ],
+  "input": {
+    "receipt": "The rcpt-001 golden receipt and body; the registry DID document's key placement varies per scenario."
+  },
+  "scenarios": [
+    {
+      "name": "A — receipt key in verificationMethod and assertionMethod",
+      "expected": {
+        "outcome": "success",
+        "receipt_key_status": "current"
+      }
+    },
+    {
+      "name": "B — receipt key in verificationMethod only",
+      "expected": {
+        "outcome": "success",
+        "receipt_key_status": "historical",
+        "behavior": "Reported as historical; MUST NOT be presented as a currently authorized registry attestation."
+      }
+    },
+    {
+      "name": "C — receipt key absent from verificationMethod",
+      "expected": {
+        "outcome": "failure",
+        "error_code": "invalid_receipt"
+      }
+    },
+    {
+      "name": "D — revoked producer key, pre-T receipt under a historical receipt key",
+      "expected": {
+        "outcome": "failure",
+        "key_revocation": "unplaceable",
+        "behavior": "The context is signed by revoked K1 and its receipt created_at is before T, but the receipt key is historical: under the strict profile it cannot place the context, which fails closed (RFC-ACDP-0014 §7 step 4). With a current receipt key the same context is historically authorized (pre-compromise). With no revocation of K1 at all, scenario B's historical receipt still supports the RFC-ACDP-0010 §10 historical-key rule."
+      }
+    }
+  ],
+  "notes": "Behavioral; not executed by scripts/conformance-runner.py (no registry_test_keypair)."
+}

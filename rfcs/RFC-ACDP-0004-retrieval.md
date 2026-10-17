@@ -15,6 +15,10 @@ This document is a Final ACDP specification (acdp/0.1.0, with Final amendments t
 
 Passages marked *(0.2.0)* or *(0.3.0)* record the release line that added them (acdp/0.2.0 Trust & Hardening; the acdp/0.3.0 program). Both lines are **Final** as of 2026-07-05, promoted after their conformance packs passed against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md)). No amendment changes any v0.1.0 body field, hash, or signature semantic.
 
+This revision additionally carries a **consumer-side acdp/0.5.0 Draft-line amendment**, marked *(0.5.0)*, to §2.1: consumers bind the registry-assigned `lineage_id` and `origin_registry`, as they already bind `ctx_id` (fixtures `ret-003`, `body-003`). It adds no field and changes no wire behavior.
+
+> **Markers and status — read this before relying on a marked passage.** A parenthetical version marker records *which release line introduced a passage*, not that the passage is Final. Passages marked ***(0.5.0)*** belong to the **0.5.0 line, which is still `Draft`** ([VERSIONING.md](../VERSIONING.md)) — they are open to substantive change until that line is promoted, and an implementation MUST NOT treat them as frozen. Everything not marked at all is Final and wire-frozen for acdp/0.1.0. The document-level status above describes the unmarked body of this RFC; it does not extend to *(0.5.0)* passages.
+
 The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **SHOULD**, **SHOULD NOT**, **RECOMMENDED**, **MAY**, and **OPTIONAL** in this document are to be interpreted as described in BCP 14 ([RFC 2119](https://datatracker.ietf.org/doc/html/rfc2119), [RFC 8174](https://datatracker.ietf.org/doc/html/rfc8174)) when, and only when, they appear in all capitals — the conventions of [RFC-ACDP-0001 §2](RFC-ACDP-0001-core.md#2-conventions-and-terminology).
 
 ---
@@ -58,6 +62,13 @@ A registry advertising the `acdp-registry-receipts` profile MUST include it; oth
 The `{ctx_id}` path parameter is the URL-encoded `acdp://...` URI. Implementations MAY also accept a path-style alternate (`/contexts/<authority>/<uuid>`) for ergonomics; if both forms are supported, they MUST resolve to the same context.
 
 **Bind the resolved identity (NORMATIVE).** A consumer retrieving directly via this endpoint MUST apply the same `body.ctx_id`-equality check RFC-ACDP-0006 §4.1 step 7 requires of the cross-registry walk (which delegates its actual fetch to this section) — `ctx_id` sits in the RFC-ACDP-0001 §5.7 registry-assigned exclusion set, so it is bound by neither the producer signature nor `content_hash`.
+
+*(0.5.0)* **Bind the registry-assigned lineage and origin (NORMATIVE).** `lineage_id` and `origin_registry` sit in the same exclusion set as `ctx_id`; without a receipt (RFC-ACDP-0010 §8 step 3) nothing else binds them.
+
+1. For a body with `supersedes: null`, a consumer MUST verify that `lineage_id` equals the RFC-ACDP-0001 §5.6 derivation from `body.ctx_id`. A mismatch MUST be treated as `schema_violation` for the retrieved body. The check is offline and needs no receipt.
+2. A consumer that relies on `origin_registry` SHOULD verify that it equals the `ctx_id` authority. A mismatch SHOULD be treated as `schema_violation`.
+
+For a body with `supersedes` other than `null`, the derivation needs the version-1 `ctx_id`. A consumer SHOULD obtain it from a verified receipt (RFC-ACDP-0010 §8 step 3) or from a lineage walk ending at a `supersedes: null` member, and otherwise SHOULD report `lineage_id` as registry-asserted (unbound). A receipt that failed verification is treated as absent for this purpose (RFC-ACDP-0010 §8).
 
 ### 2.2 Body-only retrieval
 

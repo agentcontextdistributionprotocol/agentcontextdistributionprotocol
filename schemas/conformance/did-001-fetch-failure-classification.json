@@ -1,0 +1,62 @@
+{
+  "id": "did-001",
+  "description": "DID-document fetch failure classification (RFC-ACDP-0001 §5.11 step 3; scenarios D–E also §5.11 'Caching' (0.5.0)). A non-2xx response, timeout or TLS failure is transient (key_resolution_unreachable); a parse failure or a fragment absent after a fresh fetch is permanent (key_resolution_failed). Pins an existing rule: an implementation that maps a DID-host outage to a permanent verdict feeds a false 'permanently invalid' into revocation discovery (RFC-ACDP-0014 §8). Applies to registries (producer DIDs at publish) and consumers alike. SSRF refusals stay permanent and are pinned by did-ssrf-*.",
+  "tags": [
+    "did-resolution",
+    "errors",
+    "consumer",
+    "registry"
+  ],
+  "applies_to_profiles": [
+    "acdp-registry-core",
+    "acdp-consumer"
+  ],
+  "input": {
+    "key_id": "did:web:agents.example.com:test-producer#key-1"
+  },
+  "scenarios": [
+    {
+      "name": "A — HTTP 404, 410, 500 or 503",
+      "expected": {
+        "outcome": "failure",
+        "error_code": "key_resolution_unreachable",
+        "http_status": 502
+      }
+    },
+    {
+      "name": "B — timeout or TLS failure",
+      "expected": {
+        "outcome": "failure",
+        "error_code": "key_resolution_unreachable",
+        "http_status": 502
+      }
+    },
+    {
+      "name": "C — 200 with a body that is not JSON",
+      "expected": {
+        "outcome": "failure",
+        "error_code": "key_resolution_failed",
+        "http_status": 400
+      }
+    },
+    {
+      "name": "D — no verificationMethod matches the fragment after one forced re-fetch",
+      "expected": {
+        "outcome": "failure",
+        "error_code": "key_resolution_failed",
+        "http_status": 400,
+        "behavior": "(0.5.0) The verdict from the fresh document is final."
+      }
+    },
+    {
+      "name": "E — fragment absent from the stale cache, forced re-fetch declined by the rate limit",
+      "expected": {
+        "outcome": "failure",
+        "error_code": "key_resolution_unreachable",
+        "http_status": 502,
+        "behavior": "(0.5.0) A step-4 absence from a stale document is never reported as permanent."
+      }
+    }
+  ],
+  "notes": "Behavioral; not executed by scripts/conformance-runner.py. Scenarios A–C are conditional on nothing (RFC-ACDP-0001 §5.11 step 3 is Final); D–E bind 0.5.0 verifiers."
+}

@@ -1,0 +1,22 @@
+{
+  "id": "body-003",
+  "description": "(0.5.0, conditional) A consumer that relies on origin_registry SHOULD verify that it equals the ctx_id authority (RFC-ACDP-0004 §2.1). origin_registry is registry-assigned and outside the signature and content_hash.",
+  "tags": [
+    "body",
+    "consumer",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer"
+  ],
+  "input": {
+    "ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111",
+    "origin_registry": "other-registry.example.org"
+  },
+  "expected": {
+    "outcome": "failure",
+    "error_code": "schema_violation",
+    "behavior": "For a consumer that relies on origin_registry: the mismatch is rejected. A consumer that does not rely on the field is unaffected."
+  },
+  "notes": "Behavioral; not executed by scripts/conformance-runner.py. Conditional on the consumer relying on origin_registry."
+}

@@ -1,0 +1,43 @@
+{
+  "id": "rot-002",
+  "description": "(0.5.0) Forced DID-document re-fetch (RFC-ACDP-0001 §5.11 'Caching', 'Rate-limited re-fetch', 'Freshness is per operation'). A verifier holding a cached DID document re-fetches once, bypassing the cache, before reporting a step-4 or step-5 failure or classifying a revocation candidate as permanently invalid. A re-fetch declined by rate limiting makes a step-4 absence transient, never permanent.",
+  "tags": [
+    "key-rotation",
+    "did-resolution",
+    "consumer",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer"
+  ],
+  "input": {
+    "producer": "did:web:agents.example.com:test-producer",
+    "setup": "The consumer first resolves P's DID document with only K1. P then adds K2 (verificationMethod and assertionMethod) and publishes a body signed by K2."
+  },
+  "scenarios": [
+    {
+      "name": "A — one forced re-fetch",
+      "expected": {
+        "outcome": "success",
+        "behavior": "Verification of the K2-signed body triggers exactly one cache-bypassing fetch of P's DID document, then succeeds. It MUST NOT fail with key_resolution_failed from the stale document."
+      }
+    },
+    {
+      "name": "B — re-fetch declined by the rate limit",
+      "expected": {
+        "outcome": "failure",
+        "error_code": "key_resolution_unreachable",
+        "key_revocation": "unknown",
+        "behavior": "The forced re-fetch for P is already used up (for example, an attacker published bodies naming bogus fragments under P), and the K2-signed candidate is a revocation of K1. The verdict is key_resolution_unreachable (transient) and the discovery outcome unknown — never a permanently invalid candidate or not-revoked."
+      }
+    },
+    {
+      "name": "C — one fetch per operation",
+      "expected": {
+        "outcome": "success",
+        "behavior": "Several candidates in one discovery run name keys missing from P's cached document. Exactly one forced fetch of P's DID happens in that run; the fresh document serves every candidate."
+      }
+    }
+  ],
+  "notes": "Behavioral; not executed by scripts/conformance-runner.py."
+}

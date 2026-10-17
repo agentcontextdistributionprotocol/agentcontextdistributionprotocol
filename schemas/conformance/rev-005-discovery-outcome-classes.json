@@ -1,0 +1,124 @@
+{
+  "id": "rev-005",
+  "description": "(0.5.0) Revocation-discovery outcome classes (RFC-ACDP-0014 §8 'Discovery outcome', 'Truncation'; §7 'Caching discovery outcomes'; RFC-ACDP-0005 §2.3 'Consumer-side completeness'; RFC-ACDP-0001 §5.11 'Caching'). Discovery yields exactly one of revoked, not-revoked (complete) or unknown. not-revoked is permitted only when discovery completed, was answerable, and every candidate was verified-for-another-fingerprint or permanently invalid after a fresh DID-document fetch. A candidate that fails only because its signer rotated (with no receipt), or only for a transient reason, never counts as absent. REQUIRED for 0.5.0 consumers, unconditional like rev-002.",
+  "tags": [
+    "revocation",
+    "discovery",
+    "consumer",
+    "security",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer"
+  ],
+  "input": {
+    "producer": "did:web:agents.example.com:test-producer",
+    "keys": {
+      "K1": "revoked key; fingerprint sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070 (the sig-001 key)",
+      "K2": "the revocation signer in A–C, E (the sig-003 key)",
+      "K3": "a key added to P's DID document after the consumer cached it"
+    },
+    "revocation": "A §4-valid key-revocation context naming K1, compromised_since T = 2026-01-15T00:00:00.000Z (shape as rev-001)",
+    "report_values": {
+      "key_revocation": [
+        "revoked",
+        "not-revoked",
+        "unknown"
+      ],
+      "unknown_reasons": [
+        "truncated",
+        "unanswerable",
+        "transient",
+        "unverifiable_candidate"
+      ]
+    }
+  },
+  "scenarios": [
+    {
+      "name": "A — rotated signer, receipt served",
+      "expected": {
+        "outcome": "revoked",
+        "behavior": "K2 has moved from assertionMethod to verificationMethod only. The candidate is retrieved with a registry_receipt that verifies (RFC-ACDP-0010 §8) and attests K2. The §5 step 1 historical arm applies: the candidate is a verified producer-signed revocation."
+      }
+    },
+    {
+      "name": "B — rotated signer, no receipt",
+      "expected": {
+        "outcome": "unknown",
+        "unknown_reason": "unverifiable_candidate",
+        "behavior": "As A, but no receipt is served (directly or on re-retrieval by ctx_id). The candidate is unverified, never permanently invalid. MUST NOT report not-revoked."
+      }
+    },
+    {
+      "name": "C — signer DID host transient failure",
+      "expected": {
+        "outcome": "unknown",
+        "unknown_reason": "transient",
+        "error_code": "key_resolution_unreachable",
+        "behavior": "P's DID host answers 503 (and, as a separate run, 404). RFC-ACDP-0001 §5.11 step 3 classifies any non-2xx as transient, so the outcome is unknown."
+      }
+    },
+    {
+      "name": "D — signer key newer than the cached DID document",
+      "expected": {
+        "outcome": "revoked",
+        "behavior": "The revocation is signed by K3, added after the consumer cached P's DID document. The consumer re-fetches once, bypassing the cache (RFC-ACDP-0001 §5.11 'Caching'), and verifies the revocation."
+      }
+    },
+    {
+      "name": "E — signer key absent after a fresh fetch",
+      "expected": {
+        "outcome": "not-revoked (complete)",
+        "behavior": "K2 is absent from verificationMethod even after a fresh fetch. The candidate is permanently invalid; with no other candidates, discovery is complete and not-revoked."
+      }
+    },
+    {
+      "name": "F — truncated by the consumer's page cap",
+      "expected": {
+        "outcome": "unknown",
+        "unknown_reason": "truncated",
+        "behavior": "The registry serves 11 pages of empty matches[], each with next_cursor, then a page carrying the K1 revocation. A consumer whose page cap is below 12 MUST report unknown, never not-revoked. A consumer that follows the cursor to the end reports revoked."
+      }
+    },
+    {
+      "name": "G — search refused for an anonymous requester",
+      "expected": {
+        "outcome": "unknown",
+        "unknown_reason": "unanswerable",
+        "error_code": "not_authorized",
+        "behavior": "The registry advertises anonymous_public_reads: false and answers the anonymous search 403 not_authorized. Discovery is unanswerable at that vantage."
+      }
+    },
+    {
+      "name": "H — core-only registry",
+      "expected": {
+        "outcome": "unknown",
+        "unknown_reason": "unanswerable",
+        "error_code": "not_implemented",
+        "behavior": "A registry not advertising acdp-registry-discovery answers the search 501 not_implemented."
+      }
+    },
+    {
+      "name": "I — negative-cache freshness bound",
+      "expected": {
+        "outcome": "revoked",
+        "behavior": "The consumer caches not-revoked (complete) for P at vantage V. A revocation of K1 is then published. Once the freshness bound (RECOMMENDED 300 s) has passed, the next verification of a K1-signed context MUST rediscover and report revoked. Within the bound a stale not-revoked is permitted, and the verification reports the time the absence was observed."
+      }
+    },
+    {
+      "name": "J — anti-rollback",
+      "expected": {
+        "outcome": "failure",
+        "behavior": "The consumer has verified and cached the K1 revocation. A later discovery is answered 503, or is truncated, or returns no match. The verdict for a K1-signed, post-T context MUST remain fail closed; the cached revocation is neither removed nor moved later."
+      }
+    },
+    {
+      "name": "K — vantage scope",
+      "expected": {
+        "outcome": "no cache reuse",
+        "behavior": "A cached registry-attested not-revoked observed at registry A is not reused for a context served by registry B; the consumer runs discovery for B (or reports unknown)."
+      }
+    }
+  ],
+  "notes": "Behavioral; not executed by scripts/conformance-runner.py. No new wire error code: error_code values above are the conditions that produce the outcome, not codes the consumer emits. The unknown outcome is a report value of the key_revocation stage."
+}

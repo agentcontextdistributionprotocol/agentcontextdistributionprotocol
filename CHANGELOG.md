@@ -2,6 +2,32 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Consumer verification amendments: revocation discovery outcomes, DID re-fetch, receipt-key status, log/witness preconditions (#77, #78) — 2026-10-16
+
+**Draft *(0.5.0)* consumer-side amendments. No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and no wire error code was added; every existing body, signature, and `content_hash` remains valid.** Promotes the two pre-Draft proposals of PR #77 (consumer revocation and verification) and PR #78 (log and witness preconditions) into in-prose *(0.5.0)* passages of their target RFCs and drops the proposal files. All items came from the `acdp-rs` 0.15.0 implementation pass (acdp-rs#386). Each affected RFC's §1 now says that its *(0.5.0)* passages are Draft and not frozen.
+
+- **RFC-ACDP-0014 (key revocation).**
+  - §8: discovery yields exactly one of `revoked`, `not-revoked (complete)` or `unknown`. `unknown` carries a reason: `truncated`, `unanswerable`, `transient` or `unverifiable_candidate`.
+  - §8: a rotated-signer candidate counts through the historical arm when a receipt verifies, and is unverified without one. Cursor-truncated, 403/501 and transient discovery is never not-revoked.
+  - §7: discovery-outcome caching rules. Verified revocations are retained (anti-rollback); negative entries are vantage-scoped and time-bounded (RECOMMENDED 300 s).
+  - §7: producer scope — a revocation changes a verdict only when it speaks for that context's producer, which closes the §13 cross-producer case for revocations held outside per-producer discovery.
+  - §7: attribution (`revoked` / `unplaceable` / `pre-compromise`) and precedence across lookups.
+  - §7 step 1: under strict, a pre-T placement needs a *current* receipt key.
+- **RFC-ACDP-0001 §5.11 (DID caching).** Before reporting a step-4/step-5 failure, or classifying a revocation candidate as permanently invalid, a verifier re-fetches the DID document once, bypassing the cache. The re-fetch is rate-limited per DID per operation, and a declined re-fetch is transient, never permanent. Appendix A gains row 14 (zero-fraction timestamps re-serialized by a typed round-trip).
+- **RFC-ACDP-0010 §8/§9 (receipts).** The receipt-key status (`current` / `historical`) is reported. A failing receipt is reported in its own verdict and treated exactly as an absent one.
+- **RFC-ACDP-0002 §4.2, RFC-ACDP-0004 §2.1, RFC-ACDP-0005 §2.3.**
+  - Consumers MUST verify the first-version `lineage_id` derivation, and SHOULD bind `origin_registry` to the `ctx_id` authority when relying on it.
+  - Consumer-side completeness of paginated search is spelled out.
+- **RFC-ACDP-0012 §9.1 (#78 L1).** An inclusion proof without a verified receipt is reported as `log_inclusion: cannot_verify`, with reason `receipt_absent`, `receipt_invalid` or `receipt_not_verified`. It is never reported as logged, never as `invalid_log_proof`, and the echoed leaf is never trusted. A require-inclusion policy fails closed with `invalid_receipt`.
+- **RFC-ACDP-0015 §8 (#78 L2).** A witness quorum is counted only over a checkpoint the consumer has verified, whether or not it otherwise checks log proofs. A `cannot_verify` inclusion does not block the quorum.
+- **`registries/anchor-schemes.md`.** The `seam.decision` row now cites the Seam audit record digest under the provisional label `seam.audit.record-digest`, to be replaced by the published citation, and gains a notes subsection. The table's columns are unchanged.
+- **Conformance.** Fixture count: 147 → 158.
+  - New behavioral fixtures: `rev-005`, `rev-006`, `rot-002`, `did-001` (new `did` family), `rcpt-005`, `rcpt-006`, `ret-003`, `body-003` (conditional on relying on `origin_registry`), `log-005` and `wit-005`.
+  - `log-005` and `wit-005` sit inside the existing `log-*` / `wit-*` conditional groups.
+  - New executed vector `can-013` (canonical `.000Z` timestamps). `rev-002` gains scenarios I–K, each marked 0.5.0-conditional.
+  - All of these bind only 0.5.0 `acdp-consumer` implementations, except `did-001` and `can-013`, which pin existing Final rules and also bind `acdp-registry-core`.
+- **Deployment note (`can-013`).** `acdp-rs` 0.15.0 producers emit the canonical `.000Z` form. Registries built on `acdp-rs` ≤ 0.14.5 recompute `content_hash` through a typed round-trip that drops the zero fraction, so they reject those bodies with a false `hash_mismatch`. Upgrade registries before producers.
+
 ## v0.5.0 — docs refresh: strict Ed25519, `bearer_jwt`, current sibling versions — 2026-10-08
 
 **Non-normative docs only. No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed.** Catches `docs/` up with the two 2026-10 clarifications below, linking sibling-owned detail rather than copying it.

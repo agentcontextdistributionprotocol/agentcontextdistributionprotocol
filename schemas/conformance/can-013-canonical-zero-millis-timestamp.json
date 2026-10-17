@@ -1,0 +1,62 @@
+{
+  "id": "can-013",
+  "description": "Raw-JSON hashing of canonical whole-second timestamps. RFC-ACDP-0001 §5.3/§5.7 already require hashing the body as received; this vector closes a coverage gap: no earlier vector pins a CANONICAL millisecond timestamp whose fraction is .000. A verifier that recomputes content_hash from a typed round-trip (e.g. a date-time type whose default serializer drops a zero fraction, re-emitting 2026-12-31T23:59:59.000Z as 2026-12-31T23:59:59Z) reports a false hash_mismatch on a conformant body. Registries and consumers MUST reproduce the first vector's hash. Deployment note: a registry build with that defect rejects bodies from producers that emit the canonical .000Z form; upgrade registries before producers.",
+  "tags": [
+    "canonicalization",
+    "hashing",
+    "timestamps"
+  ],
+  "vectors": [
+    {
+      "name": "Canonical .000 fractions — conformant",
+      "input": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:agent:test",
+        "contributors": [],
+        "title": "Canonical zero-millisecond timestamps",
+        "type": "data_snapshot",
+        "data_refs": [],
+        "derived_from": [],
+        "visibility": "public",
+        "expires_at": "2026-12-31T23:59:59.000Z",
+        "data_period": {
+          "start": "2026-01-01T00:00:00.000Z",
+          "end": "2026-12-31T23:59:59.000Z"
+        }
+      },
+      "expected": {
+        "canonical_form": "{\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_period\":{\"end\":\"2026-12-31T23:59:59.000Z\",\"start\":\"2026-01-01T00:00:00.000Z\"},\"data_refs\":[],\"derived_from\":[],\"expires_at\":\"2026-12-31T23:59:59.000Z\",\"supersedes\":null,\"title\":\"Canonical zero-millisecond timestamps\",\"type\":\"data_snapshot\",\"version\":1,\"visibility\":\"public\"}",
+        "sha256_hex": "f7fe763bb22887778393f8ec723c6208f11de25825bbc916e1eccbc4b00b687a",
+        "content_hash_field_value": "sha256:f7fe763bb22887778393f8ec723c6208f11de25825bbc916e1eccbc4b00b687a"
+      },
+      "producer_compliance": "conformant"
+    },
+    {
+      "name": "Zero fraction dropped by a typed round-trip — DIVERGENT (illustrative; never the hash of the body above)",
+      "input": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:agent:test",
+        "contributors": [],
+        "title": "Canonical zero-millisecond timestamps",
+        "type": "data_snapshot",
+        "data_refs": [],
+        "derived_from": [],
+        "visibility": "public",
+        "expires_at": "2026-12-31T23:59:59Z",
+        "data_period": {
+          "start": "2026-01-01T00:00:00Z",
+          "end": "2026-12-31T23:59:59Z"
+        }
+      },
+      "expected": {
+        "canonical_form": "{\"agent_id\":\"did:agent:test\",\"contributors\":[],\"data_period\":{\"end\":\"2026-12-31T23:59:59Z\",\"start\":\"2026-01-01T00:00:00Z\"},\"data_refs\":[],\"derived_from\":[],\"expires_at\":\"2026-12-31T23:59:59Z\",\"supersedes\":null,\"title\":\"Canonical zero-millisecond timestamps\",\"type\":\"data_snapshot\",\"version\":1,\"visibility\":\"public\"}",
+        "sha256_hex": "95ded5c43479892be51fc3fdfb714eb4d69fb86d60d557095e805fee8818b1df",
+        "content_hash_field_value": "sha256:95ded5c43479892be51fc3fdfb714eb4d69fb86d60d557095e805fee8818b1df"
+      },
+      "producer_compliance": "non-conformant",
+      "rationale": "If recomputing the first vector's body yields this hash, the verifier re-serialized timestamps instead of hashing the received JSON (RFC-ACDP-0001 §5.7)."
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "id": "ret-003",
+  "description": "(0.5.0) Consumer binding of the registry-assigned lineage_id (RFC-ACDP-0004 §2.1 'Bind the registry-assigned lineage and origin'; RFC-ACDP-0002 §4.2). For a first version (supersedes: null) the consumer MUST verify lineage_id against the RFC-ACDP-0001 §5.6 derivation from body.ctx_id — offline, one hash. For later versions it SHOULD verify where checkable and otherwise reports lineage_id as registry-asserted. Lives in the ret- family because the derivation arithmetic is already pinned by lin-001.",
+  "tags": [
+    "lineage",
+    "retrieval",
+    "consumer",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer"
+  ],
+  "input": {
+    "derivation": "lineage_id = 'lin:sha256:' + hex(SHA-256(utf8(first-version ctx_id))) — vectors in lin-001"
+  },
+  "scenarios": [
+    {
+      "name": "A — v1 body, correct lineage_id",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "name": "B — v1 body whose lineage_id is the derivation of a different ctx_id",
+      "expected": {
+        "outcome": "failure",
+        "error_code": "schema_violation"
+      }
+    },
+    {
+      "name": "C — v2 body, no receipt",
+      "expected": {
+        "outcome": "success",
+        "lineage_binding": "unbound",
+        "behavior": "Accepted, with lineage_id reported as registry-asserted (unbound)."
+      }
+    },
+    {
+      "name": "D — v2 body with a receipt that fails RFC-ACDP-0010 §8",
+      "expected": {
+        "outcome": "success",
+        "lineage_binding": "unbound",
+        "behavior": "A failing receipt is treated as absent; same as C."
+      }
+    }
+  ],
+  "notes": "Behavioral; not executed by scripts/conformance-runner.py."
+}

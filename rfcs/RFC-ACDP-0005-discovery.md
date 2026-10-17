@@ -15,6 +15,10 @@ This document is a Final ACDP specification (acdp/0.1.0, with a Final amendment 
 
 The section marked *(0.3.0)* records the release line that added it. The acdp/0.3.0 line is **Final** as of 2026-07-05, promoted after its conformance pack passed against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md)). It changes no v0.1.0 body field, hash, or signature semantic.
 
+This revision additionally carries a **consumer-side acdp/0.5.0 Draft-line amendment**, marked *(0.5.0)*, to §2.3: a client that stops paginating early holds a truncated result. It changes no wire behavior.
+
+> **Markers and status — read this before relying on a marked passage.** A parenthetical version marker records *which release line introduced a passage*, not that the passage is Final. Passages marked ***(0.5.0)*** belong to the **0.5.0 line, which is still `Draft`** ([VERSIONING.md](../VERSIONING.md)) — they are open to substantive change until that line is promoted, and an implementation MUST NOT treat them as frozen. Everything not marked at all is Final and wire-frozen for acdp/0.1.0. The document-level status above describes the unmarked body of this RFC; it does not extend to *(0.5.0)* passages.
+
 The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **SHOULD**, **SHOULD NOT**, **RECOMMENDED**, **MAY**, and **OPTIONAL** in this document are to be interpreted as described in BCP 14 ([RFC 2119](https://datatracker.ietf.org/doc/html/rfc2119), [RFC 8174](https://datatracker.ietf.org/doc/html/rfc8174)) when, and only when, they appear in all capitals — the conventions of [RFC-ACDP-0001 §2](RFC-ACDP-0001-core.md#2-conventions-and-terminology).
 
 ---
@@ -110,6 +114,8 @@ The registry MAY return fewer results than `limit` even when more exist — `nex
 **Post-filtering MUST NOT terminate a cursor sequence early (NORMATIVE).** Visibility scoping (§2.5.5, §3) and any other per-requester filter are applied **after** a storage page is read and **before** matches are emitted on the wire. A registry MUST NOT stop pagination — i.e. MUST NOT omit `next_cursor` and signal exhaustion — merely because a given storage page, after post-filtering, contributed zero visible rows. So long as unscanned storage remains in the paginated sequence, the registry MUST advance the cursor to the next storage page (re-applying the filter there) rather than treating the empty page as the end of results.
 
 Concretely, a registry MAY return a page with an empty `matches[]` array *together with* a non-empty `next_cursor` when the underlying storage page held only hidden/post-filtered rows; the consumer follows `next_cursor` to reach the still-pending visible results. `next_cursor` is absent **only** when the entire paginated sequence — across all remaining storage pages — has been scanned and no further visible result exists. Early termination on a fully-filtered page would silently truncate results and would also leak the boundaries of hidden rows to a client correlating page sizes; both are forbidden. (Registries MAY internally continue scanning subsequent storage pages before responding, to return a non-empty page; that is an implementation choice, but it MUST NOT come at the cost of dropping still-reachable visible results.)
+
+*(0.5.0)* **Consumer-side completeness (NORMATIVE).** A client that stops following `next_cursor` while one is still present, whether because of a page cap, byte cap, time budget, or error, has a **truncated** result. It MUST NOT present or rely on that result as complete. Where completeness is semantically load-bearing, the client MUST surface truncation as a distinct outcome rather than returning the partial set as if it were whole. The prime example is RFC-ACDP-0014 §8 revocation discovery, where an absent match is read as "not revoked". A page with empty `matches[]` and a non-empty `next_cursor` is not an end-of-results signal (above).
 
 ### 2.4 Lineage-based discovery
 

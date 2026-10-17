@@ -1,8 +1,15 @@
 {
   "id": "rev-002",
   "description": "Compromise-boundary verification semantics (RFC-ACDP-0014 §7), completing the rot-001 scenario set. Given the verified rev-001 revocation for K1 (fingerprint sha256:139e3940…, compromised_since T = 2026-05-01T00:00:00.000Z) and a context whose body signature resolves to K1: a receipt-attested publish time strictly before T verifies as historically authorized (pre-compromise, receipt-attested); at-or-after T, or with no verifiable publish time, verification MUST fail closed under the strict profile. Scenarios E-G pin the fold's correctness across a superseding lineage (narrower successor, retraction, non-revocation successor); scenario H extends the same methodology to a widening successor published under the §10 interim `acdp:key-revocation` form, which §7's disregard clause MUST NOT mistake for a disarming non-revocation — an unconditional 0.3.0 obligation like A-G, since RFC-ACDP-0014 §10 already requires 0.3.0 consumers to treat the interim form as fully equivalent to the standard type.",
-  "tags": ["revocation", "key-rotation", "security", "mixed"],
-  "applies_to_profiles": ["acdp-consumer"],
+  "tags": [
+    "revocation",
+    "key-rotation",
+    "security",
+    "mixed"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer"
+  ],
   "input": {
     "revocation": {
       "note": "The rev-001 golden key-revocation context, verified per RFC-ACDP-0014 §5 (producer-signed by K2; signer fingerprint != revoked fingerprint; visibility public).",
@@ -59,7 +66,10 @@
       "note": "Three SEPARATE revocation lineages, not one. RFC-ACDP-0003 §3.1 steps 5 and 6 make a lineage strictly linear — version must be previous.version + 1, and only the first body to supersede a given predecessor is accepted (the second gets superseded_target, HTTP 409) — so R2, X and Y could never all supersede R1 in a single lineage against a conformant registry. Scenarios E and F use lineage L1; scenario G uses lineage L2; scenario H uses lineage L3. All three are obtained by walking GET /lineages/{lineage_id} (RFC-ACDP-0004 §5.1), which returns every version ordered by version ascending with its own registry_state.",
       "fixture_ref": "rev-001",
       "L1": {
-        "used_by_scenarios": ["E", "F"],
+        "used_by_scenarios": [
+          "E",
+          "F"
+        ],
         "note": "A revocation superseded by a LATER-boundary revocation of the same signer class — the §4 supersedes row's permitted case.",
         "members": [
           {
@@ -94,7 +104,9 @@
         }
       },
       "L2": {
-        "used_by_scenarios": ["G"],
+        "used_by_scenarios": [
+          "G"
+        ],
         "note": "A revocation superseded by a context that is NOT a revocation. Distinct lineage_id from L1; R1-prime is an independent publication of the same revocation statement, so its own T is again T1.",
         "members": [
           {
@@ -120,7 +132,9 @@
         ]
       },
       "L3": {
-        "used_by_scenarios": ["H"],
+        "used_by_scenarios": [
+          "H"
+        ],
         "note": "A revocation superseded by the §10 INTERIM-typed revocation form, widening (not narrowing) the boundary. Distinct lineage_id from L1/L2; R1-triple-prime is an independent publication of the same revocation statement, so its own T is again T1. This lineage can arise on any registry below acdp_version 0.5.0 (nothing there rejects an interim-typed publish, since the pre-0.5.0 supersedes-row check only fires for bodies literally typed key-revocation, and the >= 0.5.0 registry-side rejection rules introduced alongside this scenario do not exist on such a registry), or on a >= 0.5.0 registry serving a lineage whose interim-typed member was published before that registry upgraded (RFC-ACDP-0014 §10 explicitly preserves existing interim-form bodies' retrievability unchanged). The consumer-side obligation this scenario tests is unconditional at 0.3.0 regardless of which of these gave rise to the lineage.",
         "members": [
           {
@@ -205,6 +219,32 @@
       "expected": {
         "outcome": "failure",
         "behavior": "Lineage L3: Y (type 'acdp:key-revocation', the §10 interim form) supersedes R1-triple-prime under the same agent_id, WIDENING the boundary from T1 = 2026-05-01 to T4 = 2026-04-01. Unlike scenario G's X, Y IS a revocation — just spelled the pre-0.3.0 way — so RFC-ACDP-0014 §7's disregard clause does not apply to it: 'a revocation' for that clause's purposes means key-revocation OR the §10 interim form, matching §4's definition. The correct fold takes the earliest T across the whole lineage, T4, and the body_under_test's receipt-attested publish time (2026-04-15) falls at-or-after T4, so verification MUST fail closed. A consumer whose disregard test is a literal string match against `key-revocation` (missing the interim spelling) instead treats Y as if it were an unrelated non-revocation like G's X, falls back to R1-triple-prime's own T1 = 2026-05-01, finds 2026-04-15 < T1, and returns success — silently missing the fact that a legitimate WIDENING correction moved the true boundary earlier still. That is a fail-open on the exact class of correction §4's supersedes row exists to permit, reached precisely because the successor used the interim form scenario G's non-revocation case does not exercise."
+      }
+    },
+    {
+      "name": "I — (0.5.0) attribution of a post-T refusal",
+      "conditional": "0.5.0 consumers",
+      "expected": {
+        "outcome": "failure",
+        "key_revocation": "revoked",
+        "behavior": "The key_revocation stage names the revocation's ctx_id, its signer (body.agent_id), its trust class, revoked_key_controller where present, and T (RFC-ACDP-0014 §7 'Attribution')."
+      }
+    },
+    {
+      "name": "J — (0.5.0) unplaceable is distinguishable",
+      "conditional": "0.5.0 consumers",
+      "expected": {
+        "outcome": "failure",
+        "key_revocation": "unplaceable",
+        "behavior": "As scenario C (no receipt): fails closed with outcome unplaceable, distinguishable from I's revoked."
+      }
+    },
+    {
+      "name": "K — (0.5.0) precedence across lookups",
+      "conditional": "0.5.0 consumers",
+      "expected": {
+        "outcome": "mixed (per-run)",
+        "behavior": "Run 1: one vantage returns a verified revocation with the context post-T, a second vantage is unknown (truncated) → refusal (revoked), not unknown. Run 2: one lookup is pre-compromise and another is unknown → unknown (RFC-ACDP-0014 §7 'Precedence across lookups'). No new error code: an SDK error, if any, reuses key_not_authorized."
       }
     }
   ],
