@@ -386,23 +386,23 @@ However, the registry row names neither the construction nor its version label. 
 
 ### Proposed change
 
-No RFC text changes. The scheme owner has settled the digest (2026-10-16). Amend the `seam.decision` row in `registries/anchor-schemes.md` to:
+No RFC text changes. The scheme owner has settled *which* digest the anchor carries (2026-10-16). The defining clause, its exact encoding and the golden vector are still being drafted in `seam-runtime`, and ship in Seam's next contract release, after the MACP, AITP and ACDP upstream releases. Until that release, amend the `seam.decision` row in `registries/anchor-schemes.md` to:
 
 | Scheme | Status | Defined by | `content_hash` construction | Notes |
 |---|---|---|---|---|
-| `seam.decision` | Provisional | `seam-runtime/docs/specs/seam-event.v1.md` § "Record digest" (stable URI); construction label `seam.audit.record-digest`, versioned in-preimage (`seam.audit.record-digest.v4` from Seam's 2026-10 contract release; earlier records keep their own version) | `"sha256:"` ‖ lowercase hex of the Seam sealed record's **audit record digest**: the 32 bytes published as `DECISION_SEALED.digest` (`seam-event.v1` tag 19) and stored as the seal entry's audit digest, computed under the record's own `schema_version`. | See below. |
+| `seam.decision` | Provisional | `seam-runtime/docs/specs/seam-event.v1.md` § "Record digest", at the Seam contract-release tag (to be cited once published); construction label `seam.audit.record-digest` (provisional), versioned in-preimage | `"sha256:"` ‖ lowercase hex of the Seam sealed record's **audit record digest**: the 32 bytes published as `DECISION_SEALED.digest` (`seam-event.v1` tag 19) and stored as the seal entry's audit digest, computed under the record's own `schema_version`. | See below. |
 
 **Notes** column content:
 
-- **Covers:** decision id, tenant, namespace, SHA-256 of the commitment ciphertext, seal time, outcome, mode, policy version, `supersedes`, the context-provenance digest, the participation digest, the policy-rules digest and the schema version. From v4 it also covers trust basis, classification and the participant id list. When the record supersedes another, `supersedes` carries the MACP RFC-0013 `commitment_hash`.
+- **Covers:** the sealed record as defined by its own `schema_version`. The row deliberately does not enumerate the inner fields: the field set and encoding are the scheme owner's to define, and they change per record-digest version.
 - **Excludes:** the plaintext commitment, TCT and keys. The anchor is an opaque hash and discloses none of its inputs. It survives crypto-shred.
 - **Verification:** a Seam-aware verifier recomputes the digest from the disclosed `DECISION_SEALED` event or evidence bundle and checks equality. It MAY then chain the digest to a signed chain-head attestation or a notary anchor.
-- **Versioning:** the record's `schema_version` selects the construction, and an unknown version is cannot-verify. A new record-digest version changes future records only, so the scheme does not change. The scheme label changes only if the selection rule or the rendering changes. This is RFC-ACDP-0016 §7's third bullet.
+- **Versioning:** the record's `schema_version` selects the construction, and an unknown version is cannot-verify. A new record-digest version changes future records only, so the scheme does not change. The scheme label changes only if the selection rule or the rendering changes. This is RFC-ACDP-0016 §7's third bullet. Seam's own verifiers know only the record-digest version(s) their release ships, so an anchor over an older record version can be cannot-verify for them. That is the scheme's choice and needs nothing from ACDP.
 - **Not this digest:** the anchor is not the Seam commitment digest, the chain checksum, or the chain head.
 - **No `uri`:** a URI carrying the decision id would disclose more than the hash.
 - **Ordering:** a Seam record's digest covers the ACDP bodies bound into it as context. A body can therefore never anchor a decision it was an input to. `seam.decision` anchors belong on downstream bodies, such as outcomes and disclosures.
 
-The status stays `Provisional` until Seam's contract release publishes the definition clause and a golden vector.
+The status stays `Provisional` until Seam's contract release publishes the definition clause and a golden vector. The construction label and the `"sha256:"` + lowercase-hex rendering are provisional until then too. Once the vector is pinned, an `anc-*` vector for the scheme-aware verifier hook can reference it.
 
 ---
 
@@ -460,7 +460,7 @@ None remain.
 - Reference implementation defaults: the negative-cache freshness is 300 s by default. A verified revocation is never evicted, and is held separately from negative entries. A forced DID refresh happens at most once per hour per DID (configurable). That limit is safe only together with the P4 rule that a rate-limited step-4 absence is transient.
 - P4 (from `acdp-rs` 0.15.0 implementation): a forced re-fetch declined by rate limiting gives a transient verdict, and freshness is scoped per operation. P1: a lineage-walk member without a receipt is re-retrieved by `ctx_id`.
 
-- P12: the anchor carries the sealed record's audit record digest, selected by the record's own `schema_version`. It never carries the commitment digest or the chain checksum. The row above is final pending Seam's published clause.
+- P12: the anchor carries the sealed record's audit record digest, selected by the record's own `schema_version`. It never carries the commitment digest or the chain checksum. The row stays Provisional until Seam's contract release publishes the clause and golden vector. Seam confirmed (2026-10-16) that an unknown `schema_version` is cannot-verify, never a fallback to the latest version, and asked that the row not list inner fields, including `commitment_hash`.
 
 - P7: the v1 `lineage_id` check is a MUST.
 - P5: under the strict default, a pre-T placement requires a current receipt key.
