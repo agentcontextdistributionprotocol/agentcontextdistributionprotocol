@@ -2,7 +2,7 @@
 
 **Target path:** `rfcs/proposals/consumer-revocation-and-verification-2026-10.md`
 **Status:** Pre-Draft proposal. It targets the **acdp/0.5.0 Draft line**. If accepted, each change below lands as an in-prose ***(0.5.0)*** amendment to the RFC it names, following the RFC-ACDP-0014 §4/§10 precedent.
-**Amends:** RFC-ACDP-0001 §5.11, RFC-ACDP-0002 §3.1/§4.2, RFC-ACDP-0004 §2.1, RFC-ACDP-0005 §2.3, RFC-ACDP-0010 §8/§9, RFC-ACDP-0014 §5/§6/§8, and `registries/profiles.md` (`acdp-consumer`).
+**Amends:** RFC-ACDP-0001 §5.11, RFC-ACDP-0002 §3.1/§4.2, RFC-ACDP-0004 §2.1, RFC-ACDP-0005 §2.3, RFC-ACDP-0010 §8/§9, RFC-ACDP-0014 §5/§6/§7/§8/§13, `registries/profiles.md` (`acdp-consumer`), and (editorially, P12) `registries/anchor-schemes.md`.
 **Spec pin:** `agentcontextdistributionprotocol` origin/HEAD `f4a19a1` (2026-10-08). **Evidence pin:** `acdp-rs` origin/HEAD `424253b` (crate `acdp` 0.14.5).
 
 > **Process note.** `governance/RFC-PROCESS.md` defines a Draft as a PR against `rfcs/RFC-ACDP-XXXX-*.md`. It has no `rfcs/proposals/` stage. This file is a review vehicle to settle the text before the per-RFC amendment PRs are opened. If maintainers would rather review the amendments in place, fold each section below into its target RFC as a *(0.5.0)* passage and drop this file. The README index needs no change, because no new RFC number is requested.
@@ -11,18 +11,22 @@
 
 ## Summary
 
-This proposal makes eight consumer-side changes on the 0.5.0 Draft line. Six close gaps through which a conformant `acdp-consumer` can record **"not revoked" when the honest answer is "could not tell"**, or can accept a registry-assigned binding it never checked:
+This proposal makes eleven consumer-side changes on the 0.5.0 Draft line, plus one registry-entry clarification. Six close gaps through which a conformant `acdp-consumer` can record **"not revoked" when the honest answer is "could not tell"**, or can accept a registry-assigned binding it never checked:
 
 1. **Revocation-discovery outcome classes.** Discovery yields `revoked`, `not-revoked (complete)` or `unknown`. `not-revoked` is allowed only when the answer is complete. A candidate that fails only because its signer key has since rotated, or only for a transient reason, never counts as absent.
 2. **Truncation is not completeness.** A consumer that stops paginating while `next_cursor` is present MUST NOT treat the result as complete.
 3. **Unanswerable discovery.** A 403 from `anonymous_public_reads: false`, or a 501 from a core-only registry, yields `unknown`.
 4. **DID-cache refresh** is made concrete for discovery and for "key not found / not in `assertionMethod`" failures.
-5. **Receipt-key status.** The RFC-ACDP-0010 §8 step 1 / §9 tension is resolved and the receipt-key status is reported.
+5. **Receipt-key status.** The RFC-ACDP-0010 §8 step 1 / §9 tension is resolved and the receipt-key status is reported. Under the strict default, a pre-T placement requires a *current* receipt key.
 6. **Receipt verdict reported separately.** RFC-ACDP-0010 §8 is aligned with the `acdp-consumer` manifest and `fed-011`.
-7. **Consumer binding of `lineage_id` and `origin_registry`.** These are SHOULD-level checks parallel to the `ctx_id` binding.
+7. **Consumer binding of `lineage_id` and `origin_registry`.** These checks run parallel to the `ctx_id` binding. The `lineage_id` check is a MUST for first versions (`supersedes: null`), where it is offline and total. The other checks are SHOULD.
 8. **Editorial: the RFC-ACDP-0014 §6 "served by or receipted by" scope.**
+9. **Caching discovery outcomes.** A cached absence is vantage-scoped and time-bounded, `unknown` is never cached as absence, and a cached verified revocation survives any later failed or truncated discovery.
+10. **Attributable revocation verdicts.** A revocation-driven verdict names the revocation that drove it, and separates "revoked (at/after T)" from "unplaceable (no verifiable time)".
+11. **Producer scope of the §7 trigger.** A verified revocation applies only to contexts of the producer it speaks for. This closes the RFC-ACDP-0014 §13 cross-producer case for consumers that hold revocations outside per-producer discovery.
+12. **`seam.decision` anchor-scheme entry (registry, editorial).** The registry row points at the external, versioned definition of the anchored digest. RFC-ACDP-0016 is unchanged.
 
-It also adds conformance vectors for the consumer profile, including one raw-JSON hashing vector that existing `can-*` vectors do not cover.
+It also adds conformance vectors for the consumer profile, including one raw-JSON hashing vector that existing `can-*` vectors do not cover and one standalone DID-resolution failure-classification vector (`did-001`).
 
 ## Motivation
 
@@ -167,7 +171,7 @@ Replace the last sentence of **RFC-ACDP-0010 §8 step 1** with:
 
 Add to **RFC-ACDP-0014 §7 step 1**:
 
-> *(0.5.0)* The receipt's key status (RFC-ACDP-0010 §8 step 1) MUST be carried into the `key_revocation` stage report. A deployment MAY require a *current* receipt key (or corroborating RFC-ACDP-0012 log inclusion) before it accepts a receipt-attested time that places a context *before* T. Under the strict default, a historical receipt key remains sufficient, as RFC-ACDP-0010 §9 already provides.
+> *(0.5.0)* The receipt's key status (RFC-ACDP-0010 §8 step 1) MUST be carried into the `key_revocation` stage report. **Under the strict profile, a receipt-attested time places a context *before* T (step 2) only when the receipt key's status is *current*.** A receipt verified under a *historical* receipt key cannot place the context. The context is then treated as unplaceable under step 4 and fails closed. A deployment MAY expose a non-default, explicitly named mode that also accepts a historical receipt key, either alone or corroborated by RFC-ACDP-0012 log inclusion. Such a mode is non-conformant with the strict profile and follows the RFC-ACDP-0001 §5.11 opt-in rules, like the step 4 pragmatic mode. This rule applies only to contexts signed by a revoked key. For ordinary rotation with no revocation, RFC-ACDP-0010 §9 / §10 acceptance of historical receipt keys is unchanged.
 
 ### Conformance vectors to add
 
@@ -176,6 +180,7 @@ Add to **RFC-ACDP-0014 §7 step 1**:
 - A: the receipt is signed by a key in both `verificationMethod` and `assertionMethod` → valid, status `current`.
 - B: the key is in `verificationMethod` only → valid, status `historical`.
 - C: the key is absent from `verificationMethod` → `invalid_receipt`.
+- D: a context signed by a revoked key K1, whose receipt `created_at` is before T and whose receipt is signed by a *historical* receipt key → fail closed (`unplaceable`) under the strict profile. The same context with a *current* receipt key → historically authorized (pre-compromise). With no revocation of K1 at all, scenario B's historical receipt still supports the RFC-ACDP-0010 §10 historical-key rule.
 
 ## P6. Receipt verdict reported separately *(0.5.0)*
 
@@ -226,16 +231,15 @@ For a first version (`supersedes: null`) the check is offline and costs one hash
 
 Add to **RFC-ACDP-0004 §2.1**, after "Bind the resolved identity":
 
-> *(0.5.0)* **Bind the registry-assigned lineage and origin (consumer SHOULD).** A consumer that relies on `lineage_id` or `origin_registry` SHOULD verify:
+> *(0.5.0)* **Bind the registry-assigned lineage and origin.**
 >
-> 1. For a body with `supersedes: null`, that `lineage_id` equals the RFC-ACDP-0001 §5.6 derivation from `body.ctx_id`.
-> 2. That `origin_registry` equals the `ctx_id` authority.
->
-> A mismatch SHOULD be treated as `schema_violation` for the retrieved body. For a body with `supersedes ≠ null`, the derivation needs the version-1 `ctx_id`. A consumer SHOULD obtain it from a verified receipt (RFC-ACDP-0010 §8 step 3) or from a lineage walk ending at a `supersedes: null` member, and otherwise SHOULD report `lineage_id` as registry-asserted (unbound).
+> 1. For a body with `supersedes: null`, a consumer MUST verify that `lineage_id` equals the RFC-ACDP-0001 §5.6 derivation from `body.ctx_id`. A mismatch MUST be treated as `schema_violation` for the retrieved body. The check is offline and needs no receipt.
+> 2. A consumer that relies on `origin_registry` SHOULD verify that it equals the `ctx_id` authority. A mismatch SHOULD be treated as `schema_violation`.
+> For a body with `supersedes ≠ null`, the derivation needs the version-1 `ctx_id`. A consumer SHOULD obtain it from a verified receipt (RFC-ACDP-0010 §8 step 3) or from a lineage walk ending at a `supersedes: null` member, and otherwise SHOULD report `lineage_id` as registry-asserted (unbound).
 
 And to **RFC-ACDP-0002 §4.2**:
 
-> *(0.5.0)* Consumers SHOULD verify the derivation where it is checkable (RFC-ACDP-0004 §2.1).
+> *(0.5.0)* Consumers MUST verify the derivation for first versions (`supersedes: null`), and SHOULD verify it for later versions where it is checkable (RFC-ACDP-0004 §2.1).
 
 ### Conformance vectors to add
 
@@ -245,7 +249,7 @@ And to **RFC-ACDP-0002 §4.2**:
 - B: a v1 body whose `lineage_id` is the derivation of a different `ctx_id` → rejected `schema_violation`.
 - C: a v2 body with no receipt → accepted with `lineage_id` reported unbound.
 
-**`body-003`**: `origin_registry` ≠ `ctx_id` authority → rejected `schema_violation`.
+**`body-003`** (conditional, for consumers that rely on `origin_registry`): `origin_registry` ≠ `ctx_id` authority → rejected `schema_violation`.
 
 ## P8. RFC-ACDP-0014 §6 scope: "served by or receipted by" (editorial) *(0.5.0)*
 
@@ -261,6 +265,139 @@ The two readings diverge once a receipt travels with a body served from a differ
 
 > *(0.5.0)* "Receipted by" means: the context carries a receipt whose `registry_did` is that registry and which verifies per RFC-ACDP-0010 §8 against that registry's authority. Where the serving authority and the receipting registry differ, either one brings the context into the default scope. A consumer that scopes by serving authority only is conformant but narrower, and SHOULD document that.
 
+
+## P9. Caching discovery outcomes *(0.5.0)*
+
+### Problem
+
+**RFC-ACDP-0014 §7** (L121): *"Consumers SHOULD cache verified revocations indefinitely (the statement is permanent)."* This covers the positive case only. The spec says nothing about caching the *absence* of a revocation, although every consumer that runs discovery at scale caches it. Without a cache, each verification repeats up to six searches (three statuses × two type forms) and the lineage walks, per producer and per trust class.
+
+An absence cached without rules can go wrong in three ways. Each outlives the call that produced it:
+
+- **No lifetime.** A `not-revoked` remembered indefinitely hides a revocation published afterwards for as long as the cache lives.
+- **No vantage.** An absence observed at registry A is reused for a context served by registry B. Under §6 the registry-attested class is scoped to the registry concerned, so an absence at A says nothing about B.
+- **Rollback.** A later discovery that fails (transient, truncated, unanswerable) or answers with fewer results overwrites a revocation the consumer had already verified.
+
+P1 forbids caching `unknown` as `not-revoked`. P9 sets the remaining rules.
+
+### Proposed normative text
+
+Replace the sentence at **RFC-ACDP-0014 §7** L121 with:
+
+> Consumers SHOULD cache verified revocations indefinitely (the statement is permanent) and MUST apply the earliest-T rule of §4 across a revocation lineage. *(0.5.0)* **Caching discovery outcomes (NORMATIVE).** A consumer that caches discovery outcomes (§8):
+>
+> 1. MUST retain a cached verified revocation regardless of the outcome of any later discovery. A later `unknown`, a truncated result, or a result that no longer contains the revocation MUST NOT remove it or move its boundary later (§4).
+> 2. MAY cache a `not-revoked (complete)` outcome only together with the vantage it was observed at (for the registry-attested class, the registry concerned per §6), the trust classes it covered, and the time the discovery completed. It MUST NOT reuse that outcome for another vantage or another trust class, and MUST NOT reuse it beyond a freshness bound. The RECOMMENDED default bound is **300 seconds**. A deployment MAY configure a shorter bound, including zero (no negative caching). It SHOULD NOT configure a longer one without documenting the exposure, which is the time a newly published revocation can stay unseen.
+> 3. MUST NOT cache an `unknown` outcome as `not-revoked`. It MAY cache it as `unknown`.
+>
+> A verification that relies on a cached `not-revoked (complete)` outcome SHOULD report the time that outcome was observed in the `key_revocation` stage.
+
+### Conformance vectors to add
+
+`rev-005` scenario I: the consumer caches `not-revoked (complete)` for P at vantage V. A revocation of K1 is then published. Once the freshness bound has passed, the next verification of a K1-signed context MUST rediscover and report `revoked`. Within the bound, a stale `not-revoked` is permitted, and the verification reports the time the absence was observed.
+
+`rev-005` scenario J (anti-rollback): the consumer has verified and cached a revocation of K1. A later discovery is answered 503, or is truncated, or returns no match. The verdict for a K1-signed, post-T context MUST remain fail closed.
+
+`rev-005` scenario K (vantage scope): a cached registry-attested `not-revoked` observed at registry A is not reused for a context served by registry B.
+
+## P10. Attributable revocation verdicts *(0.5.0)*
+
+### Problem
+
+**RFC-ACDP-0014 §7** (end of L127) says verification reports *SHOULD* carry a `key_revocation` stage with the trust class. **§13** "Cross-producer revocation" (L181) lists *"surfacing which DID issued each acted-upon revocation"* as a mitigation, but leaves it consumer-local and unspecified.
+
+A revocation-driven failure that does not name its cause has two problems:
+
+- An operator cannot tell a genuine producer revocation from a registry-attested or cross-producer one without re-running discovery.
+- Two different fail-closed causes look the same. One is §7 step 3, published at or after T. The other is §7 step 4, no verifiable publish time. The remedy differs: the first is final, while the second can be cured by a receipt (or, under a named pragmatic mode, other time evidence).
+
+### Proposed normative text
+
+Append to the last paragraph of **RFC-ACDP-0014 §7** ("Retraction does not un-revoke"):
+
+> *(0.5.0)* **Attribution (NORMATIVE).** When a verified revocation changes a verification verdict (§7 steps 2–4), the `key_revocation` stage MUST be reported, and MUST carry, for the revocation that fixes the effective boundary:
+>
+> - its `ctx_id`;
+> - its signer (`body.agent_id`);
+> - its trust class;
+> - `revoked_key_controller` where present;
+> - the effective boundary T.
+>
+> The stage MUST distinguish **`pre-compromise`** (step 2), **`revoked`** (step 3) and **`unplaceable`** (step 4). Where several revocations share the earliest T, reporting any one of them satisfies this rule.
+
+And in **RFC-ACDP-0014 §13** "Cross-producer revocation", replace *"surfacing which DID issued each acted-upon revocation"* with *"the §7 attribution rule (every acted-upon revocation's signer is reported)"*.
+
+### Conformance vectors to add
+
+Extend **`rev-002`** behaviorally:
+
+- **Scenario I.** A post-T context fails closed. The report names the revocation's `ctx_id`, its signer, its trust class and T, with outcome `revoked`.
+- **Scenario J.** The context has no receipt. It fails closed with outcome `unplaceable`, distinguishable from scenario I.
+
+## P11. Producer scope of the §7 trigger *(0.5.0)*
+
+### Problem
+
+**RFC-ACDP-0014 §7** opens: *"When a consumer holds a verified revocation for fingerprint F … and verifies a context whose body signature resolves to a key with fingerprint F"*. The trigger is keyed by fingerprint only.
+
+**§13** (L181) acknowledges that any DID holder can therefore publish a §5-valid revocation naming another producer's fingerprint. A consumer holding such a revocation acts on it. **§5 step 3** (L79) binds `revoked_key_controller` to the *signer*, not to the producer whose context is being verified.
+
+Discovery per §8 already searches by the producer's `agent_id`, so a consumer that only ever uses per-producer discovery results is not exposed. The exposure is confined to three sources of revocations:
+
+- revocations accepted out of band (§8 third bullet);
+- caches keyed by fingerprint across producers;
+- and caller-supplied revocation sets.
+
+The protocol forbids none of these.
+
+### Proposed normative text
+
+Add to **RFC-ACDP-0014 §7**, before step 1:
+
+> *(0.5.0)* **Producer scope.** A verified revocation is applied to a context only when the revocation speaks for that context's producer:
+>
+> - **Producer-signed:** the revocation's `body.agent_id` equals the context's `body.agent_id`.
+> - **Registry-attested:** the revocation's `metadata.revoked_key_controller` equals the context's `body.agent_id`, and §6 scoping applies.
+>
+> A revocation outside this scope MUST NOT change the context's verdict. A consumer MAY report it as a hint (it is the §5 step 2 "hint to seek a real signal" situation).
+
+And amend the **§13** bullet to say that the producer-scope rule closes the case for conformant 0.5.0 consumers, and that the residual exposure is a producer whose key material is shared under more than one DID. Such a producer must revoke under each DID.
+
+### Conformance vectors to add
+
+**`rev-006-producer-scope`** (behavioral, consumer):
+
+- A: DID A publishes a §5-valid revocation naming the fingerprint of producer B's key K. The consumer holds it out of band. A K-signed, post-T context from B is **unaffected**.
+- B: the same revocation published by B → `revoked`.
+
+## P12. `seam.decision` anchor scheme: pointer to the external definition (registry, editorial)
+
+### Problem
+
+**`registries/anchor-schemes.md`** (L8) describes `seam.decision` as carrying *"a Seam sealed-decision-record audit digest"*. **RFC-ACDP-0016 §7** (L89) defers the construction entirely to the external system. That is correct for core ACDP, which MUST NOT interpret anchor digests (§6).
+
+However, the registry row names neither the construction nor its version label. A scheme-aware verifier (RFC-ACDP-0016 §6 "Verification hook") therefore cannot tell which digest a given anchor carries. The scheme's owner is changing the sealed record (adding a commitment digest to it). That makes it the right time to pin which digest the anchor carries, before `Provisional` anchors are minted in volume.
+
+### Proposed change
+
+No RFC text changes. The scheme owner has settled the digest (2026-10-16). Amend the `seam.decision` row in `registries/anchor-schemes.md` to:
+
+| Scheme | Status | Defined by | `content_hash` construction | Notes |
+|---|---|---|---|---|
+| `seam.decision` | Provisional | `seam-runtime/docs/specs/seam-event.v1.md` § "Record digest" (stable URI); construction label `seam.audit.record-digest`, versioned in-preimage (`seam.audit.record-digest.v4` from Seam's 2026-10 contract release; earlier records keep their own version) | `"sha256:"` ‖ lowercase hex of the Seam sealed record's **audit record digest**: the 32 bytes published as `DECISION_SEALED.digest` (`seam-event.v1` tag 19) and stored as the seal entry's audit digest, computed under the record's own `schema_version`. | See below. |
+
+**Notes** column content:
+
+- **Covers:** decision id, tenant, namespace, SHA-256 of the commitment ciphertext, seal time, outcome, mode, policy version, `supersedes`, the context-provenance digest, the participation digest, the policy-rules digest and the schema version. From v4 it also covers trust basis, classification and the participant id list. When the record supersedes another, `supersedes` carries the MACP RFC-0013 `commitment_hash`.
+- **Excludes:** the plaintext commitment, TCT and keys. The anchor is an opaque hash and discloses none of its inputs. It survives crypto-shred.
+- **Verification:** a Seam-aware verifier recomputes the digest from the disclosed `DECISION_SEALED` event or evidence bundle and checks equality. It MAY then chain the digest to a signed chain-head attestation or a notary anchor.
+- **Versioning:** the record's `schema_version` selects the construction, and an unknown version is cannot-verify. A new record-digest version changes future records only, so the scheme does not change. The scheme label changes only if the selection rule or the rendering changes. This is RFC-ACDP-0016 §7's third bullet.
+- **Not this digest:** the anchor is not the Seam commitment digest, the chain checksum, or the chain head.
+- **No `uri`:** a URI carrying the decision id would disclose more than the hash.
+- **Ordering:** a Seam record's digest covers the ACDP bodies bound into it as context. A body can therefore never anchor a decision it was an input to. `seam.decision` anchors belong on downstream bodies, such as outcomes and disclosures.
+
+The status stays `Provisional` until Seam's contract release publishes the definition clause and a golden vector.
+
 ---
 
 ## Additional conformance vector: raw-JSON hashing of canonical whole-second timestamps
@@ -273,16 +410,51 @@ A typed round-trip loses that spelling. `acdp-rs` 0.14.5 recomputes the hash fro
 
 **`can-013-canonical-zero-millis-timestamp`** (executed arithmetically): a body with `expires_at: "2026-12-31T23:59:59.000Z"` and `data_period: {"start": "2026-01-01T00:00:00.000Z", "end": "2026-12-31T23:59:59.000Z"}`, with its pinned canonical form and `sha256_hex`. Consumers MUST reproduce the hash.
 
+## Additional conformance vector: DID-document fetch failure classification
+
+This is not a normative change either. **RFC-ACDP-0001 §5.11 step 3** (L378) already classifies *"HTTP non-2xx response"* as transient, to be reported as `key_resolution_unreachable` (HTTP 502). No fixture pins it, so the classification can drift in either direction:
+
+- **Permanent where it should be transient.** An implementation that maps a non-2xx response to `key_resolution_failed` turns a brief DID-host outage into a permanent-looking verdict, and that verdict is the input P1 uses to classify a revocation candidate as invalid.
+- **Transient where it should be permanent.** An implementation can also misclassify a parse failure as transient.
+
+**`did-001-fetch-failure-classification`** (behavioral; consumer and registry, since both resolve producer DIDs):
+
+| Scenario | DID host response | Expected |
+|---|---|---|
+| A | 404, 410, 500 or 503 | `key_resolution_unreachable` (transient) |
+| B | timeout or TLS failure | `key_resolution_unreachable` (transient) |
+| C | 200 with a body that is not JSON | `key_resolution_failed` (permanent) |
+| D | 200, with no `verificationMethod` matching the fragment after one forced re-fetch (P4) | `key_resolution_failed` (permanent) |
+
+SSRF refusals stay permanent (`did-ssrf-*`) and are unaffected.
+
 ## Compatibility
 
-- **No wire, schema, body, hash, signature or receipt change.** All changes are consumer-side verdict semantics plus one SHOULD-level binding (P7). Every new MUST is marked *(0.5.0)* and binds only consumers claiming the 0.5.0 `acdp-consumer` profile. 0.1.0–0.4.0-pinned consumers are unaffected, following the RFC-ACDP-0014 §10 and RFC-ACDP-0016 precedent.
+- **No wire, schema, body, hash, signature or receipt change.** All changes are consumer-side verdict semantics and bindings (P7). Every new MUST is marked *(0.5.0)* and binds only consumers claiming the 0.5.0 `acdp-consumer` profile. 0.1.0–0.4.0-pinned consumers are unaffected, following the RFC-ACDP-0014 §10 and RFC-ACDP-0016 precedent.
 - **These are tightenings, not loosenings.** P1–P4 forbid an outcome (`not-revoked`) that some consumers emit today, and P5/P6 add reporting. Per the CHANGELOG precedent (2026-07-05 errata; RFC-ACDP-0007 §4.1), a Final-line tightening is not permitted, which is why everything here is *(0.5.0)*.
 - **Availability.** P1–P3 turn some former `not-revoked` answers into `unknown`. Under a fail-closed discovery policy, verification of contexts from producers whose revocation discovery is unanswerable will fail where it previously passed. That is the intended safety property, and policy remains the deployment's choice (P1: "fail closed, or proceed and report"). P4 adds at most one extra DID fetch per failing verification, and implementations may rate-limit it.
 - **Registries:** no new obligation.
-- **Two-implementation gate:** the new vectors (`rev-005`, `rot-002`, `rcpt-005`, `lin-002`, `body-003`, `can-013`, the `rcpt-004`/`-006` extension) join the 0.5.0 consumer manifest and gate 0.5.0 Final alongside `anc-*`.
+- **Two-implementation gate:** the new vectors join the 0.5.0 consumer manifest and gate 0.5.0 Final alongside `anc-*`. They are `rev-005` (A–K), `rev-006`, `rot-002`, `rcpt-005`, `lin-002`, `body-003`, `can-013` and `did-001`, plus the `rev-002` I/J extension and the `rcpt-004`/`-006` extension. Each one is the usual three-file change: fixture JSON, the `registries/profiles.json` + `profiles.md` `acdp-consumer` row, and the `schemas/conformance/README.md` index.
+- **P9–P11** are tightenings in the same sense as P1–P4:
+  - P9 forbids reusing a cached absence across vantages or indefinitely, which some consumers may do today.
+  - P10 promotes an existing SHOULD report to a MUST when a revocation changes a verdict.
+  - P5's strict-default rule fails closed on a pre-T placement attested only by a historical receipt key, which today's text accepts.
+  - P7 rejects a first-version body whose `lineage_id` does not match the derivation.
+  - P11 narrows which revocations change a verdict. It can only *remove* fail-closed verdicts that are caused by a revocation speaking for a different producer, and it never removes one caused by the producer's own revocation.
+- **P12** is a registry-row edit with no conformance effect.
 
 ## Open questions
 
-1. Should P7's SHOULD be a MUST for `supersedes: null` bodies, where the check is offline, total and free?
-2. Should `unknown` (P1) get a suggested report token in the RFC-ACDP-0001 §5.11 stage vocabulary (e.g. `key_revocation: unknown`), with a reason sub-code (`truncated`, `unanswerable`, `transient`, `unverifiable_candidate`)?
-3. P5: should a 0.5.0 strict default require a *current* receipt key for a pre-T placement under RFC-ACDP-0014 §7, rather than leaving it to deployment policy?
+None remain.
+
+**Settled (2026-10-16):**
+
+- P1: `unknown` gets its own report token, `key_revocation: unknown`, never folded into not-revoked. It carries a reason sub-code: `truncated`, `unanswerable`, `transient` or `unverifiable_candidate`.
+- Reference implementation defaults: the negative-cache freshness is 300 s by default. A verified revocation is never evicted, and is held separately from negative entries. A forced DID refresh happens at most once per hour per DID.
+
+- P12: the anchor carries the sealed record's audit record digest, selected by the record's own `schema_version`. It never carries the commitment digest or the chain checksum. The row above is final pending Seam's published clause.
+
+- P7: the v1 `lineage_id` check is a MUST.
+- P5: under the strict default, a pre-T placement requires a current receipt key.
+- P9: the RECOMMENDED negative-cache bound is 300 s, and deployments may tighten it.
+- P11: producer scope is a MUST.
