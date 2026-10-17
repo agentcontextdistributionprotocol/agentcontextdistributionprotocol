@@ -1,0 +1,54 @@
+{
+  "id": "log-005",
+  "description": "(0.5.0) An inclusion proof cannot be checked without a receipt that verified (RFC-ACDP-0012 §9.1 step 1 and the (0.5.0) 'Precondition: a verified receipt'). The log verdict is then log_inclusion: cannot_verify — never logged, never invalid_log_proof, and the echoed leaf is never trusted.",
+  "tags": [
+    "transparency-log",
+    "receipt",
+    "consumer",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer"
+  ],
+  "input": {
+    "proof": "The log-001 inclusion proof and checkpoint, served with the matching body"
+  },
+  "scenarios": [
+    {
+      "name": "A — registry_receipt absent",
+      "expected": {
+        "outcome": "cannot_verify",
+        "log_inclusion": "cannot_verify",
+        "log_inclusion_reason": "receipt_absent"
+      }
+    },
+    {
+      "name": "B — receipt fails RFC-ACDP-0010 §8 (rcpt-002 tampering)",
+      "expected": {
+        "outcome": "cannot_verify",
+        "log_inclusion": "cannot_verify",
+        "log_inclusion_reason": "receipt_invalid",
+        "receipt_verdict": "invalid_receipt",
+        "behavior": "The receipt failure is reported in its own verdict."
+      }
+    },
+    {
+      "name": "C — echoed leaf matches the true leaf, no receipt",
+      "expected": {
+        "outcome": "cannot_verify",
+        "log_inclusion": "cannot_verify",
+        "log_inclusion_reason": "receipt_absent",
+        "behavior": "The echo is never trusted."
+      }
+    },
+    {
+      "name": "D — as A, under a require-inclusion policy",
+      "expected": {
+        "outcome": "failure",
+        "error_code": "invalid_receipt",
+        "behavior": "Fails closed, attributed to the receipt, never invalid_log_proof."
+      }
+    }
+  ],
+  "notes": "Behavioral; not executed by scripts/conformance-runner.py (no registry_test_keypair). cannot_verify is a report value, not a wire error code."
+}

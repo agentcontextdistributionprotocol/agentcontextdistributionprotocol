@@ -15,6 +15,10 @@ This document is a Final ACDP specification (acdp/0.1.0, with a Final amendment 
 
 The section marked *(0.3.0)* records the release line that added it. The acdp/0.3.0 line is **Final** as of 2026-07-05, promoted after its conformance pack passed against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md)). It changes no v0.1.0 body field, hash, or signature semantic.
 
+This revision additionally carries a **consumer-side acdp/0.5.0 Draft-line amendment**, marked *(0.5.0)*, to §4.2: consumers verify the `lineage_id` derivation. It adds no field and changes no hash or signature semantic.
+
+> **Markers and status — read this before relying on a marked passage.** A parenthetical version marker records *which release line introduced a passage*, not that the passage is Final. Passages marked ***(0.5.0)*** belong to the **0.5.0 line, which is still `Draft`** ([VERSIONING.md](../VERSIONING.md)) — they are open to substantive change until that line is promoted, and an implementation MUST NOT treat them as frozen. Everything not marked at all is Final and wire-frozen for acdp/0.1.0. The document-level status above describes the unmarked body of this RFC; it does not extend to *(0.5.0)* passages.
+
 The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **SHOULD**, **SHOULD NOT**, **RECOMMENDED**, **MAY**, and **OPTIONAL** in this document are to be interpreted as described in BCP 14 ([RFC 2119](https://datatracker.ietf.org/doc/html/rfc2119), [RFC 8174](https://datatracker.ietf.org/doc/html/rfc8174)) when, and only when, they appear in all capitals — the conventions of [RFC-ACDP-0001 §2](RFC-ACDP-0001-core.md#2-conventions-and-terminology).
 
 ---
@@ -161,7 +165,7 @@ A context's `ctx_id` MUST conform to the form `acdp://<authority>/<uuid>` where 
 
 ### 4.2 lineage_id
 
-A context's `lineage_id` MUST be derived deterministically per RFC-ACDP-0001 §5.6.
+A context's `lineage_id` MUST be derived deterministically per RFC-ACDP-0001 §5.6. *(0.5.0)* Consumers MUST verify the derivation for first versions (`supersedes: null`), and SHOULD verify it for later versions where it is checkable (RFC-ACDP-0004 §2.1).
 
 ### 4.3 version
 

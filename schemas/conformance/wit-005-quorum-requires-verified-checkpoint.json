@@ -1,0 +1,39 @@
+{
+  "id": "wit-005",
+  "description": "(0.5.0) A witness quorum is counted only over a checkpoint the consumer has verified (RFC-ACDP-0015 §8 'Precondition: a verified checkpoint'), whether or not it otherwise checks log proofs. Checkpoint verification needs no receipt, so a cannot_verify inclusion does not block the quorum.",
+  "tags": [
+    "witness",
+    "transparency-log",
+    "consumer",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer"
+  ],
+  "input": {
+    "checkpoint": "The log-001 checkpoint",
+    "cosignature": "A cosignature by a trusted witness (wit-001 key material)",
+    "quorum": 1
+  },
+  "scenarios": [
+    {
+      "name": "A — altered checkpoint, log-proof checking disabled",
+      "expected": {
+        "outcome": "failure",
+        "error_code": "invalid_log_proof",
+        "witnessed": 0,
+        "behavior": "The checkpoint's root_hash was altered after signing (log-004 tampering) and a cosignature over the altered triple verifies. The checkpoint is verified anyway and fails: not 1-witnessed, reported via invalid_log_proof — not invalid_witness_cosignature."
+      }
+    },
+    {
+      "name": "B — verified checkpoint, receipt absent",
+      "expected": {
+        "outcome": "success",
+        "witnessed": 1,
+        "log_inclusion": "cannot_verify",
+        "behavior": "The checkpoint verifies and the trusted cosignature over it verifies: 1-witnessed. Inclusion is reported separately as cannot_verify."
+      }
+    }
+  ],
+  "notes": "Behavioral; not executed by scripts/conformance-runner.py (no witness_test_keypair). Kept separate from wit-003, which is an executed golden vector."
+}

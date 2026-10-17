@@ -1,0 +1,36 @@
+{
+  "id": "rev-006",
+  "description": "(0.5.0) Producer scope of the RFC-ACDP-0014 §7 trigger: a verified revocation changes a context's verdict only when it speaks for that context's producer (producer-signed: same body.agent_id; registry-attested: metadata.revoked_key_controller equals the context's agent_id, with §6 scoping). Closes the §13 cross-producer case for consumers that hold revocations outside per-producer discovery (out-of-band, fingerprint-keyed caches, caller-supplied sets). REQUIRED for 0.5.0 consumers.",
+  "tags": [
+    "revocation",
+    "consumer",
+    "security",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer"
+  ],
+  "input": {
+    "producer_B": "did:web:agents.example.com:producer-b",
+    "attacker_A": "did:web:attacker.example.net:a",
+    "key": "K, a key of producer B; contexts below are signed by K and receipt-attested after T"
+  },
+  "scenarios": [
+    {
+      "name": "A — cross-producer revocation held out of band",
+      "expected": {
+        "outcome": "success",
+        "behavior": "DID A publishes a §5-valid revocation naming K's fingerprint. The consumer holds it out of band. A K-signed, post-T context from B is unaffected; the consumer MAY report the revocation as a hint."
+      }
+    },
+    {
+      "name": "B — the same revocation published by B",
+      "expected": {
+        "outcome": "failure",
+        "key_revocation": "revoked",
+        "behavior": "The same statement signed by B's current key applies: the post-T context fails closed."
+      }
+    }
+  ],
+  "notes": "Behavioral; not executed by scripts/conformance-runner.py."
+}

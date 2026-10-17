@@ -1,0 +1,39 @@
+{
+  "id": "rcpt-006",
+  "description": "(0.5.0) The receipt verdict is reported separately from the body verdict, and a failing receipt is treated exactly as an absent one for every rule that consumes receipt-attested facts (RFC-ACDP-0010 §8 'Receipt failure does not invalidate the body'). Aligns RFC-ACDP-0010 §8 with the acdp-consumer manifest and fed-011.",
+  "tags": [
+    "receipt",
+    "consumer",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer"
+  ],
+  "input": {
+    "body": "The sig-001 golden context (valid signature and content_hash)",
+    "registry_receipt": "The rcpt-001 receipt with ctx_id altered so that the §8 step 3 context binding fails"
+  },
+  "scenarios": [
+    {
+      "name": "A — signer key current",
+      "expected": {
+        "outcome": "success",
+        "body_verdict": "valid",
+        "receipt_verdict": "invalid_receipt",
+        "error_code": "invalid_receipt",
+        "behavior": "Both verdicts are reported; the body is not presented as receipt-attested."
+      }
+    },
+    {
+      "name": "B — signer key in verificationMethod only",
+      "expected": {
+        "outcome": "failure",
+        "body_verdict": "valid",
+        "receipt_verdict": "invalid_receipt",
+        "error_code": "invalid_receipt",
+        "behavior": "The RFC-ACDP-0010 §10 historical-key rule needs a verified receipt, so it does not apply and the overall result fails closed."
+      }
+    }
+  ],
+  "notes": "Behavioral; not executed by scripts/conformance-runner.py. A federated resolver's wire behavior is unchanged (fed-009)."
+}

@@ -13,6 +13,10 @@ This RFC specifies the **registry transparency log**: a per-registry, append-onl
 
 This document is a **Final** ACDP specification (acdp/0.3.0). It is stable for the 0.3.0 line; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md). It was promoted from Draft to Final on 2026-07-05, the VERSIONING.md gate having been met: the conformance fixtures it defines (`log-001..004`) pass against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md) for the promotion record).
 
+This revision additionally carries a **consumer-side acdp/0.5.0 Draft-line amendment**, marked *(0.5.0)*, to §9.1: an inclusion proof that cannot be checked for want of a verified receipt is reported as *cannot-verify*, never as logged and never as `invalid_log_proof` (fixture `log-005`). It changes no leaf, checkpoint, proof or wire error code.
+
+> **Markers and status — read this before relying on a marked passage.** A parenthetical version marker records *which release line introduced a passage*, not that the passage is Final. Passages marked ***(0.5.0)*** belong to the **0.5.0 line, which is still `Draft`** ([VERSIONING.md](../VERSIONING.md)) — they are open to substantive change until that line is promoted, and an implementation MUST NOT treat them as frozen. Everything not marked at all is Final and wire-frozen for acdp/0.3.0 (and, transitively, acdp/0.1.0). The document-level status above describes the unmarked body of this RFC; it does not extend to *(0.5.0)* passages.
+
 This RFC promotes the RFC-ACDP-0009 §2.11 reservation. The reserved names — `log_inclusion`, `log_checkpoint`, `log_id`, `leaf_index`, `inclusion_path`, the profile `acdp-registry-transparency-log`, and the endpoint paths `/log/checkpoint`, `/log/proof`, `/log/entries` — are all adopted with the reserved meanings; §12 records the two places where this document refines the §2.11 *sketch* (the position of `log_inclusion` and the realization of the checkpoint signature member). Nothing in this document invalidates any v0.1.0/0.2.0/0.3.0 body, signature, `content_hash`, RFC-ACDP-0010 receipt, or RFC-ACDP-0011 head receipt.
 
 ---
@@ -252,6 +256,12 @@ A consumer verifying that a context is logged MUST perform all of the following:
    4. Right-shift both `fn` and `sn` by one.
 6. **Compare.** After consuming the whole path, `sn` MUST equal 0 and `r` MUST equal the raw digest encoded by `log_checkpoint.root_hash`. Any leftover path, premature exhaustion, or mismatch **fails**.
 
+*(0.5.0)* **Precondition: a verified receipt (NORMATIVE).** Step 1 cannot be performed without a receipt that verified per RFC-ACDP-0010 §8. Where the receipt is absent, or failed verification, the consumer MUST report the log verdict as **cannot-verify**. It MUST NOT report the context as logged, MUST NOT substitute an echoed `leaf`, and MUST NOT surface the result as `invalid_log_proof`, which indicts the log. The receipt failure is reported in its own verdict (RFC-ACDP-0010 §8; §9.3 independence). A cannot-verify log verdict is not evidence of a log violation (§3), because the consumer holds no valid receipt to demand inclusion against.
+
+*(0.5.0)* **Report value.** The log verdict is reported as `log_inclusion: cannot_verify`, alongside `included` and `invalid_log_proof`, with a reason: `receipt_absent`, `receipt_invalid`, or `receipt_not_verified` (the consumer did not verify receipts). This parallels RFC-ACDP-0014 §8's `key_revocation: unknown`; it is a report value, not a wire error code.
+
+*(0.5.0)* **Require-inclusion policy.** A consumer whose policy requires verified inclusion fails closed on `cannot_verify`. It MUST attribute that failure to the receipt (`invalid_receipt`, RFC-ACDP-0010 §8), never to the log (`invalid_log_proof`), because the log has not been shown to misbehave.
+
 ### 9.2 Consistency-proof verification
 
 A verifier holding a retained earlier checkpoint (`first_root` at size `first`) and a later checkpoint (`second_root` at size `second`, verified per §9.3) MUST check (the RFC 9162 §2.1.4.2 algorithm):
@@ -337,6 +347,7 @@ The log completes a specific promise — *any lie about logged history is detect
 | `log-002-inclusion-proof-mismatch` | The `log-001` proof with one tampered `inclusion_path` element → §9.1 folding yields a root ≠ checkpoint `root_hash` → MUST fail (`invalid_log_proof`); the checkpoint's own signature verifies. | Behavioral (data pinned) |
 | `log-003-consistency-proof-golden` | Consistency proof between tree sizes 3 and 5 of the `log-001` tree: both signed checkpoints, the four-element `consistency_path`, §9.2 verification end-to-end. | Executed arithmetically |
 | `log-004-checkpoint-signature-invalid` | A checkpoint whose `root_hash` was altered after signing (signature no longer verifies over the recomputed preimage) → §9.3 step 2 MUST fail (`invalid_log_proof`); the analogue of `rcpt-002` one layer up. | Behavioral (data pinned) |
+| `log-005-proof-without-verified-receipt` | ***(0.5.0)*** §9.1 precondition: with the receipt absent or failing, or only an echoed leaf, the log verdict is `log_inclusion: cannot_verify` — never logged, never `invalid_log_proof`; a require-inclusion policy fails closed with `invalid_receipt`. Consumer-only. | Behavioral |
 
 Vectors are generated by `scripts/gen-0.3.0-vectors.py` (never hand-written); the generator self-checks the §9.1/§9.2 verification algorithms against brute-force tree recomputation for all tree sizes ≤ 8 and all proof indexes.
 
