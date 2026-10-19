@@ -2,6 +2,14 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — docs refresh: `acdp-rs` 0.15.1, `acdp-verifier-py` at `85088a6`, `acdp-registry-rs` 0.5.3 — 2026-10-18
+
+**Non-normative docs only. No body field, schema `$id`, JCS rule, content-hash, signature semantic, or RFC text changed.** Brings `docs/version-matrix.md` up to date with the sibling releases that adopted the 2026-10-16 consumer-verification amendments, linking sibling-owned detail rather than copying it.
+
+- `acdp-rs` and its bindings: `0.14.5` → `0.15.1`. The matrix now lists npm `acdp-wasm` alongside the Node and Python bindings. The 0.15.0 *(0.5.0)* consumer additions are summarized in one sentence (revocation `unknown` verdict, client `bearer_jwt` read auth, opt-in log and witness verification), with links to the SDK's migration guide, the `schema_violation` mapping in its `errors.md`, the binding toolchain floors, and its pinned spec ref.
+- `acdp-verifier-py`: the caveat that strict Ed25519 (`sig-004`) post-dates its pinned revision is removed. It now pins `85088a6` and executes the 0.5.0 consumer fixtures; the exact counts are in its README.
+- Reference registry (v0.5.0 row): `acdp-registry-server` `0.4.x` → `0.5.x` (current `v0.5.3`).
+
 ## v0.5.0 — Clarification: receipt-requiring consumer policies in `rcpt-006` / `ret-003` — 2026-10-16
 
 **Fixture notes only. No body field, schema `$id`, JCS rule, content-hash, signature semantic, or RFC text changed.** `rcpt-006` scenario A and `ret-003` scenario D expected `success` when a receipt fails RFC-ACDP-0010 §8. The normative requirement is to report the receipt verdict separately and treat a failing receipt as absent. A consumer whose policy requires a verified receipt MAY still fail closed with `invalid_receipt`, as `rcpt-002` does. Both scenarios now carry `alternative_outcome` / `alternative_error_code`, which keeps the `acdp-rs` 0.14.x fail-closed default (`ReceiptPolicy::VerifyIfPresent`) conformant. Raised by the `acdp-rs` 0.15.0 binding of the #79 fixtures (acdp-rs#386).
