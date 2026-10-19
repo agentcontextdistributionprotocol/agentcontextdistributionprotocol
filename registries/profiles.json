@@ -371,6 +371,7 @@
         "anc-003-empty-anchors-array",
         "anc-004-content-hash-with-anchors",
         "anc-005-scheme-unaware-verifier-ignores-anchor",
+        "anc-006-seam-decision-scheme-aware-hook",
         "caps-001-valid-minimal",
         "caps-002-missing-ed25519",
         "caps-003-missing-did-web",
@@ -496,6 +497,6 @@
     "dk": "did:key resolution — golden and rejection scenarios (RFC-ACDP-0001 §5.4 / §5.11.1, 0.2.0)",
     "lc": "Lifecycle events & retraction — retraction flow, immutable_field, retracted-head /current semantics (RFC-ACDP-0013, 0.3.0)",
     "rev": "Producer key revocation — key-revocation context golden vector and compromise-boundary verification semantics (RFC-ACDP-0014, 0.3.0)",
-    "anc": "Typed external anchors — content-hash inclusion golden vector, schema rejections, and scheme-unaware verifier tolerance (RFC-ACDP-0016, 0.5.0)"
+    "anc": "Typed external anchors — content-hash inclusion golden vector, schema rejections, scheme-unaware verifier tolerance, and the conditional seam.decision scheme-aware hook (RFC-ACDP-0016, 0.5.0)"
   }
 }
