@@ -1,0 +1,148 @@
+{
+  "id": "anc-006",
+  "description": "(0.5.0, conditional) The RFC-ACDP-0016 §6 verification hook for the seam.decision scheme. A scheme-aware verifier recomputes the Seam record digest v4 from a disclosed sealed record and compares it to the anchor's content_hash. The construction is owned and versioned by Seam, not ACDP (registries/anchor-schemes.md); this fixture pins the scheme owner's published known-answer vectors so a Seam-aware ACDP verifier can test its hook. A verifier that does not resolve seam.decision anchors is unaffected and follows anc-005.",
+  "tags": [
+    "anchors",
+    "verification",
+    "scheme-aware",
+    "seam",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer"
+  ],
+  "input": {
+    "source": {
+      "scheme_owner": "Seam (zer07labs/seam-runtime)",
+      "release_tag": "seam-api-v0.48.0",
+      "commit": "32f8196ca41432e04617713048db02c8e07a843c",
+      "construction": "https://github.com/zer07labs/seam-runtime/blob/seam-api-v0.48.0/docs/specs/seam-event.v1.md#record-digest",
+      "vector_file": "https://github.com/zer07labs/seam-runtime/blob/seam-api-v0.48.0/crates/seam-client/tests/conformance_vectors.json",
+      "vector_file_sha256": "4b944ff116c2885ee52bf29ecbea39eba7b3574607bf6bb0b356c4c99cecf022",
+      "note": "inputs and digest_hex are copied verbatim from the vector file at the tagged commit. preimage_hex was recomputed independently from the spec text (frame(x) = le32(len(x)) || x; opt(x) = 0x00 or 0x01 || frame(x)) and reproduces digest_hex for both vectors."
+    },
+    "retrieved_body_summary": "A valid, signed body whose anchors array carries the anchor shown in each scenario. Signature and content_hash are otherwise valid (as in anc-001/anc-004).",
+    "verifier_under_test": "A conformant acdp-verify implementation with a scheme-aware resolution hook registered for seam.decision, given the disclosed sealed-record inputs for the scenario."
+  },
+  "scenarios": [
+    {
+      "name": "A — known vector, policy bound",
+      "vector": {
+        "seam_vector": "record_digest_v4",
+        "inputs": {
+          "domain": "seam.audit.record-digest.v4",
+          "decision_id": "dec:conformance",
+          "tenant": "acme",
+          "namespace": "fraud",
+          "ciphertext_hex": "636f6e666f726d616e63652d636970686572746578742d0001ff",
+          "ciphertext_digest_hex": "67d9f6952981d85f7a2cabb0d5468e6934dc63ec55b480f18339277afc7635a6",
+          "sealed_at": 1700000000000,
+          "outcome": "Resolved",
+          "mode": "decision.v1",
+          "policy_version": null,
+          "supersedes": null,
+          "context_digest_hex": "74b9b01c2fba7cd65f4a677e9a1be80b663f64421440a0e1c66a3f9dc05d7d69",
+          "participation_digest_hex": "66c8ae346f5284cc62cf29e6681b16a98db7a3bba458a4d494273a267ba69c02",
+          "policy_rules_digest_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+          "classification": "Internal",
+          "participants": [
+            "fraud-v3",
+            "risk-v2"
+          ],
+          "participants_digest_hex": "58b8fac506c099ccb4af417df40f632c69e614fb03531e8e21570a90caf7fc4a",
+          "trust_basis_commitment": "hmac-sha256:0a1b2c3d:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+          "auth_method": "aitp-pinned-handshake",
+          "schema_version": 4
+        },
+        "preimage_hex": "1b0000007365616d2e61756469742e7265636f72642d6469676573742e76340f0000006465633a636f6e666f726d616e63650400000061636d650500000066726175642000000067d9f6952981d85f7a2cabb0d5468e6934dc63ec55b480f18339277afc7635a6080000000068e5cf8b010000080000005265736f6c766564010b0000006465636973696f6e2e763100002000000074b9b01c2fba7cd65f4a677e9a1be80b663f64421440a0e1c66a3f9dc05d7d692000000066c8ae346f5284cc62cf29e6681b16a98db7a3bba458a4d494273a267ba69c0201200000005a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a08000000496e7465726e616c2000000058b8fac506c099ccb4af417df40f632c69e614fb03531e8e21570a90caf7fc4a55000000686d61632d7368613235363a30613162326333643a6364636463646364636463646364636463646364636463646364636463646364636463646364636463646364636463646364636463646364636463646364636415000000616974702d70696e6e65642d68616e647368616b650400000004000000",
+        "digest_hex": "7f230b80d79b8af05be44507c7356032b4e93d32818dbf97ef530786bc4e6004",
+        "anchor": {
+          "scheme": "seam.decision",
+          "content_hash": "sha256:7f230b80d79b8af05be44507c7356032b4e93d32818dbf97ef530786bc4e6004"
+        }
+      },
+      "expected": {
+        "outcome": "success",
+        "anchor_verdict": "match",
+        "body_verification_verdict": "valid",
+        "behavior": "SHA-256 over preimage_hex equals digest_hex, and \"sha256:\" + digest_hex equals the anchor's content_hash."
+      }
+    },
+    {
+      "name": "B — known vector, no policy bound (policy_rules_digest absent, encoded as a single 0x00)",
+      "vector": {
+        "seam_vector": "record_digest_v4_absent_policy",
+        "inputs": {
+          "domain": "seam.audit.record-digest.v4",
+          "decision_id": "dec:conformance",
+          "tenant": "acme",
+          "namespace": "fraud",
+          "ciphertext_hex": "636f6e666f726d616e63652d636970686572746578742d0001ff",
+          "ciphertext_digest_hex": "67d9f6952981d85f7a2cabb0d5468e6934dc63ec55b480f18339277afc7635a6",
+          "sealed_at": 1700000000000,
+          "outcome": "Resolved",
+          "mode": "decision.v1",
+          "policy_version": null,
+          "supersedes": null,
+          "context_digest_hex": "74b9b01c2fba7cd65f4a677e9a1be80b663f64421440a0e1c66a3f9dc05d7d69",
+          "participation_digest_hex": "66c8ae346f5284cc62cf29e6681b16a98db7a3bba458a4d494273a267ba69c02",
+          "policy_rules_digest_hex": null,
+          "classification": "Internal",
+          "participants": [
+            "fraud-v3",
+            "risk-v2"
+          ],
+          "participants_digest_hex": "58b8fac506c099ccb4af417df40f632c69e614fb03531e8e21570a90caf7fc4a",
+          "trust_basis_commitment": "hmac-sha256:0a1b2c3d:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+          "auth_method": "aitp-pinned-handshake",
+          "schema_version": 4
+        },
+        "preimage_hex": "1b0000007365616d2e61756469742e7265636f72642d6469676573742e76340f0000006465633a636f6e666f726d616e63650400000061636d650500000066726175642000000067d9f6952981d85f7a2cabb0d5468e6934dc63ec55b480f18339277afc7635a6080000000068e5cf8b010000080000005265736f6c766564010b0000006465636973696f6e2e763100002000000074b9b01c2fba7cd65f4a677e9a1be80b663f64421440a0e1c66a3f9dc05d7d692000000066c8ae346f5284cc62cf29e6681b16a98db7a3bba458a4d494273a267ba69c020008000000496e7465726e616c2000000058b8fac506c099ccb4af417df40f632c69e614fb03531e8e21570a90caf7fc4a55000000686d61632d7368613235363a30613162326333643a6364636463646364636463646364636463646364636463646364636463646364636463646364636463646364636463646364636463646364636463646364636415000000616974702d70696e6e65642d68616e647368616b650400000004000000",
+        "digest_hex": "cccd4e1c41ff7f2e67809058132690e7d5aeda08097436a9e5fe0ae985064c3a",
+        "anchor": {
+          "scheme": "seam.decision",
+          "content_hash": "sha256:cccd4e1c41ff7f2e67809058132690e7d5aeda08097436a9e5fe0ae985064c3a"
+        }
+      },
+      "expected": {
+        "outcome": "success",
+        "anchor_verdict": "match",
+        "body_verification_verdict": "valid",
+        "behavior": "An absent optional slot is the single byte 0x00, not an empty frame; the preimage is 36 bytes shorter than scenario A's."
+      }
+    },
+    {
+      "name": "C — anchor names a different digest",
+      "input": {
+        "record": "scenario A's inputs",
+        "anchor": {
+          "scheme": "seam.decision",
+          "content_hash": "sha256:cccd4e1c41ff7f2e67809058132690e7d5aeda08097436a9e5fe0ae985064c3a"
+        }
+      },
+      "expected": {
+        "outcome": "anchor_invalid",
+        "anchor_verdict": "mismatch",
+        "body_verification_verdict": "valid",
+        "behavior": "The recomputed digest (scenario A) differs from the anchor's content_hash. The verifier treats the body as anchor-invalid for its own purpose only; signature, content_hash, receipts and log evidence keep their independent verdicts (RFC-ACDP-0016 §6)."
+      }
+    },
+    {
+      "name": "D — unknown record-digest version",
+      "input": {
+        "record": "scenario A's inputs with schema_version = 3",
+        "anchor": {
+          "scheme": "seam.decision",
+          "content_hash": "sha256:7f230b80d79b8af05be44507c7356032b4e93d32818dbf97ef530786bc4e6004"
+        }
+      },
+      "expected": {
+        "outcome": "anchor_cannot_verify",
+        "anchor_verdict": "cannot_verify",
+        "body_verification_verdict": "valid",
+        "behavior": "The record's schema_version selects the construction. A version the verifier does not ship is cannot-verify, never a fallback to v4 or any other formula (registries/anchor-schemes.md, seam.decision notes: Versioning). Not a mismatch, and no effect on the body's ACDP-level verdict."
+      }
+    }
+  ],
+  "notes": "Behavioral; not executed by scripts/conformance-runner.py, which never implements a scheme owner's construction. Conditional: REQUIRED only for a 0.5.0 consumer that resolves seam.decision anchors. Vectors are deliberately kept under scenarios[].vector, not a top-level vectors array, which would route the fixture to the runner's executed anc-* content-hash path."
+}

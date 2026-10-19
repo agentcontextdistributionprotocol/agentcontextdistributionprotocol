@@ -2,6 +2,17 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Registry and conformance: `seam.decision` cites Seam record digest v4; conditional `anc-006` (#76) — 2026-10-19
+
+**Registry entry and one conditional behavioral fixture. No body field, schema `$id`, JCS rule, content-hash, signature semantic, or RFC text changed.** Closes the deferred items 1–2 of #76 now that Seam's protocol-pass release is out.
+
+- **`registries/anchor-schemes.md`.** The `seam.decision` row cites the record-digest section of `seam-event.v1.md` at Seam release tag `seam-api-v0.48.0` (commit `32f8196`) in place of the provisional citation, and moves `Provisional` → `Stable`, as its notes said it would once the definition clause and a golden vector were published. The label `seam.audit.record-digest` and the `"sha256:"` + lowercase-hex rendering are unchanged.
+- **Conformance.** Fixture count: 158 → 159. New behavioral fixture `anc-006`, the RFC-ACDP-0016 §6 scheme-aware hook for `seam.decision`, REQUIRED only for a 0.5.0 consumer that resolves `seam.decision` anchors.
+  - It pins Seam's `record_digest_v4` and `record_digest_v4_absent_policy` known-answer vectors verbatim, with source tag, commit and file hash.
+  - It adds each preimage in hex, recomputed independently from the spec text; both reproduce Seam's digests.
+  - Scenarios: match (with and without a bound policy), mismatch (anchor-invalid for the verifier's own purpose, body still valid), and unknown `schema_version` (cannot-verify, never a fallback).
+  - The runner does not execute it: ACDP never implements a scheme owner's construction.
+
 ## v0.5.0 — docs refresh: `acdp-rs` 0.15.1, `acdp-verifier-py` at `85088a6`, `acdp-registry-rs` 0.5.3 — 2026-10-18
 
 **Non-normative docs only. No body field, schema `$id`, JCS rule, content-hash, signature semantic, or RFC text changed.** Brings `docs/version-matrix.md` up to date with the sibling releases that adopted the 2026-10-16 consumer-verification amendments, linking sibling-owned detail rather than copying it.
