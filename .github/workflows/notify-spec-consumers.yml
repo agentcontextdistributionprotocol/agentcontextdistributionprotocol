@@ -1,7 +1,7 @@
 name: notify spec consumers
 
 # When conformance-relevant spec files change on main, notify repos that pin the
-# spec by SHA (acdp-rs, acdp-verifier-py, acdp-registry-rs) so each opens a held
+# spec by SHA (acdp-rs, acdp-verifier-py, acdp-registry-rs, acdp-control-plane) so each opens a held
 # "adopt new spec" PR via acdp-ci's bump-spec-ref. App-authenticated (org
 # secrets) — no PAT.
 
@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        repo: [acdp-rs, acdp-verifier-py, acdp-registry-rs]
+        repo: [acdp-rs, acdp-verifier-py, acdp-registry-rs, acdp-control-plane]
     steps:
       - name: Mint token for ${{ matrix.repo }}
         id: app
