@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.1.0/acdp-change.schema.json",
+  "title": "ACDP Change Entry (0.5.0, Draft)",
+  "description": "acdp-change/1: one reliance-changing change in a registry's GET /changes feed, carrying the existing signed evidence for it verbatim (RFC-ACDP-0018 §4). Evidence, not a verdict: consumers verify it per RFC-ACDP-0018 §7. Unsigned itself; adds no new signature.",
+  "type": "object",
+  "required": [
+    "change_version",
+    "seq",
+    "kind",
+    "ctx_id",
+    "lineage_id",
+    "agent_id",
+    "recorded_at"
+  ],
+  "properties": {
+    "change_version": {
+      "const": "acdp-change/1"
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Registry-wide, strictly increasing, never reused; gaps permitted (RFC-ACDP-0018 §5.3)."
+    },
+    "kind": {
+      "enum": [
+        "lifecycle",
+        "superseded",
+        "key_revocation"
+      ]
+    },
+    "ctx_id": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id",
+      "description": "The affected context (RFC-ACDP-0018 §3)."
+    },
+    "lineage_id": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/lineage_id"
+    },
+    "agent_id": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did",
+      "description": "The producer whose reliance the change touches; for key_revocation, the revoked key's controller (RFC-ACDP-0018 §4)."
+    },
+    "recorded_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+      "description": "Equals event_receipt.accepted_at (lifecycle) or registry_receipt.created_at (superseded, key_revocation) (RFC-ACDP-0018 §4)."
+    },
+    "event": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-lifecycle-event.schema.json"
+    },
+    "event_receipt": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-event-receipt.schema.json"
+    },
+    "superseded_by": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id"
+    },
+    "registry_receipt": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-registry-receipt.schema.json"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "lifecycle"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "event",
+          "event_receipt"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "superseded_by"
+              ]
+            },
+            {
+              "required": [
+                "registry_receipt"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "superseded"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "superseded_by",
+          "registry_receipt"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "event"
+              ]
+            },
+            {
+              "required": [
+                "event_receipt"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "key_revocation"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "registry_receipt"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "event"
+              ]
+            },
+            {
+              "required": [
+                "event_receipt"
+              ]
+            },
+            {
+              "required": [
+                "superseded_by"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "additionalProperties": false,
+  "$comment": "Closed (RFC-ACDP-0007 §3.3.1 openness map): a change entry is a fixed envelope around signed objects. The kind vocabulary is closed in acdp-change/1; a new kind requires acdp-change/2."
+}

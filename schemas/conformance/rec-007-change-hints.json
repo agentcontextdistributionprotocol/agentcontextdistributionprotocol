@@ -1,0 +1,75 @@
+{
+  "id": "rec-007",
+  "description": "(0.5.0) Change-hint subscriptions and webhooks (RFC-ACDP-0018 §8). Scenarios A–C and F–H are registry-side (acdp-registry-events); D–E are receiver-side (acdp-consumer-recall).",
+  "tags": [
+    "rec",
+    "registry",
+    "consumer",
+    "0.5.0",
+    "events",
+    "ssrf"
+  ],
+  "applies_to_profiles": [
+    "acdp-registry-events",
+    "acdp-consumer-recall"
+  ],
+  "input": {
+    "requester": "did:web:consumer.example.com",
+    "other_requester": "did:web:other.example.com",
+    "request": "examples/subscription-request/golden-subscription-request.json"
+  },
+  "scenarios": [
+    {
+      "name": "A — create",
+      "expected": {
+        "behavior": "Authenticated POST /subscriptions returns 201 with acdp-subscription.schema.json, status active, and a secret of >= 32 bytes; GET returns the same object without secret; DELETE returns 204, then GET is not_found."
+      }
+    },
+    {
+      "name": "B — owner scoping",
+      "expected": {
+        "behavior": "other_requester GETs or DELETEs the subscription; unauthenticated POST gives not_authorized (403).",
+        "error_code": "not_found",
+        "http_status": 404
+      }
+    },
+    {
+      "name": "C — hint content",
+      "expected": {
+        "behavior": "After a matching visible change, the callback receives an acdp-change-hint/1 body with no change content and a valid ACDP-Signature t=…,v1=HMAC-SHA-256(secret, t + '.' + body)."
+      }
+    },
+    {
+      "name": "D — receiver verification",
+      "expected": {
+        "behavior": "A receiver rejects a hint with a wrong v1, and one whose t is more than 300 s from its clock."
+      }
+    },
+    {
+      "name": "E — receiver pulls own cursor",
+      "expected": {
+        "behavior": "On a hint the receiver requests GET /changes?since=<its persisted cursor> with the subscription filter, never head_cursor."
+      }
+    },
+    {
+      "name": "F — SSRF at creation",
+      "expected": {
+        "behavior": "callback_url http://…, https://127.0.0.1/…, https://[::1]/…, https://169.254.169.254/…, or a host resolving to RFC 1918 space is rejected.",
+        "error_code": "schema_violation",
+        "http_status": 400
+      }
+    },
+    {
+      "name": "G — SSRF at delivery",
+      "expected": {
+        "behavior": "A callback host that re-resolves to a private address after creation receives no delivery; redirects are not followed."
+      }
+    },
+    {
+      "name": "H — visibility",
+      "expected": {
+        "behavior": "A change not visible to the owner produces no hint."
+      }
+    }
+  ]
+}

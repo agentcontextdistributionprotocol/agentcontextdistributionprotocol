@@ -102,10 +102,30 @@
           "type": "integer",
           "minimum": 1,
           "description": "OPTIONAL (0.3.0, RFC-ACDP-0007 §3.2, RFC-ACDP-0008 §4.3): the nominal per-agent publish ceiling this registry enforces on POST /contexts, in requests per minute. Advisory for producer pacing; its presence does NOT relax the RFC-ACDP-0008 §4.3 requirements (per-agent rate limiting is REQUIRED regardless, and 429 responses MUST carry Retry-After). The one 0.3.0 addition to this closed sub-object — strict pre-0.3.0 validators of `limits` will reject documents carrying it."
+        },
+        "change_retention_seconds": {
+          "type": "integer",
+          "minimum": 2592000,
+          "description": "(0.5.0, Draft) How long this registry retains GET /changes entries and honours feed cursors pointing at them. MUST be advertised with acdp-registry-changes; at least 30 days (RFC-ACDP-0018 §5.4, §9)."
+        },
+        "max_change_filters": {
+          "type": "integer",
+          "minimum": 100,
+          "description": "(0.5.0, Draft) Maximum total ctx_id/lineage_id/agent_id/kind values accepted in one GET /changes request or subscription filter. MUST be advertised with acdp-registry-changes (RFC-ACDP-0018 §5.1, §9)."
+        },
+        "max_changes_page": {
+          "type": "integer",
+          "minimum": 100,
+          "description": "(0.5.0, Draft) Largest GET /changes limit this registry accepts. MUST be advertised with acdp-registry-changes (RFC-ACDP-0018 §5.1, §9)."
+        },
+        "max_subscriptions_per_requester": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "(0.5.0, Draft) Maximum change-hint subscriptions one requester DID may hold. MUST be advertised with acdp-registry-events (RFC-ACDP-0018 §8.1, §9)."
         }
       },
       "additionalProperties": false,
-      "$comment": "Closed sub-object (RFC-ACDP-0007 §3.3.1, fixture schema-010). v0.1.0 defines max_payload_bytes, max_embedded_bytes, idempotency_key_ttl_seconds; 0.3.0 adds the optional max_publish_per_minute and nothing else."
+      "$comment": "Closed sub-object (RFC-ACDP-0007 §3.3.1, fixture schema-010). v0.1.0 defines max_payload_bytes, max_embedded_bytes, idempotency_key_ttl_seconds; 0.3.0 adds the optional max_publish_per_minute; 0.5.0 (Draft) adds the optional RFC-ACDP-0018 change-feed and subscription limits."
     }
   },
   "additionalProperties": true,

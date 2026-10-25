@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.1.0/acdp-change-hint.schema.json",
+  "title": "ACDP Change Hint (0.5.0, Draft)",
+  "description": "acdp-change-hint/1: webhook body telling a subscriber that new matching entries exist; carries no change content (RFC-ACDP-0018 §8.2). Authenticated by the ACDP-Signature HMAC header, which conveys no producer or registry authenticity. The receiver pulls GET /changes from its OWN persisted cursor; head_cursor is informational.",
+  "type": "object",
+  "required": [
+    "hint_version",
+    "subscription_id",
+    "registry_authority",
+    "head_cursor"
+  ],
+  "properties": {
+    "hint_version": {
+      "const": "acdp-change-hint/1"
+    },
+    "subscription_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "registry_authority": {
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/hostname"
+    },
+    "head_cursor": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "description": "Opaque, durable feed cursor (RFC-ACDP-0018 §5.4)."
+    }
+  },
+  "additionalProperties": false
+}

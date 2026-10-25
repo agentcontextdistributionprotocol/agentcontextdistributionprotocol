@@ -1,0 +1,71 @@
+{
+  "id": "rec-003",
+  "description": "(0.5.0) Watch-filter semantics (RFC-ACDP-0018 §5.1, §6). Behavioral, registry-side.",
+  "tags": [
+    "rec",
+    "registry",
+    "0.5.0",
+    "changes"
+  ],
+  "applies_to_profiles": [
+    "acdp-registry-changes"
+  ],
+  "input": {
+    "registry": "registry.example.com",
+    "capabilities": {
+      "profiles": [
+        "acdp-registry-core",
+        "acdp-registry-receipts",
+        "acdp-registry-lifecycle",
+        "acdp-registry-changes"
+      ],
+      "acdp_version": "0.5.0",
+      "limits": {
+        "change_retention_seconds": 2592000,
+        "max_change_filters": 100,
+        "max_changes_page": 100
+      }
+    },
+    "setup": "Producer P publishes X (lineage Lx) and W (lineage Lw); X is retracted; W is superseded by W2; P's key is revoked by R; an unrelated producer Q's context V is retracted."
+  },
+  "scenarios": [
+    {
+      "name": "A — ctx_id",
+      "expected": {
+        "behavior": "ctx_id=X returns X's retraction AND R's key_revocation entry (same agent_id as X), nothing else."
+      }
+    },
+    {
+      "name": "B — lineage_id",
+      "expected": {
+        "behavior": "lineage_id=Lw returns W's superseded entry only."
+      }
+    },
+    {
+      "name": "C — OR across members",
+      "expected": {
+        "behavior": "ctx_id=V&lineage_id=Lw returns V's retraction and W's supersession."
+      }
+    },
+    {
+      "name": "D — kind AND",
+      "expected": {
+        "behavior": "agent_id=P&kind=key_revocation returns R's entry only."
+      }
+    },
+    {
+      "name": "E — no watch values",
+      "expected": {
+        "behavior": "kind=lifecycle alone returns X's and V's retractions (every visible lifecycle entry)."
+      }
+    },
+    {
+      "name": "F — over limit",
+      "expected": {
+        "behavior": "101 total filter values against max_change_filters=100 fails.",
+        "error_code": "schema_violation",
+        "http_status": 400
+      }
+    }
+  ]
+}

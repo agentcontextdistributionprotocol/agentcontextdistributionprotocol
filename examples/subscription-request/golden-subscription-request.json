@@ -1,0 +1,12 @@
+{
+  "filter": {
+    "lineage_id": [
+      "lin:sha256:a3cb6a87c1601b9f6dddd8d54709b01df3e05f1095b43e6d58e3a862bf9906fa"
+    ],
+    "kind": [
+      "lifecycle",
+      "key_revocation"
+    ]
+  },
+  "callback_url": "https://consumer.example.com/acdp/hints"
+}

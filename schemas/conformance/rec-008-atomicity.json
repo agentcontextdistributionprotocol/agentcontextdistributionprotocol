@@ -1,0 +1,52 @@
+{
+  "id": "rec-008",
+  "description": "(0.5.0) Feed entries commit atomically with their change (RFC-ACDP-0018 §5.3). Behavioral, registry-side; partly a self-test obligation.",
+  "tags": [
+    "rec",
+    "registry",
+    "0.5.0",
+    "changes",
+    "lifecycle"
+  ],
+  "applies_to_profiles": [
+    "acdp-registry-changes"
+  ],
+  "input": {
+    "registry": "registry.example.com",
+    "capabilities": {
+      "profiles": [
+        "acdp-registry-core",
+        "acdp-registry-receipts",
+        "acdp-registry-lifecycle",
+        "acdp-registry-changes"
+      ],
+      "acdp_version": "0.5.0",
+      "limits": {
+        "change_retention_seconds": 2592000,
+        "max_change_filters": 100,
+        "max_changes_page": 100
+      }
+    },
+    "setup": "Concurrent retract/republish of X interleaved with supersessions of Y."
+  },
+  "scenarios": [
+    {
+      "name": "A — no change without entry",
+      "expected": {
+        "behavior": "Every element of every context's registry_state.event_receipts has exactly one lifecycle entry with that event_id; every superseding body has one superseded entry."
+      }
+    },
+    {
+      "name": "B — no entry without change",
+      "expected": {
+        "behavior": "Every feed entry's evidence resolves to a stored event, receipt or body."
+      }
+    },
+    {
+      "name": "C — order",
+      "expected": {
+        "behavior": "For one context, lifecycle entries appear in ascending event_receipt.index order."
+      }
+    }
+  ]
+}

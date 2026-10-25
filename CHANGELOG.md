@@ -2,6 +2,14 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Draft RFC-ACDP-0018: retraction recall — 2026-10-25
+
+**New Draft RFC plus additive Draft-line wire objects. No existing body field, schema `$id`, JCS rule, content-hash, or signature semantic changed; every existing body, receipt and signature stays valid.**
+
+- **RFC-ACDP-0018 (Draft, acdp/0.5.0).** Retraction recall. `GET /changes` is a sequenced, durable feed with one `acdp-change/1` entry per reliance-changing change (lifecycle event, supersession, key revocation). Each entry carries the existing signed evidence verbatim, so consumers verify rather than believe. Watch filters by `ctx_id`, `lineage_id`, `agent_id` and `kind` are stateless; dependents are found via `derived_from` search or `verify_chain`. Optional webhooks (`acdp-change-hint/1`) carry no content and only say "pull now", authenticated by an `ACDP-Signature` HMAC header with RFC-ACDP-0006 §7 SSRF rules on callbacks.
+- **Profiles (Draft, OPTIONAL).** `acdp-registry-changes`, `acdp-registry-events` (the name RFC-ACDP-0009 §2.10 reserved) and `acdp-consumer-recall`, with behavioral fixtures `rec-001`..`rec-008`.
+- **Schemas.** New `acdp-change`, `acdp-changes-response`, `acdp-change-hint`, `acdp-subscription-request` and `acdp-subscription`; four optional `capabilities.limits` members (`change_retention_seconds`, `max_change_filters`, `max_changes_page`, `max_subscriptions_per_requester`). No new error codes.
+
 ## v0.5.0 — Draft RFC-ACDP-0017: chain verification and evidence bundles — 2026-10-24
 
 **New Draft RFC plus additive Draft-line wire members. No existing body field, schema `$id`, JCS rule, content-hash, or signature semantic changed; every existing body, receipt and signature stays valid.**

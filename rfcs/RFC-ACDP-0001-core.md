@@ -651,6 +651,10 @@ Cosignature-aware consumers verify cosignatures per RFC-ACDP-0015 §8 whenever t
 
 An OPTIONAL consumer profile, prerequisite `acdp-consumer`, for consumers that verify a whole `derived_from` graph offline and/or as of a past instant from an `acdp-evidence/1` bundle. Consumers claiming it implement `verify_chain` per RFC-ACDP-0017 §6–§9, emit the deterministic `acdp-chain-verdict/1` object, verify lifecycle event receipts per RFC-ACDP-0017 §10.3, and pass `chain-001..010` (RFC-ACDP-0017 §13–§14). Being Draft-line, this entry is not frozen.
 
+#### `acdp-registry-changes`, `acdp-registry-events`, `acdp-consumer-recall` *(0.5.0, Draft)*
+
+OPTIONAL retraction-recall profiles (RFC-ACDP-0018 §9). `acdp-registry-changes` (prerequisites `acdp-registry-lifecycle` and `acdp-registry-receipts`) serves `GET /changes`, a sequenced feed of `acdp-change/1` entries, one per reliance-changing change, carrying the existing signed evidence, and passes `rec-001`..`005` and `rec-008`. `acdp-registry-events` (prerequisite `acdp-registry-changes`, the name RFC-ACDP-0009 §2.10 reserved) adds owner-scoped webhook subscriptions whose HMAC-authenticated hints carry no change content, and passes `rec-007`. `acdp-consumer-recall` (prerequisite `acdp-consumer`) verifies every entry before acting on it and passes `rec-006`. Being Draft-line, these entries are not frozen.
+
 ### 9.2 Verification profile names (RECOMMENDED)
 
 v0.1.0 verification is always strict for any conformance claim — §5.11 ("v0.1.0 strict verification profile") defines the strict pipeline and requires that it be the non-loosenable default. SDKs MAY additionally expose relaxed or diagnostic verification modes for debugging and test harnesses. When they do, they SHOULD use the following identifiers so documentation, logs, and error messages are consistent across language implementations:

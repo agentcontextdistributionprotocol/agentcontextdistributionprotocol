@@ -1,0 +1,71 @@
+{
+  "id": "rec-001",
+  "description": "(0.5.0) Changes-feed mechanics (RFC-ACDP-0018 §5.2–§5.4). Behavioral, registry-side.",
+  "tags": [
+    "rec",
+    "registry",
+    "0.5.0",
+    "changes"
+  ],
+  "applies_to_profiles": [
+    "acdp-registry-changes"
+  ],
+  "input": {
+    "registry": "registry.example.com",
+    "capabilities": {
+      "profiles": [
+        "acdp-registry-core",
+        "acdp-registry-receipts",
+        "acdp-registry-lifecycle",
+        "acdp-registry-changes"
+      ],
+      "acdp_version": "0.5.0",
+      "limits": {
+        "change_retention_seconds": 2592000,
+        "max_change_filters": 100,
+        "max_changes_page": 100
+      }
+    },
+    "setup": "Three reliance-changing changes committed in order: retract X, supersede Y, retract Z."
+  },
+  "scenarios": [
+    {
+      "name": "A — ascending seq",
+      "expected": {
+        "behavior": "GET /changes (no since) returns the three entries in strictly ascending seq; each validates against acdp-change.schema.json; response validates against acdp-changes-response.schema.json."
+      }
+    },
+    {
+      "name": "B — next_cursor always present",
+      "expected": {
+        "behavior": "GET /changes?limit=2 returns two entries, has_more: true and a next_cursor; following it returns the third entry, has_more: false and a next_cursor still present."
+      }
+    },
+    {
+      "name": "C — polling at the head",
+      "expected": {
+        "behavior": "GET /changes?since=<final next_cursor> returns changes: [], has_more: false, and a next_cursor; after a fourth change is committed the same request returns exactly that entry."
+      }
+    },
+    {
+      "name": "D — since=head",
+      "expected": {
+        "behavior": "GET /changes?since=head returns changes: [] and a cursor at the head; nothing committed before the request ever appears after it."
+      }
+    },
+    {
+      "name": "E — immutability",
+      "expected": {
+        "behavior": "Reading seq N twice (from separate cursor sequences) returns byte-identical JCS objects."
+      }
+    },
+    {
+      "name": "F — bad request",
+      "expected": {
+        "behavior": "limit=0, or kind=bogus, fails.",
+        "error_code": "schema_violation",
+        "http_status": 400
+      }
+    }
+  ]
+}

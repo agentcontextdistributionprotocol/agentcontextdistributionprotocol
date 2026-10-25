@@ -1,0 +1,70 @@
+{
+  "id": "rec-002",
+  "description": "(0.5.0) Exactly one entry per reliance-changing change and none otherwise; evidence verbatim (RFC-ACDP-0018 §3, §4). Behavioral, registry-side.",
+  "tags": [
+    "rec",
+    "registry",
+    "0.5.0",
+    "changes",
+    "lifecycle"
+  ],
+  "applies_to_profiles": [
+    "acdp-registry-changes"
+  ],
+  "input": {
+    "registry": "registry.example.com",
+    "capabilities": {
+      "profiles": [
+        "acdp-registry-core",
+        "acdp-registry-receipts",
+        "acdp-registry-lifecycle",
+        "acdp-registry-changes"
+      ],
+      "acdp_version": "0.5.0",
+      "limits": {
+        "change_retention_seconds": 2592000,
+        "max_change_filters": 100,
+        "max_changes_page": 100
+      }
+    },
+    "setup": "Fresh registry; record the feed head before each step."
+  },
+  "scenarios": [
+    {
+      "name": "A — retract",
+      "expected": {
+        "behavior": "POST /contexts/X/retract appends one lifecycle entry: event byte-identical to registry_state.lifecycle_events[i], event_receipt byte-identical to registry_state.event_receipts[i], recorded_at = event_receipt.accepted_at."
+      }
+    },
+    {
+      "name": "B — republish",
+      "expected": {
+        "behavior": "POST /contexts/X/republish appends one lifecycle entry (event_type republished)."
+      }
+    },
+    {
+      "name": "C — supersede",
+      "expected": {
+        "behavior": "Publishing Y2 with supersedes = Y1 appends one superseded entry with ctx_id Y1, superseded_by Y2, registry_receipt = Y2's receipt, recorded_at = its created_at, lineage_id = Y1's lineage."
+      }
+    },
+    {
+      "name": "D — key revocation",
+      "expected": {
+        "behavior": "Accepting a key-revocation context R appends one key_revocation entry with ctx_id R, registry_receipt = R's receipt, agent_id = metadata.revoked_key_controller when present else R.agent_id."
+      }
+    },
+    {
+      "name": "E — plain publish",
+      "expected": {
+        "behavior": "Publishing a body with no supersedes and type other than key-revocation appends nothing."
+      }
+    },
+    {
+      "name": "F — idempotent retry",
+      "expected": {
+        "behavior": "A byte-identical retry of the retraction (HTTP 200, no new receipt) appends nothing."
+      }
+    }
+  ]
+}

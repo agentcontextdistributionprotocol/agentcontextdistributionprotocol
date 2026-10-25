@@ -140,6 +140,38 @@ For consumers that verify a whole `derived_from` graph offline and/or as of a pa
 
 **Profile commitment.** No new error codes: `verify_chain` returns a verdict object, not an error envelope. A verifier that cannot produce a deterministic verdict (e.g. a fired time budget) MUST report `control: "timeout"` and `complete: false` rather than a partial verdict presented as complete.
 
+### `acdp-registry-changes` *(0.5.0)*
+
+Retraction recall, the feed (RFC-ACDP-0018 §3–§6). Draft: the profile is OPTIONAL. Prerequisites `acdp-registry-lifecycle` and `acdp-registry-receipts`, at `acdp_version` ≥ 0.5.0.
+
+| | Required (in addition to `acdp-registry-lifecycle`) |
+|---|---|
+| **Endpoints** | `GET /changes` |
+| **Behavioral requirements** | One `acdp-change/1` entry per reliance-changing change (lifecycle event, supersession, key revocation) and none otherwise, carrying the existing signed evidence verbatim (§3, §4); registry-wide strictly increasing `seq`, committed atomically with the change (§5.3); `next_cursor` always present, durable cursors retained ≥ `change_retention_seconds` (§5.4); stateless watch filters (§6); visibility no wider than retrieval (§5.5); `capabilities.limits` carries `change_retention_seconds`, `max_change_filters`, `max_changes_page` |
+| **Conformance fixtures** | `rec-001` (feed mechanics), `rec-002` (one entry per change, evidence verbatim), `rec-003` (watch filters), `rec-004` (visibility), `rec-005` (durable cursors and retention), `rec-008` (atomicity) |
+| **`not_implemented` permitted on** | None |
+
+### `acdp-registry-events` *(0.5.0)*
+
+Change hints (RFC-ACDP-0018 §8), under the name RFC-ACDP-0009 §2.10 reserved. Draft and OPTIONAL. Prerequisite `acdp-registry-changes`.
+
+| | Required (in addition to `acdp-registry-changes`) |
+|---|---|
+| **Endpoints** | `POST /subscriptions`, `GET /subscriptions/{subscription_id}`, `DELETE /subscriptions/{subscription_id}` |
+| **Behavioral requirements** | Authenticated, owner-scoped subscriptions (another requester's id is `not_found`); `secret` shown once; `acdp-change-hint/1` bodies carry no change content and are authenticated by `ACDP-Signature`; hints only for entries visible to the owner; RFC-ACDP-0006 §7 SSRF rules at creation and every delivery (§8.3); `capabilities.limits` carries `max_subscriptions_per_requester` |
+| **Conformance fixtures** | `rec-007` scenarios A–C, F–H |
+| **`not_implemented` permitted on** | None |
+
+### `acdp-consumer-recall` *(0.5.0)*
+
+For consumers that act on the changes feed (RFC-ACDP-0018 §7). Draft and OPTIONAL. Prerequisite `acdp-consumer`.
+
+| | Required (in addition to `acdp-consumer`) |
+|---|---|
+| **Behavioral requirements** | A change entry is a hint until verified: `lifecycle` via RFC-ACDP-0013 §5 and RFC-ACDP-0017 §10.3, then the full-list retraction state; `superseded` via retrieval and the `supersedes`/lineage check; `key_revocation` via RFC-ACDP-0014 §5–§7. A failing entry changes nothing. Deduplicate by (authority, `seq`); on `cursor_expired` re-verify every watched context. On a hint, verify `ACDP-Signature` and pull from the persisted cursor (§8.2) |
+| **Conformance fixtures** | `rec-006` (consumer verification), `rec-007` scenarios D–E |
+| **`not_implemented` permitted on** | Not applicable — a consumer runs no registry endpoints |
+
 ## Adding a profile
 Open a PR adding a row above and amending RFC-ACDP-0001 §9.1 with the profile's MUST list. Profiles MUST:
 
@@ -147,4 +179,4 @@ Open a PR adding a row above and amending RFC-ACDP-0001 §9.1 with the profile's
 - Carry conformance fixtures sufficient to validate the additional MUSTs.
 - Have a stable name; renames are forbidden.
 
-Reserved future identifiers: `acdp-registry-push` (RFC-ACDP-0009 §2.4), `acdp-registry-walks` (RFC-ACDP-0009 §2.5). (`acdp-registry-receipts` was promoted out of reserved space by RFC-ACDP-0010 in acdp/0.2.0; `acdp-registry-transparency-log` by RFC-ACDP-0012 in acdp/0.3.0; `acdp-log-witness` by RFC-ACDP-0015 in acdp/0.4.0.)
+Reserved future identifiers: `acdp-registry-push` (RFC-ACDP-0009 §2.4), `acdp-registry-walks` (RFC-ACDP-0009 §2.5). (`acdp-registry-events` (RFC-ACDP-0009 §2.10) was defined by RFC-ACDP-0018 on the 0.5.0 Draft line; `acdp-registry-receipts` was promoted out of reserved space by RFC-ACDP-0010 in acdp/0.2.0; `acdp-registry-transparency-log` by RFC-ACDP-0012 in acdp/0.3.0; `acdp-log-witness` by RFC-ACDP-0015 in acdp/0.4.0.)
