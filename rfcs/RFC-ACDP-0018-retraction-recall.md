@@ -182,11 +182,12 @@ A change entry is a **hint until verified**. A consumer claiming `acdp-consumer-
    - Then re-derive the context's retraction state over its **full** event list (RFC-ACDP-0013 §7.1). The consumer either re-retrieves the context (RFC-ACDP-0004 §2) or uses the events it already holds. It MAY apply the entry's event directly only when it already holds and has verified every earlier event of that context (indexes `0` to `index − 1`).
    - When it re-retrieves, the served `lifecycle_events[index]` MUST be byte-equal (under JCS) to the entry's `event`. Otherwise the registry is inconsistent and the entry is rejected.
 2. **`superseded`.**
-   - Retrieve `superseded_by` and verify it under RFC-ACDP-0001 §5.11, including its receipt.
+   - Retrieve `superseded_by` and verify it under RFC-ACDP-0001 §5.11. Verify its served `registry_receipt` under RFC-ACDP-0010 §8; the entry's `registry_receipt` MUST be JCS-equal to it.
    - Confirm that its `supersedes` equals the entry's `ctx_id`, its `lineage_id` equals the entry's `lineage_id`, and its `agent_id` equals the entry's `agent_id` (supersession keeps the producer, RFC-ACDP-0003 §3.1).
    - Whether reliance moves to the new version is the consumer's policy.
 3. **`key_revocation`.**
    - Retrieve the revocation context and verify it under RFC-ACDP-0014 §5 (producer-signed) or §6 (registry-attested).
+   - Verify its served `registry_receipt` under RFC-ACDP-0010 §8, whichever arm applies; the entry's `registry_receipt` MUST be JCS-equal to it. Equality with a verified served receipt is sufficient: the entry's copy needs no separate signature check.
    - Apply RFC-ACDP-0014 §7: the producer scope, the compromise boundary and the earliest-`compromised_since` fold over its lineage.
 
 The remaining rules apply to every kind:
