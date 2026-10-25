@@ -1,0 +1,101 @@
+{
+  "id": "chain-007",
+  "description": "(0.5.0) did:web snapshot selection at T and the observed vs pinned basis (RFC-ACDP-0017 §6.2, §6.3). The producer rotates from K1 to K2 after T; the body is signed by K1 and receipted before T.",
+  "tags": [
+    "chain",
+    "consumer",
+    "offline",
+    "0.5.0",
+    "did-web",
+    "key-rotation"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-chain"
+  ],
+  "input": {
+    "graph": {
+      "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": []
+    },
+    "roots": [
+      "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    ],
+    "as_of": "2026-10-01T00:00:00.000Z",
+    "bundle": {
+      "producer": "did:web:agents.example.com:test-producer",
+      "receipts": {
+        "created_at": {
+          "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": "2026-09-10T00:00:00.000Z"
+        },
+        "key_fingerprint": "K1"
+      },
+      "revocation_discovery": {
+        "did:web:agents.example.com:test-producer": [
+          {
+            "vantage": "registry.example.com",
+            "outcome": "not-revoked-complete",
+            "completed_at": "2026-09-30T00:00:00.000Z"
+          }
+        ]
+      },
+      "did_documents": {
+        "did:web:registry.example.com": "one snapshot observed 2026-08-01T00:00:00.000Z with #receipt-key-1 in verificationMethod",
+        "did:web:agents.example.com:test-producer": [
+          {
+            "observed_at": "2026-09-20T00:00:00.000Z",
+            "assertionMethod": [
+              "#key-1"
+            ]
+          },
+          {
+            "observed_at": "2026-10-10T00:00:00.000Z",
+            "assertionMethod": [
+              "#key-2"
+            ],
+            "verificationMethod": [
+              "#key-1 (retired)",
+              "#key-2"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "name": "A — rotation after T",
+      "expected": {
+        "as_of": {
+          "key": "current (basis observed, evidence_time 2026-09-20T00:00:00.000Z)"
+        },
+        "latest": {
+          "key": "historical_receipt_attested (RFC-ACDP-0010 §10, basis observed)",
+          "caveats_include": [
+            "historical_key",
+            "observed_basis"
+          ]
+        },
+        "drift": [],
+        "note": "Rotation is not compromise (RFC-ACDP-0014 §9): no revoked_after_as_of; the verdict is ok_with_caveats in both passes, so no verdict_changed."
+      }
+    },
+    {
+      "name": "B — only a later snapshot",
+      "expected": {
+        "behavior": "Drop the 2026-09-20 snapshot. As of T: key unknown, reason no_evidence_at_as_of, the signature stage omitted (RFC-ACDP-0017 §7.4), node verdict unknown. Latest: historical_receipt_attested. Drift [as_of_unprovable] only — it explains the verdict change."
+      }
+    },
+    {
+      "name": "C — pinned",
+      "expected": {
+        "behavior": "The caller pins the 2026-09-20 snapshot: as of T key rests on basis pinned, the observed_basis caveat is gone from as_of if nothing else is observed, and options_digest changes."
+      }
+    },
+    {
+      "name": "D — pinned key that does not verify",
+      "expected": {
+        "behavior": "Pinning never overrides a failed check: a pinned snapshot whose key does not verify the signature gives signature: invalid → refused."
+      }
+    }
+  ],
+  "notes": "Behavioral scenarios: the verifier builds the described bundle from real signed bodies, runs verify_chain, and asserts the stage values and verdicts. Test keys: the did:key producer is the sig-001 zero seed (did:key:z6MkiTBz…, not sig-003's 0x42 seed); did:web producer #key-1 is the zero seed and #key-2 is 0x02×32; registry did:web:registry.example.com #receipt-key-1 is 0x11×32. Every bundle whose receipts must verify carries a registry DID snapshot (REG_SNAP) and every producer carries a discovery record unless a scenario removes it. Where present, `vectors` are known answers: the bundle and verdict files plus their pinned digests, executed by scripts/conformance-runner.py (RFC-ACDP-0017 §14)."
+}

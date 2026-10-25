@@ -1,0 +1,72 @@
+{
+  "id": "chain-009",
+  "description": "(0.5.0) Event-receipt issuance and verification (RFC-ACDP-0017 §10, amending RFC-ACDP-0013). Scenarios A–B are registry-side only (lifecycle+receipts registries at acdp_version >= 0.5.0); C–G are consumer-side for acdp-consumer-chain.",
+  "tags": [
+    "chain",
+    "consumer",
+    "offline",
+    "0.5.0",
+    "lifecycle",
+    "receipts",
+    "registry"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-chain"
+  ],
+  "input": {
+    "context": "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "registry_did": "did:web:registry.example.com",
+    "events": [
+      "e0 retracted (occurred_at 2026-09-01T00:00:00.000Z)",
+      "e1 republished (occurred_at 2026-09-02T00:00:00.000Z)"
+    ],
+    "did_documents": {
+      "did:web:registry.example.com": "one snapshot observed 2026-08-01T00:00:00.000Z with #receipt-key-1 in verificationMethod"
+    }
+  },
+  "scenarios": [
+    {
+      "name": "A — issuance",
+      "expected": {
+        "behavior": "After both appends, registry_state.event_receipts has exactly two elements, index 0 and 1, each event_hash = sha256(JCS(event incl. signature)), accepted_at non-decreasing and >= body.created_at, signed under the receipt key with receipt_type acdp-event-receipt/1."
+      }
+    },
+    {
+      "name": "B — idempotent retry",
+      "expected": {
+        "behavior": "Retrying e1 byte-identically returns HTTP 200 with the same single receipt for e1; no third receipt is minted."
+      }
+    },
+    {
+      "name": "C — wrong index",
+      "expected": {
+        "behavior": "A receipt whose index is 1 sits at position 0: it fails §10.3 step 5 and is treated as absent; the event has no evidence time."
+      }
+    },
+    {
+      "name": "D — wrong event_hash",
+      "expected": {
+        "behavior": "event_hash computed without the event's signature member: fails step 6, treated as absent."
+      }
+    },
+    {
+      "name": "E — decreasing accepted_at",
+      "expected": {
+        "behavior": "accepted_at[1] < accepted_at[0]: step 8 fails; retraction is invalid in both passes; node verdict unknown."
+      }
+    },
+    {
+      "name": "F — wrong registry",
+      "expected": {
+        "behavior": "registry_did names a different authority than origin_registry: fails step 2, treated as absent."
+      }
+    },
+    {
+      "name": "G — accepted_at before created_at",
+      "expected": {
+        "behavior": "accepted_at[0] is earlier than the context's created_at: fails §10.3 step 9 and is treated as absent; retraction is NOT invalid (only step 8 makes it invalid, RFC-ACDP-0017 §7.8 item 4)."
+      }
+    }
+  ],
+  "notes": "Behavioral scenarios: the verifier builds the described bundle from real signed bodies, runs verify_chain, and asserts the stage values and verdicts. Test keys: the did:key producer is the sig-001 zero seed (did:key:z6MkiTBz…, not sig-003's 0x42 seed); did:web producer #key-1 is the zero seed and #key-2 is 0x02×32; registry did:web:registry.example.com #receipt-key-1 is 0x11×32. Every bundle whose receipts must verify carries a registry DID snapshot (REG_SNAP) and every producer carries a discovery record unless a scenario removes it. Where present, `vectors` are known answers: the bundle and verdict files plus their pinned digests, executed by scripts/conformance-runner.py (RFC-ACDP-0017 §14)."
+}

@@ -2,6 +2,35 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Draft RFC-ACDP-0017: chain verification and evidence bundles — 2026-10-24
+
+**New Draft RFC plus additive Draft-line wire members. No existing body field, schema `$id`, JCS rule, content-hash, or signature semantic changed; every existing body, receipt and signature stays valid.**
+
+- **RFC-ACDP-0017 (Draft, acdp/0.5.0).** `verify_chain`: offline, as-of verification of a whole `derived_from` graph from an untrusted `acdp-evidence/1` bundle. It specifies a deterministic walk with truncating limits, an as-of pass and a latest pass with no wall clock, nine verification stages, verdict aggregation with tainted paths and drift, and a byte-identical `acdp-chain-verdict/1` object with `verdict_digest` and a sealable `as_of_digest`.
+- **Wire additions (Draft-line).**
+  - Lifecycle event receipts (`acdp-event-receipt/1`, served in `registry_state.event_receipts`) are REQUIRED for `acdp-registry-lifecycle` + `acdp-registry-receipts` registries at `acdp_version` ≥ 0.5.0 (RFC-ACDP-0017 §10; pointer in RFC-ACDP-0013 §4.1).
+  - Lineage-array members carry their receipts (RFC-ACDP-0017 §11; pointer in RFC-ACDP-0004 §5.1).
+  - Log event leaves are reserved, not specified (§12).
+- **Schemas.** New `acdp-event-receipt`, `acdp-evidence` and `acdp-chain-verdict`. `acdp-registry-state` gains the optional `event_receipts` array, which depends on `lifecycle_events`.
+- **Profile.** New OPTIONAL `acdp-consumer-chain` (prerequisite `acdp-consumer`), registered in `registries/profiles.*` and RFC-ACDP-0001 §9.1. No new error codes.
+- **Conformance.** Fixture count: 159 → 169. New family `chain-001`..`chain-010`. `chain-009` is also conditional for `acdp-registry-lifecycle` registries that advertise receipts at ≥ 0.5.0 (its scenarios A–B are registry-side only). New example `examples/evidence/golden-evidence.json`, validated against the evidence schema.
+  - **Known answers.** `chain-001`/`002`/`003`/`010` scenario A pin a bundle (`examples/evidence/chain-00N-a.json`), a verdict (new `examples/chain-verdict/`, validated against `acdp-chain-verdict`) and their three digests. The runner recomputes them (`check_chain_kat`). They were produced by acdp-rs `acdp-chain`, and the digests were recomputed independently.
+- **Implementer clarifications** (first implementation, acdp-rs `acdp-chain`).
+  - `pinned` gets a normative shape (`#/$defs/pinned`), now including discovery `vantages`.
+  - Out-of-range limits are rejected with no verdict.
+  - Walk and verdict rules:
+    - cycles and tainted paths use the walk graph;
+    - the `signature` stage is omitted when `key` is `unknown`;
+    - registry-receipt basis is `registry` or `pinned`, never `observed`;
+    - only §10.3 step 8 makes `retraction` `invalid`, and a new step 9 checks `accepted_at` ≥ `created_at`;
+    - the registry-attested revocation scope is defined offline;
+    - not-revoked is decided only by a discovery record;
+    - caveats are listed whatever the verdict, sorted by bytes;
+    - drift is defined when the as-of pass did not run a stage;
+    - the nested as-of projection is fixed.
+  - `reason` is an enum (`no_evidence_at_as_of`).
+  - Node presence `truncated` is removed, since truncation is reported only via `complete`, `control` and `frontier`.
+
 ## v0.5.0 — Registry and conformance: `seam.decision` cites Seam record digest v4; conditional `anc-006` (#76) — 2026-10-19
 
 **Registry entry and one conditional behavioral fixture. No body field, schema `$id`, JCS rule, content-hash, signature semantic, or RFC text changed.** Closes the deferred items 1–2 of #76 now that Seam's protocol-pass release is out.

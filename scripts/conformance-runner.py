@@ -22,6 +22,7 @@ Reads every fixture under schemas/conformance/ and verifies arithmetic claims:
     golden cycle (JCS preimage, cosignature hash, witness-keyed signature,
     checkpoint chaining, and the N-witnessed quorum count) per RFC-ACDP-0015
   - fp-* fixtures: key-fingerprint encoding vectors (RFC-ACDP-0010 §6)
+  - chain-* fixtures with a vectors array: RFC-ACDP-0017 verdict digest known answers
 
 Behavioral fixtures (pub-*, vis-*, dk-*, rcpt-002..004, lhr-002..004,
 log-002/log-004, wit-002/wit-004, lc-*, rev-002/rev-003, rot-*, fed-*, ...) are not executed; they
@@ -1127,6 +1128,52 @@ def check_witness_quorum(fixture, fixture_data):
     return True
 
 
+def check_chain_kat(fixture, vector):
+    """chain-* known-answer vectors (RFC-ACDP-0017 §9.2, §14): recompute evidence_digest,
+    verdict_digest and as_of_digest from the pinned bundle and verdict files and compare
+    them with the pinned values and with the digests the verdict itself carries. This
+    pins the digest arithmetic and the as-of projection; the stage values inside the
+    verdict are produced by verify_chain implementations, not re-derived here."""
+    name = vector.get("name", "?")
+    try:
+        evidence = json.loads((ROOT / vector["evidence"]).read_text())
+        verdict = json.loads((ROOT / vector["verdict"]).read_text())
+    except (KeyError, OSError, ValueError) as e:
+        fail(fixture, name, f"cannot load KAT files: {e}")
+        return False
+
+    def digest(obj):
+        return "sha256:" + hashlib.sha256(jcs.canonicalize(obj)).hexdigest()
+
+    computed = {"evidence_digest": digest(evidence),
+                "verdict_digest": digest({k: v for k, v in verdict.items()
+                                          if k not in ("as_of_digest", "verdict_digest")})}
+    if verdict.get("as_of") is None:
+        computed["as_of_digest"] = None
+    else:
+        projection = {k: verdict[k] for k in (
+            "verdict_version", "roots", "as_of", "limits", "require_attested_events",
+            "options_digest", "complete", "control", "frontier")}
+        projection["nodes"] = [{k: n[k] for k in ("ctx_id", "depth", "derived_from", "as_of") if k in n}
+                               for n in verdict["nodes"]]
+        projection["chain"] = {"as_of": verdict["chain"]["as_of"]}
+        projection["tainted_paths"] = {"as_of": verdict["tainted_paths"]["as_of"]}
+        computed["as_of_digest"] = digest(projection)
+
+    ok = True
+    for key, value in computed.items():
+        if vector.get(key) != value:
+            fail(fixture, name, f"{key}: pinned {vector.get(key)} != computed {value}")
+            ok = False
+        if verdict.get(key) != value:
+            fail(fixture, name, f"{key}: verdict carries {verdict.get(key)} != computed {value}")
+            ok = False
+    if verdict.get("roots") != vector.get("roots") or verdict.get("as_of") != vector.get("as_of"):
+        fail(fixture, name, "verdict roots/as_of differ from the vector's inputs")
+        ok = False
+    return ok
+
+
 def _vectors(data, fixture_id):
     """Vectors of an executable fixture; an empty/missing list is a fixture bug
     (the fixture would otherwise pass with zero assertions)."""
@@ -1209,6 +1256,13 @@ for path in sorted(CONFORMANCE.glob("*.json")):
         for v in _vectors(data, fixture_id):
             result = check_canonicalization_and_hash(fixture_id, v)
             if result is True:
+                passes += 1
+    elif fixture_id.startswith("chain-") and "vectors" in data:
+        # chain-001/002/003/010 carry known-answer vectors (pinned bundle +
+        # verdict + digests); their remaining scenarios, and chain-004..009,
+        # are behavioral and verified by verify_chain implementations.
+        for v in _vectors(data, fixture_id):
+            if check_chain_kat(fixture_id, v):
                 passes += 1
     else:
         # pub-, vis-, ret-, dk-, rot-, lc-, fed- (and keypair-less rcpt-/lhr-/log-/rev-/wit-/

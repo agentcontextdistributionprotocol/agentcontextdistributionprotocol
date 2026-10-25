@@ -1,0 +1,245 @@
+{
+  "verdict_version": "acdp-chain-verdict/1",
+  "roots": [
+    "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+  ],
+  "as_of": "2026-10-01T00:00:00.000Z",
+  "horizon": "2026-10-03T00:00:01.000Z",
+  "limits": {
+    "max_depth": 10,
+    "max_nodes": 500,
+    "max_fanout": 100
+  },
+  "require_attested_events": true,
+  "options_digest": null,
+  "evidence_digest": "sha256:f6cdcb640bedb5d7dd2bfaddeac128380a8a0a9c4f46e25e5dd7fa8da685929f",
+  "complete": true,
+  "control": null,
+  "frontier": [],
+  "nodes": [
+    {
+      "ctx_id": "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "depth": 0,
+      "derived_from": [
+        "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+      ],
+      "as_of": {
+        "verdict": "ok_with_caveats",
+        "caveats": [
+          "observed_basis"
+        ],
+        "stages": {
+          "presence": {
+            "value": "present",
+            "evidence_time": "2026-09-03T00:00:00.000Z",
+            "basis": "registry"
+          },
+          "identity": {
+            "value": "ok",
+            "basis": "registry"
+          },
+          "content_hash": {
+            "value": "ok",
+            "basis": "self"
+          },
+          "signature": {
+            "value": "ok",
+            "basis": "self"
+          },
+          "registry_receipt": {
+            "value": "ok",
+            "key_status": "current",
+            "basis": "registry",
+            "evidence_time": "2026-09-03T00:00:00.000Z"
+          },
+          "key": {
+            "value": "current",
+            "basis": "self"
+          },
+          "log": {
+            "value": "absent"
+          },
+          "retraction": {
+            "value": "not_retracted",
+            "events_admitted": 0
+          },
+          "key_revocation": {
+            "value": "not-revoked",
+            "basis": "observed",
+            "evidence_time": "2026-09-30T00:00:00.000Z"
+          }
+        }
+      },
+      "latest": {
+        "verdict": "ok_with_caveats",
+        "caveats": [
+          "observed_basis"
+        ],
+        "stages": {
+          "presence": {
+            "value": "present",
+            "evidence_time": "2026-09-03T00:00:00.000Z",
+            "basis": "registry"
+          },
+          "identity": {
+            "value": "ok",
+            "basis": "registry"
+          },
+          "content_hash": {
+            "value": "ok",
+            "basis": "self"
+          },
+          "signature": {
+            "value": "ok",
+            "basis": "self"
+          },
+          "registry_receipt": {
+            "value": "ok",
+            "key_status": "current",
+            "basis": "registry",
+            "evidence_time": "2026-09-03T00:00:00.000Z"
+          },
+          "key": {
+            "value": "current",
+            "basis": "self"
+          },
+          "log": {
+            "value": "absent"
+          },
+          "retraction": {
+            "value": "not_retracted",
+            "events_admitted": 0
+          },
+          "key_revocation": {
+            "value": "not-revoked",
+            "basis": "observed",
+            "evidence_time": "2026-09-30T00:00:00.000Z"
+          }
+        }
+      }
+    },
+    {
+      "ctx_id": "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "depth": 1,
+      "derived_from": [],
+      "as_of": {
+        "verdict": "ok_with_caveats",
+        "caveats": [
+          "observed_basis"
+        ],
+        "stages": {
+          "presence": {
+            "value": "present",
+            "evidence_time": "2026-09-02T00:00:00.000Z",
+            "basis": "registry"
+          },
+          "identity": {
+            "value": "ok",
+            "basis": "registry"
+          },
+          "content_hash": {
+            "value": "ok",
+            "basis": "self"
+          },
+          "signature": {
+            "value": "ok",
+            "basis": "self"
+          },
+          "registry_receipt": {
+            "value": "ok",
+            "key_status": "current",
+            "basis": "registry",
+            "evidence_time": "2026-09-02T00:00:00.000Z"
+          },
+          "key": {
+            "value": "current",
+            "basis": "self"
+          },
+          "log": {
+            "value": "absent"
+          },
+          "retraction": {
+            "value": "not_retracted",
+            "events_admitted": 0
+          },
+          "key_revocation": {
+            "value": "not-revoked",
+            "basis": "observed",
+            "evidence_time": "2026-09-30T00:00:00.000Z"
+          }
+        }
+      },
+      "latest": {
+        "verdict": "ok_with_caveats",
+        "caveats": [
+          "observed_basis",
+          "retracted"
+        ],
+        "stages": {
+          "presence": {
+            "value": "present",
+            "evidence_time": "2026-09-02T00:00:00.000Z",
+            "basis": "registry"
+          },
+          "identity": {
+            "value": "ok",
+            "basis": "registry"
+          },
+          "content_hash": {
+            "value": "ok",
+            "basis": "self"
+          },
+          "signature": {
+            "value": "ok",
+            "basis": "self"
+          },
+          "registry_receipt": {
+            "value": "ok",
+            "key_status": "current",
+            "basis": "registry",
+            "evidence_time": "2026-09-02T00:00:00.000Z"
+          },
+          "key": {
+            "value": "current",
+            "basis": "self"
+          },
+          "log": {
+            "value": "absent"
+          },
+          "retraction": {
+            "value": "retracted",
+            "events_admitted": 1,
+            "basis": "registry",
+            "evidence_time": "2026-10-03T00:00:01.000Z"
+          },
+          "key_revocation": {
+            "value": "not-revoked",
+            "basis": "observed",
+            "evidence_time": "2026-09-30T00:00:00.000Z"
+          }
+        }
+      }
+    }
+  ],
+  "chain": {
+    "as_of": "ok_with_caveats",
+    "latest": "ok_with_caveats"
+  },
+  "tainted_paths": {
+    "as_of": [],
+    "latest": [
+      [
+        "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+      ]
+    ]
+  },
+  "drift": [
+    {
+      "ctx_id": "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "kind": "retracted_after_as_of"
+    }
+  ],
+  "as_of_digest": "sha256:552546ec839dd566646efa2b3bce302fdec6ec32dcadfeadd0c7fe46494c9bd5",
+  "verdict_digest": "sha256:e159462668ef28960cef957630cbf754c8565fe98a532cb4fb4f88912c4581f3"
+}

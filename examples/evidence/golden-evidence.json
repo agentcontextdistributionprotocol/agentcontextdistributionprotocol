@@ -1,0 +1,83 @@
+{
+  "_note": "Illustrative acdp-evidence/1 bundle (RFC-ACDP-0017 §4) carrying the golden context and its receipt. The producer DID snapshot and the discovery record are observed-basis evidence (§5.1). The golden body's derived_from entries are listed in 'omitted', so the bundle says what it leaves out.",
+  "evidence_version": "acdp-evidence/1",
+  "roots": [
+    "acdp://registry.example.com/12345678-1234-4321-8123-123456781234"
+  ],
+  "exported_at": "2026-10-24T12:00:00.000Z",
+  "contexts": {
+    "acdp://registry.example.com/12345678-1234-4321-8123-123456781234": {
+      "body": {
+        "ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234",
+        "lineage_id": "lin:sha256:c7fef01c000f8edaa9cb46122ceb5d7bca38328f002fb0f40e362e3b289bbb2a",
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:web:agents.example.com:test-producer",
+        "contributors": [],
+        "origin_registry": "registry.example.com",
+        "created_at": "2026-04-16T10:30:15.123Z",
+        "content_hash": "sha256:f170150ddbf59d99794e7797824591b374d459782084597b644ecc57a41031b5",
+        "signature": {
+          "algorithm": "ed25519",
+          "key_id": "did:web:agents.example.com:test-producer#key-1",
+          "value": "ErkbV+FUdn49TgF3zJ3RBe3AmyGxLVAQdMjlhabUfM96qendmWwdVodX/SV3O3aKLypbUu6gmb5Npt3O/w7nDQ=="
+        },
+        "title": "Golden test vector — minimal first version",
+        "type": "data_snapshot",
+        "data_refs": [],
+        "derived_from": [],
+        "visibility": "public"
+      },
+      "registry_receipt": {
+        "registry_did": "did:web:registry.example.com",
+        "ctx_id": "acdp://registry.example.com/12345678-1234-4321-8123-123456781234",
+        "lineage_id": "lin:sha256:c7fef01c000f8edaa9cb46122ceb5d7bca38328f002fb0f40e362e3b289bbb2a",
+        "origin_registry": "registry.example.com",
+        "created_at": "2026-04-16T10:30:15.123Z",
+        "content_hash": "sha256:f170150ddbf59d99794e7797824591b374d459782084597b644ecc57a41031b5",
+        "key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+        "signature": {
+          "algorithm": "ed25519",
+          "key_id": "did:web:registry.example.com#receipt-key-1",
+          "value": "vBgQKmn17pHXXY95C07BBeconmjDIdYIvxN5B+YXrQ7tIzFsDNsh1TglzgxOyPUp8lwTz7zwMNiK+Sn5whveDg=="
+        }
+      }
+    }
+  },
+  "did_documents": {
+    "did:web:agents.example.com:test-producer": [
+      {
+        "document": {
+          "@context": [
+            "https://www.w3.org/ns/did/v1"
+          ],
+          "id": "did:web:agents.example.com:test-producer",
+          "verificationMethod": [
+            {
+              "id": "did:web:agents.example.com:test-producer#key-1",
+              "type": "Ed25519VerificationKey2020",
+              "controller": "did:web:agents.example.com:test-producer",
+              "publicKeyMultibase": "z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"
+            }
+          ],
+          "assertionMethod": [
+            "did:web:agents.example.com:test-producer#key-1"
+          ]
+        },
+        "observed_at": "2026-10-24T11:59:58.000Z",
+        "observed_by": "example-exporter",
+        "source": "https://agents.example.com/test-producer/did.json"
+      }
+    ]
+  },
+  "revocation_discovery": {
+    "did:web:agents.example.com:test-producer": [
+      {
+        "vantage": "registry.example.com",
+        "outcome": "not-revoked-complete",
+        "completed_at": "2026-10-24T11:59:59.000Z"
+      }
+    ]
+  },
+  "omitted": []
+}

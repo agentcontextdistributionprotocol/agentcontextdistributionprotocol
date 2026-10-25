@@ -1,0 +1,76 @@
+{
+  "id": "chain-006",
+  "description": "(0.5.0) The offline analogue of fed-010: a root whose derived_from exceeds max_fanout. Truncation, never silent: complete false, control max_fanout, the unadmitted entries in frontier, and a chain verdict no better than unknown (RFC-ACDP-0017 §6.1, §8.2).",
+  "tags": [
+    "chain",
+    "consumer",
+    "offline",
+    "0.5.0",
+    "traversal",
+    "truncation"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-chain"
+  ],
+  "input": {
+    "roots": [
+      "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    ],
+    "as_of": null,
+    "limits": {
+      "max_depth": 10,
+      "max_nodes": 500,
+      "max_fanout": 2
+    },
+    "graph": {
+      "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": [
+        "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "acdp://registry.example.com/cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+        "acdp://registry.example.com/dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+        "acdp://registry.example.com/eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee"
+      ]
+    },
+    "note": "B, C, D and E are all carried and verify cleanly."
+  },
+  "scenarios": [
+    {
+      "name": "A — fanout",
+      "expected": {
+        "complete": false,
+        "control": "max_fanout",
+        "frontier": [
+          "acdp://registry.example.com/dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+          "acdp://registry.example.com/eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee"
+        ],
+        "admitted": [
+          "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          "acdp://registry.example.com/cccccccc-cccc-4ccc-8ccc-cccccccccccc"
+        ],
+        "chain": {
+          "latest": "unknown"
+        },
+        "behavior": "Only the first max_fanout DISTINCT entries in derived_from array order (B, C) are admitted; D and E join the frontier, sorted."
+      }
+    },
+    {
+      "name": "B — depth",
+      "expected": {
+        "behavior": "Linear chain A→B→C→D with max_depth 2: C (depth 2) is verified but not expanded; frontier [D]; control max_depth."
+      }
+    },
+    {
+      "name": "C — nodes",
+      "expected": {
+        "behavior": "max_nodes 3 over A→[B, C, D]: A, B and C are admitted (BFS order, ascending ctx_id within a depth); D joins the frontier; control max_nodes."
+      }
+    },
+    {
+      "name": "D — limits above the defaults",
+      "expected": {
+        "behavior": "A caller passing max_fanout 101 MUST be refused (RFC-ACDP-0017 §6.1 item 4); the verdict schema caps limits at the RFC-ACDP-0006 defaults."
+      }
+    }
+  ],
+  "notes": "Behavioral scenarios: the verifier builds the described bundle from real signed bodies, runs verify_chain, and asserts the stage values and verdicts. Test keys: the did:key producer is the sig-001 zero seed (did:key:z6MkiTBz…, not sig-003's 0x42 seed); did:web producer #key-1 is the zero seed and #key-2 is 0x02×32; registry did:web:registry.example.com #receipt-key-1 is 0x11×32. Every bundle whose receipts must verify carries a registry DID snapshot (REG_SNAP) and every producer carries a discovery record unless a scenario removes it. Where present, `vectors` are known answers: the bundle and verdict files plus their pinned digests, executed by scripts/conformance-runner.py (RFC-ACDP-0017 §14)."
+}

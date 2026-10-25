@@ -1,0 +1,88 @@
+{
+  "id": "chain-004",
+  "description": "(0.5.0) A retraction whose actor-claimed occurred_at is BEFORE T but whose event receipt accepted_at is AFTER T. The backdating is reported, not believed: as of T the node is not retracted (RFC-ACDP-0017 §5.2, §8.4).",
+  "tags": [
+    "chain",
+    "consumer",
+    "offline",
+    "0.5.0",
+    "lifecycle",
+    "retraction",
+    "backdating"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-chain"
+  ],
+  "input": {
+    "graph": {
+      "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": []
+    },
+    "roots": [
+      "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    ],
+    "as_of": "2026-10-01T00:00:00.000Z",
+    "bundle": {
+      "producer": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
+      "lifecycle": {
+        "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": {
+          "lifecycle_events": [
+            {
+              "event_type": "retracted",
+              "occurred_at": "2026-09-15T00:00:00.000Z"
+            }
+          ],
+          "event_receipts": [
+            {
+              "index": 0,
+              "accepted_at": "2026-10-04T00:00:00.000Z"
+            }
+          ]
+        }
+      },
+      "revocation_discovery": {
+        "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp": [
+          {
+            "vantage": "registry.example.com",
+            "outcome": "not-revoked-complete",
+            "completed_at": "2026-09-30T00:00:00.000Z"
+          }
+        ]
+      },
+      "did_documents": {
+        "did:web:registry.example.com": "one snapshot observed 2026-08-01T00:00:00.000Z with #receipt-key-1 in verificationMethod"
+      }
+    },
+    "require_attested_events": true
+  },
+  "scenarios": [
+    {
+      "name": "A — backdated",
+      "expected": {
+        "as_of": {
+          "retraction": "not_retracted"
+        },
+        "latest": {
+          "retraction": "retracted"
+        },
+        "drift": [
+          {
+            "ctx_id": "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "kind": "backdated_event"
+          },
+          {
+            "ctx_id": "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "kind": "retracted_after_as_of"
+          }
+        ],
+        "non_conformant_implementation": "Ordering or filtering events by occurred_at, which would report retracted as of T on the actor's say-so."
+      }
+    },
+    {
+      "name": "B — attestation not required",
+      "expected": {
+        "behavior": "require_attested_events = false does NOT change A: the event HAS a verified receipt, so its evidence time is accepted_at and the occurred_at fallback (RFC-ACDP-0017 §6.4) never applies to it."
+      }
+    }
+  ],
+  "notes": "Behavioral scenarios: the verifier builds the described bundle from real signed bodies, runs verify_chain, and asserts the stage values and verdicts. Test keys: the did:key producer is the sig-001 zero seed (did:key:z6MkiTBz…, not sig-003's 0x42 seed); did:web producer #key-1 is the zero seed and #key-2 is 0x02×32; registry did:web:registry.example.com #receipt-key-1 is 0x11×32. Every bundle whose receipts must verify carries a registry DID snapshot (REG_SNAP) and every producer carries a discovery record unless a scenario removes it. Where present, `vectors` are known answers: the bundle and verdict files plus their pinned digests, executed by scripts/conformance-runner.py (RFC-ACDP-0017 §14)."
+}
