@@ -1174,6 +1174,26 @@ def check_chain_kat(fixture, vector):
     return ok
 
 
+def check_hint_hmac(fixture, vector):
+    """rec-007 change-hint HMAC known answer (RFC-ACDP-0018 §8.2): v1 =
+    hex(HMAC-SHA-256(key = UTF-8 bytes of the secret string as served, t + "." + body)).
+    The base64-decoded secret is NOT the key; not_header pins that wrong reading."""
+    import hmac
+    name = vector.get("name", "?")
+    msg = f"{vector['t']}.".encode() + vector["body"].encode()
+    v1 = hmac.new(vector["secret"].encode(), msg, hashlib.sha256).hexdigest()
+    header = f"t={vector['t']},v1={v1}"
+    decoded = hmac.new(base64.b64decode(vector["secret"]), msg, hashlib.sha256).hexdigest()
+    ok = True
+    if header != vector.get("expected_header"):
+        fail(fixture, name, f"expected_header {vector.get('expected_header')} != computed {header}")
+        ok = False
+    if vector.get("not_header") != f"t={vector['t']},v1={decoded}" or decoded == v1:
+        fail(fixture, name, "not_header must be the (rejected) MAC under the base64-decoded key")
+        ok = False
+    return ok
+
+
 def _vectors(data, fixture_id):
     """Vectors of an executable fixture; an empty/missing list is a fixture bug
     (the fixture would otherwise pass with zero assertions)."""
@@ -1256,6 +1276,12 @@ for path in sorted(CONFORMANCE.glob("*.json")):
         for v in _vectors(data, fixture_id):
             result = check_canonicalization_and_hash(fixture_id, v)
             if result is True:
+                passes += 1
+    elif fixture_id.startswith("rec-") and "vectors" in data:
+        # rec-007 carries the change-hint HMAC known answer; every other rec-*
+        # scenario is behavioral.
+        for v in _vectors(data, fixture_id):
+            if check_hint_hmac(fixture_id, v):
                 passes += 1
     elif fixture_id.startswith("chain-") and "vectors" in data:
         # chain-001/002/003/010 carry known-answer vectors (pinned bundle +

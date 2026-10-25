@@ -389,7 +389,7 @@ All `lc-*` fixtures are behavioral. Required for `acdp-registry-lifecycle`; `lc-
 | `rec-007` | Subscriptions and hints (A–C, F–H registry; D–E receiver) | owner-scoped, `secret` once; HMAC `ACDP-Signature`; no content in hints; SSRF rejections at creation and delivery; receiver pulls its own cursor |
 | `rec-008` | Atomicity under concurrent lifecycle and supersession | no change without its entry, no entry without its change, per-context index order |
 
-All eight are behavioral. `rec-001`..`005` and `rec-008` are REQUIRED for the OPTIONAL `acdp-registry-changes` profile, `rec-007` for `acdp-registry-events`, and `rec-006` plus `rec-007` D–E for `acdp-consumer-recall`.
+All eight are behavioral, except `rec-007`'s executed HMAC known-answer vector `hint-hmac-001` (key = the UTF-8 bytes of the secret string). `rec-001`..`005` and `rec-008` are REQUIRED for the OPTIONAL `acdp-registry-changes` profile, `rec-007` for `acdp-registry-events`, and `rec-006` plus `rec-007` D–E for `acdp-consumer-recall`.
 
 ### did:key resolution (RFC-ACDP-0001 §5.4 / §5.11.1, 0.2.0)
 

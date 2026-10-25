@@ -1,6 +1,6 @@
 {
   "id": "rec-007",
-  "description": "(0.5.0) Change-hint subscriptions and webhooks (RFC-ACDP-0018 §8). Scenarios A–C and F–H are registry-side (acdp-registry-events); D–E are receiver-side (acdp-consumer-recall).",
+  "description": "(0.5.0) Change-hint subscriptions and webhooks (RFC-ACDP-0018 §8). Scenarios A–C and F–H are registry-side (acdp-registry-events); D–E are receiver-side (acdp-consumer-recall). Carries one executed HMAC known-answer vector (hint-hmac-001).",
   "tags": [
     "rec",
     "registry",
@@ -70,6 +70,17 @@
       "expected": {
         "behavior": "A change not visible to the owner produces no hint."
       }
+    }
+  ],
+  "vectors": [
+    {
+      "name": "hint-hmac-001",
+      "secret": "q4C3i0gxkC8b7mSx2F5fW1dTnYp9Z0eLrJvH6uK3oAM=",
+      "t": 1790985602,
+      "body": "{\"head_cursor\":\"c2VxOjEwNTc\",\"hint_version\":\"acdp-change-hint/1\",\"registry_authority\":\"registry.example.com\",\"subscription_id\":\"6f1c2a9e-3b4d-4e5f-8a6b-7c8d9e0f1a2b\"}",
+      "expected_header": "t=1790985602,v1=a000c589a805e6a5ed4eeb7835a9e8051a879d067c17c86c3de28862f9e489de",
+      "not_header": "t=1790985602,v1=3b096f13ceb0ff06e1f51542614551007d2a8547f8df1a6f5f38daa26d5f0aed",
+      "_note": "Key = the UTF-8 bytes of the secret string exactly as served, NOT its base64 decoding (not_header shows the decoded-key MAC, which MUST NOT verify). Body = the raw request bytes (here the JCS form of examples/change-hint/golden-hint.json; the registry MAY send any byte form, the MAC is over what is sent). RFC-ACDP-0018 §8.2."
     }
   ]
 }
