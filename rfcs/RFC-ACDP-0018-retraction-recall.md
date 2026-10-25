@@ -180,9 +180,10 @@ A change entry is a **hint until verified**. A consumer claiming `acdp-consumer-
    - Verify `event` under RFC-ACDP-0013 §5.
    - Verify `event_receipt` under RFC-ACDP-0017 §10.3 against that event, with *i* = `event_receipt.index` and the affected context's `created_at`.
    - Then re-derive the context's retraction state over its **full** event list (RFC-ACDP-0013 §7.1). The consumer either re-retrieves the context (RFC-ACDP-0004 §2) or uses the events it already holds. It MAY apply the entry's event directly only when it already holds and has verified every earlier event of that context (indexes `0` to `index − 1`).
+   - When it re-retrieves, the served `lifecycle_events[index]` MUST be byte-equal (under JCS) to the entry's `event`. Otherwise the registry is inconsistent and the entry is rejected.
 2. **`superseded`.**
    - Retrieve `superseded_by` and verify it under RFC-ACDP-0001 §5.11, including its receipt.
-   - Confirm that its `supersedes` equals the entry's `ctx_id` and its `lineage_id` equals the entry's `lineage_id`.
+   - Confirm that its `supersedes` equals the entry's `ctx_id`, its `lineage_id` equals the entry's `lineage_id`, and its `agent_id` equals the entry's `agent_id` (supersession keeps the producer, RFC-ACDP-0003 §3.1).
    - Whether reliance moves to the new version is the consumer's policy.
 3. **`key_revocation`.**
    - Retrieve the revocation context and verify it under RFC-ACDP-0014 §5 (producer-signed) or §6 (registry-attested).
@@ -190,6 +191,7 @@ A change entry is a **hint until verified**. A consumer claiming `acdp-consumer-
 
 The remaining rules apply to every kind:
 
+- **Envelope consistency.** `recorded_at` MUST equal the evidence time given in §4: `event_receipt.accepted_at` for a lifecycle entry, `registry_receipt.created_at` otherwise. `ctx_id` MUST equal the evidence's own `ctx_id`. A mismatch rejects the entry.
 - **Failure.** An entry that fails verification MUST NOT change any reliance decision. Failure is itself a signal: the registry or the path to it may be faulty. The consumer SHOULD re-verify the affected context directly from its own retrieval, since a faulty source could equally drop a real entry.
 - **Idempotency.** Delivery is at-least-once, because a consumer may re-read after a crash. Consumers MUST deduplicate by (`registry authority`, `seq`) and process idempotently.
 - **Cursor persistence.** A consumer SHOULD persist `next_cursor` only after it has processed every entry before it.
@@ -225,7 +227,11 @@ When one or more entries committed after the last hint match a subscription's fi
   "head_cursor": "c2VxOjEwNDI" }
 ```
 
-- **Authentication.** The registry signs the request with header `ACDP-Signature: t=<unix seconds>,v1=<hex>`, where `v1` = hex(HMAC-SHA-256(`secret`, `<t>` + `.` + the raw request body bytes)). Receivers MUST verify `v1` in constant time and MUST reject a `t` more than 300 seconds from their clock. This authenticates the hint to its subscriber. It is **not** a producer or registry signature and conveys no authenticity for any change (RFC-ACDP-0009 §2.10).
+- **Authentication.** The registry signs the request with header `ACDP-Signature: t=<unix seconds>,v1=<hex>`, where `v1` = lowercase hex(HMAC-SHA-256(*key*, `<t>` + `.` + the raw request body bytes)).
+  - The HMAC *key* is the **UTF-8 bytes of the `secret` string exactly as served**, not its base64 decoding. Receivers store and use the string verbatim.
+  - The header is a comma-separated list of `key=value` pairs. Receivers MUST accept the pairs in any order, MUST ignore unknown keys, and MUST accept the request when **any** `v1` value matches. That leaves room for a registry to send several `v1` values during secret rotation, and for a future `v2` scheme.
+  - Receivers MUST compare in constant time and MUST reject a `t` more than 300 seconds from their clock.
+  - `rec-007` carries a known-answer vector (`hint-hmac-001`), which `scripts/conformance-runner.py` executes. This authenticates the hint to its subscriber. It is **not** a producer or registry signature and conveys no authenticity for any change (RFC-ACDP-0009 §2.10).
 - **Coalescing.** A registry MAY send one hint for many entries and MAY drop a hint while an earlier one for the same subscription is undelivered. A hint is "pull now", not "one change happened".
 - **Delivery.** Delivery is best-effort. A registry SHOULD retry a failed delivery (a non-2xx response or a timeout) with exponential backoff for at least one hour. It MAY disable a subscription that has failed for 72 hours, and then MUST answer `GET` on it with `"status": "disabled"`.
 - **Receiver duty.** On a hint, the receiver pulls `GET /changes?since=<its own persisted cursor>` with the subscription's filter. It MUST NOT jump to `head_cursor`, which is informational, or it skips entries. It MUST NOT treat the absence of hints as the absence of changes.
@@ -294,7 +300,7 @@ A `callback_url` failing these rules at creation is rejected (§8.1).
 | `rec-007` | Hints: subscription create, get and delete, `secret` shown once, owner scoping, HMAC header verification, stale `t` rejected, SSRF rejections of `callback_url`, no change content in the hint, receiver pulls from its own cursor (§8) |
 | `rec-008` | Atomicity: every event receipt in `registry_state` has its feed entry; a context's events appear in index order; no entry without its change (§5.3) |
 
-All eight are **behavioral** in this Draft.
+All eight are **behavioral** in this Draft, except `rec-007`'s HMAC known-answer vector `hint-hmac-001`, which the runner executes.
 
 ---
 
