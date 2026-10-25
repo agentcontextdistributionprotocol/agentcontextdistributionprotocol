@@ -176,9 +176,9 @@ The verifier walks breadth-first from the roots over `derived_from`. The order i
    - **`max_fanout`.** Only the first `max_fanout` distinct entries of a node's `derived_from` are admitted.
    - **`max_nodes`.** Once `max_nodes` nodes have been admitted, no further node is admitted.
 
-   Every `ctx_id` that is referenced but not admitted joins the **frontier**. The report sets `complete: false` and names the first control that fired, in walk order.
+   Every `ctx_id` that is referenced but not admitted joins the **frontier**. Frontier entries are not nodes: they appear in `frontier` only, never in `nodes`. The report sets `complete: false` and names the first control that fired, in walk order.
 5. The verifier MAY also enforce a wall-clock **time budget**. A verdict produced under a fired time budget MUST set `control: "timeout"` and `complete: false`, and is **exempt from the determinism requirement** (§9.3).
-6. A **cycle** is a `derived_from` path from a node back to itself. It is reported as stage `presence: cycle` on every node that lies on the cycle. Honest registries cannot produce one, because `derived_from` can name only `ctx_id`s that already exist, so a cycle is evidence of a forged body or a forged bundle.
+6. A **cycle** is a `derived_from` path from a node back to itself. It is reported as stage `presence: cycle` on every node that lies on the cycle. Honest registries cannot produce one, because `derived_from` can name only `ctx_id`s that already exist, so a cycle is evidence of a forged body or a forged bundle. (NORMATIVE) Cycles (here) and tainted paths (§8.3) are computed over the **walk graph**: the edges the walk considered, i.e. a node's first `max_fanout` distinct `derived_from` entries, from nodes that were expanded. An edge the walk did not consider plays no part in either.
 
 A node is resolved from `evidence.contexts`. A `ctx_id` the walk admits but `contexts` does not carry has presence `withheld` when `omitted` lists it with reason `withheld`, `unresolved` when `omitted` lists it with any other reason, and `absent` when `omitted` does not list it. An online verifier collects first (§4.3) and then runs the same algorithm over what it collected. It MUST NOT fetch evidence during a pass.
 
@@ -186,7 +186,7 @@ A node is resolved from `evidence.contexts`. A `ctx_id` the walk admits but `con
 
 For a `did:web` key:
 
-- In the **as-of pass**, the verifier uses the snapshot with the greatest `observed_at` ≤ T. Ties are broken by array position, and the later entry wins. With no such snapshot, the key stage is `unknown` with reason `no_evidence_at_as_of`.
+- In the **as-of pass**, the verifier uses the snapshot with the greatest `observed_at` ≤ T (for a pinned snapshot, its `instant`). Ties are broken as follows: a pinned snapshot beats an observed one; among observed snapshots, the later array position wins. With no such snapshot, the key stage is `unknown` with reason `no_evidence_at_as_of`.
 - In the **latest pass**, it uses the snapshot with the greatest `observed_at`.
 
 The chosen snapshot is evaluated under RFC-ACDP-0001 §5.11 as though it were the fetched document. There is no forced re-fetch offline. An online verifier performs the §5.11 re-fetch **while collecting**, and the bundle records the result.
@@ -213,7 +213,7 @@ The chosen snapshot is evaluated under RFC-ACDP-0001 §5.11 as though it were th
 }
 ```
 
-`registries`, `witnesses` and `vantages` are sorted ascending by UTF-8 bytes and deduplicated. `snapshots` are sorted by `did`, then `instant`, and deduplicated. An empty array member is omitted. A caller that pins nothing passes `pinned` absent or `{}`; both are equivalent. The shape is `#/$defs/pinned` in `acdp-evidence.schema.json`, and options that fail it are rejected as in §6.1(4).
+`registries`, `witnesses` and `vantages` are sorted ascending by UTF-8 bytes and deduplicated. `snapshots` are sorted by `did`, then `instant`, and deduplicated. Two pinned snapshots with the same `did` and `instant` but different `document`s are an error under §6.1(4). An empty array member is omitted. A caller that pins nothing passes `pinned` absent, `null` or `{}`; all three are equivalent. The shape is `#/$defs/pinned` in `acdp-evidence.schema.json`, and options that fail it are rejected as in §6.1(4).
 
 A pinned snapshot takes part in §6.2 selection like an observed one, but its basis is `pinned`. Pinning promotes a basis. It never overrides a failed check: a pinned key that does not verify a signature is still `signature: invalid`.
 
@@ -227,16 +227,16 @@ A pinned snapshot takes part in §6.2 selection like an observed one, but its ba
 
 ## 7. Per-Node Stages (NORMATIVE)
 
-Each stage reports a `value`. Where the stage defines them, it also reports a `basis`, an `evidence_time` and a `reason`. Stages run in the order below, in both passes, over the evidence that pass admits. Stage values are the closed vocabularies in [`acdp-chain-verdict.schema.json`](../schemas/json/acdp-chain-verdict.schema.json).
+Each stage reports a `value`. Where the stage defines them, it also reports a `basis`, an `evidence_time` and a `reason`. (NORMATIVE) `acdp-chain-verdict/1` defines one reason token, `no_evidence_at_as_of`, emitted exactly where this document names it (§6.2, §7.5, §7.6). A verifier MUST NOT emit any other `reason`, since the verdict bytes are compared across implementations (§9.3). Stages run in the order below, in both passes, over the evidence that pass admits. Stage values are the closed vocabularies in [`acdp-chain-verdict.schema.json`](../schemas/json/acdp-chain-verdict.schema.json).
 
 ### 7.1 `presence`
 
-`present`, `withheld`, `unresolved`, `absent`, `truncated`, `cycle`, or `not_yet_published`.
+`present`, `withheld`, `unresolved`, `absent`, `cycle`, or `not_yet_published`. A truncated walk is reported through `complete`, `control` and `frontier` (§6.1), never as a node presence.
 
 - `not_yet_published` applies in the **as-of pass only**: the node's receipt verifies and its `created_at` is later than T. A chain that is honest at T cannot reference such a node.
 - A node with no evidence time is `present` in the as-of pass, with the caveat `undated` (§8.1). Its content verifies arithmetically, but its existence at T is unproven.
 
-A node that is not `present` runs no further stages.
+A node that is not `present` runs no further stages. A `cycle` presence carries `value` only. A node's `derived_from` member (§9.1) is emitted exactly when its **latest** presence is `present`.
 
 ### 7.2 `identity`
 
@@ -251,13 +251,15 @@ A node that is not `present` runs no further stages.
 
 ### 7.4 `signature`
 
-`ok`, `invalid`, or `unresolvable`, under RFC-ACDP-0001 §5.8. It uses the key the `key` stage resolves.
+`ok`, `invalid`, or `unresolvable`, under RFC-ACDP-0001 §5.8. It uses the key the `key` stage resolves. (NORMATIVE) When the `key` stage is `unknown` (as-of pass, `no_evidence_at_as_of`), the `signature` stage is omitted: there is no key to verify against, and the `key: unknown` verdict rule (§8.1) already decides the node.
 
 ### 7.5 `registry_receipt`
 
 `absent`, `ok`, or `invalid`, under RFC-ACDP-0010 §8, with the registry DID document chosen per §6.2. An `ok` value carries `key_status`: `current` or `historical`.
 
 A receipt that fails is **treated as absent everywhere downstream**, as RFC-ACDP-0010 §8 requires.
+
+(NORMATIVE) An `ok` receipt has basis `pinned` when its `registry_did` is pinned (§6.3), and `registry` otherwise. The registry DID snapshot that supplied the receipt key does **not** make the stage rest on basis `observed`: the receipt is the registry's own signed attestation, and trusting the registry for it is the RFC-ACDP-0010 trust model. The observed snapshot is still what the pass selects under §6.2. A present receipt for which no registry DID snapshot is selectable is `invalid`. In the as-of pass, when the only selectable snapshots are dated after T, the value is `invalid` with reason `no_evidence_at_as_of`.
 
 ### 7.6 `key`
 
@@ -281,15 +283,15 @@ In the as-of pass, a checkpoint counts only if its `timestamp` ≤ T.
 1. **Admitting events.** The pass admits a prefix of `lifecycle_events`: the longest prefix whose every event is admitted under §6.4 (as-of) or carries a verified signature (latest, RFC-ACDP-0013 §5). In the latest pass, an event with a verified event receipt (§10) has basis `registry`. An event admitted on its signature alone has basis `observed`, and the `retraction` stage takes the weakest basis among the admitted events.
 2. **Deriving the state.** RFC-ACDP-0013 §7.1 retraction state is derived over the admitted prefix.
 3. **`unknown`** in the as-of pass when an event that is not admitted precedes an admitted one. The prefix is then unprovable.
-4. **`invalid`** when event receipts disagree with the event array: a mismatched `index` or `event_hash`, or `accepted_at` values that decrease with index (§10.3).
+4. **`invalid`** when §10.3 step 8 fails: the verified event receipts' `accepted_at` values decrease with index. A receipt failing any other §10.3 step (a mismatched `index`, `event_hash`, `registry_did` or signature, or step 9) is **treated as absent**, and its event has no evidence time; that alone never makes the stage `invalid`.
 
 ### 7.9 `key_revocation`
 
 `not-revoked`, `pre-compromise`, `revoked`, `unplaceable`, or `unknown`. RFC-ACDP-0014 §7–§8 applies, with these rules:
 
-- **Applying revocations.** The verifier applies the key-revocation contexts the pass admits (§5.3).
+- **Applying revocations.** The verifier applies the key-revocation contexts the pass admits (§5.3), under RFC-ACDP-0014 §7 producer scope. (NORMATIVE) A **registry-attested** revocation (RFC-ACDP-0014 §6) is applied to a node only under that section's strict default scope, read offline: the revocation's `agent_id` is `did:web:<authority>`, where `<authority>` is the revocation's own `origin_registry`, and that authority equals the node's `origin_registry` or the `registry_did` authority of the node's verified receipt. Its `metadata.revoked_key_controller` MUST equal the node's `body.agent_id`.
 - **Discovery records.** It considers the discovery records the pass admits. A record is admitted when its `completed_at` ≤ T in the as-of pass, and always in the latest pass.
-- **Producer outcomes.** A producer has a **`revoked`** discovery outcome when any admitted revocation applies to it. It has **`not-revoked`** only when an admitted record says `not-revoked-complete`. Otherwise its outcome is **`unknown`**.
+- **Producer outcomes.** A producer has a **`revoked`** discovery outcome when any admitted revocation applies to it. It has **`not-revoked`** only when an admitted record says `not-revoked-complete`. Otherwise its outcome is **`unknown`**. (NORMATIVE) Revocation contexts in the bundle that do not name the key are **not** evidence of not-revoked: the bundle is untrusted (§4.1), and its exporter can leave the revoking context out. Only a discovery record can decide `not-revoked`.
 - **Precedence** is RFC-ACDP-0014's own: refusal, then `unknown`, then `pre-compromise`, then `not-revoked`.
 - **Basis.** The value carries the basis of the evidence that decided it. A revocation that decided it is `registry`. A discovery record that decided it is `observed`.
 
@@ -309,7 +311,7 @@ Each pass yields one node verdict. The first rule that matches decides it:
    - `key` is `revoked`, `unplaceable` or `unresolvable`;
    - `key_revocation` is `revoked` or `unplaceable`.
 2. **`unknown`** when any of these hold:
-   - `presence` is `withheld`, `unresolved`, `absent` or `truncated`;
+   - `presence` is `withheld`, `unresolved` or `absent`;
    - `key: unknown`;
    - `key_revocation: unknown`;
    - `retraction` is `unknown` or `invalid`;
@@ -324,7 +326,7 @@ Each pass yields one node verdict. The first rule that matches decides it:
    - `log: cannot_verify`;
    - any stage resting on basis `observed`.
 
-   The verdict lists the caveats that hold, as the schema's tokens, sorted ascending by UTF-8 bytes. In the order of the list above, the tokens are `undated`, `identity_unbound`, `historical_key`, `pre_compromise`, `historical_receipt_key`, `retracted`, `log_cannot_verify` and `observed_basis`.
+   The verdict lists the caveats that hold, as the schema's tokens, sorted ascending by UTF-8 bytes. (NORMATIVE) `caveats` is computed from the stages independently of which rule decides the verdict, so a `refused` or `unknown` node also lists every caveat that holds for it. In the order of the list above, the tokens are `undated`, `identity_unbound`, `historical_key`, `pre_compromise`, `historical_receipt_key`, `retracted`, `log_cannot_verify` and `observed_basis`.
 4. **`ok`** otherwise.
 
 `retracted` is a **caveat, not a refusal**. A retracted body stays valid and retrievable (RFC-ACDP-0013 §8.1). Whether to rely on it is the consumer's policy, and §8.3 supplies what that policy needs.
@@ -335,13 +337,13 @@ Each pass also yields one chain verdict: the worst node verdict, in the order `r
 
 ### 8.3 Tainted paths
 
-For each node whose node verdict is `refused`, or whose `retraction` is `retracted`, the verdict lists one **tainted path**: the shortest path from any root to that node, as a `ctx_id` array. Ties are broken by comparing the arrays lexicographically, element by element, in UTF-8 byte order.
+For each node whose node verdict is `refused`, or whose `retraction` is `retracted`, the verdict lists one **tainted path**: the shortest path over the walk graph (§6.1(6)) from any root to that node, as a `ctx_id` array. Ties are broken by comparing the arrays lexicographically, element by element, in UTF-8 byte order.
 
 Tainted paths do not change any node verdict. A descendant of a retracted or refused node keeps its own verdict, and policy acts on ancestry without re-walking.
 
 ### 8.4 Drift
 
-When both passes run, the verifier emits one drift entry, `{ctx_id, kind}`, for each kind below that holds for a node. A stage difference that matches no kind and leaves the node verdict unchanged emits no entry. The kinds are:
+When both passes run, the verifier emits one drift entry, `{ctx_id, kind}`, for each kind below that holds for a node. A stage difference that matches no kind and leaves the node verdict unchanged emits no entry. (NORMATIVE) A stage the as-of pass did not run (because the node was not `present` as of T) counts as not having reached the latest value, so for example a node that is `not_yet_published` as of T and `retracted` latest emits both `published_after_as_of` and `retracted_after_as_of`. The kinds are:
 
 | Kind | Meaning |
 |---|---|
@@ -387,7 +389,7 @@ When `as_of` is `null`, every `as_of` member is `null` and `drift` is empty. A m
   - `verdict_version`, `roots`, `as_of`, `limits`, `require_attested_events` and `options_digest`;
   - `complete`, `control` and `frontier`;
   - `nodes`, each reduced to `ctx_id`, `depth`, `derived_from` and `as_of`;
-  - `chain.as_of` and `tainted_paths.as_of`.
+  - `chain` and `tainted_paths`, each reduced to its `as_of` member and kept nested: `{"chain": {"as_of": …}, "tainted_paths": {"as_of": …}}`.
 
   It is `null` when `as_of` is `null`.
 
@@ -449,6 +451,7 @@ A consumer verifies event receipt *i* against event *i*:
 6. `event_hash` recomputes.
 7. The signature verifies under a key in the registry DID document's `verificationMethod`, chosen per §6.2. The RFC-ACDP-0010 §9 receipt-key lifecycle applies.
 8. `accepted_at` is non-decreasing in *i*.
+9. `accepted_at` ≥ the context's `created_at`.
 
 A receipt that fails any step is treated as absent. Step 8 failing on any pair makes the context's `retraction` stage `invalid` (§7.8).
 
@@ -500,7 +503,7 @@ A future amendment to RFC-ACDP-0012 MAY add a leaf kind that binds an event rece
 | `chain-009` | Event-receipt verification (consumer): wrong index, wrong `event_hash`, wrong registry, decreasing `accepted_at`. Issuance and the idempotent retry that mints no second receipt are registry-side only (`acdp-registry-lifecycle`) (§10) |
 | `chain-010` | Digest stability: the same bundle and options give the same `verdict_digest` across implementations and across online/offline modes; evidence added after T changes `verdict_digest` but not `as_of_digest` (§9) |
 
-All are **behavioral** in this Draft. Promotion requires pinned known-answer verdict digests, generated by two independent implementations and then executed by `scripts/conformance-runner.py`.
+`chain-001`, `chain-002`, `chain-003` and `chain-010` scenario A carry **known-answer vectors**: a pinned bundle (`examples/evidence/`), a pinned verdict (`examples/chain-verdict/`) and their `evidence_digest`, `as_of_digest` and `verdict_digest`. `scripts/conformance-runner.py` recomputes the three digests and the as-of projection, and `make json-validate` validates both files against their schemas. A conformant implementation MUST reproduce each pinned verdict byte for byte from the pinned bundle and options. The known answers come from the first implementation (acdp-rs `acdp-chain`), and the digest arithmetic was recomputed independently. Every other scenario is **behavioral**. Promotion requires a second independent implementation to reproduce the known answers.
 
 ---
 

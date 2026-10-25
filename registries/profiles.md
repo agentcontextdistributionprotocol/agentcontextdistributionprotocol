@@ -130,7 +130,7 @@ For consumer deployments (libraries, agents). Does not run a registry.
 
 ### `acdp-consumer-chain` *(0.5.0)*
 
-For consumers that verify a whole `derived_from` graph offline and/or as of a past instant (RFC-ACDP-0017). Draft: the profile is OPTIONAL and every fixture is behavioral until promotion pins known-answer verdict digests.
+For consumers that verify a whole `derived_from` graph offline and/or as of a past instant (RFC-ACDP-0017). Draft: the profile is OPTIONAL. `chain-001`/`002`/`003`/`010` scenario A are known-answer vectors (a pinned bundle, verdict and digests that an implementation MUST reproduce byte for byte); every other scenario is behavioral.
 
 | | Required (in addition to `acdp-consumer`) |
 |---|---|

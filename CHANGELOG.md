@@ -13,7 +13,23 @@ All notable changes to ACDP are recorded here. ACDP follows the versioning polic
   - Log event leaves are reserved, not specified (§12).
 - **Schemas.** New `acdp-event-receipt`, `acdp-evidence` and `acdp-chain-verdict`. `acdp-registry-state` gains the optional `event_receipts` array, which depends on `lifecycle_events`.
 - **Profile.** New OPTIONAL `acdp-consumer-chain` (prerequisite `acdp-consumer`), registered in `registries/profiles.*` and RFC-ACDP-0001 §9.1. No new error codes.
-- **Conformance.** Fixture count: 159 → 169. New behavioral family `chain-001`..`chain-010`. `chain-009` is also conditional for `acdp-registry-lifecycle` registries that advertise receipts at ≥ 0.5.0. New example `examples/evidence/golden-evidence.json`, validated against the evidence schema.
+- **Conformance.** Fixture count: 159 → 169. New family `chain-001`..`chain-010`. `chain-009` is also conditional for `acdp-registry-lifecycle` registries that advertise receipts at ≥ 0.5.0 (its scenarios A–B are registry-side only). New example `examples/evidence/golden-evidence.json`, validated against the evidence schema.
+  - **Known answers.** `chain-001`/`002`/`003`/`010` scenario A pin a bundle (`examples/evidence/chain-00N-a.json`), a verdict (new `examples/chain-verdict/`, validated against `acdp-chain-verdict`) and their three digests. The runner recomputes them (`check_chain_kat`). They were produced by acdp-rs `acdp-chain`, and the digests were recomputed independently.
+- **Implementer clarifications** (first implementation, acdp-rs `acdp-chain`).
+  - `pinned` gets a normative shape (`#/$defs/pinned`), now including discovery `vantages`.
+  - Out-of-range limits are rejected with no verdict.
+  - Walk and verdict rules:
+    - cycles and tainted paths use the walk graph;
+    - the `signature` stage is omitted when `key` is `unknown`;
+    - registry-receipt basis is `registry` or `pinned`, never `observed`;
+    - only §10.3 step 8 makes `retraction` `invalid`, and a new step 9 checks `accepted_at` ≥ `created_at`;
+    - the registry-attested revocation scope is defined offline;
+    - not-revoked is decided only by a discovery record;
+    - caveats are listed whatever the verdict, sorted by bytes;
+    - drift is defined when the as-of pass did not run a stage;
+    - the nested as-of projection is fixed.
+  - `reason` is an enum (`no_evidence_at_as_of`).
+  - Node presence `truncated` is removed, since truncation is reported only via `complete`, `control` and `frontier`.
 
 ## v0.5.0 — Registry and conformance: `seam.decision` cites Seam record digest v4; conditional `anc-006` (#76) — 2026-10-19
 

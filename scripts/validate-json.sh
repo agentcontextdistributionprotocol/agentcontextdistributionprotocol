@@ -21,6 +21,7 @@ LOG_INCLUSION_SCHEMA="${SCHEMA_DIR}/acdp-log-inclusion.schema.json"
 LOG_COSIGNATURE_SCHEMA="${SCHEMA_DIR}/acdp-log-cosignature.schema.json"
 EVENT_RECEIPT_SCHEMA="${SCHEMA_DIR}/acdp-event-receipt.schema.json"
 EVIDENCE_SCHEMA="${SCHEMA_DIR}/acdp-evidence.schema.json"
+CHAIN_VERDICT_SCHEMA="${SCHEMA_DIR}/acdp-chain-verdict.schema.json"
 CONTEXT_SCHEMA="${SCHEMA_DIR}/acdp-context.schema.json"
 PUBLISH_REQUEST_SCHEMA="${SCHEMA_DIR}/acdp-publish-request.schema.json"
 PUBLISH_RESPONSE_SCHEMA="${SCHEMA_DIR}/acdp-publish-response.schema.json"
@@ -120,6 +121,7 @@ validate_dir_against "${EXAMPLES_DIR}/visibility"       "${CONTEXT_SCHEMA}"     
 validate_dir_against "${EXAMPLES_DIR}/capabilities"     "${CAPABILITIES_SCHEMA}"         "capabilities"
 validate_dir_against "${EXAMPLES_DIR}/error"            "${ERROR_SCHEMA}"                "error"
 validate_dir_against "${EXAMPLES_DIR}/evidence"         "${EVIDENCE_SCHEMA}"             "evidence bundle"
+validate_dir_against "${EXAMPLES_DIR}/chain-verdict"    "${CHAIN_VERDICT_SCHEMA}"        "chain verdict"
 
 # Meta-shape illustrative examples — JSON syntax check only (not single payloads)
 syntax_check_dir() {

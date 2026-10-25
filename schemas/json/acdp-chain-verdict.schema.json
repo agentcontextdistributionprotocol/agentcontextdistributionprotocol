@@ -139,7 +139,7 @@
             "key_revocation": { "$ref": "#/$defs/stage_key_revocation" }
           },
           "additionalProperties": false,
-          "description": "A node whose presence is not 'present' carries presence only (RFC-ACDP-0017 §7.1)."
+          "description": "A node whose presence is not 'present' carries presence only (RFC-ACDP-0017 §7.1). signature is omitted when key is unknown (§7.4)."
         }
       },
       "additionalProperties": false
@@ -148,13 +148,13 @@
       "properties": {
         "basis": { "$ref": "#/$defs/basis" },
         "evidence_time": { "$ref": "#/$defs/timestamp" },
-        "reason": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$", "maxLength": 64 }
+        "reason": { "enum": ["no_evidence_at_as_of"], "description": "The only reason token acdp-chain-verdict/1 defines (RFC-ACDP-0017 §7)." }
       }
     },
     "stage_presence": {
       "type": "object", "required": ["value"],
       "properties": {
-        "value": { "enum": ["present", "withheld", "unresolved", "absent", "truncated", "cycle", "not_yet_published"] },
+        "value": { "enum": ["present", "withheld", "unresolved", "absent", "cycle", "not_yet_published"] },
         "evidence_time": { "$ref": "#/$defs/timestamp" },
         "basis": { "$ref": "#/$defs/basis" }
       },

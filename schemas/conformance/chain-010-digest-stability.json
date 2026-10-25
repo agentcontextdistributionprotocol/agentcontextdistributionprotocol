@@ -53,5 +53,29 @@
       }
     }
   ],
-  "notes": "Behavioral in this Draft: the verifier builds the described bundle from real signed bodies (or the rcpt-001 / sig-003 test keys), runs verify_chain, and asserts the pinned stage values and verdicts. Pinned verdict digests replace these assertions at promotion (RFC-ACDP-0017 §14)."
+  "notes": "Behavioral scenarios: the verifier builds the described bundle from real signed bodies, runs verify_chain, and asserts the stage values and verdicts. Test keys: the did:key producer is the sig-001 zero seed (did:key:z6MkiTBz…, not sig-003's 0x42 seed); did:web producer #key-1 is the zero seed and #key-2 is 0x02×32; registry did:web:registry.example.com #receipt-key-1 is 0x11×32. Every bundle whose receipts must verify carries a registry DID snapshot (REG_SNAP) and every producer carries a discovery record unless a scenario removes it. Where present, `vectors` are known answers: the bundle and verdict files plus their pinned digests, executed by scripts/conformance-runner.py (RFC-ACDP-0017 §14).",
+  "vectors": [
+    {
+      "name": "A — known answer",
+      "roots": [
+        "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+      ],
+      "as_of": "2026-10-01T00:00:00.000Z",
+      "options": {
+        "as_of": "2026-10-01T00:00:00.000Z",
+        "limits": {
+          "max_depth": 10,
+          "max_nodes": 500,
+          "max_fanout": 100
+        },
+        "pinned": null,
+        "require_attested_events": true
+      },
+      "evidence": "examples/evidence/chain-002-a.json",
+      "verdict": "examples/chain-verdict/chain-002-a.json",
+      "evidence_digest": "sha256:0ce1f0f95b53f8d62e6073c2ce3fa77778eb8caf8f748acdbdb95e56a4307367",
+      "as_of_digest": "sha256:1bdf1fab1bea1ef927897e8d69a6c50b4c8a1e29a54030dc686b6984abcfccdd",
+      "verdict_digest": "sha256:211ed9aabab86e6d6fe6aa5166bdcb2747f9fe590beb8bcd68ed9152e8c66213"
+    }
+  ]
 }

@@ -499,7 +499,7 @@
         "chain-009-event-receipt-verification",
         "chain-010-digest-stability"
       ],
-      "notes": "OPTIONAL consumer profile (RFC-ACDP-0017 §13) for consumers that verify whole derived_from graphs offline and/or as of a past instant. Requires acdp-consumer. All chain-* fixtures are behavioral in this Draft; promotion pins known-answer verdict digests and executes them in scripts/conformance-runner.py. chain-009 is also the registry-side event-receipt fixture for acdp-registry-lifecycle (conditional there)."
+      "notes": "OPTIONAL consumer profile (RFC-ACDP-0017 §13) for consumers that verify whole derived_from graphs offline and/or as of a past instant. Requires acdp-consumer. chain-001/002/003/010 carry known-answer vectors (pinned bundle, verdict and digests) executed by scripts/conformance-runner.py; every other scenario is behavioral. Promotion requires a second independent implementation to reproduce the known answers. chain-009 is also the registry-side event-receipt fixture for acdp-registry-lifecycle (conditional there)."
     }
   ],
   "fixture_families": {
