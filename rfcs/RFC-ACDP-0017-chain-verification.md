@@ -171,7 +171,7 @@ The verifier walks breadth-first from the roots over `derived_from`. The order i
 1. The roots are deduplicated, sorted by `ctx_id` in ascending byte order of their UTF-8 encoding, and assigned depth 0.
 2. Nodes are expanded in order of increasing depth. Within one depth, they are expanded in ascending `ctx_id` byte order.
 3. A node's `derived_from` entries are considered in array order. A `ctx_id` already admitted is a **DAG join**: it adds an edge and admits no new node.
-4. The RFC-ACDP-0006 §4.1 controls apply, combined with AND. `limits` carries `max_depth`, `max_nodes` and `max_fanout`, which default to 10, 500 and 100. A caller MAY lower them and MUST NOT raise them above those defaults. Each limit **truncates** rather than aborts, as follows:
+4. The RFC-ACDP-0006 §4.1 controls apply, combined with AND. `limits` carries `max_depth`, `max_nodes` and `max_fanout`, which default to 10, 500 and 100. A caller MAY lower them and MUST NOT raise them above those defaults. A verifier MUST reject options carrying a limit above its default, or below the schema minimum (`max_depth` 0, `max_nodes` 1, `max_fanout` 0), with an error and emit no verdict. Each limit **truncates** rather than aborts, as follows:
    - **`max_depth`.** A node at depth `max_depth` is verified but not expanded.
    - **`max_fanout`.** Only the first `max_fanout` distinct entries of a node's `derived_from` are admitted.
    - **`max_nodes`.** Once `max_nodes` nodes have been admitted, no further node is admitted.
@@ -199,11 +199,25 @@ The chosen snapshot is evaluated under RFC-ACDP-0001 §5.11 as though it were th
 
 - DID-document snapshots, each bound to the instant at which the caller vouches for it;
 - registry DIDs whose receipt keys the caller trusts;
-- witness DIDs.
+- witness DIDs;
+- discovery vantages: hostnames whose RFC-ACDP-0014 §8 discovery records the caller vouches for. A `revocation_discovery` record whose `vantage` is pinned has basis `pinned` rather than `observed`.
+
+(NORMATIVE) `pinned` is a JSON object with these members, each OPTIONAL:
+
+```json
+{
+  "snapshots":  [{ "did": "did:web:…", "document": { }, "instant": "2026-09-20T00:00:00.000Z" }],
+  "registries": ["did:web:…"],
+  "witnesses":  ["did:web:…"],
+  "vantages":   ["registry.example.com"]
+}
+```
+
+`registries`, `witnesses` and `vantages` are sorted ascending by UTF-8 bytes and deduplicated. `snapshots` are sorted by `did`, then `instant`, and deduplicated. An empty array member is omitted. A caller that pins nothing passes `pinned` absent or `{}`; both are equivalent. The shape is `#/$defs/pinned` in `acdp-evidence.schema.json`, and options that fail it are rejected as in §6.1(4).
 
 A pinned snapshot takes part in §6.2 selection like an observed one, but its basis is `pinned`. Pinning promotes a basis. It never overrides a failed check: a pinned key that does not verify a signature is still `signature: invalid`.
 
-`pinned` contributes to the verdict through `options_digest` (§9.1).
+`pinned` contributes to the verdict through `options_digest` (§9.1), computed over the normalized object above.
 
 ### 6.4 Attested events
 
@@ -264,7 +278,7 @@ In the as-of pass, a checkpoint counts only if its `timestamp` ≤ T.
 
 `not_retracted`, `retracted`, `invalid`, or `unknown`.
 
-1. **Admitting events.** The pass admits a prefix of `lifecycle_events`: the longest prefix whose every event is admitted under §6.4 (as-of) or carries a verified signature (latest, RFC-ACDP-0013 §5).
+1. **Admitting events.** The pass admits a prefix of `lifecycle_events`: the longest prefix whose every event is admitted under §6.4 (as-of) or carries a verified signature (latest, RFC-ACDP-0013 §5). In the latest pass, an event with a verified event receipt (§10) has basis `registry`. An event admitted on its signature alone has basis `observed`, and the `retraction` stage takes the weakest basis among the admitted events.
 2. **Deriving the state.** RFC-ACDP-0013 §7.1 retraction state is derived over the admitted prefix.
 3. **`unknown`** in the as-of pass when an event that is not admitted precedes an admitted one. The prefix is then unprovable.
 4. **`invalid`** when event receipts disagree with the event array: a mismatched `index` or `event_hash`, or `accepted_at` values that decrease with index (§10.3).
@@ -310,7 +324,7 @@ Each pass yields one node verdict. The first rule that matches decides it:
    - `log: cannot_verify`;
    - any stage resting on basis `observed`.
 
-   The verdict lists the caveats that hold, sorted, as the schema's tokens: `undated`, `identity_unbound`, `historical_key`, `pre_compromise`, `historical_receipt_key`, `retracted`, `log_cannot_verify` and `observed_basis`, in the order of the list above.
+   The verdict lists the caveats that hold, as the schema's tokens, sorted ascending by UTF-8 bytes. In the order of the list above, the tokens are `undated`, `identity_unbound`, `historical_key`, `pre_compromise`, `historical_receipt_key`, `retracted`, `log_cannot_verify` and `observed_basis`.
 4. **`ok`** otherwise.
 
 `retracted` is a **caveat, not a refusal**. A retracted body stays valid and retrievable (RFC-ACDP-0013 §8.1). Whether to rely on it is the consumer's policy, and §8.3 supplies what that policy needs.
@@ -355,7 +369,7 @@ The verdict is validated by [`acdp-chain-verdict.schema.json`](../schemas/json/a
 - `horizon`.
 - `limits`: `max_depth`, `max_nodes` and `max_fanout`.
 - `require_attested_events`.
-- `options_digest`: `sha256:` + hex(SHA-256(JCS(`pinned`))), or `null` when nothing is pinned.
+- `options_digest`: `sha256:` + hex(SHA-256(JCS(`pinned`))) over the normalized object of §6.3, or `null` when `pinned` is absent or `{}`.
 - `evidence_digest`: `sha256:` + hex(SHA-256(JCS(bundle))).
 - `complete`, `control` and `frontier` (sorted).
 - `nodes`: sorted by `ctx_id`. Each node carries `depth` (the shortest distance from a root), `derived_from` (as in the body), and an `as_of` and a `latest` object. Each pass object holds the §7 stages and the §8.1 verdict and caveats.
@@ -475,7 +489,7 @@ A future amendment to RFC-ACDP-0012 MAY add a leaf kind that binds an event rece
 
 | Fixture | Covers |
 |---|---|
-| `chain-001` | 3-node DAG with a join, all `did:key`, receipts and complete discovery: both passes `ok`, no drift (§6.1, §8) |
+| `chain-001` | 3-node DAG with a join, all `did:key`, receipts and complete discovery: both passes `ok_with_caveats` [`observed_basis`], because discovery is observed; with the vantage pinned (B), `ok`; no drift (§6.1, §6.3, §8) |
 | `chain-002` | Revocation published after T: as-of `ok_with_caveats` (observed discovery), latest `refused`, drift `revoked_after_as_of` (§5.3) |
 | `chain-003` | Retraction with an event receipt after T: as-of `not_retracted`, latest `retracted`, drift `retracted_after_as_of` (§7.8, §10) |
 | `chain-004` | Backdated retraction (`occurred_at` ≤ T < `accepted_at`): same as `chain-003`, plus `backdated_event` (§8.4) |
@@ -483,7 +497,7 @@ A future amendment to RFC-ACDP-0012 MAY add a leaf kind that binds an event rece
 | `chain-006` | Fanout truncation: `complete: false`, `control: max_fanout`, frontier pinned (§6.1; offline `fed-010`) |
 | `chain-007` | did:web snapshot selection before and after T; `observed` vs `pinned` basis; `no_evidence_at_as_of` (§6.2, §6.3) |
 | `chain-008` | Tampered body, key ≠ `body.ctx_id`, and a node missing from `contexts` and absent from `omitted`: `content_hash: mismatch`, `identity: mismatch`, `absent` vs `withheld` (§4.2, §7) |
-| `chain-009` | Event-receipt verification: wrong index, wrong `event_hash`, decreasing `accepted_at`; idempotent retry mints no second receipt (§10) |
+| `chain-009` | Event-receipt verification (consumer): wrong index, wrong `event_hash`, wrong registry, decreasing `accepted_at`. Issuance and the idempotent retry that mints no second receipt are registry-side only (`acdp-registry-lifecycle`) (§10) |
 | `chain-010` | Digest stability: the same bundle and options give the same `verdict_digest` across implementations and across online/offline modes; evidence added after T changes `verdict_digest` but not `as_of_digest` (§9) |
 
 All are **behavioral** in this Draft. Promotion requires pinned known-answer verdict digests, generated by two independent implementations and then executed by `scripts/conformance-runner.py`.

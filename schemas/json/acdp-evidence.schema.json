@@ -138,6 +138,30 @@
         "completed_at": { "$ref": "#/$defs/timestamp" }
       },
       "additionalProperties": false
+    },
+    "pinned": {
+      "type": "object",
+      "description": "Caller-supplied verify_chain option, NOT a bundle member (RFC-ACDP-0017 §6.3). Arrays sorted ascending by UTF-8 bytes and deduplicated; snapshots sorted by did, then instant. options_digest = sha256(JCS(this object)), or null when absent or {} (RFC-ACDP-0017 §9.1).",
+      "properties": {
+        "snapshots": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["did", "document", "instant"],
+            "properties": {
+              "did": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did", "not": { "pattern": "^did:key:" } },
+              "document": { "type": "object" },
+              "instant": { "$ref": "#/$defs/timestamp" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "registries": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did" } },
+        "witnesses": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did" } },
+        "vantages": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/hostname" } }
+      },
+      "additionalProperties": false
     }
   }
 }
