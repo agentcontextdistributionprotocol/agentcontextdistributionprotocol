@@ -1,0 +1,114 @@
+{
+  "id": "chain-001",
+  "description": "(0.5.0) Clean three-node DAG with a join, all did:key producers, every body receipted at or before T, a not-revoked-complete discovery record observed before T (RFC-ACDP-0017 §6.1, §7, §8). Exercises deterministic BFS order, DAG-join handling (a node reached twice is admitted once), and the observed-basis caveat contributed by discovery records.",
+  "tags": [
+    "chain",
+    "consumer",
+    "offline",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-chain"
+  ],
+  "input": {
+    "graph": {
+      "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": [
+        "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "acdp://registry.example.com/cccccccc-cccc-4ccc-8ccc-cccccccccccc"
+      ],
+      "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb": [
+        "acdp://registry.example.com/cccccccc-cccc-4ccc-8ccc-cccccccccccc"
+      ],
+      "acdp://registry.example.com/cccccccc-cccc-4ccc-8ccc-cccccccccccc": []
+    },
+    "roots": [
+      "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    ],
+    "as_of": "2026-10-01T00:00:00.000Z",
+    "bundle": {
+      "producer": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
+      "receipts": {
+        "created_at": {
+          "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": "2026-09-03T00:00:00.000Z",
+          "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb": "2026-09-02T00:00:00.000Z",
+          "acdp://registry.example.com/cccccccc-cccc-4ccc-8ccc-cccccccccccc": "2026-09-01T00:00:00.000Z"
+        }
+      },
+      "revocation_discovery": {
+        "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp": [
+          {
+            "vantage": "registry.example.com",
+            "outcome": "not-revoked-complete",
+            "completed_at": "2026-09-30T00:00:00.000Z"
+          }
+        ]
+      },
+      "did_documents": "none (did:key resolves arithmetically)",
+      "omitted": []
+    },
+    "limits": {
+      "max_depth": 10,
+      "max_nodes": 500,
+      "max_fanout": 100
+    },
+    "pinned": null
+  },
+  "scenarios": [
+    {
+      "name": "A — both passes",
+      "expected": {
+        "complete": true,
+        "control": null,
+        "frontier": [],
+        "nodes": {
+          "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": {
+            "depth": 0
+          },
+          "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb": {
+            "depth": 1
+          },
+          "acdp://registry.example.com/cccccccc-cccc-4ccc-8ccc-cccccccccccc": {
+            "depth": 1
+          }
+        },
+        "per_node_both_passes": {
+          "presence": "present",
+          "identity": "ok",
+          "content_hash": "ok",
+          "signature": "ok",
+          "registry_receipt": "ok (key_status current)",
+          "key": "current (basis self)",
+          "retraction": "not_retracted",
+          "key_revocation": "not-revoked (basis observed)"
+        },
+        "node_verdict": "ok_with_caveats",
+        "caveats": [
+          "observed_basis"
+        ],
+        "chain": {
+          "as_of": "ok_with_caveats",
+          "latest": "ok_with_caveats"
+        },
+        "drift": [],
+        "tainted_paths": {
+          "as_of": [],
+          "latest": []
+        },
+        "behavior": "C is reached from A (depth 1) and from B (depth 2); it is admitted once, at depth 1 — the shortest distance — and the second edge is a DAG join, not a cycle."
+      }
+    },
+    {
+      "name": "B — discovery pinned",
+      "expected": {
+        "behavior": "As A, but the caller pins the discovery vantage (RFC-ACDP-0017 §6.3) so key_revocation rests on basis pinned: every node verdict is ok, the chain verdict is ok in both passes, and options_digest is non-null."
+      }
+    },
+    {
+      "name": "C — no as_of",
+      "expected": {
+        "behavior": "as_of = null: only the latest pass runs; every node's as_of member, chain.as_of, tainted_paths.as_of and as_of_digest are null, and drift is []."
+      }
+    }
+  ],
+  "notes": "Behavioral in this Draft: the verifier builds the described bundle from real signed bodies (or the rcpt-001 / sig-003 test keys), runs verify_chain, and asserts the pinned stage values and verdicts. Pinned verdict digests replace these assertions at promotion (RFC-ACDP-0017 §14)."
+}

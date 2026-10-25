@@ -647,6 +647,10 @@ A **witness** for the RFC-ACDP-0012 transparency log (the RFC-ACDP-0009 §2.12 p
 
 Cosignature-aware consumers verify cosignatures per RFC-ACDP-0015 §8 whenever they rely on witness evidence, count a checkpoint as *N*-witnessed over distinct trusted witness DIDs, apply local quorum/freshness policy (RFC-ACDP-0015 §8.1), and report the witness verdict separately from the body, context-receipt, head-receipt, and log verdicts; failures surface as `invalid_witness_cosignature` (RFC-ACDP-0015 §10). Registries MAY aggregate cosignatures as the top-level `witness_signatures` member under their existing `acdp-registry-transparency-log` profile (RFC-ACDP-0015 §6.1); no registry profile is required to do so.
 
+#### `acdp-consumer-chain` *(0.5.0, Draft)*
+
+An OPTIONAL consumer profile, prerequisite `acdp-consumer`, for consumers that verify a whole `derived_from` graph offline and/or as of a past instant from an `acdp-evidence/1` bundle. Consumers claiming it implement `verify_chain` per RFC-ACDP-0017 §6–§9, emit the deterministic `acdp-chain-verdict/1` object, verify lifecycle event receipts per RFC-ACDP-0017 §10.3, and pass `chain-001..010` (RFC-ACDP-0017 §13–§14). Being Draft-line, this entry is not frozen.
+
 ### 9.2 Verification profile names (RECOMMENDED)
 
 v0.1.0 verification is always strict for any conformance claim — §5.11 ("v0.1.0 strict verification profile") defines the strict pipeline and requires that it be the non-loosenable default. SDKs MAY additionally expose relaxed or diagnostic verification modes for debugging and test harnesses. When they do, they SHOULD use the following identifiers so documentation, logs, and error messages are consistent across language implementations:

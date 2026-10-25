@@ -1,0 +1,63 @@
+{
+  "id": "chain-008",
+  "description": "(0.5.0) Untrusted-bundle checks (RFC-ACDP-0017 §4.1, §6.1, §7.2, §7.3): a tampered body, a contexts key that does not match body.ctx_id, a referenced node missing from contexts and not in omitted, and a malformed bundle.",
+  "tags": [
+    "chain",
+    "consumer",
+    "offline",
+    "0.5.0",
+    "untrusted-input"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-chain"
+  ],
+  "input": {
+    "graph": {
+      "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": [
+        "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "acdp://registry.example.com/cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+        "acdp://registry.example.com/dddddddd-dddd-4ddd-8ddd-dddddddddddd"
+      ],
+      "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb": [],
+      "acdp://registry.example.com/cccccccc-cccc-4ccc-8ccc-cccccccccccc": [],
+      "acdp://registry.example.com/dddddddd-dddd-4ddd-8ddd-dddddddddddd": []
+    },
+    "roots": [
+      "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    ],
+    "as_of": null
+  },
+  "scenarios": [
+    {
+      "name": "A — tampered body",
+      "expected": {
+        "behavior": "B's title is altered after signing: content_hash mismatch → refused; tainted_paths.latest contains [A, B]."
+      }
+    },
+    {
+      "name": "B — key mismatch",
+      "expected": {
+        "behavior": "The contexts entry under key C carries a body whose ctx_id is acdp://registry.example.com/eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee: identity mismatch → refused, even though content_hash and signature verify (the offline fed-011 binding)."
+      }
+    },
+    {
+      "name": "C — absent vs withheld",
+      "expected": {
+        "behavior": "D is missing from contexts. With omitted = [{ctx_id: D, reason: withheld}] D is withheld; with reason not_retrievable it is unresolved; with no omitted entry it is absent. All three are unknown, and the three values MUST be distinguishable."
+      }
+    },
+    {
+      "name": "D — receipt mismatch",
+      "expected": {
+        "behavior": "B's registry_receipt.created_at differs from body.created_at: identity mismatch (the receipt fails RFC-ACDP-0010 §8 and is treated as absent everywhere else)."
+      }
+    },
+    {
+      "name": "E — malformed bundle",
+      "expected": {
+        "behavior": "A bundle that fails acdp-evidence.schema.json (e.g. a did:key key in did_documents) is rejected whole; no partial verdict is emitted."
+      }
+    }
+  ],
+  "notes": "Behavioral in this Draft: the verifier builds the described bundle from real signed bodies (or the rcpt-001 / sig-003 test keys), runs verify_chain, and asserts the pinned stage values and verdicts. Pinned verdict digests replace these assertions at promotion (RFC-ACDP-0017 §14)."
+}

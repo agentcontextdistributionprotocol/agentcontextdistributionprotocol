@@ -1,0 +1,57 @@
+{
+  "id": "chain-010",
+  "description": "(0.5.0) Verdict determinism and the sealable as-of digest (RFC-ACDP-0017 §9.2, §9.3).",
+  "tags": [
+    "chain",
+    "consumer",
+    "offline",
+    "0.5.0",
+    "determinism"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-chain"
+  ],
+  "input": {
+    "base": "the chain-002 scenario A bundle",
+    "as_of": "2026-10-01T00:00:00.000Z"
+  },
+  "scenarios": [
+    {
+      "name": "A — cross-implementation",
+      "expected": {
+        "behavior": "Two independent implementations, given identical roots, bundle bytes and options, emit byte-identical JCS verdicts: equal verdict_digest and as_of_digest."
+      }
+    },
+    {
+      "name": "B — online vs offline",
+      "expected": {
+        "behavior": "verify_chain over a bundle collected online, and verify_chain_online over the same registry state, give the same verdict_digest."
+      }
+    },
+    {
+      "name": "C — evidence added after T",
+      "expected": {
+        "behavior": "Add a lifecycle event with accepted_at > T and a DID snapshot observed after T: verdict_digest and evidence_digest change; as_of_digest does NOT."
+      }
+    },
+    {
+      "name": "D — evidence added at or before T",
+      "expected": {
+        "behavior": "Add a discovery record with completed_at <= T that changes a stage: as_of_digest changes — the auditor learns the bundles differ in evidence dated <= T."
+      }
+    },
+    {
+      "name": "E — extra members",
+      "expected": {
+        "non_conformant_implementation": "Adding diagnostics (durations, fetch logs) or null-valued optional members to the verdict object; both break byte identity."
+      }
+    },
+    {
+      "name": "F — timeout",
+      "expected": {
+        "behavior": "A fired time budget sets control timeout and complete false; such a verdict is exempt from A–B."
+      }
+    }
+  ],
+  "notes": "Behavioral in this Draft: the verifier builds the described bundle from real signed bodies (or the rcpt-001 / sig-003 test keys), runs verify_chain, and asserts the pinned stage values and verdicts. Pinned verdict digests replace these assertions at promotion (RFC-ACDP-0017 §14)."
+}

@@ -2,6 +2,19 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Draft RFC-ACDP-0017: chain verification and evidence bundles — 2026-10-24
+
+**New Draft RFC plus additive Draft-line wire members. No existing body field, schema `$id`, JCS rule, content-hash, or signature semantic changed; every existing body, receipt and signature stays valid.**
+
+- **RFC-ACDP-0017 (Draft, acdp/0.5.0).** `verify_chain`: offline, as-of verification of a whole `derived_from` graph from an untrusted `acdp-evidence/1` bundle. It specifies a deterministic walk with truncating limits, an as-of pass and a latest pass with no wall clock, nine verification stages, verdict aggregation with tainted paths and drift, and a byte-identical `acdp-chain-verdict/1` object with `verdict_digest` and a sealable `as_of_digest`.
+- **Wire additions (Draft-line).**
+  - Lifecycle event receipts (`acdp-event-receipt/1`, served in `registry_state.event_receipts`) are REQUIRED for `acdp-registry-lifecycle` + `acdp-registry-receipts` registries at `acdp_version` ≥ 0.5.0 (RFC-ACDP-0017 §10; pointer in RFC-ACDP-0013 §4.1).
+  - Lineage-array members carry their receipts (RFC-ACDP-0017 §11; pointer in RFC-ACDP-0004 §5.1).
+  - Log event leaves are reserved, not specified (§12).
+- **Schemas.** New `acdp-event-receipt`, `acdp-evidence` and `acdp-chain-verdict`. `acdp-registry-state` gains the optional `event_receipts` array, which depends on `lifecycle_events`.
+- **Profile.** New OPTIONAL `acdp-consumer-chain` (prerequisite `acdp-consumer`), registered in `registries/profiles.*` and RFC-ACDP-0001 §9.1. No new error codes.
+- **Conformance.** Fixture count: 159 → 169. New behavioral family `chain-001`..`chain-010`. `chain-009` is also conditional for `acdp-registry-lifecycle` registries that advertise receipts at ≥ 0.5.0. New example `examples/evidence/golden-evidence.json`, validated against the evidence schema.
+
 ## v0.5.0 — Registry and conformance: `seam.decision` cites Seam record digest v4; conditional `anc-006` (#76) — 2026-10-19
 
 **Registry entry and one conditional behavioral fixture. No body field, schema `$id`, JCS rule, content-hash, signature semantic, or RFC text changed.** Closes the deferred items 1–2 of #76 now that Seam's protocol-pass release is out.

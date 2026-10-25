@@ -15,6 +15,8 @@ Retraction is **mark-not-delete**: the body of a retracted context remains perma
 
 This document is a **Final** ACDP specification (acdp/0.3.0). It is stable for the 0.3.0 line; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md). It was promoted from Draft to Final on 2026-07-05, the VERSIONING.md gate having been met: the conformance fixtures it defines (`lc-001..003`) pass against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md) for the promotion record).
 
+This revision additionally carries an **acdp/0.5.0 Draft-line amendment**, marked *(0.5.0)*, to §4.1: registry-signed lifecycle event receipts, specified in RFC-ACDP-0017 §10. Being Draft-line, the marked passage is **not** frozen with the rest of this Final document.
+
 This RFC promotes the RFC-ACDP-0009 §2.1 reservation. The reserved names — the `lifecycle_events` registry-state field, the `retracted` status, and the `immutable_field` error code — are adopted exactly as reserved. Nothing in this document invalidates any v0.1.0/0.2.0 body, signature, `content_hash`, or receipt; retraction never touches a body.
 
 ---
@@ -70,6 +72,8 @@ A lifecycle event is a JSON object with exactly the following members. The canon
 - MUST serve the array on full retrieval (`GET /contexts/{ctx_id}`) and on the lineage array (`GET /lineages/{lineage_id}`), inside each version's `registry_state`. The **body-only endpoint is unaffected** — `GET /contexts/{ctx_id}/body` returns the bare signed body with no registry state of any kind, preserving its immutable-cache story (RFC-ACDP-0004 §2.2).
 
 Lifecycle events are registry state, OUTSIDE the body. They are never an input to the producer's `content_hash` (RFC-ACDP-0001 §5.7) and MUST NOT appear inside a stored body.
+
+**Event receipts *(0.5.0)* (NORMATIVE).** A registry advertising this profile together with `acdp-registry-receipts`, and declaring `acdp_version` ≥ `0.5.0`, MUST mint one `acdp-event-receipt/1` per accepted event and serve them in `registry_state.event_receipts`, parallel to `lifecycle_events` (same length, receipt at position *i* attesting the event at position *i*), per RFC-ACDP-0017 §10. The receipt's `accepted_at`, not the actor-claimed `occurred_at`, is the event's time for as-of verification. `event_receipts` obeys the same append-only and absent-when-empty rules as `lifecycle_events`.
 
 ---
 

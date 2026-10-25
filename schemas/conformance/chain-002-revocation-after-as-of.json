@@ -1,0 +1,105 @@
+{
+  "id": "chain-002",
+  "description": "(0.5.0) A key-revocation for the producer's key is published (receipt created_at) AFTER T, with compromised_since before the node's receipt time. As of T the revocation is not applied (its evidence time > T, RFC-ACDP-0017 §5.3); latest applies it under RFC-ACDP-0014 §7 unchanged.",
+  "tags": [
+    "chain",
+    "consumer",
+    "offline",
+    "0.5.0",
+    "revocation"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-chain"
+  ],
+  "input": {
+    "graph": {
+      "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": [
+        "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+      ],
+      "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb": []
+    },
+    "roots": [
+      "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    ],
+    "as_of": "2026-10-01T00:00:00.000Z",
+    "bundle": {
+      "producer": "did:web:agents.example.com:test-producer",
+      "receipts": {
+        "created_at": {
+          "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": "2026-09-20T00:00:00.000Z",
+          "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb": "2026-09-10T00:00:00.000Z"
+        }
+      },
+      "revocation": {
+        "ctx_id": "acdp://registry.example.com/eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+        "revoked_key": "the key that signed A and B",
+        "compromised_since": "2026-09-01T00:00:00.000Z",
+        "receipt_created_at": "2026-10-05T00:00:00.000Z",
+        "carried_in": "contexts"
+      },
+      "revocation_discovery": {
+        "did:web:agents.example.com:test-producer": [
+          {
+            "vantage": "registry.example.com",
+            "outcome": "not-revoked-complete",
+            "completed_at": "2026-09-30T00:00:00.000Z"
+          }
+        ]
+      },
+      "did_documents": {
+        "did:web:agents.example.com:test-producer": "one snapshot observed 2026-09-30T00:00:00.000Z with the signing key in assertionMethod"
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "name": "A — as-of vs latest",
+      "expected": {
+        "as_of": {
+          "key_revocation": "not-revoked (basis observed, from the 2026-09-30 discovery record)",
+          "node_verdict": "ok_with_caveats",
+          "chain": "ok_with_caveats"
+        },
+        "latest": {
+          "key_revocation": "revoked (revocation_ctx_id = acdp://registry.example.com/eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee)",
+          "key": "revoked",
+          "node_verdict": "refused",
+          "chain": "refused",
+          "tainted_paths": [
+            [
+              "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+            ],
+            [
+              "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+            ]
+          ]
+        },
+        "drift": [
+          {
+            "ctx_id": "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "kind": "revoked_after_as_of"
+          },
+          {
+            "ctx_id": "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+            "kind": "revoked_after_as_of"
+          }
+        ],
+        "note": "verdict_changed is NOT emitted: revoked_after_as_of already explains the change (RFC-ACDP-0017 §8.4)."
+      }
+    },
+    {
+      "name": "B — no discovery record before T",
+      "expected": {
+        "behavior": "Remove the discovery record. As of T, key_revocation is unknown (no admitted record, no admitted revocation) and the chain as-of verdict is unknown; latest is unchanged (refused). Drift includes revoked_after_as_of; it MUST NOT report not-revoked as of T."
+      }
+    },
+    {
+      "name": "C — compromise boundary after the bodies",
+      "expected": {
+        "behavior": "compromised_since = 2026-09-25T00:00:00.000Z: B (receipt 2026-09-10) is pre-compromise in latest (caveat pre_compromise, ok_with_caveats); A (receipt 2026-09-20) is pre-compromise too. Both passes are ok_with_caveats, so drift is []: a stage change that matches no drift kind and leaves the verdict unchanged emits no entry."
+      }
+    }
+  ],
+  "notes": "Behavioral in this Draft: the verifier builds the described bundle from real signed bodies (or the rcpt-001 / sig-003 test keys), runs verify_chain, and asserts the pinned stage values and verdicts. Pinned verdict digests replace these assertions at promotion (RFC-ACDP-0017 §14)."
+}

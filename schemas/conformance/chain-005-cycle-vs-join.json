@@ -1,0 +1,82 @@
+{
+  "id": "chain-005",
+  "description": "(0.5.0) A true cycle in derived_from (only possible with forged bodies or a forged bundle) is presence: cycle and refused on every node on the cycle; a DAG join is not a cycle (RFC-ACDP-0017 §6.1).",
+  "tags": [
+    "chain",
+    "consumer",
+    "offline",
+    "0.5.0",
+    "traversal"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-chain"
+  ],
+  "input": {
+    "roots": [
+      "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    ],
+    "as_of": null,
+    "cases": {
+      "join": {
+        "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": [
+          "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          "acdp://registry.example.com/cccccccc-cccc-4ccc-8ccc-cccccccccccc"
+        ],
+        "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb": [
+          "acdp://registry.example.com/dddddddd-dddd-4ddd-8ddd-dddddddddddd"
+        ],
+        "acdp://registry.example.com/cccccccc-cccc-4ccc-8ccc-cccccccccccc": [
+          "acdp://registry.example.com/dddddddd-dddd-4ddd-8ddd-dddddddddddd"
+        ],
+        "acdp://registry.example.com/dddddddd-dddd-4ddd-8ddd-dddddddddddd": []
+      },
+      "cycle": {
+        "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": [
+          "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+        ],
+        "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb": [
+          "acdp://registry.example.com/cccccccc-cccc-4ccc-8ccc-cccccccccccc"
+        ],
+        "acdp://registry.example.com/cccccccc-cccc-4ccc-8ccc-cccccccccccc": [
+          "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+        ]
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "name": "A — join",
+      "expected": {
+        "behavior": "D is admitted once (depth 2); no node is cycle; the chain verdict follows the nodes' own stages."
+      }
+    },
+    {
+      "name": "B — cycle",
+      "expected": {
+        "nodes": {
+          "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": "not on the cycle: its own verdict",
+          "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb": "presence cycle → refused",
+          "acdp://registry.example.com/cccccccc-cccc-4ccc-8ccc-cccccccccccc": "presence cycle → refused"
+        },
+        "chain": {
+          "latest": "refused"
+        },
+        "tainted_paths": {
+          "latest": [
+            [
+              "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+            ],
+            [
+              "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+              "acdp://registry.example.com/cccccccc-cccc-4ccc-8ccc-cccccccccccc"
+            ]
+          ]
+        },
+        "behavior": "The walk terminates (a ctx_id is admitted at most once) and reports the cycle; it MUST NOT loop or abort without a report."
+      }
+    }
+  ],
+  "notes": "Behavioral in this Draft: the verifier builds the described bundle from real signed bodies (or the rcpt-001 / sig-003 test keys), runs verify_chain, and asserts the pinned stage values and verdicts. Pinned verdict digests replace these assertions at promotion (RFC-ACDP-0017 §14)."
+}

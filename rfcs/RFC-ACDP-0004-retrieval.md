@@ -17,6 +17,8 @@ Passages marked *(0.2.0)* or *(0.3.0)* record the release line that added them (
 
 This revision additionally carries a **consumer-side acdp/0.5.0 Draft-line amendment**, marked *(0.5.0)*, to §2.1: consumers bind the registry-assigned `lineage_id` and `origin_registry`, as they already bind `ctx_id` (fixtures `ret-003`, `body-003`). It adds no field and changes no wire behavior.
 
+A second *(0.5.0)* Draft-line amendment, to §5.1, requires receipts-advertising registries to carry each lineage member's receipts (RFC-ACDP-0017 §11). It adds no field; it makes an existing optional member mandatory in one response shape.
+
 > **Markers and status — read this before relying on a marked passage.** A parenthetical version marker records *which release line introduced a passage*, not that the passage is Final. Passages marked ***(0.5.0)*** belong to the **0.5.0 line, which is still `Draft`** ([VERSIONING.md](../VERSIONING.md)) — they are open to substantive change until that line is promoted, and an implementation MUST NOT treat them as frozen. Everything not marked at all is Final and wire-frozen for acdp/0.1.0. The document-level status above describes the unmarked body of this RFC; it does not extend to *(0.5.0)* passages.
 
 The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **SHOULD**, **SHOULD NOT**, **RECOMMENDED**, **MAY**, and **OPTIONAL** in this document are to be interpreted as described in BCP 14 ([RFC 2119](https://datatracker.ietf.org/doc/html/rfc2119), [RFC 8174](https://datatracker.ietf.org/doc/html/rfc8174)) when, and only when, they appear in all capitals — the conventions of [RFC-ACDP-0001 §2](RFC-ACDP-0001-core.md#2-conventions-and-terminology).
@@ -159,6 +161,8 @@ Content-Type: application/acdp+json
   { "body": { "version": 2, "ctx_id": "...", ... }, "registry_state": { "status": "active" } }
 ]
 ```
+
+**Receipts on lineage members *(0.5.0)* (NORMATIVE).** A registry advertising `acdp-registry-receipts` and declaring `acdp_version` ≥ `0.5.0` MUST include each version's `registry_state.registry_receipt` (and, where it advertises `acdp-registry-lifecycle`, its `lifecycle_events` and `event_receipts`) in every element of this array, exactly as on full retrieval of that version, so that a lineage walk can be verified offline per RFC-ACDP-0017 §11.
 
 ### 5.2 Current version
 

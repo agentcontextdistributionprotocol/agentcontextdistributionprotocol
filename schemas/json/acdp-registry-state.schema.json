@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.acdp.io/v0.1.0/acdp-registry-state.schema.json",
   "title": "ACDP Registry State (v0.1.0)",
-  "description": "The registry-maintained portion of a context, returned alongside the body on retrieval. In v0.1.0 this contains only the derived 'status' field; 0.3.0 adds the optional 'lifecycle_events' array (RFC-ACDP-0013, promoting the RFC-ACDP-0009 §2.1 reservation). Future versions will add relationships and attestations. Consumers MUST tolerate unknown fields for forward compatibility.",
+  "description": "The registry-maintained portion of a context, returned alongside the body on retrieval. In v0.1.0 this contains only the derived 'status' field; 0.3.0 adds the optional 'lifecycle_events' array (RFC-ACDP-0013, promoting the RFC-ACDP-0009 §2.1 reservation); 0.5.0 adds the parallel 'event_receipts' array (RFC-ACDP-0017 §10). Future versions will add relationships and attestations. Consumers MUST tolerate unknown fields for forward compatibility.",
 
   "type": "object",
   "required": ["status"],
@@ -16,7 +16,14 @@
       "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-lifecycle-event.schema.json" },
       "minItems": 1,
       "description": "(0.3.0) Append-only lifecycle event history (RFC-ACDP-0013 §4.1): events in registry-accepted order; never removed, reordered, or mutated. Omitted entirely (never an empty array) when no events exist, per the absent-vs-null convention (RFC-ACDP-0005 §2.2.1). Emitted only by registries advertising acdp-registry-lifecycle. Pre-0.3.0 libraries preserve it verbatim as an unknown registry-state member (the field name has been reserved since v0.1.0, RFC-ACDP-0009 §2.1)."
+    },
+    "event_receipts": {
+      "type": "array",
+      "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-event-receipt.schema.json" },
+      "minItems": 1,
+      "description": "(0.5.0) Registry-signed event receipts, parallel to lifecycle_events: element i receipts event i (RFC-ACDP-0017 §10.2). REQUIRED wherever lifecycle_events is served by a registry advertising acdp-registry-lifecycle and acdp-registry-receipts at acdp_version >= 0.5.0; omitted entirely when lifecycle_events is absent. Append-only under the RFC-ACDP-0013 §4.1 discipline."
     }
   },
+  "dependentRequired": { "event_receipts": ["lifecycle_events"] },
   "additionalProperties": true
 }

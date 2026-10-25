@@ -18,6 +18,9 @@ LINEAGE_HEAD_RECEIPT_SCHEMA="${SCHEMA_DIR}/acdp-lineage-head-receipt.schema.json
 LOG_LEAF_SCHEMA="${SCHEMA_DIR}/acdp-log-leaf.schema.json"
 LOG_CHECKPOINT_SCHEMA="${SCHEMA_DIR}/acdp-log-checkpoint.schema.json"
 LOG_INCLUSION_SCHEMA="${SCHEMA_DIR}/acdp-log-inclusion.schema.json"
+LOG_COSIGNATURE_SCHEMA="${SCHEMA_DIR}/acdp-log-cosignature.schema.json"
+EVENT_RECEIPT_SCHEMA="${SCHEMA_DIR}/acdp-event-receipt.schema.json"
+EVIDENCE_SCHEMA="${SCHEMA_DIR}/acdp-evidence.schema.json"
 CONTEXT_SCHEMA="${SCHEMA_DIR}/acdp-context.schema.json"
 PUBLISH_REQUEST_SCHEMA="${SCHEMA_DIR}/acdp-publish-request.schema.json"
 PUBLISH_RESPONSE_SCHEMA="${SCHEMA_DIR}/acdp-publish-response.schema.json"
@@ -36,6 +39,8 @@ REFS=(
     -r "${LOG_LEAF_SCHEMA}"
     -r "${LOG_CHECKPOINT_SCHEMA}"
     -r "${LOG_INCLUSION_SCHEMA}"
+    -r "${LOG_COSIGNATURE_SCHEMA}"
+    -r "${EVENT_RECEIPT_SCHEMA}"
 )
 
 CONFORMANCE_DIR="${PROJECT_ROOT}/schemas/conformance"
@@ -114,6 +119,7 @@ validate_dir_against "${EXAMPLES_DIR}/mixed-data-refs"  "${CONTEXT_SCHEMA}"     
 validate_dir_against "${EXAMPLES_DIR}/visibility"       "${CONTEXT_SCHEMA}"              "context (visibility)"
 validate_dir_against "${EXAMPLES_DIR}/capabilities"     "${CAPABILITIES_SCHEMA}"         "capabilities"
 validate_dir_against "${EXAMPLES_DIR}/error"            "${ERROR_SCHEMA}"                "error"
+validate_dir_against "${EXAMPLES_DIR}/evidence"         "${EVIDENCE_SCHEMA}"             "evidence bundle"
 
 # Meta-shape illustrative examples — JSON syntax check only (not single payloads)
 syntax_check_dir() {

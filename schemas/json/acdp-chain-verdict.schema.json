@@ -1,0 +1,241 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.1.0/acdp-chain-verdict.schema.json",
+  "title": "ACDP Chain Verdict (0.5.0)",
+  "description": "acdp-chain-verdict/1: the deterministic output of RFC-ACDP-0017 verify_chain. JCS-canonical; given the same roots, bundle bytes and options (and no fired time budget) every conformant implementation emits byte-identical JCS (RFC-ACDP-0017 §9.3). verdict_digest covers the whole object minus both digests; as_of_digest covers the as-of projection only and is the value to seal at T (RFC-ACDP-0017 §9.2). Closed at every level: implementations MUST NOT add members. Members that do not apply are omitted, never null, except the members this schema declares nullable.",
+
+  "type": "object",
+  "required": [
+    "verdict_version", "roots", "as_of", "horizon", "limits", "require_attested_events",
+    "options_digest", "evidence_digest", "complete", "control", "frontier",
+    "nodes", "chain", "tainted_paths", "drift", "as_of_digest", "verdict_digest"
+  ],
+  "properties": {
+    "verdict_version": { "const": "acdp-chain-verdict/1" },
+    "roots": { "$ref": "#/$defs/ctx_id_set", "minItems": 1 },
+    "as_of": { "oneOf": [{ "$ref": "#/$defs/timestamp" }, { "type": "null" }] },
+    "horizon": { "oneOf": [{ "$ref": "#/$defs/timestamp" }, { "type": "null" }] },
+    "limits": {
+      "type": "object",
+      "required": ["max_depth", "max_nodes", "max_fanout"],
+      "properties": {
+        "max_depth": { "type": "integer", "minimum": 0, "maximum": 10 },
+        "max_nodes": { "type": "integer", "minimum": 1, "maximum": 500 },
+        "max_fanout": { "type": "integer", "minimum": 0, "maximum": 100 }
+      },
+      "additionalProperties": false
+    },
+    "require_attested_events": { "type": "boolean" },
+    "options_digest": { "oneOf": [{ "$ref": "#/$defs/digest" }, { "type": "null" }] },
+    "evidence_digest": { "$ref": "#/$defs/digest" },
+    "complete": { "type": "boolean" },
+    "control": { "enum": [null, "max_depth", "max_nodes", "max_fanout", "timeout"] },
+    "frontier": { "$ref": "#/$defs/ctx_id_set" },
+    "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+    "chain": {
+      "type": "object",
+      "required": ["as_of", "latest"],
+      "properties": {
+        "as_of": { "oneOf": [{ "$ref": "#/$defs/verdict" }, { "type": "null" }] },
+        "latest": { "$ref": "#/$defs/verdict" }
+      },
+      "additionalProperties": false
+    },
+    "tainted_paths": {
+      "type": "object",
+      "required": ["as_of", "latest"],
+      "properties": {
+        "as_of": { "oneOf": [{ "$ref": "#/$defs/paths" }, { "type": "null" }] },
+        "latest": { "$ref": "#/$defs/paths" }
+      },
+      "additionalProperties": false
+    },
+    "drift": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["ctx_id", "kind"],
+        "properties": {
+          "ctx_id": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
+          "kind": {
+            "enum": [
+              "published_after_as_of", "revoked_after_as_of", "retracted_after_as_of",
+              "republished_after_as_of", "backdated_event", "as_of_unprovable", "verdict_changed"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Sorted by ctx_id, then kind (RFC-ACDP-0017 §8.4). Empty when as_of is null."
+    },
+    "as_of_digest": { "oneOf": [{ "$ref": "#/$defs/digest" }, { "type": "null" }] },
+    "verdict_digest": { "$ref": "#/$defs/digest" }
+  },
+  "additionalProperties": false,
+
+  "$defs": {
+    "timestamp": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$" },
+    "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "ctx_id_set": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
+      "description": "Sorted ascending by UTF-8 bytes."
+    },
+    "paths": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "minItems": 1,
+        "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" }
+      }
+    },
+    "verdict": { "enum": ["ok", "ok_with_caveats", "unknown", "refused"] },
+    "basis": { "enum": ["self", "pinned", "registry", "observed"] },
+    "node": {
+      "type": "object",
+      "required": ["ctx_id", "depth", "as_of", "latest"],
+      "properties": {
+        "ctx_id": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
+        "depth": { "type": "integer", "minimum": 0 },
+        "derived_from": {
+          "type": "array",
+          "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
+          "description": "As in the body, in body order. Omitted when the node is not present."
+        },
+        "as_of": { "oneOf": [{ "$ref": "#/$defs/pass" }, { "type": "null" }] },
+        "latest": { "$ref": "#/$defs/pass" }
+      },
+      "additionalProperties": false
+    },
+    "pass": {
+      "type": "object",
+      "required": ["verdict", "caveats", "stages"],
+      "properties": {
+        "verdict": { "$ref": "#/$defs/verdict" },
+        "caveats": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "historical_key", "historical_receipt_key", "identity_unbound", "log_cannot_verify",
+              "observed_basis", "pre_compromise", "retracted", "undated"
+            ]
+          },
+          "description": "Sorted. Mapping to §8.1 conditions: undated; identity: unbound → identity_unbound; key: historical_receipt_attested → historical_key; key_revocation: pre-compromise → pre_compromise; registry_receipt.key_status: historical → historical_receipt_key; retraction: retracted → retracted; log: cannot_verify → log_cannot_verify; any basis observed → observed_basis."
+        },
+        "stages": {
+          "type": "object",
+          "required": ["presence"],
+          "properties": {
+            "presence": { "$ref": "#/$defs/stage_presence" },
+            "identity": { "$ref": "#/$defs/stage_identity" },
+            "content_hash": { "$ref": "#/$defs/stage_content_hash" },
+            "signature": { "$ref": "#/$defs/stage_signature" },
+            "registry_receipt": { "$ref": "#/$defs/stage_registry_receipt" },
+            "key": { "$ref": "#/$defs/stage_key" },
+            "log": { "$ref": "#/$defs/stage_log" },
+            "retraction": { "$ref": "#/$defs/stage_retraction" },
+            "key_revocation": { "$ref": "#/$defs/stage_key_revocation" }
+          },
+          "additionalProperties": false,
+          "description": "A node whose presence is not 'present' carries presence only (RFC-ACDP-0017 §7.1)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "stage_common": {
+      "properties": {
+        "basis": { "$ref": "#/$defs/basis" },
+        "evidence_time": { "$ref": "#/$defs/timestamp" },
+        "reason": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$", "maxLength": 64 }
+      }
+    },
+    "stage_presence": {
+      "type": "object", "required": ["value"],
+      "properties": {
+        "value": { "enum": ["present", "withheld", "unresolved", "absent", "truncated", "cycle", "not_yet_published"] },
+        "evidence_time": { "$ref": "#/$defs/timestamp" },
+        "basis": { "$ref": "#/$defs/basis" }
+      },
+      "additionalProperties": false
+    },
+    "stage_identity": {
+      "type": "object", "required": ["value"],
+      "properties": {
+        "value": { "enum": ["ok", "unbound", "mismatch"] },
+        "basis": { "$ref": "#/$defs/basis" },
+        "reason": { "$ref": "#/$defs/stage_common/properties/reason" }
+      },
+      "additionalProperties": false
+    },
+    "stage_content_hash": {
+      "type": "object", "required": ["value"],
+      "properties": { "value": { "enum": ["ok", "mismatch"] }, "basis": { "const": "self" } },
+      "additionalProperties": false
+    },
+    "stage_signature": {
+      "type": "object", "required": ["value"],
+      "properties": {
+        "value": { "enum": ["ok", "invalid", "unresolvable"] },
+        "basis": { "$ref": "#/$defs/basis" }
+      },
+      "additionalProperties": false
+    },
+    "stage_registry_receipt": {
+      "type": "object", "required": ["value"],
+      "properties": {
+        "value": { "enum": ["absent", "ok", "invalid"] },
+        "key_status": { "enum": ["current", "historical"] },
+        "basis": { "$ref": "#/$defs/basis" },
+        "evidence_time": { "$ref": "#/$defs/timestamp" },
+        "reason": { "$ref": "#/$defs/stage_common/properties/reason" }
+      },
+      "additionalProperties": false
+    },
+    "stage_key": {
+      "type": "object", "required": ["value"],
+      "properties": {
+        "value": { "enum": ["current", "historical_receipt_attested", "revoked", "unplaceable", "unresolvable", "unknown"] },
+        "basis": { "$ref": "#/$defs/basis" },
+        "evidence_time": { "$ref": "#/$defs/timestamp" },
+        "reason": { "$ref": "#/$defs/stage_common/properties/reason" }
+      },
+      "additionalProperties": false
+    },
+    "stage_log": {
+      "type": "object", "required": ["value"],
+      "properties": {
+        "value": { "enum": ["absent", "included", "cannot_verify", "invalid"] },
+        "tree_size": { "type": "integer", "minimum": 1 },
+        "checkpoint_time": { "$ref": "#/$defs/timestamp" },
+        "witnesses": { "type": "integer", "minimum": 0 },
+        "basis": { "$ref": "#/$defs/basis" },
+        "reason": { "$ref": "#/$defs/stage_common/properties/reason" }
+      },
+      "additionalProperties": false
+    },
+    "stage_retraction": {
+      "type": "object", "required": ["value"],
+      "properties": {
+        "value": { "enum": ["not_retracted", "retracted", "invalid", "unknown"] },
+        "events_admitted": { "type": "integer", "minimum": 0 },
+        "basis": { "$ref": "#/$defs/basis" },
+        "evidence_time": { "$ref": "#/$defs/timestamp" },
+        "reason": { "$ref": "#/$defs/stage_common/properties/reason" }
+      },
+      "additionalProperties": false
+    },
+    "stage_key_revocation": {
+      "type": "object", "required": ["value"],
+      "properties": {
+        "value": { "enum": ["not-revoked", "pre-compromise", "revoked", "unplaceable", "unknown"] },
+        "revocation_ctx_id": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
+        "basis": { "$ref": "#/$defs/basis" },
+        "evidence_time": { "$ref": "#/$defs/timestamp" },
+        "reason": { "$ref": "#/$defs/stage_common/properties/reason" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

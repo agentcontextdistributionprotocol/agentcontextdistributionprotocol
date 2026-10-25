@@ -1,0 +1,109 @@
+{
+  "id": "chain-003",
+  "description": "(0.5.0) A retraction of an ancestor accepted (event receipt accepted_at) after T. As of T the event is not admitted; latest admits it. retracted is a caveat, not a refusal (RFC-ACDP-0017 §7.8, §8.1, §10).",
+  "tags": [
+    "chain",
+    "consumer",
+    "offline",
+    "0.5.0",
+    "lifecycle",
+    "retraction"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-chain"
+  ],
+  "input": {
+    "graph": {
+      "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": [
+        "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+      ],
+      "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb": []
+    },
+    "roots": [
+      "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    ],
+    "as_of": "2026-10-01T00:00:00.000Z",
+    "bundle": {
+      "producer": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
+      "lifecycle": {
+        "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb": {
+          "lifecycle_events": [
+            {
+              "event_type": "retracted",
+              "occurred_at": "2026-10-03T00:00:00.000Z",
+              "signed_by": "B's producer"
+            }
+          ],
+          "event_receipts": [
+            {
+              "index": 0,
+              "accepted_at": "2026-10-03T00:00:01.000Z"
+            }
+          ]
+        }
+      },
+      "revocation_discovery": {
+        "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp": [
+          {
+            "vantage": "registry.example.com",
+            "outcome": "not-revoked-complete",
+            "completed_at": "2026-09-30T00:00:00.000Z"
+          }
+        ]
+      }
+    },
+    "require_attested_events": true
+  },
+  "scenarios": [
+    {
+      "name": "A — as-of vs latest",
+      "expected": {
+        "as_of": {
+          "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb": {
+            "retraction": "not_retracted (events_admitted 0)"
+          },
+          "chain": "ok_with_caveats",
+          "tainted_paths": []
+        },
+        "latest": {
+          "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb": {
+            "retraction": "retracted (events_admitted 1, basis registry, evidence_time 2026-10-03T00:00:01.000Z)",
+            "caveats": [
+              "observed_basis",
+              "retracted"
+            ]
+          },
+          "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": {
+            "node_verdict": "ok_with_caveats (A's own verdict is NOT tainted by B, RFC-ACDP-0017 §8.3)"
+          },
+          "chain": "ok_with_caveats",
+          "tainted_paths": [
+            [
+              "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+            ]
+          ]
+        },
+        "drift": [
+          {
+            "ctx_id": "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+            "kind": "retracted_after_as_of"
+          }
+        ]
+      }
+    },
+    {
+      "name": "B — event with no receipt, attested events required",
+      "expected": {
+        "behavior": "Drop event_receipts. As of T the event has no evidence time and is not admitted; since no admitted event follows it, the prefix is empty and retraction is not_retracted. Latest admits the producer-signed event (signature verifies): retracted. Drift retracted_after_as_of."
+      }
+    },
+    {
+      "name": "C — unreceipted event followed by a receipted one",
+      "expected": {
+        "behavior": "Events [retracted (no receipt), republished (receipt accepted_at < T)]: as of T the unadmitted event precedes an admitted one, so retraction is unknown (RFC-ACDP-0017 §7.8 item 3) and the node as-of verdict is unknown."
+      }
+    }
+  ],
+  "notes": "Behavioral in this Draft: the verifier builds the described bundle from real signed bodies (or the rcpt-001 / sig-003 test keys), runs verify_chain, and asserts the pinned stage values and verdicts. Pinned verdict digests replace these assertions at promotion (RFC-ACDP-0017 §14)."
+}

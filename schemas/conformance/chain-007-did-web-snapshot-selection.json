@@ -1,0 +1,91 @@
+{
+  "id": "chain-007",
+  "description": "(0.5.0) did:web snapshot selection at T and the observed vs pinned basis (RFC-ACDP-0017 §6.2, §6.3). The producer rotates from K1 to K2 after T; the body is signed by K1 and receipted before T.",
+  "tags": [
+    "chain",
+    "consumer",
+    "offline",
+    "0.5.0",
+    "did-web",
+    "key-rotation"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-chain"
+  ],
+  "input": {
+    "graph": {
+      "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": []
+    },
+    "roots": [
+      "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    ],
+    "as_of": "2026-10-01T00:00:00.000Z",
+    "bundle": {
+      "producer": "did:web:agents.example.com:test-producer",
+      "receipts": {
+        "created_at": {
+          "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": "2026-09-10T00:00:00.000Z"
+        },
+        "key_fingerprint": "K1"
+      },
+      "did_documents": {
+        "did:web:agents.example.com:test-producer": [
+          {
+            "observed_at": "2026-09-20T00:00:00.000Z",
+            "assertionMethod": [
+              "#key-1"
+            ]
+          },
+          {
+            "observed_at": "2026-10-10T00:00:00.000Z",
+            "assertionMethod": [
+              "#key-2"
+            ],
+            "verificationMethod": [
+              "#key-1 (retired)",
+              "#key-2"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "name": "A — rotation after T",
+      "expected": {
+        "as_of": {
+          "key": "current (basis observed, evidence_time 2026-09-20T00:00:00.000Z)"
+        },
+        "latest": {
+          "key": "historical_receipt_attested (RFC-ACDP-0010 §10, basis observed)",
+          "caveats_include": [
+            "historical_key",
+            "observed_basis"
+          ]
+        },
+        "drift": [],
+        "note": "Rotation is not compromise (RFC-ACDP-0014 §9): no revoked_after_as_of; the verdict is ok_with_caveats in both passes, so no verdict_changed."
+      }
+    },
+    {
+      "name": "B — only a later snapshot",
+      "expected": {
+        "behavior": "Drop the 2026-09-20 snapshot. As of T: key unknown, reason no_evidence_at_as_of, node verdict unknown. Latest: historical_receipt_attested. Drift [as_of_unprovable] only — it explains the verdict change."
+      }
+    },
+    {
+      "name": "C — pinned",
+      "expected": {
+        "behavior": "The caller pins the 2026-09-20 snapshot: as of T key rests on basis pinned, the observed_basis caveat is gone from as_of if nothing else is observed, and options_digest changes."
+      }
+    },
+    {
+      "name": "D — pinned key that does not verify",
+      "expected": {
+        "behavior": "Pinning never overrides a failed check: a pinned snapshot whose key does not verify the signature gives signature: invalid → refused."
+      }
+    }
+  ],
+  "notes": "Behavioral in this Draft: the verifier builds the described bundle from real signed bodies (or the rcpt-001 / sig-003 test keys), runs verify_chain, and asserts the pinned stage values and verdicts. Pinned verdict digests replace these assertions at promotion (RFC-ACDP-0017 §14)."
+}

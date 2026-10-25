@@ -1,0 +1,63 @@
+{
+  "id": "chain-009",
+  "description": "(0.5.0) Event-receipt issuance and verification (RFC-ACDP-0017 §10, amending RFC-ACDP-0013). Registry-side for lifecycle+receipts registries at acdp_version >= 0.5.0; consumer-side for acdp-consumer-chain.",
+  "tags": [
+    "chain",
+    "consumer",
+    "offline",
+    "0.5.0",
+    "lifecycle",
+    "receipts",
+    "registry"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-chain"
+  ],
+  "input": {
+    "context": "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "registry_did": "did:web:registry.example.com",
+    "events": [
+      "e0 retracted (occurred_at 2026-09-01T00:00:00.000Z)",
+      "e1 republished (occurred_at 2026-09-02T00:00:00.000Z)"
+    ]
+  },
+  "scenarios": [
+    {
+      "name": "A — issuance",
+      "expected": {
+        "behavior": "After both appends, registry_state.event_receipts has exactly two elements, index 0 and 1, each event_hash = sha256(JCS(event incl. signature)), accepted_at non-decreasing and >= body.created_at, signed under the receipt key with receipt_type acdp-event-receipt/1."
+      }
+    },
+    {
+      "name": "B — idempotent retry",
+      "expected": {
+        "behavior": "Retrying e1 byte-identically returns HTTP 200 with the same single receipt for e1; no third receipt is minted."
+      }
+    },
+    {
+      "name": "C — wrong index",
+      "expected": {
+        "behavior": "A receipt whose index is 1 sits at position 0: it fails §10.3 step 5 and is treated as absent; the event has no evidence time."
+      }
+    },
+    {
+      "name": "D — wrong event_hash",
+      "expected": {
+        "behavior": "event_hash computed without the event's signature member: fails step 6, treated as absent."
+      }
+    },
+    {
+      "name": "E — decreasing accepted_at",
+      "expected": {
+        "behavior": "accepted_at[1] < accepted_at[0]: step 8 fails; retraction is invalid in both passes; node verdict unknown."
+      }
+    },
+    {
+      "name": "F — wrong registry",
+      "expected": {
+        "behavior": "registry_did names a different authority than origin_registry: fails step 2, treated as absent."
+      }
+    }
+  ],
+  "notes": "Behavioral in this Draft: the verifier builds the described bundle from real signed bodies (or the rcpt-001 / sig-003 test keys), runs verify_chain, and asserts the pinned stage values and verdicts. Pinned verdict digests replace these assertions at promotion (RFC-ACDP-0017 §14)."
+}
