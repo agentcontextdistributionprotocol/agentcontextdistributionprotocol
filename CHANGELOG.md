@@ -29,6 +29,7 @@ All notable changes to ACDP are recorded here. ACDP follows the versioning polic
     - drift is defined when the as-of pass did not run a stage;
     - the nested as-of projection is fixed.
   - `reason` is an enum (`no_evidence_at_as_of`).
+  - §10.3 step 8 compares only receipts that pass steps 1–7 and 9.
   - Node presence `truncated` is removed, since truncation is reported only via `complete`, `control` and `frontier`.
 
 ## v0.5.0 — Registry and conformance: `seam.decision` cites Seam record digest v4; conditional `anc-006` (#76) — 2026-10-19
