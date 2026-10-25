@@ -450,7 +450,7 @@ A consumer verifies event receipt *i* against event *i*:
 5. `index` equals *i*.
 6. `event_hash` recomputes.
 7. The signature verifies under a key in the registry DID document's `verificationMethod`, chosen per §6.2. The RFC-ACDP-0010 §9 receipt-key lifecycle applies.
-8. `accepted_at` is non-decreasing in *i*.
+8. `accepted_at` is non-decreasing in *i*, compared over the receipts that pass steps 1–7 and 9. A receipt failing any of those is treated as absent first and takes no part in this comparison.
 9. `accepted_at` ≥ the context's `created_at`.
 
 A receipt that fails any step is treated as absent. Step 8 failing on any pair makes the context's `retraction` stage `invalid` (§7.8).
