@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.1.0/acdp-changes-response.schema.json",
+  "title": "ACDP Changes Feed Response (0.5.0, Draft)",
+  "description": "Response body of GET /changes (RFC-ACDP-0018 §5.2). next_cursor is ALWAYS present (the feed is a tail); has_more signals entries already committed past it.",
+  "type": "object",
+  "required": [
+    "changes",
+    "next_cursor",
+    "has_more"
+  ],
+  "properties": {
+    "changes": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.acdp.io/v0.1.0/acdp-change.schema.json"
+      },
+      "description": "Matching, visible entries after since, ascending seq."
+    },
+    "next_cursor": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "description": "Opaque, durable feed cursor (RFC-ACDP-0018 §5.4)."
+    },
+    "has_more": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": false
+}

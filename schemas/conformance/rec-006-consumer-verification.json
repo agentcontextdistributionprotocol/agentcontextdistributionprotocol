@@ -1,0 +1,71 @@
+{
+  "id": "rec-006",
+  "description": "(0.5.0) A change entry is a hint until verified (RFC-ACDP-0018 §7). Behavioral, consumer-side.",
+  "tags": [
+    "rec",
+    "consumer",
+    "0.5.0",
+    "changes",
+    "lifecycle"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-recall"
+  ],
+  "input": {
+    "relied_on": [
+      "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+    ],
+    "feed": "entries modelled on examples/changes/golden-changes.json"
+  },
+  "scenarios": [
+    {
+      "name": "A — valid retraction",
+      "expected": {
+        "behavior": "The golden lifecycle entry verifies (event signature, event receipt per RFC-ACDP-0017 §10.3, full-list retraction state) and the consumer marks its reliance for re-evaluation."
+      }
+    },
+    {
+      "name": "B — bad event signature",
+      "expected": {
+        "behavior": "Same entry with one byte of event.signature.value flipped: no reliance decision changes; the consumer re-verifies the context directly."
+      }
+    },
+    {
+      "name": "C — failing event receipt",
+      "expected": {
+        "behavior": "event_receipt.index does not match the event's position: treated as absent; no reliance change."
+      }
+    },
+    {
+      "name": "D — partial event list",
+      "expected": {
+        "behavior": "Entry is index 1 and the consumer has not verified index 0: it MUST re-retrieve the full list before applying."
+      }
+    },
+    {
+      "name": "E — bogus supersession",
+      "expected": {
+        "behavior": "superseded_by's retrieved body does not supersede ctx_id (or has a different lineage_id): no reliance change."
+      }
+    },
+    {
+      "name": "F — out-of-scope revocation",
+      "expected": {
+        "behavior": "A key_revocation entry whose verified revocation is out of producer scope (RFC-ACDP-0014 §7): no reliance change."
+      }
+    },
+    {
+      "name": "G — duplicate",
+      "expected": {
+        "behavior": "The same (authority, seq) delivered twice is processed once."
+      }
+    },
+    {
+      "name": "H — resync",
+      "expected": {
+        "behavior": "On cursor_expired the consumer re-verifies every watched context directly, then resumes from since=head.",
+        "error_code": "cursor_expired"
+      }
+    }
+  ]
+}

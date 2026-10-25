@@ -22,6 +22,11 @@ LOG_COSIGNATURE_SCHEMA="${SCHEMA_DIR}/acdp-log-cosignature.schema.json"
 EVENT_RECEIPT_SCHEMA="${SCHEMA_DIR}/acdp-event-receipt.schema.json"
 EVIDENCE_SCHEMA="${SCHEMA_DIR}/acdp-evidence.schema.json"
 CHAIN_VERDICT_SCHEMA="${SCHEMA_DIR}/acdp-chain-verdict.schema.json"
+CHANGE_SCHEMA="${SCHEMA_DIR}/acdp-change.schema.json"
+CHANGES_RESPONSE_SCHEMA="${SCHEMA_DIR}/acdp-changes-response.schema.json"
+CHANGE_HINT_SCHEMA="${SCHEMA_DIR}/acdp-change-hint.schema.json"
+SUBSCRIPTION_REQUEST_SCHEMA="${SCHEMA_DIR}/acdp-subscription-request.schema.json"
+SUBSCRIPTION_SCHEMA="${SCHEMA_DIR}/acdp-subscription.schema.json"
 CONTEXT_SCHEMA="${SCHEMA_DIR}/acdp-context.schema.json"
 PUBLISH_REQUEST_SCHEMA="${SCHEMA_DIR}/acdp-publish-request.schema.json"
 PUBLISH_RESPONSE_SCHEMA="${SCHEMA_DIR}/acdp-publish-response.schema.json"
@@ -42,6 +47,7 @@ REFS=(
     -r "${LOG_INCLUSION_SCHEMA}"
     -r "${LOG_COSIGNATURE_SCHEMA}"
     -r "${EVENT_RECEIPT_SCHEMA}"
+    -r "${CHANGE_SCHEMA}"
 )
 
 CONFORMANCE_DIR="${PROJECT_ROOT}/schemas/conformance"
@@ -122,6 +128,10 @@ validate_dir_against "${EXAMPLES_DIR}/capabilities"     "${CAPABILITIES_SCHEMA}"
 validate_dir_against "${EXAMPLES_DIR}/error"            "${ERROR_SCHEMA}"                "error"
 validate_dir_against "${EXAMPLES_DIR}/evidence"         "${EVIDENCE_SCHEMA}"             "evidence bundle"
 validate_dir_against "${EXAMPLES_DIR}/chain-verdict"    "${CHAIN_VERDICT_SCHEMA}"        "chain verdict"
+validate_dir_against "${EXAMPLES_DIR}/changes"          "${CHANGES_RESPONSE_SCHEMA}"     "changes-response"
+validate_dir_against "${EXAMPLES_DIR}/change-hint"      "${CHANGE_HINT_SCHEMA}"          "change hint"
+validate_dir_against "${EXAMPLES_DIR}/subscription-request" "${SUBSCRIPTION_REQUEST_SCHEMA}" "subscription request"
+validate_dir_against "${EXAMPLES_DIR}/subscription"     "${SUBSCRIPTION_SCHEMA}"         "subscription"
 
 # Meta-shape illustrative examples — JSON syntax check only (not single payloads)
 syntax_check_dir() {

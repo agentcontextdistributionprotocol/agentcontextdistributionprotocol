@@ -1,0 +1,62 @@
+{
+  "id": "rec-005",
+  "description": "(0.5.0) Durable cursors and retention (RFC-ACDP-0018 §5.4, overriding RFC-ACDP-0005 §2.5.4's one-hour bound for /changes). Behavioral, registry-side.",
+  "tags": [
+    "rec",
+    "registry",
+    "0.5.0",
+    "changes",
+    "cur"
+  ],
+  "applies_to_profiles": [
+    "acdp-registry-changes"
+  ],
+  "input": {
+    "registry": "registry.example.com",
+    "capabilities": {
+      "profiles": [
+        "acdp-registry-core",
+        "acdp-registry-receipts",
+        "acdp-registry-lifecycle",
+        "acdp-registry-changes"
+      ],
+      "acdp_version": "0.5.0",
+      "limits": {
+        "change_retention_seconds": 2592000,
+        "max_change_filters": 100,
+        "max_changes_page": 100
+      }
+    },
+    "setup": "A cursor C1 obtained at t0."
+  },
+  "scenarios": [
+    {
+      "name": "A — durable",
+      "expected": {
+        "behavior": "C1 still works at t0 + 2 h and at t0 + 29 d."
+      }
+    },
+    {
+      "name": "B — expired",
+      "expected": {
+        "behavior": "A cursor pointing before the oldest retained entry fails; consumer must resync (§7).",
+        "error_code": "cursor_expired",
+        "http_status": 400
+      }
+    },
+    {
+      "name": "C — malformed",
+      "expected": {
+        "behavior": "since=%%%garbage fails.",
+        "error_code": "invalid_cursor",
+        "http_status": 400
+      }
+    },
+    {
+      "name": "D — advertised",
+      "expected": {
+        "behavior": "capabilities.limits carries change_retention_seconds >= 2592000, max_change_filters >= 100 and max_changes_page >= 100."
+      }
+    }
+  ]
+}

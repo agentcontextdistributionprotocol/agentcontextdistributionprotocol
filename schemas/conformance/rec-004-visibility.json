@@ -1,0 +1,64 @@
+{
+  "id": "rec-004",
+  "description": "(0.5.0) Feed visibility no wider than retrieval (RFC-ACDP-0018 §5.5; RFC-ACDP-0008 §4.5; RFC-ACDP-0005 §2.5). Behavioral, registry-side.",
+  "tags": [
+    "rec",
+    "registry",
+    "0.5.0",
+    "changes",
+    "visibility"
+  ],
+  "applies_to_profiles": [
+    "acdp-registry-changes"
+  ],
+  "input": {
+    "registry": "registry.example.com",
+    "capabilities": {
+      "profiles": [
+        "acdp-registry-core",
+        "acdp-registry-receipts",
+        "acdp-registry-lifecycle",
+        "acdp-registry-changes"
+      ],
+      "acdp_version": "0.5.0",
+      "limits": {
+        "change_retention_seconds": 2592000,
+        "max_change_filters": 100,
+        "max_changes_page": 100
+      }
+    },
+    "setup": "Producer P: public X retracted; restricted Y (audience [A]) retracted; private Z retracted; public W superseded by restricted W2 (audience [A]); 200 hidden changes follow, then one public retraction."
+  },
+  "scenarios": [
+    {
+      "name": "A — anonymous",
+      "expected": {
+        "behavior": "Anonymous sees X's retraction only; never Y, Z or the W→W2 entry."
+      }
+    },
+    {
+      "name": "B — audience member",
+      "expected": {
+        "behavior": "A sees X, Y and the W→W2 entry; not Z."
+      }
+    },
+    {
+      "name": "C — producer",
+      "expected": {
+        "behavior": "P sees all four."
+      }
+    },
+    {
+      "name": "D — empty page is not the end",
+      "expected": {
+        "behavior": "Anonymous with limit=100 past X gets changes: [] with has_more: true until it reaches the final public retraction; pagination never ends early."
+      }
+    },
+    {
+      "name": "E — cursor re-scoping",
+      "expected": {
+        "behavior": "A cursor issued to A and replayed anonymously yields only anonymous-visible entries; no hidden seq or count is inferable from the cursor."
+      }
+    }
+  ]
+}

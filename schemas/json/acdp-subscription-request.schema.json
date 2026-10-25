@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.1.0/acdp-subscription-request.schema.json",
+  "title": "ACDP Subscription Request (0.5.0, Draft)",
+  "description": "POST /subscriptions body (RFC-ACDP-0018 §8.1). callback_url is subject to the RFC-ACDP-0018 §8.3 SSRF rules at creation and at every delivery.",
+  "type": "object",
+  "required": [
+    "filter",
+    "callback_url"
+  ],
+  "properties": {
+    "filter": {
+      "type": "object",
+      "minProperties": 1,
+      "properties": {
+        "ctx_id": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id"
+          }
+        },
+        "lineage_id": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/lineage_id"
+          }
+        },
+        "agent_id": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did"
+          }
+        },
+        "kind": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "lifecycle",
+              "superseded",
+              "key_revocation"
+            ]
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "Watch filter (RFC-ACDP-0018 §6): values OR'd within a member; ctx_id/lineage_id/agent_id OR'd with each other; kind AND'd with the result. The total value count is bounded by capabilities.limits.max_change_filters."
+    },
+    "callback_url": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://",
+      "maxLength": 2048
+    }
+  },
+  "additionalProperties": false
+}
