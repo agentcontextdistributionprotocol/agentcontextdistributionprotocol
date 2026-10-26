@@ -123,11 +123,13 @@ The **hashed result** is the result object restricted to those of `content`, `st
 
 **Verification.** A verifier holding a result and its `io.acdp/provenance` value:
 
-1. retrieves `ctx_id` and verifies the body as for any body (RFC-ACDP-0001 §5.11), including that `content_hash` equals the `_meta` value's;
-2. checks that `agent_id` is a proxy it trusts, and that `type` is `acdp:mcp-tool-result`;
-3. decodes the salt (strict base64url, exactly 32 bytes) when `salted` is true;
-4. recomputes `result_hash` from the result it holds and requires equality, and checks `tool` and `is_error`;
-5. MAY recompute `arguments_hash` and `request_id_hash` from the request it sent.
+1. retrieves `ctx_id` and verifies the body as for any body (RFC-ACDP-0001 §5.11). It MUST check that the retrieved body's `ctx_id` equals the link's `ctx_id` (RFC-ACDP-0006 §4.1 step 7), that its `origin_registry` equals the link's `registry`, and that its `content_hash` equals the link's;
+2. checks that `agent_id` is a proxy it trusts, that `type` is `acdp:mcp-tool-result`, and that `metadata` is a valid record of a version it knows. The record is closed (§4.2), so a verifier MUST reject unknown members rather than ignore them;
+3. decodes the salt when `salted` is true. Only the canonical encoding is accepted: exactly 43 base64url characters, no padding, and zero trailing bits (RFC 4648 §3.5). Anything else is rejected;
+4. recomputes `result_hash` from the result it holds and requires equality, requires `tool` to equal the `params.name` it called, and requires `is_error` to equal the held result's `isError` (`false` when absent);
+5. MAY recompute `arguments_hash` and `request_id_hash` from the request it sent. An absent `request_id_hash` leaves the request id unchecked. It is not a mismatch.
+
+The outcome is a local verification verdict, not a wire condition, so there is no error code for it (§9). A verifier SHOULD report which step failed, and SHOULD at least distinguish an untrusted or unrecognised record (steps 1–2) from a record that does not match the held call (steps 3–5).
 
 A mismatch at step 4 means the body is not a record of this result. It says nothing about the body itself, which remains validly signed.
 
@@ -206,7 +208,7 @@ A proxy SHOULD publish with `visibility: private`, or `restricted` with an `audi
 
 ### 8.4 Replay and freshness
 
-A `_meta` link copied onto a different result fails §4.3 step 4. A link replayed with the result it was issued for proves only what it always proved: that call, at `completed_at`. Consumers that care about freshness compare `completed_at` with their own clock and policy. The salt is a capability to prove the link; a client that forwards the result with its `_meta` lets the recipient prove it too, which is the intent.
+A `_meta` link copied onto a different result fails §4.3 step 4. A link replayed with the result it was issued for proves only what it always proved: that call, at `completed_at`. Consumers that care about freshness compare `completed_at` with their own clock and policy. When the upstream result already carried `io.acdp/provenance` (§6), the holder receives the upstream link, and nothing in the result points to the proxy's own record. That record stays findable by search (`agent_id`, `type`), but a holder cannot tell from the result alone whether the link came from the proxy or from upstream. The salt is a capability to prove the link; a client that forwards the result with its `_meta` lets the recipient prove it too, which is the intent.
 
 ### 8.5 SSRF
 
