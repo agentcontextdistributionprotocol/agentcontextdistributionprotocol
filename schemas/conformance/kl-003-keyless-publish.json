@@ -1,0 +1,107 @@
+{
+  "id": "kl-003",
+  "description": "(0.5.0, Draft) Publishing a keyless-signed body (RFC-ACDP-0021 §6.3). Behavioral, registry-side.",
+  "tags": [
+    "keyless",
+    "registry",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-registry-keyless"
+  ],
+  "input": {
+    "golden": "kl-001 (controller did:web:agents.example.com:ci, identity oidc https://token.actions.githubusercontent.com / repo:example/pipeline:ref:refs/heads/main, registry did:web:registry.example.com)",
+    "body": "kl-001 vector 2"
+  },
+  "scenarios": [
+    {
+      "name": "A — signature inside the window",
+      "expected": {
+        "http_status": 201,
+        "behavior": "Accepted. The receipt and log leaf carry key_fingerprint = the attestation's key_fingerprint."
+      }
+    },
+    {
+      "name": "B — the registry's created_at would be at or after not_after",
+      "expected": {
+        "error_code": "key_not_authorized",
+        "http_status": 403,
+        "details": {
+          "reason": "outside_attestation_window"
+        }
+      }
+    },
+    {
+      "name": "C — acdp-kl- key_id with no key_attestation member",
+      "expected": {
+        "error_code": "key_resolution_failed",
+        "http_status": 400,
+        "details": {
+          "reason": "attestation_missing"
+        }
+      }
+    },
+    {
+      "name": "D — key_attestation names a ctx_id on another registry",
+      "expected": {
+        "error_code": "key_resolution_failed",
+        "http_status": 400,
+        "details": {
+          "reason": "attestation_foreign"
+        }
+      }
+    },
+    {
+      "name": "E — key_attestation.content_hash differs from the stored attestation",
+      "expected": {
+        "error_code": "key_resolution_failed",
+        "http_status": 400,
+        "details": {
+          "reason": "attestation_mismatch"
+        }
+      }
+    },
+    {
+      "name": "F — agent_id differs from the attestation controller, or key_id/algorithm differ",
+      "expected": {
+        "error_code": "key_not_authorized",
+        "http_status": 403,
+        "details": {
+          "reason": "attestation_mismatch"
+        }
+      }
+    },
+    {
+      "name": "G — the attestation was retracted",
+      "expected": {
+        "error_code": "key_not_authorized",
+        "http_status": 403,
+        "details": {
+          "reason": "attestation_withdrawn"
+        }
+      }
+    },
+    {
+      "name": "H — signature does not verify under the attested key",
+      "expected": {
+        "error_code": "invalid_signature",
+        "http_status": 400
+      }
+    },
+    {
+      "name": "I — key_attestation present but key_id fragment does not begin acdp-kl-",
+      "expected": {
+        "error_code": "schema_violation",
+        "http_status": 400
+      }
+    },
+    {
+      "name": "J — registry not advertising acdp-registry-keyless",
+      "expected": {
+        "error_code": "key_resolution_failed",
+        "http_status": 400,
+        "behavior": "Ordinary RFC-ACDP-0001 §5.11 resolution finds no verificationMethod with the acdp-kl- fragment. The body is never accepted."
+      }
+    }
+  ]
+}

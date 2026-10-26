@@ -147,6 +147,16 @@
       "pattern": "^\\d+\\.\\d+\\.\\d+$",
       "description": "Optional. ACDP protocol version this body was authored under. Absent value MUST be treated as '0.1.0'. Producer-signed (part of the content_hash). See RFC-ACDP-0001 §6."
     },
+    "key_attestation": {
+      "type": "object",
+      "description": "(0.5.0, Draft) Keyless signing (RFC-ACDP-0021 §6.2): names the acdp:key-attestation context that authorizes signature.key_id. Present exactly when the key_id fragment begins 'acdp-kl-'. Producer-signed (part of ProducerContent, RFC-ACDP-0001 §5.7), immutable. Consumers without RFC-ACDP-0021 support fail closed on such bodies at key resolution (RFC-ACDP-0021 §12).",
+      "required": ["ctx_id", "content_hash"],
+      "properties": {
+        "ctx_id": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
+        "content_hash": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/content_hash" }
+      },
+      "additionalProperties": false
+    },
     "anchors": {
       "type": "array",
       "description": "(0.5.0) Typed external anchors (RFC-ACDP-0016 §4). Genesis-links this body to a non-ACDP, content-addressed external artifact. Absent when empty (§6.8 convention) — omit rather than sending []. Producer-signed (part of ProducerContent, RFC-ACDP-0001 §5.7), immutable.",

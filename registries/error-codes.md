@@ -61,6 +61,27 @@ When returning `superseded_target`, registries SHOULD include `details.reason` t
 
 `Provisional` here follows the same convention as the main table's version-marked entries (e.g. `unsupported_media_type` *(0.5.0)*): a reason token introduced on the still-`Draft` 0.5.0 line is `Provisional` until that line promotes to `Final`, at which point it becomes `Stable` like its six pre-existing siblings.
 
+## Keyless-signing reason tokens *(0.5.0)*
+
+`details.reason` values RFC-ACDP-0021 adds to existing codes. It adds no wire error code ([RFC-ACDP-0021 §13.3](../rfcs/RFC-ACDP-0021-keyless-signing.md)). Emitted only by registries advertising `acdp-registry-keyless`.
+
+| Reason | Status | Code | Meaning | Reference |
+|---|---|---|---|---|
+| `issuer_not_accepted` | Provisional | `key_not_authorized` | The token's issuer (or SPIFFE trust domain) is not in the registry's `keyless` capabilities. | [RFC-ACDP-0021 §5.2](../rfcs/RFC-ACDP-0021-keyless-signing.md) |
+| `token_invalid` | Provisional | `key_not_authorized` | The token fails verification: signature, expiry, or `iss`/`sub` not equal to the request's identity. | [RFC-ACDP-0021 §5.2](../rfcs/RFC-ACDP-0021-keyless-signing.md) |
+| `audience_mismatch` | Provisional | `key_not_authorized` | The token's `aud` does not contain the registry's `registry_did`. | [RFC-ACDP-0021 §5.2](../rfcs/RFC-ACDP-0021-keyless-signing.md) |
+| `confirmation_mismatch` | Provisional | `key_not_authorized` | The token's `cnf.jkt` is not the thumbprint of the presented key. | [RFC-ACDP-0021 §5.2](../rfcs/RFC-ACDP-0021-keyless-signing.md) |
+| `token_replayed` | Provisional | `key_not_authorized` | The token was already used for an attestation. | [RFC-ACDP-0021 §5.2](../rfcs/RFC-ACDP-0021-keyless-signing.md) |
+| `identity_not_authorized` | Provisional | `key_not_authorized` | The controller's DID document does not list the workload identity (attestation request, or SHOULD-recheck at publish). | [RFC-ACDP-0021 §5.2](../rfcs/RFC-ACDP-0021-keyless-signing.md) |
+| `pop_invalid` | Provisional | `invalid_signature` | The proof of possession does not verify under the presented key. | [RFC-ACDP-0021 §5.1](../rfcs/RFC-ACDP-0021-keyless-signing.md) |
+| `attestation_missing` | Provisional | `key_resolution_failed` | A keyless key id with no `key_attestation` member. | [RFC-ACDP-0021 §6.3](../rfcs/RFC-ACDP-0021-keyless-signing.md) |
+| `attestation_foreign` | Provisional | `key_resolution_failed` | `key_attestation` names an attestation on another registry. | [RFC-ACDP-0021 §6.3](../rfcs/RFC-ACDP-0021-keyless-signing.md) |
+| `attestation_not_found` | Provisional | `key_resolution_failed` | No attestation at `key_attestation.ctx_id`. | [RFC-ACDP-0021 §6.3](../rfcs/RFC-ACDP-0021-keyless-signing.md) |
+| `attestation_mismatch` | Provisional | `key_resolution_failed` / `key_not_authorized` | The attestation's bytes differ from `key_attestation.content_hash` or it is invalid (`key_resolution_failed`); or `agent_id`, `key_id` or `algorithm` differ from it (`key_not_authorized`). | [RFC-ACDP-0021 §6.3](../rfcs/RFC-ACDP-0021-keyless-signing.md) |
+| `attestation_withdrawn` | Provisional | `key_not_authorized` | The attestation was retracted. | [RFC-ACDP-0021 §6.3](../rfcs/RFC-ACDP-0021-keyless-signing.md) |
+| `outside_attestation_window` | Provisional | `key_not_authorized` | The registry's `created_at` is outside `[not_before, not_after)`. | [RFC-ACDP-0021 §6.3](../rfcs/RFC-ACDP-0021-keyless-signing.md) |
+| `keyless_identity_mismatch` | Provisional | `not_authorized` | A keyless successor (or lifecycle event) whose identity may not supersede the predecessor. | [RFC-ACDP-0021 §7](../rfcs/RFC-ACDP-0021-keyless-signing.md) |
+
 ## Adding a code
 
 Open a PR adding a row to the table above. Codes MUST:

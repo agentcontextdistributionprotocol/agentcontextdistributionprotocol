@@ -1426,6 +1426,177 @@ def check_trust_vector(fixture, fixture_data, vector):
     return ok
 
 
+def _b64u(raw):
+    return base64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
+
+
+def _ms(ts):
+    """Canonical RFC 3339 millisecond UTC timestamp -> datetime (for window arithmetic)."""
+    return datetime.strptime(ts, "%Y-%m-%dT%H:%M:%S.%fZ")
+
+
+def keyless_classify(window, case):
+    """RFC-ACDP-0021 §8.2: the keyless key status, in the normative check order."""
+    att = case["attestation"]
+    if not att["valid"]:
+        return {"status": "refused", "reason": "attestation_invalid"}
+    if not att["registry_accepted"]:
+        return {"status": "refused", "reason": "untrusted_attester"}
+    if not att["bindings_ok"]:
+        return {"status": "refused", "reason": "attestation_mismatch"}
+    r = case["receipt"]
+    if not r or not (r["verified"] and r["registry_is_attester"] and r["fingerprint_matches"]):
+        return {"status": "refused", "reason": "unplaceable"}
+    t = r["created_at"]
+    if not (window["not_before"] <= t < window["not_after"]):
+        return {"status": "refused", "reason": "outside_attestation_window"}
+    if not case["signature_valid"]:
+        return {"status": "refused", "reason": "invalid_signature"}
+    if att["retracted"]:
+        return {"status": "refused", "reason": "attestation_withdrawn"}
+    revs = case.get("revocations", [])
+    if revs:
+        boundary = min(rv["compromised_since"] for rv in revs)
+        if t >= boundary:
+            return {"status": "refused", "reason": "revoked"}
+        return {"status": "historically_authorized_pre_compromise"}
+    listed = case["identity_listed_now"]
+    if listed == "unreachable":
+        return {"status": "refused", "reason": "controller_unreachable"}
+    return {"status": "currently_authorized" if listed else "historically_authorized"}
+
+
+def keyless_supersede(pred, succ):
+    """RFC-ACDP-0021 §7: who may supersede a body under the same agent_id."""
+    if succ["kind"] == "controller" or succ.get("org_wide"):
+        return {"result": "allowed"}
+    if pred["kind"] == "keyless" and pred["identity"] == succ["identity"]:
+        return {"result": "allowed"}
+    return {"result": "refused", "reason": "keyless_identity_mismatch"}
+
+
+def check_keyless_vector(fixture, fixture_data, vector):
+    """kl-* known answers (RFC-ACDP-0021). The attestation and the keyless body are
+    ordinary signed bodies (JCS, content_hash, Ed25519 over the ASCII content_hash),
+    signed by the registry key and the ephemeral key respectively; on top we pin the
+    §5.3 attestation rules, the §5.1 proof of possession, and replay the §8.2 and §7
+    tables."""
+    name = vector.get("name", "?")
+    kind = vector.get("kind")
+    exp = vector.get("expected", {})
+    vectors = fixture_data["vectors"]
+    att_vec = next((v for v in vectors if v.get("kind") == "attestation"), None)
+    eph = fixture_data["ephemeral_test_keypair"]
+    eph_priv = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(eph["private_seed_hex"]))
+    eph_raw = eph_priv.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+    if eph_raw.hex() != eph["public_key_hex"]:
+        fail(fixture, name, "ephemeral public_key_hex does not match its seed")
+        return False
+
+    def body_sig(priv):
+        _, content_hash, ok = _canonicalize_and_hash(fixture, name, vector)
+        if not ok:
+            return None, None
+        return content_hash, priv.sign(content_hash.encode("ascii"))
+
+    if kind == "attestation":
+        reg = fixture_data["registry_test_keypair"]
+        reg_priv = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(reg["private_seed_hex"]))
+        content_hash, sig = body_sig(reg_priv)
+        if content_hash is None:
+            return False
+        if sig.hex() != exp.get("signature_value_hex") or base64.b64encode(sig).decode() != exp.get("signature_value_base64"):
+            fail(fixture, name, "registry signature mismatch")
+            return False
+        pc = vector["producer_content"]
+        m = pc["metadata"]
+        if pc.get("type") != "acdp:key-attestation" or m.get("attestation_version") != "acdp-key-attestation/1":
+            fail(fixture, name, "type MUST be acdp:key-attestation with an acdp-key-attestation/1 metadata object (§5.3)")
+            return False
+        if pc.get("visibility") != "public":
+            fail(fixture, name, "an attestation MUST be public (§5.3)")
+            return False
+        if pc.get("agent_id") != reg["key_id"].split("#")[0] or not vector["ctx_id"].startswith("acdp://" + pc["agent_id"][len("did:web:"):] + "/"):
+            fail(fixture, name, "agent_id MUST be the attesting registry's DID, matching the ctx_id authority (§5.3)")
+            return False
+        jwk = m["public_key_jwk"]
+        if jwk != {"crv": "Ed25519", "kty": "OKP", "x": _b64u(eph_raw)}:
+            fail(fixture, name, "public_key_jwk is not the canonical Ed25519 JWK of the ephemeral key")
+            return False
+        thumb = _b64u(hashlib.sha256(jcs.canonicalize(jwk)).digest())
+        if thumb != exp.get("jwk_thumbprint") or thumb != eph["jwk_thumbprint"]:
+            fail(fixture, name, f"RFC 7638 thumbprint mismatch: {thumb}")
+            return False
+        fp = key_fingerprint(eph_raw)
+        if m["key_fingerprint"] != fp or eph["key_fingerprint"] != fp:
+            fail(fixture, name, "key_fingerprint is not the RFC-ACDP-0010 §6 fingerprint of the attested key")
+            return False
+        if m["key_id"] != f"{m['controller']}#acdp-kl-{fp[len('sha256:'):]}":
+            fail(fixture, name, "key_id MUST be <controller>#acdp-kl-<fingerprint hex> (§6.1)")
+            return False
+        span = (_ms(m["not_after"]) - _ms(m["not_before"])).total_seconds()
+        if not 0 < span <= 3600:
+            fail(fixture, name, f"window MUST be non-empty and at most 3600 s (§5.2), got {span}")
+            return False
+        return True
+
+    if kind == "keyless_body":
+        content_hash, sig = body_sig(eph_priv)
+        if content_hash is None:
+            return False
+        pc = vector["producer_content"]
+        am = att_vec["producer_content"]["metadata"]
+        want = {"algorithm": am["algorithm"], "key_id": am["key_id"], "value": base64.b64encode(sig).decode()}
+        if exp.get("signature") != want:
+            fail(fixture, name, f"signature mismatch: expected {exp.get('signature')} got {want}")
+            return False
+        if pc.get("agent_id") != am["controller"]:
+            fail(fixture, name, "agent_id MUST equal the attestation controller (§6.2)")
+            return False
+        ka = pc.get("key_attestation", {})
+        if ka.get("ctx_id") != att_vec["ctx_id"] or ka.get("content_hash") != att_vec["expected"]["content_hash"]:
+            fail(fixture, name, "key_attestation MUST name the attestation's ctx_id and content_hash (§6.2)")
+            return False
+        return True
+
+    if kind == "pop":
+        token_hash = "sha256:" + hashlib.sha256(vector["token"].encode("ascii")).hexdigest()
+        pre = vector["pop_preimage"]
+        am = att_vec["producer_content"]["metadata"]
+        if token_hash != exp.get("token_hash") or pre.get("token_hash") != token_hash or am["token_hash"] != token_hash:
+            fail(fixture, name, "token_hash mismatch")
+            return False
+        if pre.get("key_fingerprint") != am["key_fingerprint"] or pre.get("controller") != am["controller"]:
+            fail(fixture, name, "proof-of-possession preimage does not bind the attested key and controller")
+            return False
+        canon = jcs.canonicalize(pre)
+        if canon.decode() != exp.get("pop_canonical_form"):
+            fail(fixture, name, "pop_canonical_form mismatch")
+            return False
+        if base64.b64encode(eph_priv.sign(canon)).decode() != exp.get("pop_value_base64"):
+            fail(fixture, name, "pop_value_base64 mismatch")
+            return False
+        return True
+
+    ok = True
+    cases = vector.get("cases", [])
+    for case in cases:
+        if kind == "classification":
+            got = keyless_classify(vector["window"], case)
+        elif kind == "supersession":
+            got = keyless_supersede(case["predecessor"], case["successor"])
+        else:
+            fail(fixture, name, f"unknown vector kind {kind!r}")
+            return False
+        if got != case["expected"]:
+            fail(fixture, f"{name} / {case.get('name', '?')}", f"expected {case['expected']} got {got}")
+            ok = False
+    if not cases:
+        fail(fixture, name, "table vector has no cases")
+        ok = False
+    return ok
+
+
 def _vectors(data, fixture_id):
     """Vectors of an executable fixture; an empty/missing list is a fixture bug
     (the fixture would otherwise pass with zero assertions)."""
@@ -1531,6 +1702,12 @@ for path in sorted(CONFORMANCE.glob("*.json")):
         # table; trust-002..007 are behavioral.
         for v in _vectors(data, fixture_id):
             if check_trust_vector(fixture_id, data, v):
+                passes += 1
+    elif fixture_id.startswith("kl-") and "vectors" in data:
+        # kl-001 carries the keyless-signing known answers; kl-002..009 are
+        # behavioral.
+        for v in _vectors(data, fixture_id):
+            if check_keyless_vector(fixture_id, data, v):
                 passes += 1
     elif fixture_id.startswith("chain-") and "vectors" in data:
         # chain-001/002/003/010 carry known-answer vectors (pinned bundle +

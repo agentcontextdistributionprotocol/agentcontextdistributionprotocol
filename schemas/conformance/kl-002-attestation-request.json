@@ -1,0 +1,145 @@
+{
+  "id": "kl-002",
+  "description": "(0.5.0, Draft) POST /key-attestations validation (RFC-ACDP-0021 §5.1–§5.2). Behavioral, registry-side.",
+  "tags": [
+    "keyless",
+    "registry",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-registry-keyless"
+  ],
+  "input": {
+    "golden": "kl-001 (controller did:web:agents.example.com:ci, identity oidc https://token.actions.githubusercontent.com / repo:example/pipeline:ref:refs/heads/main, registry did:web:registry.example.com)",
+    "request": "examples/key-attestation-request/oidc-key-attestation-request.json shape"
+  },
+  "scenarios": [
+    {
+      "name": "A — valid request",
+      "expected": {
+        "http_status": 201,
+        "behavior": "The registry publishes one public acdp:key-attestation body under its own DID, with a registry receipt and a transparency-log leaf committed atomically, and returns its full retrieval representation. not_before is the registry's clock; not_after - not_before = min(requested_ttl_seconds, max_attestation_ttl_seconds)."
+      }
+    },
+    {
+      "name": "B — token aud is another registry's DID",
+      "expected": {
+        "error_code": "key_not_authorized",
+        "http_status": 403,
+        "details": {
+          "reason": "audience_mismatch"
+        },
+        "behavior": "aud MUST contain this registry's registry_did byte for byte; no attestation is minted."
+      }
+    },
+    {
+      "name": "C — token aud is the registry hostname, not its DID",
+      "expected": {
+        "error_code": "key_not_authorized",
+        "http_status": 403,
+        "details": {
+          "reason": "audience_mismatch"
+        }
+      }
+    },
+    {
+      "name": "D — issuer not in keyless.accepted_oidc_issuers",
+      "expected": {
+        "error_code": "key_not_authorized",
+        "http_status": 403,
+        "details": {
+          "reason": "issuer_not_accepted"
+        },
+        "behavior": "Checked before any key fetch for the issuer."
+      }
+    },
+    {
+      "name": "E — identity not listed in the controller's AcdpKeylessSigning service",
+      "expected": {
+        "error_code": "key_not_authorized",
+        "http_status": 403,
+        "details": {
+          "reason": "identity_not_authorized"
+        },
+        "behavior": "The registry re-fetches the controller DID document bypassing its cache before reporting this (RFC-ACDP-0001 §5.11 caching rule)."
+      }
+    },
+    {
+      "name": "F — token carries cnf.jkt that is not the RFC 7638 thumbprint of public_key_jwk",
+      "expected": {
+        "error_code": "key_not_authorized",
+        "http_status": 403,
+        "details": {
+          "reason": "confirmation_mismatch"
+        }
+      }
+    },
+    {
+      "name": "G — token without cnf",
+      "expected": {
+        "http_status": 201,
+        "behavior": "Accepted: cnf is optional because common workload issuers cannot set it; the pop binds the key (§5.1)."
+      }
+    },
+    {
+      "name": "H — same token presented twice",
+      "expected": {
+        "error_code": "key_not_authorized",
+        "http_status": 403,
+        "details": {
+          "reason": "token_replayed"
+        },
+        "behavior": "The second request is refused while the token is unexpired; token_hash is the replay key."
+      }
+    },
+    {
+      "name": "I — pop does not verify under public_key_jwk",
+      "expected": {
+        "error_code": "invalid_signature",
+        "http_status": 400,
+        "details": {
+          "reason": "pop_invalid"
+        }
+      }
+    },
+    {
+      "name": "J — expired token, or iss/sub not equal to identity.issuer/identity.subject",
+      "expected": {
+        "error_code": "key_not_authorized",
+        "http_status": 403,
+        "details": {
+          "reason": "token_invalid"
+        }
+      }
+    },
+    {
+      "name": "K — controller is a did:key",
+      "expected": {
+        "error_code": "schema_violation",
+        "http_status": 400
+      }
+    },
+    {
+      "name": "L — controller DID document unreachable",
+      "expected": {
+        "error_code": "key_resolution_unreachable",
+        "http_status": 502
+      }
+    },
+    {
+      "name": "M — registry does not advertise acdp-registry-keyless",
+      "expected": {
+        "error_code": "not_implemented",
+        "http_status": 501
+      }
+    },
+    {
+      "name": "N — spiffe identity with svid_type x509-svid",
+      "expected": {
+        "error_code": "schema_violation",
+        "http_status": 400,
+        "behavior": "Only JWT-SVIDs are accepted in acdp-key-attestation-request/1."
+      }
+    }
+  ]
+}

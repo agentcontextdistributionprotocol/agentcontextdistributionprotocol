@@ -209,6 +209,18 @@ The following names are RESERVED and MUST NOT be used by extensions: `witness_si
 
 ---
 
+### 2.13 Sigstore Fulcio binding for keyless signing — **RESERVED (0.5.0)**
+
+RFC-ACDP-0021 makes the registry the attester for ephemeral producer keys. A future binding may let a producer present a Sigstore Fulcio certificate (a short-lived X.509 certificate binding an ephemeral key to an OIDC identity, logged in Rekor) in place of an `acdp:key-attestation`, so that workloads already using Sigstore need not ask an ACDP registry for an attestation. The certificate would carry the identity, the controller's DID document would still have to list it (RFC-ACDP-0021 §4), and the signature would still be placed by an ACDP registry receipt inside the certificate's validity.
+
+#### Reserved names
+
+The `key_attestation` member name `fulcio_certificate`, the fragment prefix `acdp-kl-fulcio-`, and the profile names `acdp-registry-keyless-fulcio` and `acdp-consumer-keyless-fulcio` are RESERVED and MUST NOT be used by extensions.
+
+**Why deferred:** it brings X.509 path validation, the Fulcio root and its rotation, and Rekor inclusion proofs into ACDP verification, a second trust root beside the registry, and an offline story RFC-ACDP-0017 bundles would have to carry. Registry attestation already gives receipts, logging and RFC-ACDP-0020 trust gating with no new machinery. The binding waits for an adopter that needs it.
+
+---
+
 ## 3. Forward Compatibility
 
 Future capabilities will follow these rules to maintain backward compatibility:

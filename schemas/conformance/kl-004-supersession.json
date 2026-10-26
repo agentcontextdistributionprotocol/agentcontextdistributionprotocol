@@ -1,0 +1,65 @@
+{
+  "id": "kl-004",
+  "description": "(0.5.0, Draft) Same-identity supersession (RFC-ACDP-0021 §7, amending RFC-ACDP-0003 §3.1 step 3). Behavioral, registry-side; the decision table is the executed kl-001 vector 5.",
+  "tags": [
+    "keyless",
+    "registry",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-registry-keyless"
+  ],
+  "input": {
+    "golden": "kl-001 (controller did:web:agents.example.com:ci, identity oidc https://token.actions.githubusercontent.com / repo:example/pipeline:ref:refs/heads/main, registry did:web:registry.example.com)"
+  },
+  "scenarios": [
+    {
+      "name": "A — successor attested to another subject",
+      "expected": {
+        "error_code": "not_authorized",
+        "http_status": 403,
+        "details": {
+          "reason": "keyless_identity_mismatch"
+        }
+      }
+    },
+    {
+      "name": "B — successor attested to the same identity",
+      "expected": {
+        "http_status": 201
+      }
+    },
+    {
+      "name": "C — successor attested to an org_wide identity",
+      "expected": {
+        "http_status": 201
+      }
+    },
+    {
+      "name": "D — successor signed by a DID-document key of the controller",
+      "expected": {
+        "http_status": 201
+      }
+    },
+    {
+      "name": "E — non-org-wide keyless successor of a controller-signed body",
+      "expected": {
+        "error_code": "not_authorized",
+        "http_status": 403,
+        "details": {
+          "reason": "keyless_identity_mismatch"
+        }
+      }
+    },
+    {
+      "name": "F — lifecycle event (RFC-ACDP-0013) signed with a keyless key on a body attested to another identity",
+      "expected": {
+        "error_code": "not_authorized",
+        "http_status": 403,
+        "details": {
+          "reason": "keyless_identity_mismatch"
+        }
+      }
+    }
+  ]
+}

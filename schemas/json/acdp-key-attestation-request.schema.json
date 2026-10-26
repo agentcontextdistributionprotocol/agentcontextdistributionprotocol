@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.1.0/acdp-key-attestation-request.schema.json",
+  "title": "ACDP Key-Attestation Request (acdp-key-attestation-request/1)",
+  "description": "(0.5.0, Draft) The body of POST /key-attestations (RFC-ACDP-0021 §5.1). The identity member is an RFC-AITP-0002 identity descriptor: type, issuer (oidc only), subject and proof (the token), plus svid_type for spiffe. Only JWT-SVIDs are accepted; X509-SVIDs are out of scope (RFC-ACDP-0021 §5.1). Closed at every level.",
+  "type": "object",
+  "required": [
+    "request_version",
+    "controller",
+    "identity",
+    "algorithm",
+    "public_key_jwk",
+    "pop"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "request_version": {
+      "const": "acdp-key-attestation-request/1"
+    },
+    "controller": {
+      "type": "string",
+      "pattern": "^did:web:[A-Za-z0-9._:%-]+$"
+    },
+    "identity": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "issuer",
+            "subject",
+            "proof"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "oidc"
+            },
+            "issuer": {
+              "type": "string",
+              "pattern": "^https://[^\\s#?]+$",
+              "maxLength": 512
+            },
+            "subject": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            },
+            "proof": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$",
+              "maxLength": 16384
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "subject",
+            "svid_type",
+            "proof"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "spiffe"
+            },
+            "subject": {
+              "type": "string",
+              "pattern": "^spiffe://[a-z0-9._-]+(/[A-Za-z0-9._~%!$&'()*+,;=:@-]+)*$",
+              "maxLength": 2048
+            },
+            "svid_type": {
+              "const": "jwt-svid"
+            },
+            "proof": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$",
+              "maxLength": 16384
+            }
+          }
+        }
+      ]
+    },
+    "algorithm": {
+      "type": "string",
+      "enum": [
+        "ed25519",
+        "ecdsa-p256"
+      ]
+    },
+    "public_key_jwk": {
+      "description": "The ephemeral public key as a JWK, in the canonical member set of RFC 7638 (the same shape as acdp-key-attestation/1 public_key_jwk).",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "kty",
+            "crv",
+            "x"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kty": {
+              "const": "OKP"
+            },
+            "crv": {
+              "const": "Ed25519"
+            },
+            "x": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{43}$"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "kty",
+            "crv",
+            "x",
+            "y"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kty": {
+              "const": "EC"
+            },
+            "crv": {
+              "const": "P-256"
+            },
+            "x": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{43}$"
+            },
+            "y": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{43}$"
+            }
+          }
+        }
+      ]
+    },
+    "pop": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9+/]+=*$",
+      "description": "Base64 signature by the ephemeral key over the JCS bytes of the acdp-key-attestation-pop/1 preimage (RFC-ACDP-0021 §5.1)."
+    },
+    "requested_ttl_seconds": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3600,
+      "description": "Requested window length. The registry MAY shorten it (RFC-ACDP-0021 §5.2)."
+    }
+  }
+}

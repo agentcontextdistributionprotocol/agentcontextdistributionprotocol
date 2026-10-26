@@ -1,0 +1,50 @@
+{
+  "id": "kl-009",
+  "description": "(0.5.0, Draft) Identity-level revocation and attestation listing (RFC-ACDP-0021 §9). Behavioral.",
+  "tags": [
+    "keyless",
+    "registry",
+    "consumer",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-registry-keyless",
+    "acdp-consumer-keyless"
+  ],
+  "input": {
+    "golden": "kl-001 (controller did:web:agents.example.com:ci, identity oidc https://token.actions.githubusercontent.com / repo:example/pipeline:ref:refs/heads/main, registry did:web:registry.example.com)"
+  },
+  "scenarios": [
+    {
+      "name": "A — identity removed from the DID document",
+      "expected": {
+        "behavior": "New attestation requests for it fail key_not_authorized / identity_not_authorized. Bodies signed earlier stay verifiable as historically authorized."
+      }
+    },
+    {
+      "name": "B — publish after the identity was removed, inside a live attestation window",
+      "expected": {
+        "behavior": "A registry that re-checks (SHOULD) refuses with key_not_authorized / identity_not_authorized; one that does not accepts, and consumers report historically authorized."
+      }
+    },
+    {
+      "name": "C — GET /key-attestations?controller=<did>&issuer=&subject=",
+      "expected": {
+        "http_status": 200,
+        "behavior": "Lists every attestation minted for the controller (and identity, when given), newest first, paginated with next_cursor; each item has ctx_id, content_hash and metadata."
+      }
+    },
+    {
+      "name": "D — compromise since T",
+      "expected": {
+        "behavior": "The controller publishes one RFC-ACDP-0014 key-revocation per attested fingerprint whose window ends after T, signed by a DID-document key; consumers place bodies by receipt as in kl-005 C/D."
+      }
+    },
+    {
+      "name": "E — registry retracts an attestation by policy",
+      "expected": {
+        "behavior": "An RFC-ACDP-0013 registry-actor retracted event: consumers apply kl-005 E."
+      }
+    }
+  ]
+}

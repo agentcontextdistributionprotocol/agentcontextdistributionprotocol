@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "supersedes": null,
+  "agent_id": "did:web:agents.example.com:ci",
+  "contributors": [],
+  "title": "Nightly evaluation summary",
+  "summary": "Evaluation results published by the CI workflow with a keyless key (RFC-ACDP-0021).",
+  "type": "analysis",
+  "data_refs": [],
+  "derived_from": [],
+  "visibility": "public",
+  "key_attestation": {
+    "ctx_id": "acdp://registry.example.com/7a1c0f3e-5b2d-4c8e-9f10-2b3c4d5e6f70",
+    "content_hash": "sha256:fbed72af712224f7d9d6e05a896d3a364c6c709247548a3de059198473399672"
+  },
+  "acdp_version": "0.5.0",
+  "content_hash": "sha256:4f41313eb0cce8e836fce522d74116e85c3ec57d942acdbd69d15302b8338123",
+  "signature": {
+    "algorithm": "ed25519",
+    "key_id": "did:web:agents.example.com:ci#acdp-kl-f7b7676c94df7e8fd9998e38f9fff04d8588b00d1801764e3f1877a3feae4477",
+    "value": "X740awlIg3YKai4X7pP15WT5tahGs0JV5j9Bt23OFBIC0585vpY56IbrZTzFm+uoHnNg+QOQTzmUbloI6KddBQ=="
+  }
+}

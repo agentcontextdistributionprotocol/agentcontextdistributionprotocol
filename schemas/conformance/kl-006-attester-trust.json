@@ -1,0 +1,51 @@
+{
+  "id": "kl-006",
+  "description": "(0.5.0, Draft) Which registries' attestations a consumer accepts (RFC-ACDP-0021 §11). Behavioral, consumer-side.",
+  "tags": [
+    "keyless",
+    "consumer",
+    "trust-list",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-keyless"
+  ],
+  "input": {
+    "golden": "kl-001 (controller did:web:agents.example.com:ci, identity oidc https://token.actions.githubusercontent.com / repo:example/pipeline:ref:refs/heads/main, registry did:web:registry.example.com)"
+  },
+  "scenarios": [
+    {
+      "name": "A — no keyless attester configured and no trust list",
+      "expected": {
+        "key_status": "fail closed",
+        "behavior": "untrusted_attester. The default accepts no attester."
+      }
+    },
+    {
+      "name": "B — attester in local keyless configuration",
+      "expected": {
+        "behavior": "Verification proceeds."
+      }
+    },
+    {
+      "name": "C — trust list applied and the keyless body evaluates trusted at the attesting registry",
+      "expected": {
+        "behavior": "Verification proceeds."
+      }
+    },
+    {
+      "name": "D — trust list applied and the body evaluates untrusted_registry, out_of_scope or expired",
+      "expected": {
+        "key_status": "fail closed",
+        "behavior": "untrusted_attester."
+      }
+    },
+    {
+      "name": "E — attestation body served from a registry other than its ctx_id authority",
+      "expected": {
+        "key_status": "fail closed",
+        "behavior": "attestation_invalid: agent_id MUST be did:web:<ctx_id authority>."
+      }
+    }
+  ]
+}

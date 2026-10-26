@@ -1,0 +1,47 @@
+{
+  "id": "kl-007",
+  "description": "(0.5.0, Draft) Implementations without RFC-ACDP-0021 support fail closed (RFC-ACDP-0021 §12). Behavioral, registry- and consumer-side.",
+  "tags": [
+    "keyless",
+    "consumer",
+    "registry",
+    "compatibility",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-keyless",
+    "acdp-registry-keyless"
+  ],
+  "input": {
+    "golden": "kl-001 (controller did:web:agents.example.com:ci, identity oidc https://token.actions.githubusercontent.com / repo:example/pipeline:ref:refs/heads/main, registry did:web:registry.example.com)"
+  },
+  "scenarios": [
+    {
+      "name": "A — consumer without the profile verifies a keyless body",
+      "expected": {
+        "error_code": "key_resolution_failed",
+        "behavior": "RFC-ACDP-0001 §5.11 step 4 finds no verificationMethod for the acdp-kl- fragment. The body MUST NOT be accepted by any other path."
+      }
+    },
+    {
+      "name": "B — DID document contains a verificationMethod whose fragment begins acdp-kl-",
+      "expected": {
+        "error_code": "key_resolution_failed",
+        "behavior": "Refused by keyless-aware registries and consumers on both paths; the prefix is reserved."
+      }
+    },
+    {
+      "name": "C — 0.4.0 registry receives a publish carrying key_attestation",
+      "expected": {
+        "error_code": "schema_violation",
+        "http_status": 400
+      }
+    },
+    {
+      "name": "D — Seam-style consumer pinned to a pre-keyless acdp release",
+      "expected": {
+        "behavior": "Resolution fails closed exactly as for an unknown key; no new key-status or revocation-class value reaches it."
+      }
+    }
+  ]
+}

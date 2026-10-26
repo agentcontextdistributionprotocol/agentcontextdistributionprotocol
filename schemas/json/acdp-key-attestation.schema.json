@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.1.0/acdp-key-attestation.schema.json",
+  "title": "ACDP Key Attestation (acdp-key-attestation/1)",
+  "description": "(0.5.0, Draft) The metadata of an 'acdp:key-attestation' body (RFC-ACDP-0021 §5.3): a registry's signed statement that, during [not_before, not_after), an ephemeral public key speaks for the controller DID because a workload identity that the controller's DID document authorizes presented a valid token for it. Closed at every level. Runtime checks not expressible here: key_fingerprint is the RFC-ACDP-0010 §6 fingerprint of public_key_jwk; key_id equals controller + '#acdp-kl-' + the fingerprint's hex; not_before < not_after and the window is at most 3600 seconds (RFC-ACDP-0021 §5.2).",
+  "type": "object",
+  "required": [
+    "attestation_version",
+    "controller",
+    "identity",
+    "org_wide",
+    "key_id",
+    "algorithm",
+    "public_key_jwk",
+    "key_fingerprint",
+    "not_before",
+    "not_after",
+    "token_hash"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "attestation_version": { "const": "acdp-key-attestation/1" },
+    "controller": {
+      "type": "string",
+      "pattern": "^did:web:[A-Za-z0-9._:%-]+$",
+      "description": "The did:web DID the attested key signs for. Producer bodies signed with the key carry it as agent_id (RFC-ACDP-0021 §6.2)."
+    },
+    "identity": { "$ref": "#/$defs/identity" },
+    "org_wide": {
+      "type": "boolean",
+      "description": "Copied from the controller's DID-document entry at attestation time. true lets bodies signed with this key supersede any of the controller's lineages (RFC-ACDP-0021 §7)."
+    },
+    "key_id": {
+      "type": "string",
+      "pattern": "^did:web:[A-Za-z0-9._:%-]+#acdp-kl-[0-9a-f]{64}$",
+      "description": "The DID URL producers put in signature.key_id (RFC-ACDP-0021 §6.1)."
+    },
+    "algorithm": {
+      "type": "string",
+      "enum": ["ed25519", "ecdsa-p256"],
+      "description": "The signature algorithm of the attested key (registries/signature-algorithms.md)."
+    },
+    "public_key_jwk": {
+      "description": "The attested public key as a JWK (RFC 7517), in the canonical member set of RFC 7638 for its key type.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kty", "crv", "x"],
+          "additionalProperties": false,
+          "properties": {
+            "kty": { "const": "OKP" },
+            "crv": { "const": "Ed25519" },
+            "x": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kty", "crv", "x", "y"],
+          "additionalProperties": false,
+          "properties": {
+            "kty": { "const": "EC" },
+            "crv": { "const": "P-256" },
+            "x": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$" },
+            "y": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$" }
+          }
+        }
+      ]
+    },
+    "key_fingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "RFC-ACDP-0010 §6 fingerprint of the attested key. Receipts and log leaves of bodies signed with it carry the same value."
+    },
+    "not_before": { "$ref": "#/$defs/ms_timestamp" },
+    "not_after": { "$ref": "#/$defs/ms_timestamp" },
+    "token_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "sha256: + lowercase hex SHA-256 of the ASCII bytes of the presented token. For audit and single-use enforcement; the token itself is never published (RFC-ACDP-0021 §5.2)."
+    }
+  },
+  "$defs": {
+    "ms_timestamp": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$",
+      "description": "Canonical millisecond RFC 3339 UTC (RFC-ACDP-0001 §5.3)."
+    },
+    "identity": {
+      "description": "A workload identity, in the shape of the RFC-AITP-0002 identity hint: type, issuer (oidc only) and subject, with no proof.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "issuer", "subject"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "oidc" },
+            "issuer": { "type": "string", "pattern": "^https://[^\\s#?]+$", "maxLength": 512 },
+            "subject": { "type": "string", "minLength": 1, "maxLength": 512 }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "subject"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "spiffe" },
+            "subject": { "type": "string", "pattern": "^spiffe://[a-z0-9._-]+(/[A-Za-z0-9._~%!$&'()*+,;=:@-]+)*$", "maxLength": 2048 }
+          }
+        }
+      ]
+    }
+  }
+}

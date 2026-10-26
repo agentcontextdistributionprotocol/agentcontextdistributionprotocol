@@ -621,6 +621,46 @@
         "trust-007-bundle-and-report"
       ],
       "notes": "OPTIONAL consumer profile (0.5.0, Draft). Trust lists are ordinary bodies of type acdp:trust-list; no registry obligation is added. trust-001 is executed by the runner (golden body + §6.2 evaluation table); trust-002..007 are behavioral."
+    },
+    {
+      "id": "acdp-registry-keyless",
+      "inherits": "acdp-registry-receipts",
+      "spec_reference": "RFC-ACDP-0021 §13 (0.5.0, Draft)",
+      "required_endpoints_added": [
+        "POST /key-attestations",
+        "GET /key-attestations"
+      ],
+      "required_fixtures_added": [
+        "kl-001-keyless-golden",
+        "kl-002-attestation-request",
+        "kl-003-keyless-publish",
+        "kl-004-supersession",
+        "kl-007-old-verifier-fail-closed",
+        "kl-009-identity-revocation"
+      ],
+      "not_implemented_permitted_on": [],
+      "notes": "OPTIONAL registry profile. Also requires acdp-registry-transparency-log and acdp-registry-lifecycle (attestations are logged, and withdrawn by retraction) and acdp_version >= 0.5.0; the capabilities document MUST carry the keyless member. A registry advertising it verifies OIDC tokens and JWT-SVIDs for the issuers and trust domains it lists, checks the controller's AcdpKeylessSigning DID-document service, and mints public acdp:key-attestation bodies under its own DID. No new wire error code: refusals use existing codes with RFC-ACDP-0021 details.reason tokens. kl-001 is executed by scripts/conformance-runner.py; the other kl-* fixtures are behavioral. Registries not advertising it MUST answer both endpoints with not_implemented (501) and, by ordinary RFC-ACDP-0001 §5.11 resolution, reject acdp-kl- signatures (kl-007)."
+    },
+    {
+      "id": "acdp-consumer-keyless",
+      "inherits": "acdp-consumer",
+      "spec_reference": "RFC-ACDP-0021 §13 (0.5.0, Draft)",
+      "behavioral_requirements": [
+        "Resolve an acdp-kl- signature only through the RFC-ACDP-0021 §8 procedure, never through §5.11 or any other path; without it, fail closed (§12)",
+        "Accept attestations only from registries the consumer's configuration or RFC-ACDP-0020 trust evaluation accepts; the default accepts none (§11)",
+        "Place the signature with a verified receipt from the attesting registry inside [not_before, not_after) (§8)",
+        "Report the key status as exactly one of currently authorized, historically authorized (receipt-attested) or historically authorized (pre-compromise, receipt-attested), or fail closed; revocations keep the producer-signed and registry-attested trust classes (§8.2, §9)",
+        "In RFC-ACDP-0017 chains, evaluate keyless nodes with the existing key-stage values and basis registry (§10)"
+      ],
+      "required_fixtures": [
+        "kl-001-keyless-golden",
+        "kl-005-consumer-verification",
+        "kl-006-attester-trust",
+        "kl-007-old-verifier-fail-closed",
+        "kl-008-chain-verification",
+        "kl-009-identity-revocation"
+      ],
+      "notes": "OPTIONAL consumer profile (0.5.0, Draft). Adds no key-status value, no revocation trust class, no chain-verdict vocabulary and no evidence-bundle member. kl-001 is executed by scripts/conformance-runner.py (attestation, keyless body, proof of possession, and the §8.2 and §7 tables); the other kl-* fixtures are behavioral."
     }
   ],
   "fixture_families": {
@@ -657,6 +697,7 @@
     "chain": "Chain verification and evidence bundles — offline derived_from walks, as-of vs latest verdicts, drift, verdict digests, and lifecycle event receipts (RFC-ACDP-0017, 0.5.0)",
     "rec": "Retraction recall — changes feed, watch filters, feed visibility and retention, consumer verification of change entries, and change-hint webhooks (RFC-ACDP-0018, 0.5.0)",
     "mcp": "MCP tool-result provenance — the acdp:mcp-tool-result record, salted call hashes, the io.acdp/provenance _meta link, publish-failure modes (RFC-ACDP-0019, 0.5.0)",
-    "trust": "Registry trust lists — signed acdp:trust-list bodies, issuer pins, series rollback/equivocation, as-of selection, body evaluation and the trust report (RFC-ACDP-0020, 0.5.0)"
+    "trust": "Registry trust lists — signed acdp:trust-list bodies, issuer pins, series rollback/equivocation, as-of selection, body evaluation and the trust report (RFC-ACDP-0020, 0.5.0)",
+    "kl": "Keyless signing — registry-attested ephemeral keys bound to OIDC/SPIFFE workload identities authorized by the controller's did:web document, the keyless publish path, same-identity supersession and the key-status mapping (RFC-ACDP-0021, 0.5.0)"
   }
 }
