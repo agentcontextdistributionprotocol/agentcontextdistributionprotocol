@@ -2,6 +2,19 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — RFC-ACDP-0017 promoted to Final; 27 cross-implementation known-answer vectors — 2026-10-26
+
+**Status promotion plus new known-answer vectors. No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and no existing vector or digest moved.**
+
+- **RFC-ACDP-0017 is Final at `0.5.0`.** This is the first Final document on the still-Draft 0.5.0 line.
+  - Evidence: acdp-rs `acdp-chain` 0.17.1, and acdp-verifier-py `c95cf7b` (written from the RFC text alone, without reading acdp-rs).
+  - Both reproduce all 31 known-answer verdicts byte for byte and pass the behavioral consumer scenarios.
+  - In a shared run over 29 edge bundles, 28 matched first time. The one mismatch exposed a spec gap: step-5 deferral for unresolvable keys, fixed in #92. All 29 then matched.
+  - The §10 (event receipts) and §11 (lineage-member receipts) registry amendments stay *(0.5.0)* Draft until a second registry implementation passes `chain-009` A–B.
+  - `acdp-consumer-chain` is Final.
+- **`chain-011`**: the 27 matching edge verdicts are pinned as known-answer vectors (`examples/evidence/xc-*.json`, `examples/chain-verdict/xc-*.json`). `scripts/conformance-runner.py` executes them. The two refusal cases, which also matched, stay behavioral in `chain-006` D and `chain-008` E.
+- **Tag** `rfc-acdp-0017-v0.5.0`.
+
 ## v0.5.0 — Clarifications: RFC-ACDP-0017/0018 second-implementation rulings — 2026-10-26
 
 **Draft-line clarifications. No existing body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. No known-answer vector or digest changed.** These are rulings on twelve questions from the second implementation (acdp-verifier-py), checked against acdp-rs.

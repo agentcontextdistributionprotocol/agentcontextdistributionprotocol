@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Chain Verification and Evidence Bundles
 
 **Document:** RFC-ACDP-0017
-**Version:** 0.5.0-draft
-**Status:** Community Standards Track (Draft)
+**Version:** 0.5.0
+**Status:** Community Standards Track (Final; §10–§11 registry amendments *(0.5.0)* Draft)
 
 This RFC specifies **chain verification**: one consumer-side algorithm that verifies a whole `derived_from` graph, **offline**, **as of a past instant T**, and emits a **deterministic, digestible verdict**. It defines three objects:
 
@@ -17,7 +17,15 @@ The algorithm runs identically online and offline. The two modes differ only in 
 
 ## 1. Status of This Memo
 
-This document is a **Draft** ACDP specification on the `acdp/0.5.0` line. It is open for substantive change until it is promoted. Per [VERSIONING.md](../VERSIONING.md), promotion to **Final** requires the conformance fixtures this document defines (`chain-001`..`chain-010`) to pass against two independent interoperating implementations.
+This document is a **Final** ACDP specification at version `0.5.0`, promoted 2026-10-26. It is the first Final document on the `acdp/0.5.0` line, which as a whole remains Draft (VERSIONING.md). Breaking changes now require a new RFC and a version bump.
+
+**Promotion evidence.** The consumer-side conformance fixtures (`chain-001`..`chain-011`, profile `acdp-consumer-chain`) pass against two independent interoperating implementations:
+- acdp-rs `acdp-chain` 0.17.1;
+- acdp-verifier-py at `c95cf7b`, written from this text alone.
+
+Both reproduce every known-answer vector byte for byte. That is 31 verdicts: `chain-001`, `002`, `003` and `010` scenario A, plus the 27 cross-implementation edge vectors of `chain-011`. Both also pass the behavioral consumer scenarios. The two implementations' disagreements were resolved in this text before promotion (CHANGELOG, 2026-10-26).
+
+**Still Draft.** The registry-side amendments in §10 (lifecycle event receipts) and §11 (receipts on lineage members) remain *(0.5.0)* **Draft**, not frozen. Only one registry implementation (acdp-registry-rs, in production since 0.5.6) exercises their registry-side scenarios (`chain-009` A–B). They are promoted when a second registry does. The consumer-side verification of event receipts (§10.3) is Final.
 
 The `acdp-consumer-chain` profile (§13) is OPTIONAL. A consumer that never verifies chains is unaffected. The registry-side amendments in §10 and §11 bind only registries that advertise `acdp-registry-receipts` and declare `acdp_version` ≥ `0.5.0`.
 
@@ -420,7 +428,7 @@ Implementations MUST NOT add members to the verdict object. Diagnostics, duratio
 
 ---
 
-## 10. Lifecycle Event Receipts (amends RFC-ACDP-0013, NORMATIVE) *(0.5.0)*
+## 10. Lifecycle Event Receipts (amends RFC-ACDP-0013, NORMATIVE) *(0.5.0, Draft; §10.3 consumer verification Final)*
 
 ### 10.1 Issuance
 
@@ -476,7 +484,7 @@ An event receipt gives a lifecycle event a **provable evidence time** (§5.1). W
 
 ---
 
-## 11. Receipts on Lineage Members (amends RFC-ACDP-0004 §5.1, NORMATIVE) *(0.5.0)*
+## 11. Receipts on Lineage Members (amends RFC-ACDP-0004 §5.1, NORMATIVE) *(0.5.0, Draft)*
 
 A registry that advertises `acdp-registry-receipts` and declares `acdp_version` ≥ `0.5.0` MUST include `registry_receipt` in every member of `GET /lineages/{lineage_id}`, exactly as in full retrieval (RFC-ACDP-0004 §2.1).
 
@@ -517,8 +525,9 @@ A future amendment to RFC-ACDP-0012 MAY add a leaf kind that binds an event rece
 | `chain-008` | Tampered body, key ≠ `body.ctx_id`, and a node missing from `contexts` and absent from `omitted`: `content_hash: mismatch`, `identity: mismatch`, `absent` vs `withheld` (§4.2, §7) |
 | `chain-009` | Event-receipt verification (consumer): wrong index, wrong `event_hash`, wrong registry, decreasing `accepted_at`. Issuance and the idempotent retry that mints no second receipt are registry-side only (`acdp-registry-lifecycle`) (§10) |
 | `chain-010` | Digest stability: the same bundle and options give the same `verdict_digest` across implementations and across online/offline modes; evidence added after T changes `verdict_digest` but not `as_of_digest` (§9) |
+| `chain-011` | 27 cross-implementation edge vectors: each pinned bundle and options reproduce the pinned verdict byte for byte (§9.3) |
 
-`chain-001`, `chain-002`, `chain-003` and `chain-010` scenario A carry **known-answer vectors**: a pinned bundle (`examples/evidence/`), a pinned verdict (`examples/chain-verdict/`) and their `evidence_digest`, `as_of_digest` and `verdict_digest`. `scripts/conformance-runner.py` recomputes the three digests and the as-of projection, and `make json-validate` validates both files against their schemas. A conformant implementation MUST reproduce each pinned verdict byte for byte from the pinned bundle and options. The known answers come from the first implementation (acdp-rs `acdp-chain`), and the digest arithmetic was recomputed independently. Every other scenario is **behavioral**. Promotion requires a second independent implementation to reproduce the known answers.
+`chain-001`, `chain-002`, `chain-003` and `chain-010` scenario A, and every vector of `chain-011`, carry **known-answer vectors**: a pinned bundle (`examples/evidence/`), a pinned verdict (`examples/chain-verdict/`) and their `evidence_digest`, `as_of_digest` and `verdict_digest`. `scripts/conformance-runner.py` recomputes the three digests and the as-of projection, and `make json-validate` validates both files against their schemas. A conformant implementation MUST reproduce each pinned verdict byte for byte from the pinned bundle and options. The `chain-001`..`010` known answers come from the first implementation (acdp-rs `acdp-chain`). The `chain-011` known answers are verdicts that acdp-rs and acdp-verifier-py each produced byte-identically from the same bundles. Every other scenario is **behavioral**.
 
 ---
 

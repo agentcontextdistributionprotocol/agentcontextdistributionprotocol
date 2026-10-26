@@ -502,7 +502,7 @@
     {
       "id": "acdp-consumer-chain",
       "inherits": "acdp-consumer",
-      "spec_reference": "RFC-ACDP-0017 (0.5.0, Draft)",
+      "spec_reference": "RFC-ACDP-0017 (0.5.0, Final)",
       "behavioral_requirements": [
         "Reject an acdp-evidence/1 bundle that fails acdp-evidence.schema.json as a whole; believe nothing because it is present (RFC-ACDP-0017 §4.1)",
         "Walk derived_from deterministically: deduplicated sorted roots at depth 0, BFS by depth then ascending ctx_id, derived_from in array order, DAG joins admitted once; max_depth/max_nodes/max_fanout truncate (never silently) with complete:false, the first control fired, and a sorted frontier; limits never above the RFC-ACDP-0006 defaults; cycles reported as presence: cycle (RFC-ACDP-0017 §6.1)",
@@ -521,9 +521,10 @@
         "chain-007-did-web-snapshot-selection",
         "chain-008-tamper-identity-presence",
         "chain-009-event-receipt-verification",
-        "chain-010-digest-stability"
+        "chain-010-digest-stability",
+        "chain-011-cross-implementation-edge-vectors"
       ],
-      "notes": "OPTIONAL consumer profile (RFC-ACDP-0017 §13) for consumers that verify whole derived_from graphs offline and/or as of a past instant. Requires acdp-consumer. chain-001/002/003/010 carry known-answer vectors (pinned bundle, verdict and digests) executed by scripts/conformance-runner.py; every other scenario is behavioral. Promotion requires a second independent implementation to reproduce the known answers. chain-009 is also the registry-side event-receipt fixture for acdp-registry-lifecycle (conditional there)."
+      "notes": "OPTIONAL consumer profile (RFC-ACDP-0017 §13) for consumers that verify whole derived_from graphs offline and/or as of a past instant. Requires acdp-consumer. chain-001/002/003/010 and the 27 cross-implementation vectors of chain-011 carry known-answer vectors (pinned bundle, verdict and digests) executed by scripts/conformance-runner.py; every other scenario is behavioral. Final 2026-10-26: acdp-rs acdp-chain 0.17.1 and acdp-verifier-py c95cf7b reproduce all 31 known answers byte for byte. chain-009 is also the registry-side event-receipt fixture for acdp-registry-lifecycle (conditional there)."
     },
     {
       "id": "acdp-registry-changes",

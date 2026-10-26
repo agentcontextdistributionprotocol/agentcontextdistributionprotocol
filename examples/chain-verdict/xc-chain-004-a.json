@@ -1,0 +1,147 @@
+{
+  "as_of": "2026-10-01T00:00:00.000Z",
+  "as_of_digest": "sha256:03bfb5ce1cfddc265393528bc5fdb4ca4a829761564ea3369ebd3f82f83e0778",
+  "chain": {
+    "as_of": "ok_with_caveats",
+    "latest": "ok_with_caveats"
+  },
+  "complete": true,
+  "control": null,
+  "drift": [
+    {
+      "ctx_id": "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "kind": "backdated_event"
+    },
+    {
+      "ctx_id": "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "kind": "retracted_after_as_of"
+    }
+  ],
+  "evidence_digest": "sha256:0923ce0c79915d8a1f67118740989c0952f07a7238967b34795344753994ec4c",
+  "frontier": [],
+  "horizon": "2026-10-04T00:00:00.000Z",
+  "limits": {
+    "max_depth": 10,
+    "max_fanout": 100,
+    "max_nodes": 500
+  },
+  "nodes": [
+    {
+      "as_of": {
+        "caveats": [
+          "observed_basis"
+        ],
+        "stages": {
+          "content_hash": {
+            "basis": "self",
+            "value": "ok"
+          },
+          "identity": {
+            "basis": "registry",
+            "value": "ok"
+          },
+          "key": {
+            "basis": "self",
+            "value": "current"
+          },
+          "key_revocation": {
+            "basis": "observed",
+            "evidence_time": "2026-09-30T00:00:00.000Z",
+            "value": "not-revoked"
+          },
+          "log": {
+            "value": "absent"
+          },
+          "presence": {
+            "basis": "registry",
+            "evidence_time": "2026-09-03T00:00:00.000Z",
+            "value": "present"
+          },
+          "registry_receipt": {
+            "basis": "registry",
+            "evidence_time": "2026-09-03T00:00:00.000Z",
+            "key_status": "current",
+            "value": "ok"
+          },
+          "retraction": {
+            "events_admitted": 0,
+            "value": "not_retracted"
+          },
+          "signature": {
+            "basis": "self",
+            "value": "ok"
+          }
+        },
+        "verdict": "ok_with_caveats"
+      },
+      "ctx_id": "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "depth": 0,
+      "derived_from": [],
+      "latest": {
+        "caveats": [
+          "observed_basis",
+          "retracted"
+        ],
+        "stages": {
+          "content_hash": {
+            "basis": "self",
+            "value": "ok"
+          },
+          "identity": {
+            "basis": "registry",
+            "value": "ok"
+          },
+          "key": {
+            "basis": "self",
+            "value": "current"
+          },
+          "key_revocation": {
+            "basis": "observed",
+            "evidence_time": "2026-09-30T00:00:00.000Z",
+            "value": "not-revoked"
+          },
+          "log": {
+            "value": "absent"
+          },
+          "presence": {
+            "basis": "registry",
+            "evidence_time": "2026-09-03T00:00:00.000Z",
+            "value": "present"
+          },
+          "registry_receipt": {
+            "basis": "registry",
+            "evidence_time": "2026-09-03T00:00:00.000Z",
+            "key_status": "current",
+            "value": "ok"
+          },
+          "retraction": {
+            "basis": "registry",
+            "events_admitted": 1,
+            "evidence_time": "2026-10-04T00:00:00.000Z",
+            "value": "retracted"
+          },
+          "signature": {
+            "basis": "self",
+            "value": "ok"
+          }
+        },
+        "verdict": "ok_with_caveats"
+      }
+    }
+  ],
+  "options_digest": null,
+  "require_attested_events": true,
+  "roots": [
+    "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+  ],
+  "tainted_paths": {
+    "as_of": [],
+    "latest": [
+      [
+        "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+      ]
+    ]
+  },
+  "verdict_digest": "sha256:5835d30e677b93f9ce7992dee15832696b7d9cb42b84dcfd455601bd56342ef8",
+  "verdict_version": "acdp-chain-verdict/1"
+}
