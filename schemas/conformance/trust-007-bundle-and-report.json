@@ -18,9 +18,9 @@
   },
   "scenarios": [
     {
-      "name": "A — verdict unchanged",
+      "name": "A — verdict stages unchanged",
       "expected": {
-        "behavior": "Adding the golden trust-list body (and its lifecycle_events and receipt) to evidence.contexts of the chain-001 bundle leaves every member of the chain-001 verdict except evidence_digest and verdict_digest unchanged, and as_of_digest unchanged."
+        "behavior": "Adding the golden trust-list body (and its lifecycle_events and receipt) to evidence.contexts of the chain-001 bundle leaves every member of the chain-001 verdict unchanged except evidence_digest, horizon and verdict_digest. horizon becomes max(the old horizon, the list's timed evidence) per RFC-ACDP-0017 §5.4; for chain-001 that is 2026-09-30 → 2026-10-26T00:00:01.000Z. as_of_digest is unchanged. A list whose evidence is no later than the horizon leaves horizon unchanged too."
       }
     },
     {

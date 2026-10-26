@@ -131,9 +131,9 @@ A consumer applying trust lists holds a set of **issuer pins**, each an `issuer`
 
 A candidate list body L is **valid for a pin** P only if all hold:
 
-1. L passes the RFC-ACDP-0001 §5.11 strict body pipeline (`content_hash` and producer signature). In an as-of pass, the issuer's DID document is selected as of T per RFC-ACDP-0017 §6.2 instead of being fetched now.
+1. L passes the RFC-ACDP-0001 §5.11 strict body pipeline (`content_hash` and producer signature). L may be a retrieved body or, out of band (§7), a publish-request body (ProducerContent with its `content_hash` and `signature`). Both verify identically, because the registry-assigned fields are outside the hash; a publish-request body simply has no `ctx_id`. In an as-of pass, the issuer's DID document is selected as of T per RFC-ACDP-0017 §6.2 instead of being fetched now.
 2. `L.agent_id` equals `P.issuer`, `L.type` is `acdp:trust-list`, and `L.metadata.list_id` equals `P.list_id`.
-3. If `P.issuer_key_fingerprints` is present, the fingerprint of the key that verified the signature is in it.
+3. If `P.issuer_key_fingerprints` is present, the RFC-ACDP-0010 §6 fingerprint of the issuer key that verified L's signature is in it.
 4. `L.metadata` is valid against `acdp-trust-list.schema.json`, `valid_from` < `valid_until`, and every entry's `registry_did` equals `did:web:` + its `origin`.
 5. The issuer key is not revoked for L under RFC-ACDP-0014 §7, with revocations admitted as the pass admits them.
 
@@ -145,17 +145,22 @@ Within one series, versions are ordered by `serial`.
 
 - **Rollback.** A consumer MUST persist, per pin, the highest `serial` it has accepted as valid (its **floor**). A version below the floor is never used, even when no other version is at hand. A replayed old list therefore cannot restore a registry the issuer has since dropped. When every version the consumer holds is below its floor, P contributes `list_invalid` with reason `rollback`.
 - **Equivocation.** Two valid versions with the same `serial` and different `content_hash` are proof the issuer key signed conflicting lists. The consumer MUST treat P as `list_invalid` (reason `equivocation`) until a valid version with a higher `serial` arrives, and SHOULD alert.
-- **Retraction.** A version withdrawn by an admitted RFC-ACDP-0013 `retracted` event, whose `actor` is the issuer DID and which is signed by the issuer, is not used. A registry-actor retraction is not trusted to withdraw a list: it is reported, and the version stays usable. Retracting the version at the floor does **not** revert to a lower serial, because that would be a rollback. P is `list_invalid` (reason `retracted`) until the issuer publishes a higher serial. An issuer that wants an older policy back republishes it under a new serial.
+- **Retraction.** A version withdrawn by an admitted RFC-ACDP-0013 `retracted` event, whose `actor` is the issuer DID and which is signed by the issuer, is not used. A registry-actor retraction is not trusted to withdraw a list. The version stays usable, and an implementation MAY log the retraction; `acdp-trust-report/1` does not carry it. An out-of-band list (§7) has no lifecycle channel, so its retractions are the issuer-signed `retracted` events supplied with it. With none supplied, it is not retracted, and staleness is the consumer's risk; refreshing online removes it. Retracting the version at the floor does **not** revert to a lower serial, because that would be a rollback. P is `list_invalid` (reason `retracted`) until the issuer publishes a higher serial. An issuer that wants an older policy back republishes it under a new serial.
 
 ### 5.4 Selecting the version for T
 
 For pin P at evaluation time T:
 
-1. Take the valid versions of P (§5.2) that are not retracted (§5.3).
+1. Take the valid versions of P (§5.2), **retracted ones included**.
    - In the **latest** pass, take all of them, together with the persisted floor.
-   - In an **as-of** pass, take only versions whose `issued_at` ≤ T, and count only the retractions the pass admits as of T, per RFC-ACDP-0017 §6.4 (attested events) and §7.8 (retraction evidence time). The floor for an as-of pass is the highest `serial` among those versions, never the consumer's present-day floor, so a historical evaluation reproduces what was knowable at T.
-2. The **selected version** is the one with the highest `serial`. If it is below the floor (latest pass), P is `list_invalid` (`rollback`).
-3. If T is outside the selected version's `valid_from` ≤ T < `valid_until`, P contributes `expired` (reason `list_window`). A consumer MUST NOT fall back to an older serial whose window covers T.
+   - In an **as-of** pass, take only versions whose `issued_at` ≤ T, and count only the retractions the pass admits as of T, per RFC-ACDP-0017 §6.4 (attested events) and §7.8 (retraction evidence time). The floor for an as-of pass is the highest `serial` among those versions, retracted ones included, never the consumer's present-day floor, so a historical evaluation reproduces what was knowable at T.
+2. The **top version** is the one with the highest `serial`. The checks below run in this order, and the first that applies decides P:
+   1. No valid version: `list_invalid` (`no_valid_version`).
+   2. The top version is below the floor (latest pass): `list_invalid` (`rollback`).
+   3. Two valid versions share the top serial with different `content_hash`: `list_invalid` (`equivocation`), whether or not either is retracted.
+   4. The top version is retracted: `list_invalid` (`retracted`). Retraction never selects a lower serial (§5.3).
+   5. T is outside the top version's `valid_from` ≤ T < `valid_until`: `expired` (`list_window`). A consumer MUST NOT fall back to an older serial whose window covers T.
+   6. Otherwise the top version is the **selected version**.
 
 ---
 
@@ -164,7 +169,7 @@ For pin P at evaluation time T:
 ### 6.1 Inputs
 
 - B: a body that already passed RFC-ACDP-0001 §5.11. Trust evaluation decides whether to rely on a verified body; it never makes an unverified body acceptable.
-- R: B's registry receipt, *if* it verified under RFC-ACDP-0010 §8; otherwise R is absent. Its `registry_did` and the fingerprint of the key that signed it are the receipt inputs.
+- R: B's registry receipt, *if* it verified under RFC-ACDP-0010 §8; otherwise R is absent. The receipt inputs are its `registry_did` and its **registry key fingerprint**: the RFC-ACDP-0010 §6 fingerprint of the registry key that signed the receipt. This is not the receipt's `key_fingerprint` member, which names the producer's key. The closed RFC-ACDP-0017 verdict does not carry it, so a verifier takes it from its own receipt verification.
 - C: optionally, the set of profiles the registry of B advertises, from a capabilities document the consumer fetched (RFC-ACDP-0007). Offline, C is usually absent.
 - T, and the pins with their selected versions (§5.4).
 
@@ -181,13 +186,13 @@ For pin P at evaluation time T:
    7. `E.scope` is present and B fails it: `out_of_scope`, with reason `scope_agent` (`agent_id` neither in `agent_ids` nor starting with any of `agent_id_prefixes`), `scope_did_method` (the `did:<method>` prefix of `agent_id` not in `did_methods`) or `scope_type` (`type` not in `types`), checked in that order.
    8. Otherwise: `trusted`.
 3. **Per list.** The list's outcome is the best entry outcome under the precedence `trusted` > `expired` > `out_of_scope` > `untrusted_registry`, ties broken by the lowest entry index, which also supplies the reason. If no entry applies, the outcome is `untrusted_registry` (`no_entry`). A pin without a usable version contributes `expired` or `list_invalid` from §5.
-4. **Across lists.** The final outcome is the best per-pin outcome under `trusted` > `expired` > `out_of_scope` > `untrusted_registry` > `list_invalid`. Ties are broken by the pin order (issuer, then `list_id`, by code point). This is a plain union: any one pinned list that trusts B is enough, and no list can widen or narrow another.
+4. **Across lists.** With no pins at all, the outcome is `list_invalid` (`no_valid_version`). Otherwise the final outcome is the best per-pin outcome under `trusted` > `expired` > `out_of_scope` > `untrusted_registry` > `list_invalid`. Ties are broken by the pin order (issuer, then `list_id`, by code point). This is a plain union: any one pinned list that trusts B is enough, and no list can widen or narrow another.
 
 Only `trusted` permits reliance. Every other outcome is a refusal; the outcome and reason say why, for operators and auditors.
 
 ### 6.3 What the offline evaluation cannot check
 
-`required_profiles` other than `acdp-registry-receipts` need the registry's capabilities document, which an evidence bundle does not carry. When C is absent those names are not checked, and the result records `profiles_checked: false` (§8). A consumer that requires them MUST fetch the capabilities document online, or treat `profiles_checked: false` as a refusal by local policy.
+`profiles_checked` is `true` exactly when C was supplied, whatever the entries name. `required_profiles` other than `acdp-registry-receipts` need the registry's capabilities document, which an evidence bundle does not carry. When C is absent those names are not checked, and the result records `profiles_checked: false` (§8). A consumer that requires them MUST fetch the capabilities document online, or treat `profiles_checked: false` as a refusal by local policy.
 
 ---
 
@@ -195,7 +200,7 @@ Only `trusted` permits reliance. Every other outcome is a refusal; the outcome a
 
 - **At a registry.** A trust list is published, retrieved, superseded and retracted like any body. A consumer refreshes it by retrieving the series' `/current` or by watching its `lineage_id` on the RFC-ACDP-0018 changes feed.
 - **Out of band.** The same signed body MAY be shipped as a file or with the consumer's configuration. It verifies identically, because nothing in §5–§6 needs the registry.
-- **In an evidence bundle.** An RFC-ACDP-0017 `acdp-evidence/1` bundle MAY carry trust-list bodies in `contexts`, with their `lifecycle_events` and receipts, exactly as it carries key-revocation contexts. `verify_chain` does not reach them through `derived_from` and they do not alter the verdict object; they change only `evidence_digest`, as any extra context does. A verifier applying trust lists reads them from the same bundle, so one file reproduces both the chain verdict and the trust decision at T.
+- **In an evidence bundle.** An RFC-ACDP-0017 `acdp-evidence/1` bundle MAY carry trust-list bodies in `contexts`, with their `lifecycle_events` and receipts, exactly as it carries key-revocation contexts. `verify_chain` does not reach them through `derived_from` and they do not alter the verdict object; like any extra context, they change `evidence_digest`. They also move the verdict's `horizon` (RFC-ACDP-0017 §5.4) when their timed evidence is later than the rest of the bundle, so `verdict_digest` changes too. `as_of_digest` never changes (RFC-ACDP-0017 §9.3). A verifier applying trust lists reads them from the same bundle, so one file reproduces both the chain verdict and the trust decision at T.
 
 ---
 
@@ -210,8 +215,8 @@ RFC-ACDP-0017 is Final and its verdict object is closed, so a verifier that appl
 | `evaluated_at` | T. |
 | `verdict_digest` | The `verdict_digest` of the RFC-ACDP-0017 verdict whose nodes it evaluates. OPTIONAL: a report for single bodies outside a chain omits it. |
 | `evidence_digest` | The bundle digest, when the lists came from a bundle. OPTIONAL. |
-| `lists` | One element per pin, sorted by (`issuer`, `list_id`): `issuer`, `list_id`, `status` (`used`, `expired` or `invalid`), and when a version was selected its `serial`, `content_hash` and, if known, `ctx_id`; `reason` when not `used`. |
-| `nodes` | One element per evaluated body, sorted by `ctx_id`: `ctx_id`, `outcome`, `reason` (absent for `trusted`), `profiles_checked`, and for `trusted` or entry-level outcomes the deciding `issuer`, `list_id` and `entry_index`. |
+| `lists` | One element per pin, sorted by (`issuer`, `list_id`): `issuer`, `list_id`, `status` (`used`, `expired` or `invalid`), and, for `used` and `expired` only, the version's `serial`, `content_hash` and, if known, `ctx_id`; `reason` when not `used`. |
+| `nodes` | One element per evaluated body, sorted by `ctx_id`: `ctx_id`, `outcome`, `reason` (absent for `trusted`), `profiles_checked`, and the deciding `issuer`, `list_id` and `entry_index` only when an entry decided the outcome (`trusted`, or an entry-level refusal). They are absent for `no_entry`, `origin_mismatch` and pin-level outcomes (`list_window`, `list_invalid`). |
 | `report_digest` | `sha256:` + hex(SHA-256(JCS(report without `report_digest`))). |
 
 For a chain, the inputs for each node are the node's body, its receipt only when the verdict's `registry_receipt` stage for that pass is `ok`, and the pass's T. The trust report never changes the chain verdict: an untrusted node does not taint the RFC-ACDP-0017 graph. Combining the two (for example, "refuse if any node is not trusted") is the consumer's policy.
