@@ -2,6 +2,10 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Clarifications & tooling: OpenTelemetry attribute registry — 2026-10-26
+
+**No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed.** New registry [`registries/otel-attributes.md`](registries/otel-attributes.md) gives span attribute names in the `acdp.` namespace, all Provisional. Producer side: `acdp.ctx_id`, `acdp.lineage_id`, `acdp.version`, `acdp.content_hash`, `acdp.producer`, `acdp.registry`, `acdp.type`, `acdp.derived_from` and `acdp.publish.error`. Consumer side: `acdp.input.ctx_ids`, `acdp.input.verified`, `acdp.input.chain_verdict`, `acdp.input.chain_verdict_as_of` and `acdp.input.verdict_digest`. The attributes are telemetry only: they are never evidence, and never carry body content or the RFC-ACDP-0019 salt. Agent-SDK hooks and the MCP proxy use these names.
+
 ## v0.5.0 — Clarifications: RFC-ACDP-0020 second-implementation rulings — 2026-10-26
 
 **No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. `trust-001` and the golden trust report are unchanged.** These rulings answer the eleven findings acdp-verifier-py raised implementing RFC-ACDP-0020 from the text alone.
