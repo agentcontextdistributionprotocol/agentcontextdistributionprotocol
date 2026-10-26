@@ -2,6 +2,15 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Clarifications: RFC-ACDP-0020 second-implementation rulings — 2026-10-26
+
+**No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. `trust-001` and the golden trust report are unchanged.** These rulings answer the eleven findings acdp-verifier-py raised implementing RFC-ACDP-0020 from the text alone.
+- **Conflict fixed:** a carried list moves the RFC-ACDP-0017 `horizon` (Final §5.4) when its evidence is later. §7 and `trust-007` A now say so.
+- **Version selection:** §5.4 counts retracted versions in the floor and gives the version checks a fixed order: no_valid_version, rollback, equivocation (which beats retraction), retracted, list_window.
+- **Report contents:** report `lists` carry the serial and hash only for `used` and `expired`. Node `issuer`, `list_id` and `entry_index` appear only when an entry decided. `profiles_checked` means that C was supplied. No pins gives `list_invalid` (`no_valid_version`).
+- **Naming:** the receipt input is named the *registry key fingerprint*.
+- **Out-of-band lists:** an out-of-band list may be a publish-request body, and its retractions are the issuer-signed events supplied with it. A registry-actor retraction is not carried in the report.
+
 ## v0.5.0 — Clarifications: RFC-ACDP-0019 verifier rulings — 2026-10-26
 
 **No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and `mcp-001` is unchanged.** These rulings answer the six questions acdp-verifier-py raised implementing the §4.3 holder check from the text:
