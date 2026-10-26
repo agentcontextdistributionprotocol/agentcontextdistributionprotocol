@@ -13,6 +13,7 @@ All notable changes to ACDP are recorded here. ACDP follows the versioning polic
   - The retraction `evidence_time` is the last admitted event's verified `accepted_at` (§7.8).
   - Discovery-record selection is exact, and an admitted `revoked` record with no applied revocation gives `unknown` (§7.9).
   - The horizon's inputs are listed exactly (§5.4).
+  - The log stage rebuilds the leaf from the verified receipt's `key_fingerprint`, independent of the key stage (§7.7).
   - As-of event admission is defined exactly, including unsigned registry-actor events (§6.4).
   - The `republished_after_as_of` and `as_of_unprovable` triggers are defined exactly (§8.4).
   - The `chain-003` C construction is spelled out.
