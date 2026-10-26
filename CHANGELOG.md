@@ -2,6 +2,17 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Clarifications: RFC-ACDP-0019 verifier rulings — 2026-10-26
+
+**No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and `mcp-001` is unchanged.** These rulings answer the six questions acdp-verifier-py raised implementing the §4.3 holder check from the text:
+- The verifier MUST bind the retrieved `ctx_id`, `origin_registry` and `content_hash` to the link.
+- The record is closed for verifiers too.
+- Only the canonical salt encoding is accepted (no padding, zero trailing bits).
+- `tool` is checked against the called `params.name`, and `is_error` against the held `isError`.
+- An absent `request_id_hash` is unchecked, not a mismatch.
+- Mismatches are local verdicts, with no wire code.
+- §8.4 notes that an upstream-supplied link hides the proxy's record from the holder.
+
 ## v0.5.0 — Clarifications: RFC-ACDP-0019 first-implementation rulings — 2026-10-26
 
 **No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and `mcp-001` is unchanged.** These rulings answer the twelve questions acdp-rs raised while building `acdp-mcp-proxy`:
