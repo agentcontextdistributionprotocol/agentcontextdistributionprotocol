@@ -1,0 +1,646 @@
+{
+  "id": "rev-007",
+  "description": "(0.5.0) Known-answer vectors for the RFC-ACDP-0014 §7 key_revocation classification (stable rule anchors acdp.rule.revocation-classification, acdp.rule.revocation-fold, acdp.rule.revocation-scope and acdp.rule.revocation-precedence in registries/rule-anchors.md). Each vector gives already-verified inputs for one context signed by key fingerprint F at one vantage, and the expected stage result. The inputs are: the context's agent_id and F; its registry receipt (null = none; verified flag, RFC-ACDP-0010 §8 receipt-key status, receipt-attested created_at); the revocation lineage members found, each already signature-verified per §5; and how many other lookups were unknown (§8). scripts/conformance-runner.py executes the classification and compares it with expected. Signature, DID and receipt verification are out of scope here (rev-001, rcpt-*, rot-*).",
+  "tags": [
+    "revocation",
+    "consumer",
+    "0.5.0",
+    "known-answer"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer"
+  ],
+  "input": {
+    "rules": "Applicable = members whose type is key-revocation or acdp:key-revocation (§10 equivalence), whose revoked_key_fingerprint is F, and that are in producer scope (producer-signed: agent_id equals the context's agent_id; registry-attested: revoked_key_controller equals it). Retracted members count. Other members are ignored and never disarm. T = the earliest compromised_since among applicable members; the attributed revocation is the one carrying it (vectors have no ties). No applicable member gives not-revoked. Otherwise: no receipt, a failed receipt, or a historical receipt key gives unplaceable; receipt created_at < T gives pre-compromise; else revoked. Combine with unknown lookups by refusal (revoked, unplaceable) > unknown > pre-compromise > not-revoked."
+  },
+  "scenarios": [
+    {
+      "name": "A — classify every vector",
+      "expected": {
+        "behavior": "For each vector, the implementation's key_revocation stage reports the expected class, the effective boundary T and the attributed revocation ctx_id (boundary and ctx_id are null for not-revoked and unknown)."
+      }
+    }
+  ],
+  "vectors": [
+    {
+      "name": "01 no revocation, complete discovery",
+      "input": {
+        "context": {
+          "agent_id": "did:web:agents.example.com:producer-a",
+          "key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "receipt": {
+          "verified": true,
+          "key_status": "current",
+          "created_at": "2026-09-10T00:00:00.000Z"
+        },
+        "revocations": [],
+        "unknown_lookups": 0
+      },
+      "expected": {
+        "key_revocation": "not-revoked",
+        "boundary": null,
+        "revocation_ctx_id": null
+      }
+    },
+    {
+      "name": "02 no revocation, one lookup unknown",
+      "input": {
+        "context": {
+          "agent_id": "did:web:agents.example.com:producer-a",
+          "key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "receipt": {
+          "verified": true,
+          "key_status": "current",
+          "created_at": "2026-09-10T00:00:00.000Z"
+        },
+        "revocations": [],
+        "unknown_lookups": 1
+      },
+      "expected": {
+        "key_revocation": "unknown",
+        "boundary": null,
+        "revocation_ctx_id": null
+      }
+    },
+    {
+      "name": "03 receipt before T",
+      "input": {
+        "context": {
+          "agent_id": "did:web:agents.example.com:producer-a",
+          "key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "receipt": {
+          "verified": true,
+          "key_status": "current",
+          "created_at": "2026-09-10T00:00:00.000Z"
+        },
+        "revocations": [
+          {
+            "ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111",
+            "type": "key-revocation",
+            "agent_id": "did:web:agents.example.com:producer-a",
+            "trust_class": "producer-signed",
+            "revoked_key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "retracted": false,
+            "compromised_since": "2026-10-01T00:00:00.000Z"
+          }
+        ],
+        "unknown_lookups": 0
+      },
+      "expected": {
+        "key_revocation": "pre-compromise",
+        "boundary": "2026-10-01T00:00:00.000Z",
+        "revocation_ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111"
+      }
+    },
+    {
+      "name": "04 receipt after T",
+      "input": {
+        "context": {
+          "agent_id": "did:web:agents.example.com:producer-a",
+          "key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "receipt": {
+          "verified": true,
+          "key_status": "current",
+          "created_at": "2026-10-05T00:00:00.000Z"
+        },
+        "revocations": [
+          {
+            "ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111",
+            "type": "key-revocation",
+            "agent_id": "did:web:agents.example.com:producer-a",
+            "trust_class": "producer-signed",
+            "revoked_key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "retracted": false,
+            "compromised_since": "2026-10-01T00:00:00.000Z"
+          }
+        ],
+        "unknown_lookups": 0
+      },
+      "expected": {
+        "key_revocation": "revoked",
+        "boundary": "2026-10-01T00:00:00.000Z",
+        "revocation_ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111"
+      }
+    },
+    {
+      "name": "05 receipt exactly at T",
+      "input": {
+        "context": {
+          "agent_id": "did:web:agents.example.com:producer-a",
+          "key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "receipt": {
+          "verified": true,
+          "key_status": "current",
+          "created_at": "2026-10-01T00:00:00.000Z"
+        },
+        "revocations": [
+          {
+            "ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111",
+            "type": "key-revocation",
+            "agent_id": "did:web:agents.example.com:producer-a",
+            "trust_class": "producer-signed",
+            "revoked_key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "retracted": false,
+            "compromised_since": "2026-10-01T00:00:00.000Z"
+          }
+        ],
+        "unknown_lookups": 0
+      },
+      "expected": {
+        "key_revocation": "revoked",
+        "boundary": "2026-10-01T00:00:00.000Z",
+        "revocation_ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111"
+      }
+    },
+    {
+      "name": "06 no receipt",
+      "input": {
+        "context": {
+          "agent_id": "did:web:agents.example.com:producer-a",
+          "key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "receipt": null,
+        "revocations": [
+          {
+            "ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111",
+            "type": "key-revocation",
+            "agent_id": "did:web:agents.example.com:producer-a",
+            "trust_class": "producer-signed",
+            "revoked_key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "retracted": false,
+            "compromised_since": "2026-10-01T00:00:00.000Z"
+          }
+        ],
+        "unknown_lookups": 0
+      },
+      "expected": {
+        "key_revocation": "unplaceable",
+        "boundary": "2026-10-01T00:00:00.000Z",
+        "revocation_ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111"
+      }
+    },
+    {
+      "name": "07 receipt fails verification",
+      "input": {
+        "context": {
+          "agent_id": "did:web:agents.example.com:producer-a",
+          "key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "receipt": {
+          "verified": false,
+          "key_status": "current",
+          "created_at": "2026-09-10T00:00:00.000Z"
+        },
+        "revocations": [
+          {
+            "ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111",
+            "type": "key-revocation",
+            "agent_id": "did:web:agents.example.com:producer-a",
+            "trust_class": "producer-signed",
+            "revoked_key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "retracted": false,
+            "compromised_since": "2026-10-01T00:00:00.000Z"
+          }
+        ],
+        "unknown_lookups": 0
+      },
+      "expected": {
+        "key_revocation": "unplaceable",
+        "boundary": "2026-10-01T00:00:00.000Z",
+        "revocation_ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111"
+      }
+    },
+    {
+      "name": "08 historical receipt key before T (strict)",
+      "input": {
+        "context": {
+          "agent_id": "did:web:agents.example.com:producer-a",
+          "key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "receipt": {
+          "verified": true,
+          "key_status": "historical",
+          "created_at": "2026-09-10T00:00:00.000Z"
+        },
+        "revocations": [
+          {
+            "ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111",
+            "type": "key-revocation",
+            "agent_id": "did:web:agents.example.com:producer-a",
+            "trust_class": "producer-signed",
+            "revoked_key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "retracted": false,
+            "compromised_since": "2026-10-01T00:00:00.000Z"
+          }
+        ],
+        "unknown_lookups": 0
+      },
+      "expected": {
+        "key_revocation": "unplaceable",
+        "boundary": "2026-10-01T00:00:00.000Z",
+        "revocation_ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111"
+      }
+    },
+    {
+      "name": "09 superseding member widens the window",
+      "input": {
+        "context": {
+          "agent_id": "did:web:agents.example.com:producer-a",
+          "key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "receipt": {
+          "verified": true,
+          "key_status": "current",
+          "created_at": "2026-09-10T00:00:00.000Z"
+        },
+        "revocations": [
+          {
+            "ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111",
+            "type": "key-revocation",
+            "agent_id": "did:web:agents.example.com:producer-a",
+            "trust_class": "producer-signed",
+            "revoked_key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "retracted": false,
+            "compromised_since": "2026-10-01T00:00:00.000Z"
+          },
+          {
+            "ctx_id": "acdp://registry.example.com/22222222-2222-4222-8222-222222222222",
+            "type": "key-revocation",
+            "agent_id": "did:web:agents.example.com:producer-a",
+            "trust_class": "producer-signed",
+            "revoked_key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "retracted": false,
+            "compromised_since": "2026-09-01T00:00:00.000Z"
+          }
+        ],
+        "unknown_lookups": 0
+      },
+      "expected": {
+        "key_revocation": "revoked",
+        "boundary": "2026-09-01T00:00:00.000Z",
+        "revocation_ctx_id": "acdp://registry.example.com/22222222-2222-4222-8222-222222222222"
+      }
+    },
+    {
+      "name": "10 superseding member cannot narrow the window",
+      "input": {
+        "context": {
+          "agent_id": "did:web:agents.example.com:producer-a",
+          "key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "receipt": {
+          "verified": true,
+          "key_status": "current",
+          "created_at": "2026-09-10T00:00:00.000Z"
+        },
+        "revocations": [
+          {
+            "ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111",
+            "type": "key-revocation",
+            "agent_id": "did:web:agents.example.com:producer-a",
+            "trust_class": "producer-signed",
+            "revoked_key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "retracted": false,
+            "compromised_since": "2026-09-01T00:00:00.000Z"
+          },
+          {
+            "ctx_id": "acdp://registry.example.com/22222222-2222-4222-8222-222222222222",
+            "type": "key-revocation",
+            "agent_id": "did:web:agents.example.com:producer-a",
+            "trust_class": "producer-signed",
+            "revoked_key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "retracted": false,
+            "compromised_since": "2026-10-01T00:00:00.000Z"
+          }
+        ],
+        "unknown_lookups": 0
+      },
+      "expected": {
+        "key_revocation": "revoked",
+        "boundary": "2026-09-01T00:00:00.000Z",
+        "revocation_ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111"
+      }
+    },
+    {
+      "name": "11 retracted revocation still counts",
+      "input": {
+        "context": {
+          "agent_id": "did:web:agents.example.com:producer-a",
+          "key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "receipt": {
+          "verified": true,
+          "key_status": "current",
+          "created_at": "2026-10-05T00:00:00.000Z"
+        },
+        "revocations": [
+          {
+            "ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111",
+            "type": "key-revocation",
+            "agent_id": "did:web:agents.example.com:producer-a",
+            "trust_class": "producer-signed",
+            "revoked_key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "retracted": true,
+            "compromised_since": "2026-10-01T00:00:00.000Z"
+          }
+        ],
+        "unknown_lookups": 0
+      },
+      "expected": {
+        "key_revocation": "revoked",
+        "boundary": "2026-10-01T00:00:00.000Z",
+        "revocation_ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111"
+      }
+    },
+    {
+      "name": "12 non-revocation successor does not disarm",
+      "input": {
+        "context": {
+          "agent_id": "did:web:agents.example.com:producer-a",
+          "key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "receipt": {
+          "verified": true,
+          "key_status": "current",
+          "created_at": "2026-10-05T00:00:00.000Z"
+        },
+        "revocations": [
+          {
+            "ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111",
+            "type": "key-revocation",
+            "agent_id": "did:web:agents.example.com:producer-a",
+            "trust_class": "producer-signed",
+            "revoked_key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "retracted": false,
+            "compromised_since": "2026-10-01T00:00:00.000Z"
+          },
+          {
+            "ctx_id": "acdp://registry.example.com/33333333-3333-4333-8333-333333333333",
+            "type": "note",
+            "agent_id": "did:web:agents.example.com:producer-a",
+            "trust_class": "producer-signed",
+            "revoked_key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "retracted": false
+          }
+        ],
+        "unknown_lookups": 0
+      },
+      "expected": {
+        "key_revocation": "revoked",
+        "boundary": "2026-10-01T00:00:00.000Z",
+        "revocation_ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111"
+      }
+    },
+    {
+      "name": "13 interim acdp:key-revocation counts",
+      "input": {
+        "context": {
+          "agent_id": "did:web:agents.example.com:producer-a",
+          "key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "receipt": {
+          "verified": true,
+          "key_status": "current",
+          "created_at": "2026-10-05T00:00:00.000Z"
+        },
+        "revocations": [
+          {
+            "ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111",
+            "type": "acdp:key-revocation",
+            "agent_id": "did:web:agents.example.com:producer-a",
+            "trust_class": "producer-signed",
+            "revoked_key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "retracted": false,
+            "compromised_since": "2026-10-01T00:00:00.000Z"
+          }
+        ],
+        "unknown_lookups": 0
+      },
+      "expected": {
+        "key_revocation": "revoked",
+        "boundary": "2026-10-01T00:00:00.000Z",
+        "revocation_ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111"
+      }
+    },
+    {
+      "name": "14 out of producer scope (another signer)",
+      "input": {
+        "context": {
+          "agent_id": "did:web:agents.example.com:producer-a",
+          "key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "receipt": {
+          "verified": true,
+          "key_status": "current",
+          "created_at": "2026-10-05T00:00:00.000Z"
+        },
+        "revocations": [
+          {
+            "ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111",
+            "type": "key-revocation",
+            "agent_id": "did:web:agents.example.com:producer-b",
+            "trust_class": "producer-signed",
+            "revoked_key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "retracted": false,
+            "compromised_since": "2026-10-01T00:00:00.000Z"
+          }
+        ],
+        "unknown_lookups": 0
+      },
+      "expected": {
+        "key_revocation": "not-revoked",
+        "boundary": null,
+        "revocation_ctx_id": null
+      }
+    },
+    {
+      "name": "15 registry-attested, controller is the producer",
+      "input": {
+        "context": {
+          "agent_id": "did:web:agents.example.com:producer-a",
+          "key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "receipt": {
+          "verified": true,
+          "key_status": "current",
+          "created_at": "2026-10-05T00:00:00.000Z"
+        },
+        "revocations": [
+          {
+            "ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111",
+            "type": "key-revocation",
+            "agent_id": "did:web:registry.example.com",
+            "trust_class": "registry-attested",
+            "revoked_key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "retracted": false,
+            "compromised_since": "2026-10-01T00:00:00.000Z",
+            "revoked_key_controller": "did:web:agents.example.com:producer-a"
+          }
+        ],
+        "unknown_lookups": 0
+      },
+      "expected": {
+        "key_revocation": "revoked",
+        "boundary": "2026-10-01T00:00:00.000Z",
+        "revocation_ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111"
+      }
+    },
+    {
+      "name": "16 registry-attested, controller is someone else",
+      "input": {
+        "context": {
+          "agent_id": "did:web:agents.example.com:producer-a",
+          "key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "receipt": {
+          "verified": true,
+          "key_status": "current",
+          "created_at": "2026-10-05T00:00:00.000Z"
+        },
+        "revocations": [
+          {
+            "ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111",
+            "type": "key-revocation",
+            "agent_id": "did:web:registry.example.com",
+            "trust_class": "registry-attested",
+            "revoked_key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "retracted": false,
+            "compromised_since": "2026-10-01T00:00:00.000Z",
+            "revoked_key_controller": "did:web:agents.example.com:producer-b"
+          }
+        ],
+        "unknown_lookups": 0
+      },
+      "expected": {
+        "key_revocation": "not-revoked",
+        "boundary": null,
+        "revocation_ctx_id": null
+      }
+    },
+    {
+      "name": "17 revocation names another key",
+      "input": {
+        "context": {
+          "agent_id": "did:web:agents.example.com:producer-a",
+          "key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "receipt": {
+          "verified": true,
+          "key_status": "current",
+          "created_at": "2026-10-05T00:00:00.000Z"
+        },
+        "revocations": [
+          {
+            "ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111",
+            "type": "key-revocation",
+            "agent_id": "did:web:agents.example.com:producer-a",
+            "trust_class": "producer-signed",
+            "revoked_key_fingerprint": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+            "retracted": false,
+            "compromised_since": "2026-10-01T00:00:00.000Z"
+          }
+        ],
+        "unknown_lookups": 0
+      },
+      "expected": {
+        "key_revocation": "not-revoked",
+        "boundary": null,
+        "revocation_ctx_id": null
+      }
+    },
+    {
+      "name": "18 pre-compromise yields to an unknown lookup",
+      "input": {
+        "context": {
+          "agent_id": "did:web:agents.example.com:producer-a",
+          "key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "receipt": {
+          "verified": true,
+          "key_status": "current",
+          "created_at": "2026-09-10T00:00:00.000Z"
+        },
+        "revocations": [
+          {
+            "ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111",
+            "type": "key-revocation",
+            "agent_id": "did:web:agents.example.com:producer-a",
+            "trust_class": "producer-signed",
+            "revoked_key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "retracted": false,
+            "compromised_since": "2026-10-01T00:00:00.000Z"
+          }
+        ],
+        "unknown_lookups": 1
+      },
+      "expected": {
+        "key_revocation": "unknown",
+        "boundary": null,
+        "revocation_ctx_id": null
+      }
+    },
+    {
+      "name": "19 a refusal outranks an unknown lookup",
+      "input": {
+        "context": {
+          "agent_id": "did:web:agents.example.com:producer-a",
+          "key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "receipt": {
+          "verified": true,
+          "key_status": "current",
+          "created_at": "2026-10-05T00:00:00.000Z"
+        },
+        "revocations": [
+          {
+            "ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111",
+            "type": "key-revocation",
+            "agent_id": "did:web:agents.example.com:producer-a",
+            "trust_class": "producer-signed",
+            "revoked_key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "retracted": false,
+            "compromised_since": "2026-10-01T00:00:00.000Z"
+          }
+        ],
+        "unknown_lookups": 1
+      },
+      "expected": {
+        "key_revocation": "revoked",
+        "boundary": "2026-10-01T00:00:00.000Z",
+        "revocation_ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111"
+      }
+    },
+    {
+      "name": "20 unplaceable outranks an unknown lookup",
+      "input": {
+        "context": {
+          "agent_id": "did:web:agents.example.com:producer-a",
+          "key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "receipt": null,
+        "revocations": [
+          {
+            "ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111",
+            "type": "key-revocation",
+            "agent_id": "did:web:agents.example.com:producer-a",
+            "trust_class": "producer-signed",
+            "revoked_key_fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "retracted": false,
+            "compromised_since": "2026-10-01T00:00:00.000Z"
+          }
+        ],
+        "unknown_lookups": 1
+      },
+      "expected": {
+        "key_revocation": "unplaceable",
+        "boundary": "2026-10-01T00:00:00.000Z",
+        "revocation_ctx_id": "acdp://registry.example.com/11111111-1111-4111-8111-111111111111"
+      }
+    }
+  ]
+}

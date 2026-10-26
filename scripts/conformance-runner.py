@@ -36,6 +36,7 @@ Requires: pip install jcs cryptography
 import argparse
 import json
 import hashlib
+from datetime import datetime
 import sys
 import base64
 from pathlib import Path
@@ -1174,6 +1175,49 @@ def check_chain_kat(fixture, vector):
     return ok
 
 
+def check_revocation_class(fixture, vector):
+    """rev-007 known answers (RFC-ACDP-0014 §7): classify one context's key_revocation
+    stage from already-verified inputs and compare class, boundary and attribution."""
+    name = vector.get("name", "?")
+    inp, exp = vector["input"], vector["expected"]
+    ctx = inp["context"]
+
+    def ts(s):
+        return datetime.fromisoformat(s.replace("Z", "+00:00"))
+
+    def applies(r):
+        if r.get("type") not in ("key-revocation", "acdp:key-revocation"):
+            return False
+        if r.get("revoked_key_fingerprint") != ctx["key_fingerprint"]:
+            return False
+        if r.get("trust_class") == "producer-signed":
+            return r.get("agent_id") == ctx["agent_id"]
+        if r.get("trust_class") == "registry-attested":
+            return r.get("revoked_key_controller") == ctx["agent_id"]
+        return False
+
+    members = [r for r in inp["revocations"] if applies(r)]
+    if not members:
+        got = {"key_revocation": "not-revoked", "boundary": None, "revocation_ctx_id": None}
+    else:
+        first = min(members, key=lambda r: ts(r["compromised_since"]))
+        boundary = first["compromised_since"]
+        rc = inp["receipt"]
+        if not rc or not rc.get("verified") or rc.get("key_status") != "current":
+            cls = "unplaceable"
+        elif ts(rc["created_at"]) < ts(boundary):
+            cls = "pre-compromise"
+        else:
+            cls = "revoked"
+        got = {"key_revocation": cls, "boundary": boundary, "revocation_ctx_id": first["ctx_id"]}
+    if inp.get("unknown_lookups", 0) and got["key_revocation"] in ("not-revoked", "pre-compromise"):
+        got = {"key_revocation": "unknown", "boundary": None, "revocation_ctx_id": None}
+    if got != exp:
+        fail(fixture, name, f"expected {exp}, got {got}")
+        return False
+    return True
+
+
 def check_hint_hmac(fixture, vector):
     """rec-007 change-hint HMAC known answer (RFC-ACDP-0018 §8.2): v1 =
     hex(HMAC-SHA-256(key = UTF-8 bytes of the secret string as served, t + "." + body)).
@@ -1276,6 +1320,11 @@ for path in sorted(CONFORMANCE.glob("*.json")):
         for v in _vectors(data, fixture_id):
             result = check_canonicalization_and_hash(fixture_id, v)
             if result is True:
+                passes += 1
+    elif fixture_id.startswith("rev-") and "vectors" in data:
+        # rev-007 carries the RFC-ACDP-0014 §7 classification known answers.
+        for v in _vectors(data, fixture_id):
+            if check_revocation_class(fixture_id, v):
                 passes += 1
     elif fixture_id.startswith("rec-") and "vectors" in data:
         # rec-007 carries the change-hint HMAC known answer; every other rec-*

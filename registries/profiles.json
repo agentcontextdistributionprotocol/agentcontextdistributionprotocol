@@ -397,6 +397,7 @@
         "rev-002-before-after-boundary",
         "rev-005-discovery-outcome-classes",
         "rev-006-producer-scope",
+        "rev-007-classification-known-answers",
         "anc-001-well-formed-anchor",
         "anc-002-malformed-content-hash",
         "anc-003-empty-anchors-array",

@@ -15,6 +15,12 @@ Supplied by the scheme owner (2026-10-16). Informative for scheme-aware verifier
 - **Excludes:** the plaintext commitment, TCT and keys. The anchor is an opaque hash and discloses none of its inputs. It survives crypto-shred.
 - **Verification:** a Seam-aware verifier recomputes the digest from the disclosed `DECISION_SEALED` event or evidence bundle and checks equality. It MAY then chain the digest to a signed chain-head attestation or a notary anchor.
 - **Versioning:** the record's `schema_version` selects the construction, and an unknown version is cannot-verify, never a fallback to the latest version. A new record-digest version changes future records only, so the scheme does not change. The scheme label changes only if the selection rule or the rendering changes (RFC-ACDP-0016 §7, third bullet). Seam's own verifiers know only the record-digest version(s) their release ships, so an anchor over an older record version can be cannot-verify for them; that is the scheme's choice and needs nothing from ACDP.
+- **Versions (multi-version by design):** the scheme covers every record-digest version, and each version gets its own known-answer vectors here when Seam publishes them. A verifier selects the row by the record's `schema_version`.
+
+  | Record-digest version | Domain | Known-answer vectors | Pinned in |
+  |---|---|---|---|
+  | v4 | `seam.audit.record-digest.v4` | `record_digest_v4`, `record_digest_v4_absent_policy` (Seam `seam-api-v0.48.0`, commit `32f8196`) | `anc-006` |
+  | v5 | — | not yet published by Seam; a row and vectors are added when it ships | — |
 - **Not this digest:** the anchor is not the Seam commitment digest, the chain checksum, or the chain head.
 - **No `uri`:** a URI carrying the decision id would disclose more than the hash.
 - **Ordering:** a Seam record's digest covers the ACDP bodies bound into it as context, so a body can never anchor a decision it was an input to. `seam.decision` anchors belong on downstream bodies, such as outcomes and disclosures.

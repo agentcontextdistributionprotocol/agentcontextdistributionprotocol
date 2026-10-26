@@ -10,6 +10,7 @@ This directory tracks the well-known identifiers used in ACDP. Each registry is 
 | DataRef types | [data-ref-types.md](data-ref-types.md) | [RFC-ACDP-0002 §6](../rfcs/RFC-ACDP-0002-context-body.md) |
 | Error codes | [error-codes.md](error-codes.md) | [RFC-ACDP-0007](../rfcs/RFC-ACDP-0007-capabilities.md) |
 | Implementation profiles | [profiles.md](profiles.md) | [RFC-ACDP-0001 §9.1](../rfcs/RFC-ACDP-0001-core.md) |
+| Rule anchors | [rule-anchors.md](rule-anchors.md) | the RFC each anchor names |
 | Lifecycle event types | [lifecycle-event-types.md](lifecycle-event-types.md) | [RFC-ACDP-0013 §4, §7.3](../rfcs/RFC-ACDP-0013-lifecycle-events.md) |
 | Locator schemes | [locator-schemes.md](locator-schemes.md) | [RFC-ACDP-0002](../rfcs/RFC-ACDP-0002-context-body.md) |
 | Media types | [media-types.md](media-types.md) | [RFC-ACDP-0001](../rfcs/RFC-ACDP-0001-core.md) |
