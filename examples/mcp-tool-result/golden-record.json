@@ -1,0 +1,19 @@
+{
+  "record_version": "acdp-mcp-tool-result/1",
+  "mcp_protocol_version": "2025-06-18",
+  "server": {
+    "name": "fraud-stats",
+    "version": "1.4.2",
+    "transport": "stdio",
+    "endpoint_hash": "sha256:27b9116c4e751db1e87889d804380f31b885c1f009ec2f06ab1024b9e314dfbe"
+  },
+  "tool": "regional_fraud_rate",
+  "arguments_hash": "sha256:010d05bef8881a150d20a0ee0305180990b6ca4660d7c89c665c355929a1341a",
+  "result_hash": "sha256:8262a4f266f704366e5c66c0060d9ddc9ccee7dd6cefaa7df97a3710781f936d",
+  "request_id_hash": "sha256:7cd156f85826f187bab397d47716e4ebe0ef2e5f7ba4a759268eb2af877e55da",
+  "is_error": false,
+  "salted": true,
+  "embedded": false,
+  "started_at": "2026-10-26T14:03:11.250Z",
+  "completed_at": "2026-10-26T14:03:11.912Z"
+}

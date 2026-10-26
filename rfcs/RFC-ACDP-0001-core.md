@@ -655,6 +655,10 @@ An OPTIONAL consumer profile, prerequisite `acdp-consumer`, for consumers that v
 
 OPTIONAL retraction-recall profiles (RFC-ACDP-0018 §9). `acdp-registry-changes` (prerequisites `acdp-registry-lifecycle` and `acdp-registry-receipts`) serves `GET /changes`, a sequenced feed of `acdp-change/1` entries, one per reliance-changing change, carrying the existing signed evidence, and passes `rec-001`..`005` and `rec-008`. `acdp-registry-events` (prerequisite `acdp-registry-changes`, the name RFC-ACDP-0009 §2.10 reserved) adds owner-scoped webhook subscriptions whose HMAC-authenticated hints carry no change content, and passes `rec-007`. `acdp-consumer-recall` (prerequisite `acdp-consumer`) verifies every entry before acting on it and passes `rec-006`. Being Draft-line, these entries are not frozen.
 
+#### `acdp-producer-mcp-proxy` *(0.5.0, Draft)*
+
+An OPTIONAL producer-side profile with no prerequisite, for an MCP signing proxy (RFC-ACDP-0019). A proxy claiming it publishes one `acdp:mcp-tool-result` body per observed `tools/call` under its own key, salts the call hashes whenever the result is not embedded, never alters the relayed result, returns the link in `_meta` `io.acdp/provenance`, and passes `mcp-001..007`. Being Draft-line, this entry is not frozen.
+
 ### 9.2 Verification profile names (RECOMMENDED)
 
 v0.1.0 verification is always strict for any conformance claim — §5.11 ("v0.1.0 strict verification profile") defines the strict pipeline and requires that it be the non-loosenable default. SDKs MAY additionally expose relaxed or diagnostic verification modes for debugging and test harnesses. When they do, they SHOULD use the following identifiers so documentation, logs, and error messages are consistent across language implementations:

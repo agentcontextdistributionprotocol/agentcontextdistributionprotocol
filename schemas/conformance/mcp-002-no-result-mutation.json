@@ -1,0 +1,36 @@
+{
+  "id": "mcp-002",
+  "description": "(0.5.0, Draft) The proxy never alters what the upstream server returned (RFC-ACDP-0019 §6).",
+  "tags": [
+    "mcp",
+    "producer",
+    "behavioral",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-producer-mcp-proxy"
+  ],
+  "input": {
+    "note": "Run the proxy in front of a stub MCP server that returns the mcp-001 CallToolResult for tools/call regional_fraud_rate, against a test registry."
+  },
+  "scenarios": [
+    {
+      "name": "A — content, structuredContent and isError pass through",
+      "expected": {
+        "behavior": "The returned CallToolResult's content, structuredContent and isError are JCS-equal to the upstream values; result_hash recomputed over them with the returned salt equals the record's result_hash."
+      }
+    },
+    {
+      "name": "B — upstream _meta keys preserved",
+      "expected": {
+        "behavior": "Every upstream _meta key (com.example/trace) is returned unchanged; the proxy adds only io.acdp/provenance."
+      }
+    },
+    {
+      "name": "C — upstream already set io.acdp/provenance",
+      "expected": {
+        "behavior": "The proxy publishes its own record but leaves the upstream io.acdp/provenance value unchanged and does not add its own; the record is still published."
+      }
+    }
+  ]
+}

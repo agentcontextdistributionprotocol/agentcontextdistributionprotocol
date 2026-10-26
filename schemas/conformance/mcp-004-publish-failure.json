@@ -1,0 +1,42 @@
+{
+  "id": "mcp-004",
+  "description": "(0.5.0, Draft) Fail-open by default, fail-closed per tool (RFC-ACDP-0019 §7).",
+  "tags": [
+    "mcp",
+    "producer",
+    "behavioral",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-producer-mcp-proxy"
+  ],
+  "input": {
+    "note": "Run the proxy in front of a stub MCP server that returns the mcp-001 CallToolResult for tools/call regional_fraud_rate, against a test registry."
+  },
+  "scenarios": [
+    {
+      "name": "A — fail-open, registry error",
+      "expected": {
+        "behavior": "Registry answers 429 rate_limited after retries: the upstream result is returned unchanged with io.acdp/provenance = {failed: true, error: \"rate_limited\"}."
+      }
+    },
+    {
+      "name": "B — fail-open, registry unreachable",
+      "expected": {
+        "behavior": "Connection refused or the publish timeout elapses: result returned with io.acdp/provenance = {failed: true} and no error member."
+      }
+    },
+    {
+      "name": "C — fail-closed tool",
+      "expected": {
+        "behavior": "For a tool configured fail-closed, the upstream content is withheld: the proxy returns a CallToolResult with isError true, a text content item naming the failure, and io.acdp/provenance = {failed: true, ...}."
+      }
+    },
+    {
+      "name": "D — idempotent retry",
+      "expected": {
+        "behavior": "Retries resend the byte-identical body with Idempotency-Key acdp-mcp-<content_hash hex>; the registry returns the original ctx_id, never a second publication."
+      }
+    }
+  ]
+}

@@ -1238,6 +1238,98 @@ def check_hint_hmac(fixture, vector):
     return ok
 
 
+_CTX_ID_RE = None
+
+
+def _mcp_derived_from(value, out):
+    """RFC-ACDP-0019 §4.4: preorder walk in JCS order (object members sorted by
+    UTF-16 code units, arrays in index order); a string VALUE that is a whole
+    ctx_id is extracted, first occurrence kept."""
+    import re
+    global _CTX_ID_RE
+    if _CTX_ID_RE is None:
+        _CTX_ID_RE = re.compile(r"^acdp://[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*"
+                                r"/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
+    if isinstance(value, dict):
+        for k in sorted(value, key=lambda s: s.encode("utf-16-be")):
+            _mcp_derived_from(value[k], out)
+    elif isinstance(value, list):
+        for x in value:
+            _mcp_derived_from(x, out)
+    elif isinstance(value, str) and _CTX_ID_RE.match(value) and value not in out and len(out) < 1000:
+        out.append(value)
+    return out
+
+
+def check_mcp_vector(fixture, fixture_data, vector):
+    """mcp-001 known answer (RFC-ACDP-0019 §4–§6): the salted call hashes, the
+    unsalted endpoint_hash, derived_from extraction, the Idempotency-Key, the
+    returned _meta, and (via check_ed25519_vector) the body's hash and signature."""
+    name = vector.get("name", "?")
+    if not check_ed25519_vector(fixture, fixture_data, vector):
+        return False
+    inp, exp = vector["inputs"], vector["expected"]
+    pc = vector["producer_content"]
+    rec = pc["metadata"]
+    salt_b64 = inp["salt"]
+    try:
+        salt = base64.urlsafe_b64decode(salt_b64 + "=")
+    except ValueError as e:
+        fail(fixture, name, f"salt is not base64url: {e}")
+        return False
+    if len(salt) != 32 or salt.hex() != exp["salt_hex"]:
+        fail(fixture, name, "salt MUST decode to exactly the 32 pinned bytes")
+        return False
+
+    def h(pre):
+        return "sha256:" + hashlib.sha256(pre).hexdigest()
+
+    result = inp["call_tool_result"]
+    hashed = {k: result[k] for k in ("content", "structuredContent", "isError") if k in result}
+    computed = {
+        "endpoint_hash": h(jcs.canonicalize(inp["endpoint"])),
+        "arguments_hash": h(salt + jcs.canonicalize(inp["arguments"])),
+        "result_hash": h(salt + jcs.canonicalize(hashed)),
+        "request_id_hash": h(salt + jcs.canonicalize(inp["request_id"])),
+    }
+    ok = True
+    if hashed != exp["hashed_result"]:
+        fail(fixture, name, "hashed_result must be the CallToolResult restricted to content/structuredContent/isError")
+        ok = False
+    for k, val in computed.items():
+        pinned = rec["server"]["endpoint_hash"] if k == "endpoint_hash" else rec.get(k)
+        if val != exp[k] or val != pinned:
+            fail(fixture, name, f"{k}: computed {val}, expected {exp[k]}, record {pinned}")
+            ok = False
+    if rec.get("is_error") != bool(result.get("isError", False)) or rec.get("salted") is not True:
+        fail(fixture, name, "record is_error/salted inconsistent with the inputs")
+        ok = False
+    derived = _mcp_derived_from(inp["arguments"], [])
+    if derived != exp["derived_from"] or derived != pc["derived_from"]:
+        fail(fixture, name, f"derived_from extraction mismatch: computed {derived}")
+        ok = False
+    if exp["idempotency_key"] != "acdp-mcp-" + exp["content_hash"][len("sha256:"):]:
+        fail(fixture, name, "idempotency_key MUST be acdp-mcp-<content_hash hex>")
+        ok = False
+    returned = exp["returned_result"]
+    if {k: returned[k] for k in hashed} != hashed:
+        fail(fixture, name, "returned result altered content/structuredContent/isError")
+        ok = False
+    meta = dict(returned.get("_meta", {}))
+    prov = meta.pop("io.acdp/provenance", None)
+    upstream = {k: v for k, v in result.get("_meta", {}).items()}
+    if meta != upstream:
+        fail(fixture, name, "returned _meta must keep every upstream key unchanged")
+        ok = False
+    reg = vector.get("registry_assigned", {})
+    want = {"ctx_id": reg.get("ctx_id"), "content_hash": exp["content_hash"],
+            "registry": reg.get("origin_registry"), "salt": salt_b64}
+    if prov != want:
+        fail(fixture, name, f"io.acdp/provenance {prov} != {want}")
+        ok = False
+    return ok
+
+
 def _vectors(data, fixture_id):
     """Vectors of an executable fixture; an empty/missing list is a fixture bug
     (the fixture would otherwise pass with zero assertions)."""
@@ -1331,6 +1423,12 @@ for path in sorted(CONFORMANCE.glob("*.json")):
         # scenario is behavioral.
         for v in _vectors(data, fixture_id):
             if check_hint_hmac(fixture_id, v):
+                passes += 1
+    elif fixture_id.startswith("mcp-") and "vectors" in data:
+        # mcp-001 carries the tool-result known answer; mcp-002..007 are
+        # behavioral and verified by proxy implementations.
+        for v in _vectors(data, fixture_id):
+            if check_mcp_vector(fixture_id, data, v):
                 passes += 1
     elif fixture_id.startswith("chain-") and "vectors" in data:
         # chain-001/002/003/010 carry known-answer vectors (pinned bundle +

@@ -1,0 +1,42 @@
+{
+  "id": "mcp-007",
+  "description": "(0.5.0, Draft) Salt rules (RFC-ACDP-0019 §4.3).",
+  "tags": [
+    "mcp",
+    "producer",
+    "behavioral",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-producer-mcp-proxy"
+  ],
+  "input": {
+    "note": "Run the proxy in front of a stub MCP server that returns the mcp-001 CallToolResult for tools/call regional_fraud_rate, against a test registry."
+  },
+  "scenarios": [
+    {
+      "name": "A — not embedded ⇒ salted",
+      "expected": {
+        "behavior": "A conformant proxy salts every unembedded record (salted true); an operator option that disables salting is non-conformant for this profile."
+      }
+    },
+    {
+      "name": "B — fresh salt per body",
+      "expected": {
+        "behavior": "Two calls with identical arguments produce different arguments_hash values."
+      }
+    },
+    {
+      "name": "C — endpoint_hash unsalted",
+      "expected": {
+        "behavior": "endpoint_hash is identical across bodies for the same server endpoint descriptor."
+      }
+    },
+    {
+      "name": "D — no secrets",
+      "expected": {
+        "behavior": "Environment variables, HTTP headers, URL userinfo, query and fragment never enter endpoint_hash or any other record field."
+      }
+    }
+  ]
+}
