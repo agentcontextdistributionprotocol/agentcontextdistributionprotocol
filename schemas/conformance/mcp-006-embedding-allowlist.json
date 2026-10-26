@@ -1,0 +1,36 @@
+{
+  "id": "mcp-006",
+  "description": "(0.5.0, Draft) The result is embedded only for allowlisted tools (RFC-ACDP-0019 §5).",
+  "tags": [
+    "mcp",
+    "producer",
+    "behavioral",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-producer-mcp-proxy"
+  ],
+  "input": {
+    "note": "Run the proxy in front of a stub MCP server that returns the mcp-001 CallToolResult for tools/call regional_fraud_rate, against a test registry."
+  },
+  "scenarios": [
+    {
+      "name": "A — default",
+      "expected": {
+        "behavior": "Without an allowlist entry, data_refs is [] and embedded is false."
+      }
+    },
+    {
+      "name": "B — allowlisted, embedded DataRef",
+      "expected": {
+        "behavior": "data_refs is one DataRef {type: primary_result, format: json, embedded: {encoding: json, content: <hashed result>}}, embedded is true, salted is false, and result_hash is the unsalted hash of that content."
+      }
+    },
+    {
+      "name": "C — over the embedded cap",
+      "expected": {
+        "behavior": "A result whose JCS exceeds 64 KB is never embedded inline: the proxy uses an external DataRef if configured with a location, else publishes unembedded and salted."
+      }
+    }
+  ]
+}

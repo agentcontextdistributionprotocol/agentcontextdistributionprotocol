@@ -575,6 +575,30 @@
         "rec-007-change-hints"
       ],
       "notes": "OPTIONAL consumer profile. rec-007 scenarios D–E apply here."
+    },
+    {
+      "id": "acdp-producer-mcp-proxy",
+      "inherits": null,
+      "spec_reference": "RFC-ACDP-0019 (0.5.0, Draft)",
+      "behavioral_requirements": [
+        "Publish one acdp:mcp-tool-result body per observed tools/call, signed with the proxy operator's own key; the proxy is the producer (RFC-ACDP-0019 §3–§4)",
+        "Compute arguments_hash, result_hash and request_id_hash over salt ‖ JCS with a fresh 32-byte salt per body whenever the result is not embedded; endpoint_hash is unsalted and never covers env, headers or credentials (RFC-ACDP-0019 §4.2–§4.3)",
+        "Fill derived_from from acdp:// ctx_ids found in the arguments in JCS preorder, deduplicated (RFC-ACDP-0019 §4.4)",
+        "Embed the result only for allowlisted tools (RFC-ACDP-0019 §5)",
+        "Never alter content, structuredContent or isError; return the link in _meta io.acdp/provenance only after the publish response (RFC-ACDP-0019 §6)",
+        "Fail open by default with {failed: true}; fail closed per tool; retries reuse Idempotency-Key acdp-mcp-<content_hash hex> (RFC-ACDP-0019 §7)"
+      ],
+      "required_fixtures": [
+        "mcp-001-tool-result-golden",
+        "mcp-002-no-result-mutation",
+        "mcp-003-provenance-meta",
+        "mcp-004-publish-failure",
+        "mcp-005-derived-from-extraction",
+        "mcp-006-embedding-allowlist",
+        "mcp-007-salting"
+      ],
+      "not_implemented_permitted_on": [],
+      "notes": "OPTIONAL producer-side profile. A proxy is not a registry: it publishes to one and is advertised nowhere on the wire. mcp-001 is executed by scripts/conformance-runner.py; mcp-002..007 are behavioral."
     }
   ],
   "fixture_families": {
@@ -609,6 +633,7 @@
     "rev": "Producer key revocation — key-revocation context golden vector and compromise-boundary verification semantics (RFC-ACDP-0014, 0.3.0)",
     "anc": "Typed external anchors — content-hash inclusion golden vector, schema rejections, scheme-unaware verifier tolerance, and the conditional seam.decision scheme-aware hook (RFC-ACDP-0016, 0.5.0)",
     "chain": "Chain verification and evidence bundles — offline derived_from walks, as-of vs latest verdicts, drift, verdict digests, and lifecycle event receipts (RFC-ACDP-0017, 0.5.0)",
-    "rec": "Retraction recall — changes feed, watch filters, feed visibility and retention, consumer verification of change entries, and change-hint webhooks (RFC-ACDP-0018, 0.5.0)"
+    "rec": "Retraction recall — changes feed, watch filters, feed visibility and retention, consumer verification of change entries, and change-hint webhooks (RFC-ACDP-0018, 0.5.0)",
+    "mcp": "MCP tool-result provenance — the acdp:mcp-tool-result record, salted call hashes, the io.acdp/provenance _meta link, publish-failure modes (RFC-ACDP-0019, 0.5.0)"
   }
 }

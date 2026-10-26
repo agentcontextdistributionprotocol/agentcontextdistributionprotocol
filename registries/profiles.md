@@ -172,6 +172,16 @@ For consumers that act on the changes feed (RFC-ACDP-0018 §7). Draft and OPTION
 | **Conformance fixtures** | `rec-006` (consumer verification), `rec-007` scenarios D–E |
 | **`not_implemented` permitted on** | Not applicable — a consumer runs no registry endpoints |
 
+### `acdp-producer-mcp-proxy` *(0.5.0)*
+
+For an **MCP signing proxy** that sits in front of an MCP server and publishes each tool result it relays as a signed ACDP body (RFC-ACDP-0019). Draft and OPTIONAL. A proxy is a producer, not a registry; it has no prerequisite profile.
+
+| | Required |
+|---|---|
+| **Behavioral requirements** | One `acdp:mcp-tool-result` body per observed `tools/call`, signed with the proxy operator's own key. Salted `arguments_hash`/`result_hash`/`request_id_hash` (fresh 32-byte salt per body) whenever the result is not embedded; unsalted `endpoint_hash` that never covers env, headers or credentials. `derived_from` from the ctx_ids in the arguments, in JCS preorder. Embedding only for allowlisted tools. Never alter `content`/`structuredContent`/`isError`; return the link in `_meta` `io.acdp/provenance` only after the publish response. Fail open by default, fail closed per tool; retries reuse `Idempotency-Key: acdp-mcp-<content_hash hex>` |
+| **Conformance fixtures** | `mcp-001` (known answer, executed), `mcp-002` (no result mutation), `mcp-003` (`_meta` link shape), `mcp-004` (publish failure), `mcp-005` (`derived_from` extraction), `mcp-006` (embedding allowlist), `mcp-007` (salting) |
+| **`not_implemented` permitted on** | Not applicable — a proxy runs no registry endpoints |
+
 ## Adding a profile
 Open a PR adding a row above and amending RFC-ACDP-0001 §9.1 with the profile's MUST list. Profiles MUST:
 

@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "supersedes": null,
+  "agent_id": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
+  "contributors": [],
+  "title": "MCP tool result: fraud-stats/regional_fraud_rate",
+  "type": "acdp:mcp-tool-result",
+  "schema_uri": "https://schemas.acdp.io/v0.1.0/acdp-mcp-tool-result.schema.json",
+  "data_refs": [],
+  "derived_from": [
+    "acdp://registry.example.com/7b1d0c52-3e4f-4a6b-8c9d-0e1f2a3b4c5d",
+    "acdp://registry.example.com/0f9e8d7c-6b5a-4c3d-9e2f-1a0b9c8d7e6f"
+  ],
+  "visibility": "private",
+  "metadata": {
+    "record_version": "acdp-mcp-tool-result/1",
+    "mcp_protocol_version": "2025-06-18",
+    "server": {
+      "name": "fraud-stats",
+      "version": "1.4.2",
+      "transport": "stdio",
+      "endpoint_hash": "sha256:27b9116c4e751db1e87889d804380f31b885c1f009ec2f06ab1024b9e314dfbe"
+    },
+    "tool": "regional_fraud_rate",
+    "arguments_hash": "sha256:010d05bef8881a150d20a0ee0305180990b6ca4660d7c89c665c355929a1341a",
+    "result_hash": "sha256:8262a4f266f704366e5c66c0060d9ddc9ccee7dd6cefaa7df97a3710781f936d",
+    "request_id_hash": "sha256:7cd156f85826f187bab397d47716e4ebe0ef2e5f7ba4a759268eb2af877e55da",
+    "is_error": false,
+    "salted": true,
+    "embedded": false,
+    "started_at": "2026-10-26T14:03:11.250Z",
+    "completed_at": "2026-10-26T14:03:11.912Z"
+  },
+  "acdp_version": "0.5.0",
+  "content_hash": "sha256:3b2b181b18ab9edc3160390f8a2be2fef94bd116ddb62deffcba27457c98634f",
+  "signature": {
+    "algorithm": "ed25519",
+    "key_id": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp#z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
+    "value": "tmUWnYH8y01lVLQXHc24ZcZucf74VeKWzU27e7F7vB5kigFA47Oe5bFkwaCTmMxEmr7xPIXCY/qo7hpH4qfiDw=="
+  }
+}

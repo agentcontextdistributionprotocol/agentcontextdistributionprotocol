@@ -1,0 +1,42 @@
+{
+  "id": "mcp-003",
+  "description": "(0.5.0, Draft) Shape of the io.acdp/provenance value (RFC-ACDP-0019 §6; schema $defs/provenance).",
+  "tags": [
+    "mcp",
+    "producer",
+    "behavioral",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-producer-mcp-proxy"
+  ],
+  "input": {
+    "note": "Run the proxy in front of a stub MCP server that returns the mcp-001 CallToolResult for tools/call regional_fraud_rate, against a test registry."
+  },
+  "scenarios": [
+    {
+      "name": "A — published, salted",
+      "expected": {
+        "behavior": "Value is {ctx_id, content_hash, registry, salt}; ctx_id and content_hash equal the publish response; registry equals the body's origin_registry; salt decodes (base64url, unpadded) to exactly 32 bytes."
+      }
+    },
+    {
+      "name": "B — published, unsalted",
+      "expected": {
+        "behavior": "salt is absent exactly when the record's salted is false."
+      }
+    },
+    {
+      "name": "C — link only after publish",
+      "expected": {
+        "behavior": "The proxy never returns a ctx_id before the registry's publish response carrying it has been received."
+      }
+    },
+    {
+      "name": "D — consumer recomputation",
+      "expected": {
+        "behavior": "A consumer holding the returned result retrieves ctx_id, verifies the body per RFC-ACDP-0001 §5.11, checks agent_id is a proxy it trusts, recomputes result_hash with the salt and accepts; a single changed byte of content makes the result_hash check fail."
+      }
+    }
+  ]
+}

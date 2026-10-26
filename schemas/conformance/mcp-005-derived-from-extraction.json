@@ -1,0 +1,46 @@
+{
+  "id": "mcp-005",
+  "description": "(0.5.0, Draft) derived_from comes from the arguments only, in JCS traversal order, deduplicated (RFC-ACDP-0019 §4.4).",
+  "tags": [
+    "mcp",
+    "producer",
+    "behavioral",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-producer-mcp-proxy"
+  ],
+  "input": {
+    "note": "Run the proxy in front of a stub MCP server that returns the mcp-001 CallToolResult for tools/call regional_fraud_rate, against a test registry."
+  },
+  "scenarios": [
+    {
+      "name": "A — order and dedup",
+      "expected": {
+        "derived_from": [
+          "acdp://registry.example.com/7b1d0c52-3e4f-4a6b-8c9d-0e1f2a3b4c5d",
+          "acdp://registry.example.com/0f9e8d7c-6b5a-4c3d-9e2f-1a0b9c8d7e6f"
+        ],
+        "behavior": "For the mcp-001 arguments, derived_from is the two distinct ctx_ids in JCS preorder (keys sorted per RFC 8785 §3.2.3, arrays in index order), first occurrence kept."
+      }
+    },
+    {
+      "name": "B — near-misses ignored",
+      "expected": {
+        "behavior": "Object keys, acdp:// strings embedded inside longer text, upper-case authorities and non-v4 UUIDs are not extracted."
+      }
+    },
+    {
+      "name": "C — result refs not inputs",
+      "expected": {
+        "behavior": "ctx_ids appearing only in the result are not added to derived_from."
+      }
+    },
+    {
+      "name": "D — cap",
+      "expected": {
+        "behavior": "Extraction stops after 1000 entries (the RFC-ACDP-0002 derived_from maximum)."
+      }
+    }
+  ]
+}

@@ -393,6 +393,20 @@ All `lc-*` fixtures are behavioral. Required for `acdp-registry-lifecycle`; `lc-
 
 All eight are behavioral, except `rec-007`'s executed HMAC known-answer vector `hint-hmac-001` (key = the UTF-8 bytes of the secret string). `rec-001`..`005` and `rec-008` are REQUIRED for the OPTIONAL `acdp-registry-changes` profile, `rec-007` for `acdp-registry-events`, and `rec-006` plus `rec-007` D–E for `acdp-consumer-recall`.
 
+### MCP tool-result provenance (RFC-ACDP-0019, 0.5.0, Draft)
+
+| Fixture | Scenario | Pins |
+|---|---|---|
+| `mcp-001` | Known answer: salted call hashes, `endpoint_hash`, `derived_from`, body hash and signature, `Idempotency-Key`, returned `_meta` | every value recomputed byte for byte with the `jcs` library and the zero test seed (`did:key`) |
+| `mcp-002` | The proxy never alters the upstream result | `content`/`structuredContent`/`isError` and upstream `_meta` keys unchanged; an upstream `io.acdp/provenance` is left alone |
+| `mcp-003` | The `io.acdp/provenance` value | `{ctx_id, content_hash, registry, salt}`; `salt` iff salted; link only after the publish response; consumer recomputation |
+| `mcp-004` | Publish failure | fail-open `{failed: true, error?}`; fail-closed per tool; idempotent retries |
+| `mcp-005` | `derived_from` extraction | JCS preorder, dedup, values only, arguments only, cap 1000 |
+| `mcp-006` | Embedding allowlist | default unembedded; embedded DataRef shape; 64 KB cap |
+| `mcp-007` | Salting | salted whenever unembedded; fresh per body; `endpoint_hash` unsalted; no secrets |
+
+`mcp-001` is executed by `scripts/conformance-runner.py`; `mcp-002`..`007` are behavioral. All seven are REQUIRED for the OPTIONAL `acdp-producer-mcp-proxy` profile.
+
 ### did:key resolution (RFC-ACDP-0001 §5.4 / §5.11.1, 0.2.0)
 
 | ID | Description | Outcome |

@@ -27,6 +27,7 @@ CHANGES_RESPONSE_SCHEMA="${SCHEMA_DIR}/acdp-changes-response.schema.json"
 CHANGE_HINT_SCHEMA="${SCHEMA_DIR}/acdp-change-hint.schema.json"
 SUBSCRIPTION_REQUEST_SCHEMA="${SCHEMA_DIR}/acdp-subscription-request.schema.json"
 SUBSCRIPTION_SCHEMA="${SCHEMA_DIR}/acdp-subscription.schema.json"
+MCP_TOOL_RESULT_SCHEMA="${SCHEMA_DIR}/acdp-mcp-tool-result.schema.json"
 CONTEXT_SCHEMA="${SCHEMA_DIR}/acdp-context.schema.json"
 PUBLISH_REQUEST_SCHEMA="${SCHEMA_DIR}/acdp-publish-request.schema.json"
 PUBLISH_RESPONSE_SCHEMA="${SCHEMA_DIR}/acdp-publish-response.schema.json"
@@ -132,6 +133,7 @@ validate_dir_against "${EXAMPLES_DIR}/changes"          "${CHANGES_RESPONSE_SCHE
 validate_dir_against "${EXAMPLES_DIR}/change-hint"      "${CHANGE_HINT_SCHEMA}"          "change hint"
 validate_dir_against "${EXAMPLES_DIR}/subscription-request" "${SUBSCRIPTION_REQUEST_SCHEMA}" "subscription request"
 validate_dir_against "${EXAMPLES_DIR}/subscription"     "${SUBSCRIPTION_SCHEMA}"         "subscription"
+validate_dir_against "${EXAMPLES_DIR}/mcp-tool-result"  "${MCP_TOOL_RESULT_SCHEMA}"      "MCP tool-result record"
 
 # Meta-shape illustrative examples — JSON syntax check only (not single payloads)
 syntax_check_dir() {

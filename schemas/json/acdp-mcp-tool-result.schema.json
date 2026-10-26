@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.1.0/acdp-mcp-tool-result.schema.json",
+  "title": "ACDP MCP Tool-Result Record (0.5.0, Draft)",
+  "description": "acdp-mcp-tool-result/1: the metadata of an acdp:mcp-tool-result body, published by an MCP signing proxy that observed one tools/call (RFC-ACDP-0019 §4). The proxy is the producer; the record binds hashes of the call, never the call itself unless a DataRef embeds the result. $defs/provenance is the value of the io.acdp/provenance key the proxy adds to the CallToolResult _meta (RFC-ACDP-0019 §6).",
+  "$ref": "#/$defs/record",
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "record": {
+      "type": "object",
+      "required": [
+        "record_version",
+        "mcp_protocol_version",
+        "server",
+        "tool",
+        "arguments_hash",
+        "result_hash",
+        "is_error",
+        "salted",
+        "embedded",
+        "started_at",
+        "completed_at"
+      ],
+      "properties": {
+        "record_version": { "const": "acdp-mcp-tool-result/1" },
+        "mcp_protocol_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "The MCP protocol revision negotiated with the upstream server at initialize, e.g. 2025-06-18."
+        },
+        "server": {
+          "type": "object",
+          "required": ["name", "transport", "endpoint_hash"],
+          "properties": {
+            "name": { "type": "string", "minLength": 1, "maxLength": 256, "description": "serverInfo.name from the upstream initialize result." },
+            "version": { "type": "string", "minLength": 1, "maxLength": 128, "description": "serverInfo.version, when the upstream server reported one." },
+            "transport": { "enum": ["stdio", "streamable-http", "sse"] },
+            "endpoint_hash": { "$ref": "#/$defs/hash", "description": "Unsalted hash of the endpoint descriptor (RFC-ACDP-0019 §4.2): never env, headers or credentials." }
+          },
+          "additionalProperties": false
+        },
+        "tool": { "type": "string", "minLength": 1, "maxLength": 256, "description": "The tools/call params.name." },
+        "arguments_hash": { "$ref": "#/$defs/hash" },
+        "result_hash": { "$ref": "#/$defs/hash" },
+        "request_id_hash": { "$ref": "#/$defs/hash" },
+        "is_error": { "type": "boolean", "description": "The CallToolResult isError, false when absent." },
+        "salted": { "type": "boolean", "description": "true when the hashes are over salt ‖ JCS (RFC-ACDP-0019 §4.3)." },
+        "embedded": { "type": "boolean", "description": "true when a data_refs entry carries the hashed result (RFC-ACDP-0019 §5)." },
+        "started_at": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/rfc3339_timestamp" },
+        "completed_at": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/rfc3339_timestamp" }
+      },
+      "additionalProperties": false
+    },
+    "provenance": {
+      "description": "Value of CallToolResult._meta[\"io.acdp/provenance\"]: either the published link or a publish failure (RFC-ACDP-0019 §6–§7).",
+      "oneOf": [
+        {
+          "title": "Published",
+          "type": "object",
+          "required": ["ctx_id", "content_hash", "registry"],
+          "properties": {
+            "ctx_id": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
+            "content_hash": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/content_hash" },
+            "registry": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/hostname" },
+            "salt": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$", "description": "base64url, unpadded, of the 32 salt bytes. Present exactly when the record is salted." }
+          },
+          "additionalProperties": false
+        },
+        {
+          "title": "Publish failed (fail-open)",
+          "type": "object",
+          "required": ["failed"],
+          "properties": {
+            "failed": { "const": true },
+            "error": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "The registry's error.code, present only when the registry answered with an ACDP error." }
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}
