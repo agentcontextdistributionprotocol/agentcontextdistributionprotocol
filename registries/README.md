@@ -13,6 +13,7 @@ This directory tracks the well-known identifiers used in ACDP. Each registry is 
 | Rule anchors | [rule-anchors.md](rule-anchors.md) | the RFC each anchor names |
 | Lifecycle event types | [lifecycle-event-types.md](lifecycle-event-types.md) | [RFC-ACDP-0013 §4, §7.3](../rfcs/RFC-ACDP-0013-lifecycle-events.md) |
 | Locator schemes | [locator-schemes.md](locator-schemes.md) | [RFC-ACDP-0002](../rfcs/RFC-ACDP-0002-context-body.md) |
+| OpenTelemetry attributes | [otel-attributes.md](otel-attributes.md) | this registry (telemetry only, no wire effect) |
 | Media types | [media-types.md](media-types.md) | [RFC-ACDP-0001](../rfcs/RFC-ACDP-0001-core.md) |
 | Signature algorithms | [signature-algorithms.md](signature-algorithms.md) | [RFC-ACDP-0001 §5.10](../rfcs/RFC-ACDP-0001-core.md) |
 
