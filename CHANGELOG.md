@@ -9,6 +9,7 @@ All notable changes to ACDP are recorded here. ACDP follows the versioning polic
 - **Version selection:** §5.4 counts retracted versions in the floor and gives the version checks a fixed order: no_valid_version, rollback, equivocation (which beats retraction), retracted, list_window.
 - **Report contents:** report `lists` carry the serial and hash only for `used` and `expired`. Node `issuer`, `list_id` and `entry_index` appear only when an entry decided. `profiles_checked` means that C was supplied. No pins gives `list_invalid` (`no_valid_version`).
 - **Naming:** the receipt input is named the *registry key fingerprint*.
+- **Issuer-key revocation:** §5.2 step 5 refuses a list only on an applied revocation; `unknown` passes, and refusing it is local policy (raised by acdp-rs).
 - **Out-of-band lists:** an out-of-band list may be a publish-request body, and its retractions are the issuer-signed events supplied with it. A registry-actor retraction is not carried in the report.
 
 ## v0.5.0 — Clarifications: RFC-ACDP-0019 verifier rulings — 2026-10-26
