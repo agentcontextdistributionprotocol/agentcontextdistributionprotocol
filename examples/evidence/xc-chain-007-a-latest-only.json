@@ -1,0 +1,131 @@
+{
+  "contexts": {
+    "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": {
+      "body": {
+        "acdp_version": "0.4.0",
+        "agent_id": "did:web:agents.example.com:test-producer",
+        "content_hash": "sha256:ef47b9130d2a38cd14a0afd9c17c5f72393cb59bc6204cd923f065b99f304e35",
+        "contributors": [],
+        "created_at": "2026-09-10T00:00:00.000Z",
+        "ctx_id": "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "data_refs": [],
+        "derived_from": [],
+        "lineage_id": "lin:sha256:a1bbd1895562f42b236ef21d1a54c52204099de8b6f8aee3c780888f6b42bf62",
+        "origin_registry": "registry.example.com",
+        "signature": {
+          "algorithm": "ed25519",
+          "key_id": "did:web:agents.example.com:test-producer#key-1",
+          "value": "nvtRszNw6UhBEDnC/DzjA3orH8acrEBqIOLE4H+KJyxwlcLYcyNbIxV3NCEDaJkKVsRCRo9KtEVgG3v4ChzuDw=="
+        },
+        "supersedes": null,
+        "title": "Context A",
+        "type": "analysis",
+        "version": 1,
+        "visibility": "public"
+      },
+      "registry_receipt": {
+        "content_hash": "sha256:ef47b9130d2a38cd14a0afd9c17c5f72393cb59bc6204cd923f065b99f304e35",
+        "created_at": "2026-09-10T00:00:00.000Z",
+        "ctx_id": "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+        "lineage_id": "lin:sha256:a1bbd1895562f42b236ef21d1a54c52204099de8b6f8aee3c780888f6b42bf62",
+        "origin_registry": "registry.example.com",
+        "registry_did": "did:web:registry.example.com",
+        "signature": {
+          "algorithm": "ed25519",
+          "key_id": "did:web:registry.example.com#receipt-key-1",
+          "value": "IoahHy5UEq12Dwnv6i3t96R17TUgburI+hmnUeAHjG9YYniNfpB5EQLZ5r7ZbzBkhx49G6PKFfDSPROq9ELyBg=="
+        }
+      }
+    }
+  },
+  "did_documents": {
+    "did:web:agents.example.com:test-producer": [
+      {
+        "document": {
+          "assertionMethod": [
+            "did:web:agents.example.com:test-producer#key-1"
+          ],
+          "id": "did:web:agents.example.com:test-producer",
+          "verificationMethod": [
+            {
+              "controller": "did:web:agents.example.com:test-producer",
+              "id": "did:web:agents.example.com:test-producer#key-1",
+              "publicKeyJwk": {
+                "crv": "Ed25519",
+                "kty": "OKP",
+                "x": "O2onvM62pC1io6jQKm8Nc2UyFXcd4kOmOsBIoYtZ2ik"
+              },
+              "type": "JsonWebKey2020"
+            }
+          ]
+        },
+        "observed_at": "2026-09-20T00:00:00.000Z"
+      },
+      {
+        "document": {
+          "assertionMethod": [
+            "did:web:agents.example.com:test-producer#key-2"
+          ],
+          "id": "did:web:agents.example.com:test-producer",
+          "verificationMethod": [
+            {
+              "controller": "did:web:agents.example.com:test-producer",
+              "id": "did:web:agents.example.com:test-producer#key-1",
+              "publicKeyJwk": {
+                "crv": "Ed25519",
+                "kty": "OKP",
+                "x": "O2onvM62pC1io6jQKm8Nc2UyFXcd4kOmOsBIoYtZ2ik"
+              },
+              "type": "JsonWebKey2020"
+            },
+            {
+              "controller": "did:web:agents.example.com:test-producer",
+              "id": "did:web:agents.example.com:test-producer#key-2",
+              "publicKeyJwk": {
+                "crv": "Ed25519",
+                "kty": "OKP",
+                "x": "gTl3Dqh9F19Wo1Rmw0x-zMuNipG07jeiXfYPW4_Js5Q"
+              },
+              "type": "JsonWebKey2020"
+            }
+          ]
+        },
+        "observed_at": "2026-10-10T00:00:00.000Z"
+      }
+    ],
+    "did:web:registry.example.com": [
+      {
+        "document": {
+          "assertionMethod": [
+            "did:web:registry.example.com#receipt-key-1"
+          ],
+          "id": "did:web:registry.example.com",
+          "verificationMethod": [
+            {
+              "controller": "did:web:registry.example.com",
+              "id": "did:web:registry.example.com#receipt-key-1",
+              "publicKeyJwk": {
+                "crv": "Ed25519",
+                "kty": "OKP",
+                "x": "0EqyMnQrtKs6E2i9RhXk5tAiSrcaAWuvhSCjMsl3hzc"
+              },
+              "type": "JsonWebKey2020"
+            }
+          ]
+        },
+        "observed_at": "2026-08-01T00:00:00.000Z"
+      }
+    ]
+  },
+  "evidence_version": "acdp-evidence/1",
+  "revocation_discovery": {
+    "did:web:agents.example.com:test-producer": [
+      {
+        "completed_at": "2026-09-30T00:00:00.000Z",
+        "outcome": "not-revoked-complete",
+        "vantage": "registry.example.com"
+      }
+    ]
+  }
+}

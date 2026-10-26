@@ -1,0 +1,173 @@
+{
+  "contexts": {
+    "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": {
+      "body": {
+        "acdp_version": "0.4.0",
+        "agent_id": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
+        "content_hash": "sha256:c8ff3c9cae1368c8b672941dcabd2522ad10e1c8b7fe4ecba9af21bda62355e9",
+        "contributors": [],
+        "created_at": "2026-09-03T00:00:00.000Z",
+        "ctx_id": "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "data_refs": [],
+        "derived_from": [
+          "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          "acdp://registry.example.com/cccccccc-cccc-4ccc-8ccc-cccccccccccc"
+        ],
+        "lineage_id": "lin:sha256:a1bbd1895562f42b236ef21d1a54c52204099de8b6f8aee3c780888f6b42bf62",
+        "origin_registry": "registry.example.com",
+        "signature": {
+          "algorithm": "ed25519",
+          "key_id": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp#z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
+          "value": "ffF3Yp9ZAIZMJvm8dXaNdzeQR0DtYj9vTtrLlRmnxShqgasFZfNr7qcoWv9mK895yXRzI4CPCKH1UgVaz5DVBw=="
+        },
+        "supersedes": null,
+        "title": "Context A",
+        "type": "analysis",
+        "version": 1,
+        "visibility": "public"
+      },
+      "registry_receipt": {
+        "content_hash": "sha256:c8ff3c9cae1368c8b672941dcabd2522ad10e1c8b7fe4ecba9af21bda62355e9",
+        "created_at": "2026-09-03T00:00:00.000Z",
+        "ctx_id": "acdp://registry.example.com/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+        "lineage_id": "lin:sha256:a1bbd1895562f42b236ef21d1a54c52204099de8b6f8aee3c780888f6b42bf62",
+        "origin_registry": "registry.example.com",
+        "registry_did": "did:web:registry.example.com",
+        "signature": {
+          "algorithm": "ed25519",
+          "key_id": "did:web:registry.example.com#receipt-key-1",
+          "value": "qiPRM+qULwyA6FyKKhevEV80U2ZUWX/WrIAsPO+vtfreMcLQUSs5IwhnM3y9mh5ni9PDE0gkkXsZYeurJ5JVDQ=="
+        }
+      }
+    },
+    "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb": {
+      "body": {
+        "acdp_version": "0.4.0",
+        "agent_id": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
+        "content_hash": "sha256:4278780fcd1faa53898fcd720c52f90465ecb70d21d0a172a3ab5f5f7bde2b00",
+        "contributors": [],
+        "created_at": "2026-09-02T00:00:00.000Z",
+        "ctx_id": "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "data_refs": [],
+        "derived_from": [
+          "acdp://registry.example.com/cccccccc-cccc-4ccc-8ccc-cccccccccccc"
+        ],
+        "lineage_id": "lin:sha256:a3cb6a87c1601b9f6dddd8d54709b01df3e05f1095b43e6d58e3a862bf9906fa",
+        "origin_registry": "registry.example.com",
+        "signature": {
+          "algorithm": "ed25519",
+          "key_id": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp#z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
+          "value": "22dPR+PYLdkX81lMEFshjvV69KywD10QFezMnowY+O5EEzIUv9XkVgcNbVilGik0JF7SoLNVCRsFjIRu0jkoBw=="
+        },
+        "supersedes": null,
+        "title": "Context B",
+        "type": "analysis",
+        "version": 1,
+        "visibility": "public"
+      },
+      "registry_receipt": {
+        "content_hash": "sha256:4278780fcd1faa53898fcd720c52f90465ecb70d21d0a172a3ab5f5f7bde2b00",
+        "created_at": "2026-09-02T00:00:00.000Z",
+        "ctx_id": "acdp://registry.example.com/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+        "lineage_id": "lin:sha256:a3cb6a87c1601b9f6dddd8d54709b01df3e05f1095b43e6d58e3a862bf9906fa",
+        "origin_registry": "registry.example.com",
+        "registry_did": "did:web:registry.example.com",
+        "signature": {
+          "algorithm": "ed25519",
+          "key_id": "did:web:registry.example.com#receipt-key-1",
+          "value": "SZy903nFYrNFwIGOK8xSjpzkY43M1wVwULPBpAU/kF74asOCc3VRERlDB1T5+G+gEpV+7ShagPnqtxuvEi2bBg=="
+        }
+      }
+    },
+    "acdp://registry.example.com/cccccccc-cccc-4ccc-8ccc-cccccccccccc": {
+      "body": {
+        "acdp_version": "0.4.0",
+        "agent_id": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
+        "content_hash": "sha256:8ab95154f0daffaa78474cf5308b582d1ade4c86a0fc486e05c94b64f2afcd90",
+        "contributors": [],
+        "created_at": "2026-09-01T00:00:00.000Z",
+        "ctx_id": "acdp://registry.example.com/cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+        "data_refs": [],
+        "derived_from": [],
+        "lineage_id": "lin:sha256:469c127169eca9e773600267b72e89239fc1b7634496dc1e6f233073a21aaa3e",
+        "origin_registry": "registry.example.com",
+        "signature": {
+          "algorithm": "ed25519",
+          "key_id": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp#z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
+          "value": "xC3Rw5KvB2ufnbeJaCZcaSNdvo+dIsoxTQQd21nR2ZF3KuJr1uDSQDt6i/CTjTTBtMWKmeLJW5AwNJByigQADA=="
+        },
+        "supersedes": null,
+        "title": "Context C",
+        "type": "analysis",
+        "version": 1,
+        "visibility": "public"
+      },
+      "registry_receipt": {
+        "content_hash": "sha256:8ab95154f0daffaa78474cf5308b582d1ade4c86a0fc486e05c94b64f2afcd90",
+        "created_at": "2026-09-01T00:00:00.000Z",
+        "ctx_id": "acdp://registry.example.com/cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+        "key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070",
+        "lineage_id": "lin:sha256:469c127169eca9e773600267b72e89239fc1b7634496dc1e6f233073a21aaa3e",
+        "origin_registry": "registry.example.com",
+        "registry_did": "did:web:registry.example.com",
+        "signature": {
+          "algorithm": "ed25519",
+          "key_id": "did:web:registry.example.com#receipt-key-1",
+          "value": "sprcEEZ4io0Ky8HyRHoYvJWFLqyVwJVNs+JRh1lvNXSK5e1wXGjDKfZHTZOxFTk1ADzUAZwnGK1fFSwAZKVmAg=="
+        }
+      }
+    }
+  },
+  "did_documents": {
+    "did:web:registry.example.com": [
+      {
+        "document": {
+          "assertionMethod": [
+            "did:web:registry.example.com#receipt-key-1"
+          ],
+          "id": "did:web:registry.example.com",
+          "verificationMethod": [
+            {
+              "controller": "did:web:registry.example.com",
+              "id": "did:web:registry.example.com#receipt-key-1",
+              "publicKeyJwk": {
+                "crv": "Ed25519",
+                "kty": "OKP",
+                "x": "0EqyMnQrtKs6E2i9RhXk5tAiSrcaAWuvhSCjMsl3hzc"
+              },
+              "type": "JsonWebKey2020"
+            }
+          ]
+        },
+        "observed_at": "2026-08-01T00:00:00.000Z"
+      }
+    ]
+  },
+  "evidence_version": "acdp-evidence/1",
+  "revocation_discovery": {
+    "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp": [
+      {
+        "completed_at": "2026-09-30T00:00:00.000Z",
+        "outcome": "not-revoked-complete",
+        "vantage": "registry.example.com"
+      },
+      {
+        "completed_at": "2026-09-30T06:00:00.000Z",
+        "outcome": "unknown",
+        "vantage": "x.example"
+      },
+      {
+        "completed_at": "2026-09-30T03:00:00.000Z",
+        "outcome": "not-revoked-complete",
+        "vantage": "b.example"
+      },
+      {
+        "completed_at": "2026-09-29T00:00:00.000Z",
+        "outcome": "not-revoked-complete",
+        "vantage": "p.example"
+      }
+    ]
+  }
+}

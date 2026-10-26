@@ -647,9 +647,9 @@ A **witness** for the RFC-ACDP-0012 transparency log (the RFC-ACDP-0009 §2.12 p
 
 Cosignature-aware consumers verify cosignatures per RFC-ACDP-0015 §8 whenever they rely on witness evidence, count a checkpoint as *N*-witnessed over distinct trusted witness DIDs, apply local quorum/freshness policy (RFC-ACDP-0015 §8.1), and report the witness verdict separately from the body, context-receipt, head-receipt, and log verdicts; failures surface as `invalid_witness_cosignature` (RFC-ACDP-0015 §10). Registries MAY aggregate cosignatures as the top-level `witness_signatures` member under their existing `acdp-registry-transparency-log` profile (RFC-ACDP-0015 §6.1); no registry profile is required to do so.
 
-#### `acdp-consumer-chain` *(0.5.0, Draft)*
+#### `acdp-consumer-chain` *(0.5.0, Final)*
 
-An OPTIONAL consumer profile, prerequisite `acdp-consumer`, for consumers that verify a whole `derived_from` graph offline and/or as of a past instant from an `acdp-evidence/1` bundle. Consumers claiming it implement `verify_chain` per RFC-ACDP-0017 §6–§9, emit the deterministic `acdp-chain-verdict/1` object, verify lifecycle event receipts per RFC-ACDP-0017 §10.3, and pass `chain-001..010` (RFC-ACDP-0017 §13–§14). Being Draft-line, this entry is not frozen.
+An OPTIONAL consumer profile, prerequisite `acdp-consumer`, for consumers that verify a whole `derived_from` graph offline and/or as of a past instant from an `acdp-evidence/1` bundle. Consumers claiming it implement `verify_chain` per RFC-ACDP-0017 §6–§9, emit the deterministic `acdp-chain-verdict/1` object, verify lifecycle event receipts per RFC-ACDP-0017 §10.3, and pass `chain-001..011` (RFC-ACDP-0017 §13–§14). Final with RFC-ACDP-0017 (2026-10-26).
 
 #### `acdp-registry-changes`, `acdp-registry-events`, `acdp-consumer-recall` *(0.5.0, Draft)*
 
