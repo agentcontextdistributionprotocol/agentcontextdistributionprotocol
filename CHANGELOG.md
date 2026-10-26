@@ -16,6 +16,8 @@ All notable changes to ACDP are recorded here. ACDP follows the versioning polic
   - As-of event admission is defined exactly, including unsigned registry-actor events (§6.4).
   - The `republished_after_as_of` and `as_of_unprovable` triggers are defined exactly (§8.4).
   - The `chain-003` C construction is spelled out.
+  - Latest-pass event admission is defined exactly: a producer key in `assertionMethod`, or in `verificationMethod` with a verified event receipt; unsigned registry-actor events need a receipt in both passes (§7.8).
+  - The `chain-010` D construction is spelled out.
 - **RFC-ACDP-0018 §7.**
   - Per-kind `ctx_id` checks.
   - Origin binding on every kind.
