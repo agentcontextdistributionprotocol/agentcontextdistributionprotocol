@@ -282,7 +282,7 @@ A receipt that fails is **treated as absent everywhere downstream**, as RFC-ACDP
 
 `absent`, `included`, `cannot_verify`, or `invalid`, under RFC-ACDP-0012 §9 and §9.1. An `included` value carries `tree_size`, `checkpoint_time` and `witnesses`. `witnesses` is the count of distinct trusted witness DIDs whose cosignatures verify under RFC-ACDP-0015 §8, over a verified checkpoint. A witness is trusted when it is pinned (§6.3).
 
-In the as-of pass, a checkpoint counts only if its `timestamp` ≤ T.
+In the as-of pass, a checkpoint counts only if its `timestamp` ≤ T. (NORMATIVE) The verifier rebuilds the leaf with `key_fingerprint` taken from the node's verified `registry_receipt` (RFC-ACDP-0012 §4 requires them equal), never from the key the `key` stage locates. The `log` stage therefore does not depend on the `key` stage, and with no verified receipt the leaf cannot be rebuilt, which gives `cannot_verify`.
 
 ### 7.8 `retraction`
 
