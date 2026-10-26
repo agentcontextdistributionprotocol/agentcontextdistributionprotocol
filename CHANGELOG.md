@@ -2,6 +2,21 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Clarifications: RFC-ACDP-0019 first-implementation rulings — 2026-10-26
+
+**No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and `mcp-001` is unchanged.** These rulings answer the twelve questions acdp-rs raised while building `acdp-mcp-proxy`:
+- Absent `arguments` hash as `{}`.
+- A JSON-RPC error response produces no record.
+- A result that arrives before `initialize` is a publish failure.
+- Batch elements are handled independently.
+- `content_hash` in `_meta` is that of the published body, and `registry` is the `ctx_id` authority.
+- Over-long server fields are truncated by Unicode scalar value. An over-long `tool` is a publish failure, never truncated. A missing `serverInfo.name` or protocol version becomes `unknown`.
+- The external result DataRef has a defined shape, and the proxy writes the bytes before publishing.
+- Fail-closed overrides an upstream `io.acdp/provenance`.
+- A rejected visibility is a publish failure, never a silent widening.
+- The `ctx_id` match uses the full RFC-ACDP-0001 §5.4 grammar.
+- The fail-closed text is implementation-defined.
+
 ## v0.5.0 — Draft RFC-ACDP-0020: registry trust lists — 2026-10-26
 
 **Additive Draft material for the open 0.5.0 line. No existing body field, schema `$id`, JCS rule, content-hash, signature, receipt or verdict semantic changed, and no Final text was edited.**
