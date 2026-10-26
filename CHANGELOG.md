@@ -2,6 +2,25 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Clarifications: RFC-ACDP-0017/0018 second-implementation rulings — 2026-10-26
+
+**Draft-line clarifications. No existing body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. No known-answer vector or digest changed.** These are rulings on twelve questions from the second implementation (acdp-verifier-py), checked against acdp-rs.
+
+- **RFC-ACDP-0017.**
+  - RFC-ACDP-0010 §8 step 5 is deferred when the key stage is `unknown` (§7.5).
+  - A key that cannot resolve whatever the evidence is `unresolvable` in both passes, with `signature: unresolvable` (§7.6).
+  - The signature is verified over the claimed `content_hash` (§7.4).
+  - The retraction `evidence_time` is the last admitted event's verified `accepted_at` (§7.8).
+  - Discovery-record selection is exact, and an admitted `revoked` record with no applied revocation gives `unknown` (§7.9).
+  - The horizon's inputs are listed exactly (§5.4).
+  - As-of event admission is defined exactly, including unsigned registry-actor events (§6.4).
+  - The `republished_after_as_of` and `as_of_unprovable` triggers are defined exactly (§8.4).
+  - The `chain-003` C construction is spelled out.
+- **RFC-ACDP-0018 §7.**
+  - Per-kind `ctx_id` checks.
+  - Origin binding on every kind.
+  - The held-prefix assertion.
+
 ## v0.5.0 — Draft RFC-ACDP-0018: retraction recall — 2026-10-25
 
 **New Draft RFC plus additive Draft-line wire objects. No existing body field, schema `$id`, JCS rule, content-hash, or signature semantic changed; every existing body, receipt and signature stays valid.**

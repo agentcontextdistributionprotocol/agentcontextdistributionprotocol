@@ -192,7 +192,9 @@ A change entry is a **hint until verified**. A consumer claiming `acdp-consumer-
 
 The remaining rules apply to every kind:
 
-- **Envelope consistency.** `recorded_at` MUST equal the evidence time given in §4: `event_receipt.accepted_at` for a lifecycle entry, `registry_receipt.created_at` otherwise. `ctx_id` MUST equal the evidence's own `ctx_id`. A mismatch rejects the entry.
+- **Envelope consistency.** `recorded_at` MUST equal the evidence time given in §4: `event_receipt.accepted_at` for a lifecycle entry, `registry_receipt.created_at` otherwise. The evidence MUST name the entry's context. For `lifecycle`, `event.ctx_id` and `event_receipt.ctx_id` equal `ctx_id`. For `superseded`, `registry_receipt.ctx_id` equals `superseded_by`, `superseded_by` ≠ `ctx_id`, and `registry_receipt.lineage_id` equals `lineage_id`. For `key_revocation`, `registry_receipt.ctx_id` equals `ctx_id`. A mismatch rejects the entry.
+- **Origin binding.** For every kind, the retrieved body (the affected context, `superseded_by`, or the revocation context) MUST have `origin_registry` equal to the authority serving the feed. The feed is registry-local, and supersession never crosses registries (RFC-ACDP-0003).
+- **Held prefix.** "Already holds and has verified" (step 1) is the caller's assertion: a held event list covering indexes `0` to `index − 1`. With no such list, the consumer re-retrieves, and the byte-equality rule applies.
 - **Failure.** An entry that fails verification MUST NOT change any reliance decision. Failure is itself a signal: the registry or the path to it may be faulty. The consumer SHOULD re-verify the affected context directly from its own retrieval, since a faulty source could equally drop a real entry.
 - **Idempotency.** Delivery is at-least-once, because a consumer may re-read after a crash. Consumers MUST deduplicate by (`registry authority`, `seq`) and process idempotently.
 - **Cursor persistence.** A consumer SHOULD persist `next_cursor` only after it has processed every entry before it.

@@ -153,7 +153,15 @@ A key-revocation context is **applied** in the as-of pass only if its own eviden
 
 ### 5.4 Horizon
 
-The horizon is the greatest evidence time over all evidence in the bundle that has one. A bundle with no timed evidence has a `null` horizon. The verifier MUST NOT read a wall clock in either pass. Offline there is no "now", and the report states the horizon in its place.
+The horizon is the greatest evidence time over all evidence in the bundle that has one. (NORMATIVE) Concretely, it is the maximum of these values:
+
+- the `created_at` of every registry receipt that verifies;
+- the `accepted_at` of every event receipt that passes §10.3 on its own (every step except step 8, which is a check across receipts);
+- the `timestamp` of every checkpoint whose signature verifies (carried or in a `log_inclusion`);
+- the `observed_at` of every `did_documents` snapshot;
+- the `completed_at` of every discovery record, whatever its outcome.
+
+Cosignature `witnessed_at` values are bounds, not evidence times, and do not count. Neither do pinned snapshot instants, which are caller input, or `exported_at`. The horizon is computed once, over the whole bundle, independent of T. A bundle with no timed evidence has a `null` horizon. The verifier MUST NOT read a wall clock in either pass. Offline there is no "now", and the report states the horizon in its place.
 
 ---
 
@@ -221,7 +229,7 @@ A pinned snapshot takes part in §6.2 selection like an observed one, but its ba
 
 ### 6.4 Attested events
 
-`require_attested_events` defaults to `true`. When `true`, the as-of pass considers only lifecycle events with a verified event receipt (§10). When `false`, an as-of pass MAY also consider an event without one, provided its signature verifies and its `occurred_at` is ≤ T. Such an event is labelled basis `observed`.
+`require_attested_events` defaults to `true`. When `true`, the as-of pass considers only lifecycle events with a verified event receipt (§10) whose `accepted_at` ≤ T, and whose signature verifies under the key located as of T (§6.2). For a producer actor, that key MUST also be in the as-of snapshot's `assertionMethod`. (NORMATIVE) The one exception is an **unsigned** event whose `actor` is the origin registry's DID (RFC-ACDP-0013, registries not advertising receipts). It is admitted on its verified event receipt alone, and never without one. When `false`, an as-of pass MAY also consider an event without one, provided its signature verifies and its `occurred_at` is ≤ T. Such an event is labelled basis `observed`.
 
 ---
 
@@ -251,7 +259,7 @@ A node that is not `present` runs no further stages. A `cycle` presence carries 
 
 ### 7.4 `signature`
 
-`ok`, `invalid`, or `unresolvable`, under RFC-ACDP-0001 §5.8. It uses the key the `key` stage resolves. (NORMATIVE) When the `key` stage is `unknown` (as-of pass, `no_evidence_at_as_of`), the `signature` stage is omitted: there is no key to verify against, and the `key: unknown` verdict rule (§8.1) already decides the node.
+`ok`, `invalid`, or `unresolvable`, under RFC-ACDP-0001 §5.8. It uses the key the `key` stage resolves. (NORMATIVE) It verifies the signature over the body's **claimed** `content_hash`, as RFC-ACDP-0001 §5.8 defines the preimage. A tampered body is caught by `content_hash: mismatch`, not by this stage. (NORMATIVE) When the `key` stage is `unknown` (as-of pass, `no_evidence_at_as_of`), the `signature` stage is omitted: there is no key to verify against, and the `key: unknown` verdict rule (§8.1) already decides the node.
 
 ### 7.5 `registry_receipt`
 
@@ -259,7 +267,7 @@ A node that is not `present` runs no further stages. A `cycle` presence carries 
 
 A receipt that fails is **treated as absent everywhere downstream**, as RFC-ACDP-0010 §8 requires.
 
-(NORMATIVE) An `ok` receipt has basis `pinned` when its `registry_did` is pinned (§6.3), and `registry` otherwise. The registry DID snapshot that supplied the receipt key does **not** make the stage rest on basis `observed`: the receipt is the registry's own signed attestation, and trusting the registry for it is the RFC-ACDP-0010 trust model. The observed snapshot is still what the pass selects under §6.2. A present receipt for which no registry DID snapshot is selectable is `invalid`. In the as-of pass, when the only selectable snapshots are dated after T, the value is `invalid` with reason `no_evidence_at_as_of`.
+(NORMATIVE) An `ok` receipt has basis `pinned` when its `registry_did` is pinned (§6.3), and `registry` otherwise. The registry DID snapshot that supplied the receipt key does **not** make the stage rest on basis `observed`: the receipt is the registry's own signed attestation, and trusting the registry for it is the RFC-ACDP-0010 trust model. The observed snapshot is still what the pass selects under §6.2. (NORMATIVE) RFC-ACDP-0010 §8 step 5 (key binding) runs only when the `key` stage locates a producer key. When the `key` stage is `unknown` (as-of pass, `no_evidence_at_as_of`), step 5 is deferred: the receipt is evaluated on its other steps, and the `key` stage decides the node (§8.1). A present receipt for which no registry DID snapshot is selectable is `invalid`. In the as-of pass, when the only selectable snapshots are dated after T, the value is `invalid` with reason `no_evidence_at_as_of`.
 
 ### 7.6 `key`
 
@@ -268,7 +276,7 @@ A receipt that fails is **treated as absent everywhere downstream**, as RFC-ACDP
 - **`current`**: the signing key is in the chosen snapshot's `assertionMethod`, or the key is a `did:key`.
 - **`historical_receipt_attested`**: RFC-ACDP-0010 §10 applies against the chosen snapshot.
 - **`revoked`** and **`unplaceable`**: these come from `key_revocation` (§7.9). A revocation verdict overrides this stage.
-- **`unresolvable`**: no snapshot, or a snapshot that cannot be evaluated under §5.11, in the **latest** pass. The as-of-pass equivalent is `unknown`, with reason `no_evidence_at_as_of`.
+- **`unresolvable`**: no snapshot, or a snapshot that cannot be evaluated under §5.11 or lacks the signing key, in the **latest** pass. The as-of-pass equivalent is `unknown`, with reason `no_evidence_at_as_of`. (NORMATIVE) That mapping covers only outcomes that depend on which snapshot is selected. A key that cannot resolve whatever the evidence is `unresolvable` in **both** passes, with `signature: unresolvable`. Examples are a `key_id` whose DID ≠ `body.agent_id`, an empty fragment, or a `did:key` that does not decode. Such a body is not a schema failure, so the bundle is not rejected (§4.1).
 
 ### 7.7 `log`
 
@@ -281,7 +289,7 @@ In the as-of pass, a checkpoint counts only if its `timestamp` ≤ T.
 `not_retracted`, `retracted`, `invalid`, or `unknown`.
 
 1. **Admitting events.** The pass admits a prefix of `lifecycle_events`: the longest prefix whose every event is admitted under §6.4 (as-of) or carries a verified signature (latest, RFC-ACDP-0013 §5). In the latest pass, an event with a verified event receipt (§10) has basis `registry`. An event admitted on its signature alone has basis `observed`, and the `retraction` stage takes the weakest basis among the admitted events.
-2. **Deriving the state.** RFC-ACDP-0013 §7.1 retraction state is derived over the admitted prefix.
+2. **Deriving the state.** RFC-ACDP-0013 §7.1 retraction state is derived over the admitted prefix. (NORMATIVE) The stage's `evidence_time` is the `accepted_at` of the **last** admitted event when that event's receipt verifies; otherwise the stage has no `evidence_time`. With no admitted events, the stage carries neither `basis` nor `evidence_time`.
 3. **`unknown`** in the as-of pass when an event that is not admitted precedes an admitted one. The prefix is then unprovable.
 4. **`invalid`** when §10.3 step 8 fails: the verified event receipts' `accepted_at` values decrease with index. A receipt failing any other §10.3 step (a mismatched `index`, `event_hash`, `registry_did` or signature, or step 9) is **treated as absent**, and its event has no evidence time; that alone never makes the stage `invalid`.
 
@@ -291,7 +299,11 @@ In the as-of pass, a checkpoint counts only if its `timestamp` ≤ T.
 
 - **Applying revocations.** The verifier applies the key-revocation contexts the pass admits (§5.3), under RFC-ACDP-0014 §7 producer scope. (NORMATIVE) A **registry-attested** revocation (RFC-ACDP-0014 §6) is applied to a node only under that section's strict default scope, read offline: the revocation's `agent_id` is `did:web:<authority>`, where `<authority>` is the revocation's own `origin_registry`, and that authority equals the node's `origin_registry` or the `registry_did` authority of the node's verified receipt. Its `metadata.revoked_key_controller` MUST equal the node's `body.agent_id`.
 - **Discovery records.** It considers the discovery records the pass admits. A record is admitted when its `completed_at` ≤ T in the as-of pass, and always in the latest pass.
-- **Producer outcomes.** A producer has a **`revoked`** discovery outcome when any admitted revocation applies to it. It has **`not-revoked`** only when an admitted record says `not-revoked-complete`. Otherwise its outcome is **`unknown`**. (NORMATIVE) Revocation contexts in the bundle that do not name the key are **not** evidence of not-revoked: the bundle is untrusted (§4.1), and its exporter can leave the revoking context out. Only a discovery record can decide `not-revoked`.
+- **Producer outcomes.** A producer has a **`revoked`** discovery outcome when any admitted revocation applies to it. It has **`not-revoked`** only when an admitted record says `not-revoked-complete`. Otherwise its outcome is **`unknown`**. (NORMATIVE) The rules for discovery records:
+  - A record never makes the stage `revoked`; only an applied revocation context does.
+  - A record with outcome `unknown` is ignored.
+  - An admitted record with outcome `revoked` makes the outcome `unknown` when no admitted revocation applies, because a vantage saw a revocation the bundle does not carry.
+  - Otherwise, the deciding record is the admitted `not-revoked-complete` record that is greatest by (vantage pinned, `completed_at`, array position). It supplies the stage's `evidence_time` (its `completed_at`) and its `basis` (`pinned` or `observed`). (NORMATIVE) Revocation contexts in the bundle that do not name the key are **not** evidence of not-revoked: the bundle is untrusted (§4.1), and its exporter can leave the revoking context out. Only a discovery record can decide `not-revoked`.
 - **Precedence** is RFC-ACDP-0014's own: refusal, then `unknown`, then `pre-compromise`, then `not-revoked`.
 - **Basis.** The value carries the basis of the evidence that decided it. A revocation that decided it is `registry`. A discovery record that decided it is `observed`.
 
@@ -350,9 +362,9 @@ When both passes run, the verifier emits one drift entry, `{ctx_id, kind}`, for 
 | `published_after_as_of` | The node is `not_yet_published` as of T. |
 | `revoked_after_as_of` | `key_revocation` becomes `revoked` or `unplaceable` only in the latest pass. |
 | `retracted_after_as_of` | `retraction` becomes `retracted` only in the latest pass. |
-| `republished_after_as_of` | `retraction` returns to `not_retracted` only in the latest pass. |
+| `republished_after_as_of` | `retraction` is `retracted` as of T and `not_retracted` in the latest pass. A stage the as-of pass did not run does not count as `retracted`, and `unknown` or `invalid` on either side never triggers it. |
 | `backdated_event` | An event whose `occurred_at` ≤ T but whose `accepted_at` > T. This is reported in addition to the retraction kinds; the backdating is **reported, not believed**. |
-| `as_of_unprovable` | A stage is `unknown` as of T for want of evidence (`no_evidence_at_as_of`), and decided in the latest pass. |
+| `as_of_unprovable` | A stage carries reason `no_evidence_at_as_of` as of T (only `key` or `registry_receipt` can, §7), and is decided in the latest pass. A `key_revocation: unknown` stage carries no reason and never triggers it. |
 | `verdict_changed` | The node verdict differs between the passes and no kind above holds for the node. |
 
 A clean key rotation after T is **not** drift. Rotation is not compromise (RFC-ACDP-0014 §9). It shows up as `key: current` as of T and `historical_receipt_attested` latest, which is a caveat change and therefore `verdict_changed` only if the node verdict itself changes.

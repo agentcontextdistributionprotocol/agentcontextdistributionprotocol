@@ -104,7 +104,7 @@
     {
       "name": "C — unreceipted event followed by a receipted one",
       "expected": {
-        "behavior": "Events [retracted (no receipt), republished (receipt accepted_at < T)]: as of T the unadmitted event precedes an admitted one, so retraction is unknown (RFC-ACDP-0017 §7.8 item 3) and the node as-of verdict is unknown."
+        "behavior": "Events [retracted, republished (receipt accepted_at < T)]; event_receipts is positional, so position 0 carries a receipt that fails §10.3 (e.g. the one minted for index 1) and is treated as absent: as of T the unadmitted event precedes an admitted one, so retraction is unknown (RFC-ACDP-0017 §7.8 item 3) and the node as-of verdict is unknown."
       }
     }
   ],
