@@ -2,6 +2,14 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Clarifications & tooling: rule anchors and revocation-classification known answers — 2026-10-26
+
+**No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed.** These are additions that make existing rules citable and testable, requested by Seam.
+
+- **`registries/rule-anchors.md`** (new registry): stable names (`acdp.rule.content-hash`, `acdp.rule.revocation-classification`, `acdp.rule.chain-verdict`, …) for the behaviors downstream projects cite. Each names its defining text and its executed known-answer fixtures. An anchor's meaning never changes; a behavior change mints `<name>.v2`. Downstream projects can cite these instead of SDK source lines.
+- **`rev-007`** (new, executed): 20 known-answer vectors for the RFC-ACDP-0014 §7 `key_revocation` classification (receipt rule, earliest-T fold, producer scope, lookup precedence). The runner executes them from already-verified inputs. Required for 0.5.0 `acdp-consumer`.
+- **`seam.decision`** (anchor-schemes): the row is explicitly multi-version, with a per-record-digest-version table of known-answer vectors (v4 pinned in `anc-006`; v5 added when Seam ships it).
+
 ## v0.5.0 — RFC-ACDP-0017 promoted to Final; 27 cross-implementation known-answer vectors — 2026-10-26
 
 **Status promotion plus new known-answer vectors. No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and no existing vector or digest moved.**
