@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.1.0/acdp-trust-report.schema.json",
+  "title": "ACDP Trust Report (acdp-trust-report/1)",
+  "description": "(0.5.0, Draft) The deterministic result of applying registry trust lists (RFC-ACDP-0020 §8), optionally bound to an RFC-ACDP-0017 verdict by verdict_digest. JCS-canonical; report_digest covers the object minus report_digest. Closed at every level.",
+  "type": "object",
+  "required": [
+    "trust_report_version",
+    "pass",
+    "evaluated_at",
+    "lists",
+    "nodes",
+    "report_digest"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "trust_report_version": {
+      "const": "acdp-trust-report/1"
+    },
+    "pass": {
+      "enum": [
+        "latest",
+        "as_of"
+      ]
+    },
+    "evaluated_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+      "description": "Canonical millisecond RFC 3339 UTC (RFC-ACDP-0001 §5.3)."
+    },
+    "verdict_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "evidence_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "lists": {
+      "type": "array",
+      "description": "One per issuer pin, sorted by (issuer, list_id).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "issuer",
+          "list_id",
+          "status"
+        ],
+        "properties": {
+          "issuer": {
+            "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did"
+          },
+          "list_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+            "description": "Issuer-chosen series name; with the issuer DID it names the series inside the signature (RFC-ACDP-0020 §3)."
+          },
+          "status": {
+            "enum": [
+              "used",
+              "expired",
+              "invalid"
+            ]
+          },
+          "serial": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "ctx_id": {
+            "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id"
+          },
+          "reason": {
+            "enum": [
+              "origin_mismatch",
+              "registry_mismatch",
+              "receipt_required",
+              "receipt_key_unpinned",
+              "profile_missing",
+              "entry_window",
+              "scope_agent",
+              "scope_did_method",
+              "scope_type",
+              "no_entry",
+              "list_window",
+              "no_valid_version",
+              "rollback",
+              "equivocation",
+              "retracted"
+            ]
+          }
+        }
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "description": "One per evaluated body, sorted by ctx_id.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ctx_id",
+          "outcome",
+          "profiles_checked"
+        ],
+        "properties": {
+          "ctx_id": {
+            "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id"
+          },
+          "outcome": {
+            "enum": [
+              "trusted",
+              "expired",
+              "out_of_scope",
+              "untrusted_registry",
+              "list_invalid"
+            ]
+          },
+          "reason": {
+            "enum": [
+              "origin_mismatch",
+              "registry_mismatch",
+              "receipt_required",
+              "receipt_key_unpinned",
+              "profile_missing",
+              "entry_window",
+              "scope_agent",
+              "scope_did_method",
+              "scope_type",
+              "no_entry",
+              "list_window",
+              "no_valid_version",
+              "rollback",
+              "equivocation",
+              "retracted"
+            ]
+          },
+          "profiles_checked": {
+            "type": "boolean"
+          },
+          "issuer": {
+            "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did"
+          },
+          "list_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+            "description": "Issuer-chosen series name; with the issuer DID it names the series inside the signature (RFC-ACDP-0020 §3)."
+          },
+          "entry_index": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "report_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

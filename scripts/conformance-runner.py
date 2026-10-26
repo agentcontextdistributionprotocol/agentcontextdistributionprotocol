@@ -1330,6 +1330,102 @@ def check_mcp_vector(fixture, fixture_data, vector):
     return ok
 
 
+_TRUST_PRECEDENCE = ["trusted", "expired", "out_of_scope", "untrusted_registry", "list_invalid"]
+
+
+def trust_evaluate(tl, case):
+    """Reference RFC-ACDP-0020 §6.2 evaluation of one body against one selected,
+    verified trust-list version (single pin, so the §6.2 step 4 union is trivial).
+    Timestamps are canonical millisecond UTC, so string order is time order."""
+    body, receipt, caps, t = case["body"], case.get("receipt"), case.get("capabilities_profiles"), case["T"]
+    out = {"profiles_checked": caps is not None}
+    authority = body["ctx_id"].split("/")[2].lower()
+    origin = body["origin_registry"].lower()
+    if authority != origin:
+        return {**out, "outcome": "untrusted_registry", "reason": "origin_mismatch"}
+    if not (tl["valid_from"] <= t < tl["valid_until"]):
+        return {**out, "outcome": "expired", "reason": "list_window"}
+    best = None
+    for i, e in enumerate(tl["entries"]):
+        if e["origin"] != origin:
+            continue
+        pins = e.get("receipt_key_fingerprints")
+        profiles = e.get("required_profiles", [])
+        scope = e.get("scope")
+        if receipt is not None and receipt["registry_did"] != e["registry_did"]:
+            res = ("untrusted_registry", "registry_mismatch")
+        elif (pins is not None or "acdp-registry-receipts" in profiles) and receipt is None:
+            res = ("untrusted_registry", "receipt_required")
+        elif pins is not None and receipt["registry_key_fingerprint"] not in pins:
+            res = ("untrusted_registry", "receipt_key_unpinned")
+        elif caps is not None and any(p not in caps for p in profiles):
+            res = ("untrusted_registry", "profile_missing")
+        elif ("valid_from" in e and t < e["valid_from"]) or ("valid_until" in e and t >= e["valid_until"]):
+            res = ("expired", "entry_window")
+        elif scope is not None and ("agent_ids" in scope or "agent_id_prefixes" in scope) and not (
+                body["agent_id"] in scope.get("agent_ids", [])
+                or any(body["agent_id"].startswith(p) for p in scope.get("agent_id_prefixes", []))):
+            res = ("out_of_scope", "scope_agent")
+        elif scope is not None and "did_methods" in scope and \
+                ":".join(body["agent_id"].split(":")[:2]) not in scope["did_methods"]:
+            res = ("out_of_scope", "scope_did_method")
+        elif scope is not None and "types" in scope and body["type"] not in scope["types"]:
+            res = ("out_of_scope", "scope_type")
+        else:
+            res = ("trusted", None)
+        if best is None or _TRUST_PRECEDENCE.index(res[0]) < _TRUST_PRECEDENCE.index(best[0]):
+            best = (res[0], res[1], i)
+    if best is None:
+        return {**out, "outcome": "untrusted_registry", "reason": "no_entry"}
+    r = {**out, "outcome": best[0], "entry_index": best[2]}
+    if best[1]:
+        r["reason"] = best[1]
+    return r
+
+
+def check_trust_vector(fixture, fixture_data, vector):
+    """trust-* known answers (RFC-ACDP-0020). A vector carrying producer_content is
+    a golden trust-list body: the arithmetic is check_ed25519_vector verbatim
+    (JCS, content_hash, Ed25519 over the ASCII content_hash, did:key identity), plus
+    the §4.1 body constraints and the §5.2 step 4 runtime rules. A vector carrying
+    evaluations replays the §6.2 algorithm against that golden list."""
+    name = vector.get("name", "?")
+    golden = next((v for v in fixture_data["vectors"] if "producer_content" in v), None)
+    if golden is None:
+        fail(fixture, name, "no golden trust-list vector")
+        return False
+    if "producer_content" in vector:
+        if not check_ed25519_vector(fixture, fixture_data, vector):
+            return False
+        pc = vector["producer_content"]
+        tl = pc.get("metadata", {})
+        if pc.get("type") != "acdp:trust-list" or tl.get("trust_list_version") != "acdp-trust-list/1":
+            fail(fixture, name, "type MUST be 'acdp:trust-list' with an acdp-trust-list/1 metadata object (§4.1)")
+            return False
+        if pc.get("agent_id") != fixture_data["test_keypair"].get("did_key"):
+            fail(fixture, name, "issuer (agent_id) MUST be the test did:key")
+            return False
+        if not tl["valid_from"] < tl["valid_until"]:
+            fail(fixture, name, "valid_from MUST be before valid_until (§5.2 step 4)")
+            return False
+        for i, e in enumerate(tl["entries"]):
+            if e["registry_did"] != "did:web:" + e["origin"]:
+                fail(fixture, name, f"entry {i}: registry_did MUST equal 'did:web:' + origin (§5.2 step 4)")
+                return False
+        return True
+    tl = golden["producer_content"]["metadata"]
+    ok = True
+    for case in vector.get("evaluations", []):
+        got = trust_evaluate(tl, case)
+        if got != case["expected"]:
+            fail(fixture, f"{name} / {case.get('name', '?')}", f"expected {case['expected']} got {got}")
+            ok = False
+    if not vector.get("evaluations"):
+        fail(fixture, name, "evaluation vector has no cases")
+        ok = False
+    return ok
+
+
 def _vectors(data, fixture_id):
     """Vectors of an executable fixture; an empty/missing list is a fixture bug
     (the fixture would otherwise pass with zero assertions)."""
@@ -1429,6 +1525,12 @@ for path in sorted(CONFORMANCE.glob("*.json")):
         # behavioral and verified by proxy implementations.
         for v in _vectors(data, fixture_id):
             if check_mcp_vector(fixture_id, data, v):
+                passes += 1
+    elif fixture_id.startswith("trust-") and "vectors" in data:
+        # trust-001 carries the golden trust-list body and the §6.2 evaluation
+        # table; trust-002..007 are behavioral.
+        for v in _vectors(data, fixture_id):
+            if check_trust_vector(fixture_id, data, v):
                 passes += 1
     elif fixture_id.startswith("chain-") and "vectors" in data:
         # chain-001/002/003/010 carry known-answer vectors (pinned bundle +

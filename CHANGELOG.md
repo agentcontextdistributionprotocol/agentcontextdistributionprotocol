@@ -2,6 +2,15 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Draft RFC-ACDP-0020: registry trust lists — 2026-10-26
+
+**Additive Draft material for the open 0.5.0 line. No existing body field, schema `$id`, JCS rule, content-hash, signature, receipt or verdict semantic changed, and no Final text was edited.**
+
+- **RFC-ACDP-0020** (Draft): a registry trust list is an ordinary body of the registered namespaced type `acdp:trust-list` whose `metadata` is an `acdp-trust-list/1` object. The issuer is the producer, so the producer signature is the list signature, supersession versions it and RFC-ACDP-0013 retraction withdraws it. Consumers take issuer pins (issuer DID + `list_id`) only from configuration, persist a per-pin floor on the signed `serial` against rollback, treat same-serial conflicts as equivocation, honor only issuer-signed retractions (never reverting), and select the version valid at T in both RFC-ACDP-0017 passes. §6.2 is a deterministic evaluation giving `trusted` / `expired` / `out_of_scope` / `untrusted_registry` / `list_invalid` with a reason.
+- **Carriage**: lists ride in an RFC-ACDP-0017 bundle's `contexts` like key-revocation contexts and leave the Final verdict object unchanged; the result goes in a new, separate `acdp-trust-report/1` object bound to `verdict_digest`.
+- **Schemas**: new closed `acdp-trust-list.schema.json` and `acdp-trust-report.schema.json`; examples in `examples/trust-list/`, `examples/trust-report/` and `examples/publish/trust-list-publish.json`.
+- **Profile** `acdp-consumer-trust-list` (OPTIONAL, consumer-only). **Fixtures** `trust-001` (executed: golden body plus a 20-case §6.2 evaluation table, new runner check `check_trust_vector`) and `trust-002`..`007` (behavioral). New fixture family `trust`. **Registry**: `acdp:trust-list` in `registries/context-types.md` (Provisional).
+
 ## v0.5.0 — Draft RFC-ACDP-0019: MCP tool-result provenance — 2026-10-26
 
 **Additive Draft material on the open 0.5.0 line. No existing body field, schema `$id`, JCS rule, content-hash, or signature semantic changed; every existing body, signature and vector stays valid.**
@@ -13,6 +22,7 @@ All notable changes to ACDP are recorded here. ACDP follows the versioning polic
 - **New context type** `acdp:mcp-tool-result` (`registries/context-types.md`, Provisional). It uses the `acdp:` namespace under the existing custom-type grammar, so the standard-type enum is unchanged.
 - **New schema** `acdp-mcp-tool-result.schema.json` (the record, plus `$defs/provenance` for the `_meta` value). Examples: `examples/mcp-tool-result/golden-record.json`, `examples/publish/mcp-tool-result-request.json`.
 - **New profile** `acdp-producer-mcp-proxy` (OPTIONAL) and fixture family `mcp-*`: `mcp-001` is an executed known answer, and `mcp-002`..`007` are behavioral.
+
 ## v0.5.0 — Clarifications & tooling: rule anchors and revocation-classification known answers — 2026-10-26
 
 **No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed.** These are additions that make existing rules citable and testable, requested by Seam.
@@ -20,7 +30,6 @@ All notable changes to ACDP are recorded here. ACDP follows the versioning polic
 - **`registries/rule-anchors.md`** (new registry): stable names (`acdp.rule.content-hash`, `acdp.rule.revocation-classification`, `acdp.rule.chain-verdict`, …) for the behaviors downstream projects cite. Each names its defining text and its executed known-answer fixtures. An anchor's meaning never changes; a behavior change mints `<name>.v2`. Downstream projects can cite these instead of SDK source lines.
 - **`rev-007`** (new, executed): 20 known-answer vectors for the RFC-ACDP-0014 §7 `key_revocation` classification (receipt rule, earliest-T fold, producer scope, lookup precedence). The runner executes them from already-verified inputs. Required for 0.5.0 `acdp-consumer`.
 - **`seam.decision`** (anchor-schemes): the row is explicitly multi-version, with a per-record-digest-version table of known-answer vectors (v4 pinned in `anc-006`; v5 added when Seam ships it).
-||||||| parent of f1ee07a (spec(0019): Draft RFC-ACDP-0019 MCP tool-result provenance (the MCP signing proxy))
 
 ## v0.5.0 — RFC-ACDP-0017 promoted to Final; 27 cross-implementation known-answer vectors — 2026-10-26
 

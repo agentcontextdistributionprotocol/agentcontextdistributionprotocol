@@ -1,0 +1,39 @@
+{
+  "trust_report_version": "acdp-trust-report/1",
+  "pass": "latest",
+  "evaluated_at": "2026-10-27T00:00:00.000Z",
+  "lists": [
+    {
+      "issuer": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
+      "list_id": "tenant-acme.production",
+      "status": "used",
+      "serial": 7,
+      "content_hash": "sha256:206fe1d0f0c3610e9a7d55638b7baa1883b625c71373b92747f25e07f3678bf3"
+    }
+  ],
+  "nodes": [
+    {
+      "ctx_id": "acdp://partner.example.org/3c9d7a1e-5b2f-4c8d-9e0a-1f2b3c4d5e6f",
+      "outcome": "trusted",
+      "profiles_checked": false,
+      "issuer": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
+      "list_id": "tenant-acme.production",
+      "entry_index": 1
+    },
+    {
+      "ctx_id": "acdp://registry.example.com/3c9d7a1e-5b2f-4c8d-9e0a-1f2b3c4d5e6f",
+      "outcome": "trusted",
+      "profiles_checked": false,
+      "issuer": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
+      "list_id": "tenant-acme.production",
+      "entry_index": 0
+    },
+    {
+      "ctx_id": "acdp://unknown.example.com/3c9d7a1e-5b2f-4c8d-9e0a-1f2b3c4d5e6f",
+      "outcome": "untrusted_registry",
+      "reason": "no_entry",
+      "profiles_checked": false
+    }
+  ],
+  "report_digest": "sha256:29bc9165caeee178569e5d20f49bc39e31f4fe6b2906fcb6d820a8f84598738a"
+}

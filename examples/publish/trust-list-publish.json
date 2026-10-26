@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "supersedes": null,
+  "agent_id": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
+  "contributors": [],
+  "title": "Trust list — tenant acme, production",
+  "summary": "Registries tenant acme relies on in production (RFC-ACDP-0020), serial 7.",
+  "type": "acdp:trust-list",
+  "data_refs": [],
+  "derived_from": [],
+  "visibility": "public",
+  "schema_uri": "https://schemas.acdp.io/v0.1.0/acdp-trust-list.schema.json",
+  "metadata": {
+    "trust_list_version": "acdp-trust-list/1",
+    "list_id": "tenant-acme.production",
+    "serial": 7,
+    "issued_at": "2026-10-26T00:00:00.000Z",
+    "valid_from": "2026-10-01T00:00:00.000Z",
+    "valid_until": "2027-04-01T00:00:00.000Z",
+    "entries": [
+      {
+        "registry_did": "did:web:registry.example.com",
+        "origin": "registry.example.com",
+        "receipt_key_fingerprints": [
+          "sha256:10ba682c8ad13513971e8b56881aab8bd702bb807796eca81932c735a94d6e6d"
+        ],
+        "required_profiles": [
+          "acdp-registry-receipts",
+          "acdp-registry-lifecycle"
+        ]
+      },
+      {
+        "registry_did": "did:web:partner.example.org",
+        "origin": "partner.example.org",
+        "scope": {
+          "agent_id_prefixes": [
+            "did:web:agents.partner.example.org:"
+          ],
+          "types": [
+            "analysis",
+            "data_snapshot"
+          ]
+        },
+        "valid_until": "2026-12-01T00:00:00.000Z"
+      },
+      {
+        "registry_did": "did:web:sandbox.example.net",
+        "origin": "sandbox.example.net",
+        "scope": {
+          "did_methods": [
+            "did:key"
+          ]
+        },
+        "valid_from": "2026-11-01T00:00:00.000Z"
+      },
+      {
+        "registry_did": "did:web:partner.example.org",
+        "origin": "partner.example.org",
+        "scope": {
+          "agent_ids": [
+            "did:web:auditor.example.com"
+          ]
+        }
+      }
+    ]
+  },
+  "acdp_version": "0.5.0",
+  "content_hash": "sha256:206fe1d0f0c3610e9a7d55638b7baa1883b625c71373b92747f25e07f3678bf3",
+  "signature": {
+    "algorithm": "ed25519",
+    "key_id": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3#z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
+    "value": "F4i+OHnLx0lExnr4iL3cjiIh+p8GRjjDbVenIh5TCWG3EB/iPTW5jJf6e/d37vml/TeSffkbhYyXUIMiDp+3DQ=="
+  }
+}

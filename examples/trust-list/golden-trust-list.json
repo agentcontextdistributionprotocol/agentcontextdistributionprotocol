@@ -1,0 +1,54 @@
+{
+  "trust_list_version": "acdp-trust-list/1",
+  "list_id": "tenant-acme.production",
+  "serial": 7,
+  "issued_at": "2026-10-26T00:00:00.000Z",
+  "valid_from": "2026-10-01T00:00:00.000Z",
+  "valid_until": "2027-04-01T00:00:00.000Z",
+  "entries": [
+    {
+      "registry_did": "did:web:registry.example.com",
+      "origin": "registry.example.com",
+      "receipt_key_fingerprints": [
+        "sha256:10ba682c8ad13513971e8b56881aab8bd702bb807796eca81932c735a94d6e6d"
+      ],
+      "required_profiles": [
+        "acdp-registry-receipts",
+        "acdp-registry-lifecycle"
+      ]
+    },
+    {
+      "registry_did": "did:web:partner.example.org",
+      "origin": "partner.example.org",
+      "scope": {
+        "agent_id_prefixes": [
+          "did:web:agents.partner.example.org:"
+        ],
+        "types": [
+          "analysis",
+          "data_snapshot"
+        ]
+      },
+      "valid_until": "2026-12-01T00:00:00.000Z"
+    },
+    {
+      "registry_did": "did:web:sandbox.example.net",
+      "origin": "sandbox.example.net",
+      "scope": {
+        "did_methods": [
+          "did:key"
+        ]
+      },
+      "valid_from": "2026-11-01T00:00:00.000Z"
+    },
+    {
+      "registry_did": "did:web:partner.example.org",
+      "origin": "partner.example.org",
+      "scope": {
+        "agent_ids": [
+          "did:web:auditor.example.com"
+        ]
+      }
+    }
+  ]
+}

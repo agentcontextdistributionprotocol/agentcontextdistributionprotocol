@@ -1,0 +1,45 @@
+{
+  "id": "trust-004",
+  "description": "(0.5.0, Draft) Retracting a list version (RFC-ACDP-0020 §5.3). Behavioral, consumer-side.",
+  "tags": [
+    "trust-list",
+    "consumer",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-trust-list"
+  ],
+  "input": {
+    "golden": "trust-001 vector 1 (tenant-acme.production, serial 7, issuer = the sig-003 did:key)",
+    "pin": {
+      "issuer": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
+      "list_id": "tenant-acme.production"
+    }
+  },
+  "scenarios": [
+    {
+      "name": "A — issuer retraction of the floor",
+      "expected": {
+        "behavior": "An admitted retracted event with actor = the issuer, signed by the issuer, on serial 7: serial 7 is not used and serial 6 is NOT used either; the pin is list_invalid with reason retracted."
+      }
+    },
+    {
+      "name": "B — reissue",
+      "expected": {
+        "behavior": "The issuer then publishes serial 8: selected; the pin is usable."
+      }
+    },
+    {
+      "name": "C — registry-actor retraction",
+      "expected": {
+        "behavior": "A retracted event whose actor is the serving registry: reported, but serial 7 stays selected and usable."
+      }
+    },
+    {
+      "name": "D — retraction of an older version",
+      "expected": {
+        "behavior": "Serial 6 retracted while serial 7 is current: no effect on selection."
+      }
+    }
+  ]
+}

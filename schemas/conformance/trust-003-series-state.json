@@ -1,0 +1,57 @@
+{
+  "id": "trust-003",
+  "description": "(0.5.0, Draft) Rollback and equivocation within a series (RFC-ACDP-0020 §5.3). Behavioral, consumer-side.",
+  "tags": [
+    "trust-list",
+    "consumer",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-trust-list"
+  ],
+  "input": {
+    "golden": "trust-001 vector 1 (tenant-acme.production, serial 7, issuer = the sig-003 did:key)",
+    "pin": {
+      "issuer": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
+      "list_id": "tenant-acme.production"
+    }
+  },
+  "scenarios": [
+    {
+      "name": "A — floor persisted",
+      "expected": {
+        "behavior": "After accepting serial 7 the consumer persists floor 7 for the pin."
+      }
+    },
+    {
+      "name": "B — rollback",
+      "expected": {
+        "behavior": "Only serial 5 (valid, unexpired, still trusting a registry serial 7 dropped) is presented later: it is below the floor and is not used; the pin is list_invalid with reason rollback."
+      }
+    },
+    {
+      "name": "C — higher serial",
+      "expected": {
+        "behavior": "Serial 8 arrives: it is selected and the floor moves to 8."
+      }
+    },
+    {
+      "name": "D — equivocation",
+      "expected": {
+        "behavior": "Two valid versions with serial 8 and different content_hash: the pin is list_invalid (equivocation) and the consumer alerts."
+      }
+    },
+    {
+      "name": "E — recovery",
+      "expected": {
+        "behavior": "A valid serial 9 arrives after D: it is selected and the pin is usable again."
+      }
+    },
+    {
+      "name": "F — same bytes twice",
+      "expected": {
+        "behavior": "The same serial-8 body seen from two registries (different ctx_id, same content_hash) is not equivocation."
+      }
+    }
+  ]
+}

@@ -599,6 +599,28 @@
       ],
       "not_implemented_permitted_on": [],
       "notes": "OPTIONAL producer-side profile. A proxy is not a registry: it publishes to one and is advertised nowhere on the wire. mcp-001 is executed by scripts/conformance-runner.py; mcp-002..007 are behavioral."
+    },
+    {
+      "id": "acdp-consumer-trust-list",
+      "inherits": "acdp-consumer",
+      "spec_reference": "RFC-ACDP-0020 §9 (0.5.0, Draft)",
+      "behavioral_requirements": [
+        "Accept issuer pins (issuer DID + list_id, optional issuer key fingerprints) only from configuration, never from a list, registry, capabilities document or bundle (RFC-ACDP-0020 §5.1)",
+        "Verify each acdp:trust-list version per §5.2; persist the per-pin highest accepted serial and never use a lower one; treat same-serial conflicting versions as equivocation; only issuer-signed retractions withdraw a version, and retracting the floor never reverts (RFC-ACDP-0020 §5.3)",
+        "Select the version for T per §5.4 (as-of: issued_at <= T, as-of retractions, as-of floor) with no fallback to an older serial when the selected one is out of window",
+        "Evaluate bodies per §6.2 and permit reliance only on 'trusted'; combine pins as a union with fixed precedence and no transitive inclusion",
+        "When applying lists to RFC-ACDP-0017 chains, emit acdp-trust-report/1 bound to verdict_digest, using a node's receipt only when its registry_receipt stage is ok (RFC-ACDP-0020 §8)"
+      ],
+      "required_fixtures": [
+        "trust-001-trust-list-golden",
+        "trust-002-list-validation",
+        "trust-003-series-state",
+        "trust-004-retraction",
+        "trust-005-as-of-selection",
+        "trust-006-multiple-lists",
+        "trust-007-bundle-and-report"
+      ],
+      "notes": "OPTIONAL consumer profile (0.5.0, Draft). Trust lists are ordinary bodies of type acdp:trust-list; no registry obligation is added. trust-001 is executed by the runner (golden body + §6.2 evaluation table); trust-002..007 are behavioral."
     }
   ],
   "fixture_families": {
@@ -634,6 +656,7 @@
     "anc": "Typed external anchors — content-hash inclusion golden vector, schema rejections, scheme-unaware verifier tolerance, and the conditional seam.decision scheme-aware hook (RFC-ACDP-0016, 0.5.0)",
     "chain": "Chain verification and evidence bundles — offline derived_from walks, as-of vs latest verdicts, drift, verdict digests, and lifecycle event receipts (RFC-ACDP-0017, 0.5.0)",
     "rec": "Retraction recall — changes feed, watch filters, feed visibility and retention, consumer verification of change entries, and change-hint webhooks (RFC-ACDP-0018, 0.5.0)",
-    "mcp": "MCP tool-result provenance — the acdp:mcp-tool-result record, salted call hashes, the io.acdp/provenance _meta link, publish-failure modes (RFC-ACDP-0019, 0.5.0)"
+    "mcp": "MCP tool-result provenance — the acdp:mcp-tool-result record, salted call hashes, the io.acdp/provenance _meta link, publish-failure modes (RFC-ACDP-0019, 0.5.0)",
+    "trust": "Registry trust lists — signed acdp:trust-list bodies, issuer pins, series rollback/equivocation, as-of selection, body evaluation and the trust report (RFC-ACDP-0020, 0.5.0)"
   }
 }
