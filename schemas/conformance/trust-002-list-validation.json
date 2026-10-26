@@ -76,6 +76,12 @@
       "expected": {
         "behavior": "A list that names another issuer or list as trusted has no such field to do it with, and a consumer MUST NOT add a pin from any list, registry, capabilities document or bundle (§5.1)."
       }
+    },
+    {
+      "name": "K — issuer-key revocation classes (§5.2 step 5)",
+      "expected": {
+        "behavior": "With the issuer key's RFC-ACDP-0014 §7 key_revocation class for L: revoked or unplaceable → L is not valid for the pin (the pin gives list_invalid, no_valid_version, when it has no other valid version); not-revoked, pre-compromise or unknown → step 5 passes. Under a local policy that refuses unknown, unknown fails step 5 too."
+      }
     }
   ]
 }
