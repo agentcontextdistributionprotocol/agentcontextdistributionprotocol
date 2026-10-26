@@ -135,7 +135,7 @@ A candidate list body L is **valid for a pin** P only if all hold:
 2. `L.agent_id` equals `P.issuer`, `L.type` is `acdp:trust-list`, and `L.metadata.list_id` equals `P.list_id`.
 3. If `P.issuer_key_fingerprints` is present, the RFC-ACDP-0010 §6 fingerprint of the issuer key that verified L's signature is in it.
 4. `L.metadata` is valid against `acdp-trust-list.schema.json`, `valid_from` < `valid_until`, and every entry's `registry_did` equals `did:web:` + its `origin`.
-5. The issuer key is not revoked for L under RFC-ACDP-0014 §7, with revocations admitted as the pass admits them.
+5. The issuer key is not revoked for L under RFC-ACDP-0014 §7, with revocations admitted as the pass admits them. Only an applied revocation (`revoked` or `unplaceable`) fails this step. `unknown` (no discovery evidence, the usual offline case) does not: the issuer is already pinned by the consumer's own configuration (§5.1), and failing closed on `unknown` would make every offline list unusable. A consumer MAY refuse lists whose issuer-key revocation status is `unknown`, by local policy.
 
 A version failing any step is ignored, as if absent. Where the consumer has no valid version for P at all, P contributes `list_invalid` with reason `no_valid_version` (§6.2).
 
