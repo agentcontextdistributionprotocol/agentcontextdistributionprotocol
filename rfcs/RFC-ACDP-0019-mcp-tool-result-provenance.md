@@ -53,6 +53,11 @@ The proxy is the **producer** (NORMATIVE). It signs every body with the operator
 
 The proxy relays every MCP message unchanged except that it adds one `_meta` key to `tools/call` results (§6). It publishes one body per call it relays, for every tool it is configured to cover (the RECOMMENDED default is every tool).
 
+(NORMATIVE) Edge cases of "a call it relays":
+- A `tools/call` answered with a JSON-RPC **error** (no `CallToolResult`) produces no body. The proxy relays the error unchanged and adds nothing to it.
+- A `tools/call` result that arrives before the upstream `initialize` result is a publish failure (§7), handled under the tool's fail-open or fail-closed policy. The record cannot be built without the negotiated protocol version and `serverInfo`.
+- In a JSON-RPC batch, each element is handled as if it had arrived alone. The proxy MAY hold the batch until every element's publish has settled.
+
 Upstream servers that sign their own results, and proxies that carry such a signature alongside their own, are out of scope for this version. A proxy MUST NOT claim a result was upstream-signed.
 
 ---
@@ -81,8 +86,8 @@ The record is closed: `schemas/json/acdp-mcp-tool-result.schema.json` (`$defs/re
 | Member | Required | Value |
 |---|---|---|
 | `record_version` | Yes | `acdp-mcp-tool-result/1` |
-| `mcp_protocol_version` | Yes | The MCP protocol revision negotiated with the upstream server at `initialize` (e.g. `2025-06-18`). |
-| `server.name` | Yes | `serverInfo.name` from the upstream `initialize` result. |
+| `mcp_protocol_version` | Yes | The MCP protocol revision negotiated with the upstream server at `initialize` (e.g. `2025-06-18`), or `unknown` if the server reported none. |
+| `server.name` | Yes | `serverInfo.name` from the upstream `initialize` result, or `unknown` if the server reported none. |
 | `server.version` | No | `serverInfo.version`, when the server reported one. |
 | `server.transport` | Yes | `stdio`, `streamable-http` or `sse`. |
 | `server.endpoint_hash` | Yes | H(JCS(endpoint descriptor)), unsalted (below). |
@@ -96,11 +101,13 @@ The record is closed: `schemas/json/acdp-mcp-tool-result.schema.json` (`$defs/re
 | `started_at` | Yes | When the proxy forwarded the request upstream, canonical millisecond RFC 3339 UTC (`.000Z` form). |
 | `completed_at` | Yes | When the proxy received the result, same form. |
 
+**Length limits (NORMATIVE).** `server.name`, `server.version` and `mcp_protocol_version` longer than their schema limits are truncated to the limit, counted in Unicode scalar values. These fields describe the server; truncating them loses detail but does not misidentify anything, because `endpoint_hash` identifies the server. `tool` is never truncated, because a truncated tool name could name a different tool. A call whose tool name exceeds the limit is a publish failure (§7).
+
 **Endpoint descriptor.** For `stdio`, the object `{"command": <executable>, "args": [<arguments>]}`. For the HTTP transports, `{"url": <url>}` where `<url>` is the server URL with userinfo, query and fragment removed. Environment variables and HTTP headers are never part of it (NORMATIVE). An operator whose launch arguments contain a credential MUST remove it from `args` (or replace it with a fixed placeholder) before hashing. The hash is unsalted on purpose: the same server yields the same `endpoint_hash` in every body, so consumers can recognise it.
 
 ### 4.3 Call hashes and the salt (NORMATIVE)
 
-For each of the arguments, the hashed result and the request `id`, the proxy computes:
+For each of the arguments, the hashed result and the request `id`, the proxy computes the following. The **arguments** are `params.arguments`, or `{}` when the request omits it (the MCP default); the hash is computed over the value the server acted on, never over an absent member.
 
 - **salted**: H(`salt` ‖ JCS(value)), where `salt` is 32 bytes and ‖ is byte concatenation;
 - **unsalted**: H(JCS(value)).
@@ -143,7 +150,7 @@ By default the result is not published: `data_refs` is `[]` and `embedded` is `f
 An operator MAY allowlist individual tools for embedding. For an allowlisted tool:
 
 - `data_refs` is exactly one DataRef `{"type": "primary_result", "format": "json", "embedded": {"encoding": "json", "content": <hashed result>}}` (RFC-ACDP-0002 §6.3), within the 64 KB embedded cap;
-- or, when the operator configured an external location and the hashed result exceeds the cap, one location DataRef whose `content_hash` is H(JCS(hashed result));
+- or, when the operator configured an external location and the hashed result exceeds the cap, one location DataRef `{"type": "primary_result", "format": "json", "location": <https URL>, "content_hash": H(JCS(hashed result))}`, with `size_bytes` (the length of those bytes) RECOMMENDED. The proxy MUST write exactly the bytes JCS(hashed result) to that location before it publishes. The URL form is the operator's choice. The location is subject to the RFC-ACDP-0008 §4.9 fetch rules for consumers, so it MUST be a public `https` URL;
 - `embedded` is `true`. If neither form fits, the proxy publishes the record unembedded and salted.
 
 ---
@@ -163,9 +170,9 @@ After the registry's publish response, the proxy adds one key to the result's `_
 }
 ```
 
-- The key `io.acdp/provenance` follows MCP's `_meta` key-naming rule (a reverse-DNS prefix, then `/`). Its value is closed: `acdp-mcp-tool-result.schema.json#/$defs/provenance`. `ctx_id` and `content_hash` are the publish response's; `registry` is the body's `origin_registry`; `salt` is present exactly when the record is salted.
+- The key `io.acdp/provenance` follows MCP's `_meta` key-naming rule (a reverse-DNS prefix, then `/`). Its value is closed: `acdp-mcp-tool-result.schema.json#/$defs/provenance`. `ctx_id` is the publish response's. `content_hash` is that of the body the proxy published (the RFC-ACDP-0003 publish response does not echo it; the registry receipt binds it when present). `registry` is the `ctx_id`'s authority, which RFC-ACDP-0002 §3.1 makes equal to the body's `origin_registry`. A `ctx_id` is matched by the full RFC-ACDP-0001 §5.4 grammar, including its hostname length limits; the schema pattern is necessary, not sufficient. `salt` is present exactly when the record is salted.
 - The proxy MUST NOT change `content`, `structuredContent` or `isError`, and MUST keep every other `_meta` key unchanged.
-- If the upstream result already carries `io.acdp/provenance`, the proxy MUST leave that value unchanged and MUST NOT add its own. It still publishes its record.
+- If the upstream result already carries `io.acdp/provenance`, the proxy MUST leave that value unchanged and MUST NOT add its own. It still publishes its record. Under fail-closed (§7), the withheld result carries the proxy's failure value instead, because the upstream result, `_meta` included, is not returned.
 - The proxy MUST NOT return a `ctx_id` before it has received the publish response carrying it. It MAY forward the request upstream and prepare the body concurrently, but the client sees the result only once the publish has succeeded or failed (§7).
 
 ---
@@ -177,7 +184,7 @@ The publish request carries `Idempotency-Key: acdp-mcp-<hex of content_hash>` (t
 When publishing fails after the proxy's retries, or does not finish within its publish timeout:
 
 - **Fail-open (the default).** The proxy returns the result unchanged, with `io.acdp/provenance` set to `{"failed": true, "error": <code>}`. `error` is the registry's `error.code` when the registry answered with an ACDP error, and is absent otherwise (unreachable, timeout).
-- **Fail-closed (per tool, configured by the operator).** The proxy withholds the result. It returns a `CallToolResult` with `isError: true`, one text content item saying that provenance publishing failed, and the same `io.acdp/provenance` failure value. This is the one case where the proxy does not relay the upstream content; it is what the operator asked for.
+- **Fail-closed (per tool, configured by the operator).** The proxy withholds the result. It returns a `CallToolResult` with `isError: true`, one text content item saying that provenance publishing failed, and the same `io.acdp/provenance` failure value. This is the one case where the proxy does not relay the upstream content; it is what the operator asked for. The wording of the text item is implementation-defined; it SHOULD name the tool.
 
 A failed publish never produces a link.
 
@@ -195,7 +202,7 @@ Environment variables, HTTP headers, URL userinfo, query strings and fragments n
 
 ### 8.3 Visibility
 
-A proxy SHOULD publish with `visibility: private`, or `restricted` with an `audience`, when the registry supports it. Even salted, a public record discloses that the operator called this tool on this server at this time. `public` is appropriate when the operator wants that fact discoverable.
+A proxy SHOULD publish with `visibility: private`, or `restricted` with an `audience`, when the registry supports it. Even salted, a public record discloses that the operator called this tool on this server at this time. `public` is appropriate when the operator wants that fact discoverable. (NORMATIVE) Capabilities do not advertise which visibilities a registry accepts, so the operator configures the visibility, and the proxy publishes with exactly that value. If the registry rejects it, that is a publish failure (§7). The proxy MUST NOT fall back to a wider visibility on its own.
 
 ### 8.4 Replay and freshness
 
