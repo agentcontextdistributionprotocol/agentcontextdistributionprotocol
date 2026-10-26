@@ -1,0 +1,18 @@
+{
+  "request_version": "acdp-key-attestation-request/1",
+  "controller": "did:web:agents.example.com:ci",
+  "identity": {
+    "type": "oidc",
+    "issuer": "https://token.actions.githubusercontent.com",
+    "subject": "repo:example/pipeline:ref:refs/heads/main",
+    "proof": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3Rva2VuLmFjdGlvbnMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIn0.SIGNATURE-PLACEHOLDER"
+  },
+  "algorithm": "ed25519",
+  "public_key_jwk": {
+    "crv": "Ed25519",
+    "kty": "OKP",
+    "x": "NLTZBDFWy23PC-sKKUm3VZyUDSvLbb6MU6mzAnjjp0Y"
+  },
+  "pop": "wMkYJkQDDFPR4aWUtKkLNebbLaQxt+Qo0EYCYip81vBZVxCNcnoT2EVsOO2VaR9P9Wc4IJr4RG0dL9ImVJF8Ag==",
+  "requested_ttl_seconds": 600
+}

@@ -2,9 +2,24 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Draft: RFC-ACDP-0021 Keyless Signing — 2026-10-26
+
+**No existing body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. The `signature` object, the RFC-ACDP-0001 §5.7 exclusion set and the RFC-ACDP-0010 §6 fingerprint encoding are unchanged, and no wire error code was added.** RFC-ACDP-0021 lets a workload sign with a short-lived key instead of a long-lived DID-document key.
+- **Attestation:** `POST /key-attestations` takes an OIDC ID token or SPIFFE JWT-SVID (the RFC-AITP-0002 identity descriptor), an ephemeral public key and a proof of possession. The token's `aud` must be the registry DID, and the token is single use. The registry checks that the controller's `did:web` document lists the identity in its `AcdpKeylessSigning` service. It then publishes a public, receipted, logged `acdp:key-attestation` body valid for at most an hour.
+- **Keyless bodies:** a new optional producer-signed field, `key_attestation`, names the attestation. The key id is `<controller>#acdp-kl-<fingerprint hex>`, and the `acdp-kl-` fragment is reserved: a DID document must not carry it. Implementations without RFC-ACDP-0021 therefore fail closed at key resolution.
+- **Verification:** the attester's receipt places the signature inside the window. Outcomes map onto the existing three key statuses, and revocations keep the two existing trust classes. A retracted attestation acts as a registry-attested revocation. Consumers accept attesters only by configuration or by an RFC-ACDP-0020 `trusted` evaluation.
+- **Supersession:** a keyless successor needs the same identity or an org-wide one. This is *(0.5.0)*-marked on RFC-ACDP-0003 §3.1, with `not_authorized` / `keyless_identity_mismatch`.
+- **Errors:** refusals use existing codes with new `details.reason` tokens (`registries/error-codes.md`).
+- **Wiring:**
+  - profiles `acdp-registry-keyless` and `acdp-consumer-keyless`, and the optional `keyless` capabilities member;
+  - schemas `acdp-key-attestation` and `acdp-key-attestation-request`;
+  - fixtures `kl-001` (executed: golden attestation, keyless body, proof of possession, 21-case status table, 9-case supersession table) and behavioral `kl-002`..`009`;
+  - pointers in RFC-ACDP-0001 §9.1 and RFC-ACDP-0017 §7.6;
+  - a Sigstore Fulcio binding reserved in RFC-ACDP-0009 §2.13.
 ## v0.5.0 — Clarifications & tooling: OpenTelemetry attribute registry — 2026-10-26
 
 **No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed.** New registry [`registries/otel-attributes.md`](registries/otel-attributes.md) gives span attribute names in the `acdp.` namespace, all Provisional. Producer side: `acdp.ctx_id`, `acdp.lineage_id`, `acdp.version`, `acdp.content_hash`, `acdp.producer`, `acdp.registry`, `acdp.type`, `acdp.derived_from` and `acdp.publish.error`. Consumer side: `acdp.input.ctx_ids`, `acdp.input.verified`, `acdp.input.chain_verdict`, `acdp.input.chain_verdict_as_of` and `acdp.input.verdict_digest`. The attributes are telemetry only: they are never evidence, and never carry body content or the RFC-ACDP-0019 salt. Agent-SDK hooks and the MCP proxy use these names.
+||||||| parent of 5dba497 (spec(0021): keyless signing with registry-attested ephemeral keys (Draft, 0.5.0))
 
 ## v0.5.0 — Clarifications: RFC-ACDP-0020 second-implementation rulings — 2026-10-26
 

@@ -1,0 +1,21 @@
+{
+  "attestation_version": "acdp-key-attestation/1",
+  "controller": "did:web:agents.example.com:ci",
+  "identity": {
+    "type": "oidc",
+    "issuer": "https://token.actions.githubusercontent.com",
+    "subject": "repo:example/pipeline:ref:refs/heads/main"
+  },
+  "org_wide": false,
+  "key_id": "did:web:agents.example.com:ci#acdp-kl-f7b7676c94df7e8fd9998e38f9fff04d8588b00d1801764e3f1877a3feae4477",
+  "algorithm": "ed25519",
+  "public_key_jwk": {
+    "crv": "Ed25519",
+    "kty": "OKP",
+    "x": "NLTZBDFWy23PC-sKKUm3VZyUDSvLbb6MU6mzAnjjp0Y"
+  },
+  "key_fingerprint": "sha256:f7b7676c94df7e8fd9998e38f9fff04d8588b00d1801764e3f1877a3feae4477",
+  "not_before": "2026-10-26T09:00:00.000Z",
+  "not_after": "2026-10-26T09:10:00.000Z",
+  "token_hash": "sha256:a375998360472ac02ef1181e21466c19ef2db143cb204c0bc120acc17d991009"
+}

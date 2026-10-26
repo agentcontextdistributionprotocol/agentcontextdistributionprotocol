@@ -1,0 +1,60 @@
+{
+  "id": "kl-008",
+  "description": "(0.5.0, Draft) Keyless nodes in RFC-ACDP-0017 chain verification (RFC-ACDP-0021 §10). Behavioral; verdict schema, stage vocabularies and chain KATs are unchanged.",
+  "tags": [
+    "keyless",
+    "consumer",
+    "chain",
+    "offline",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-keyless"
+  ],
+  "input": {
+    "golden": "kl-001 (controller did:web:agents.example.com:ci, identity oidc https://token.actions.githubusercontent.com / repo:example/pipeline:ref:refs/heads/main, registry did:web:registry.example.com)"
+  },
+  "scenarios": [
+    {
+      "name": "A — bundle carries the attestation context with receipt; controller snapshot lists the identity",
+      "expected": {
+        "key": "current",
+        "basis": "registry"
+      }
+    },
+    {
+      "name": "B — chosen snapshot does not list the identity",
+      "expected": {
+        "key": "historical_receipt_attested",
+        "basis": "registry"
+      }
+    },
+    {
+      "name": "C — attestation context absent from the bundle",
+      "expected": {
+        "latest": {
+          "key": "unresolvable"
+        },
+        "as_of": {
+          "key": "unknown",
+          "reason": "no_evidence_at_as_of"
+        }
+      }
+    },
+    {
+      "name": "D — admitted registry retraction of the attestation, accepted_at <= T",
+      "expected": {
+        "key_revocation": "revoked",
+        "key": "revoked"
+      }
+    },
+    {
+      "name": "E — verifier without RFC-ACDP-0021 support",
+      "expected": {
+        "key": "unresolvable",
+        "signature": "unresolvable",
+        "behavior": "The node is refused, never ok."
+      }
+    }
+  ]
+}

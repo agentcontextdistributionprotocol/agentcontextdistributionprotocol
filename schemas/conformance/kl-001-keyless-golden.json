@@ -1,0 +1,807 @@
+{
+  "id": "kl-001",
+  "description": "(0.5.0, Draft) Keyless-signing known answers (RFC-ACDP-0021), executed by scripts/conformance-runner.py. Vector 1 is a golden acdp:key-attestation body minted by the registry: JCS canonical form, content_hash and the registry's Ed25519 signature over the ASCII content_hash, plus the §5.3 metadata rules (fingerprint, JWK thumbprint, key_id fragment, window bound). Vector 2 is a keyless-signed body that references it: content_hash and the ephemeral key's signature. Vector 3 is the §5.1 proof of possession and token hash. Vector 4 is the §8 key-status table and vector 5 the §7 supersession table; the runner replays both algorithms. Test keypairs MUST NOT be used in production.",
+  "tags": [
+    "keyless",
+    "registry",
+    "consumer",
+    "0.5.0",
+    "known-answer",
+    "golden"
+  ],
+  "applies_to_profiles": [
+    "acdp-registry-keyless",
+    "acdp-consumer-keyless"
+  ],
+  "registry_test_keypair": {
+    "warning": "TEST ONLY. The private seed is publicly known (the rcpt-001 registry test seed). Never use it for real attestations.",
+    "algorithm": "ed25519",
+    "private_seed_hex": "1111111111111111111111111111111111111111111111111111111111111111",
+    "public_key_hex": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737",
+    "key_id": "did:web:registry.example.com#receipt-key-1"
+  },
+  "ephemeral_test_keypair": {
+    "warning": "TEST ONLY. The private seed is publicly known. Never use it for real signatures.",
+    "algorithm": "ed25519",
+    "private_seed_hex": "6666666666666666666666666666666666666666666666666666666666666666",
+    "public_key_hex": "34b4d9043156cb6dcf0beb0a2949b7559c940d2bcb6dbe8c53a9b30278e3a746",
+    "public_key_jwk": {
+      "crv": "Ed25519",
+      "kty": "OKP",
+      "x": "NLTZBDFWy23PC-sKKUm3VZyUDSvLbb6MU6mzAnjjp0Y"
+    },
+    "jwk_thumbprint": "Gec-ct57Gwltw072qu-aed20Ju93h-m8Qv8yjNgvMOM",
+    "key_fingerprint": "sha256:f7b7676c94df7e8fd9998e38f9fff04d8588b00d1801764e3f1877a3feae4477"
+  },
+  "notes": "The token is a placeholder string, not a JWT: kl-001 pins only token_hash. Token verification itself (issuer keys, aud, exp, cnf.jkt) follows AITP RFC-AITP-0002 §2 and is exercised behaviorally by kl-002. Timestamps are canonical, so the runner compares them as strings.",
+  "vectors": [
+    {
+      "name": "1 attestation body",
+      "kind": "attestation",
+      "ctx_id": "acdp://registry.example.com/7a1c0f3e-5b2d-4c8e-9f10-2b3c4d5e6f70",
+      "producer_content": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:web:registry.example.com",
+        "contributors": [],
+        "title": "Key attestation",
+        "summary": "registry.example.com attests an ephemeral ed25519 key for did:web:agents.example.com:ci (RFC-ACDP-0021).",
+        "type": "acdp:key-attestation",
+        "data_refs": [],
+        "derived_from": [],
+        "visibility": "public",
+        "metadata": {
+          "attestation_version": "acdp-key-attestation/1",
+          "controller": "did:web:agents.example.com:ci",
+          "identity": {
+            "type": "oidc",
+            "issuer": "https://token.actions.githubusercontent.com",
+            "subject": "repo:example/pipeline:ref:refs/heads/main"
+          },
+          "org_wide": false,
+          "key_id": "did:web:agents.example.com:ci#acdp-kl-f7b7676c94df7e8fd9998e38f9fff04d8588b00d1801764e3f1877a3feae4477",
+          "algorithm": "ed25519",
+          "public_key_jwk": {
+            "crv": "Ed25519",
+            "kty": "OKP",
+            "x": "NLTZBDFWy23PC-sKKUm3VZyUDSvLbb6MU6mzAnjjp0Y"
+          },
+          "key_fingerprint": "sha256:f7b7676c94df7e8fd9998e38f9fff04d8588b00d1801764e3f1877a3feae4477",
+          "not_before": "2026-10-26T09:00:00.000Z",
+          "not_after": "2026-10-26T09:10:00.000Z",
+          "token_hash": "sha256:a375998360472ac02ef1181e21466c19ef2db143cb204c0bc120acc17d991009"
+        },
+        "schema_uri": "https://schemas.acdp.io/v0.1.0/acdp-key-attestation.schema.json",
+        "acdp_version": "0.5.0"
+      },
+      "expected": {
+        "canonical_form": "{\"acdp_version\":\"0.5.0\",\"agent_id\":\"did:web:registry.example.com\",\"contributors\":[],\"data_refs\":[],\"derived_from\":[],\"metadata\":{\"algorithm\":\"ed25519\",\"attestation_version\":\"acdp-key-attestation/1\",\"controller\":\"did:web:agents.example.com:ci\",\"identity\":{\"issuer\":\"https://token.actions.githubusercontent.com\",\"subject\":\"repo:example/pipeline:ref:refs/heads/main\",\"type\":\"oidc\"},\"key_fingerprint\":\"sha256:f7b7676c94df7e8fd9998e38f9fff04d8588b00d1801764e3f1877a3feae4477\",\"key_id\":\"did:web:agents.example.com:ci#acdp-kl-f7b7676c94df7e8fd9998e38f9fff04d8588b00d1801764e3f1877a3feae4477\",\"not_after\":\"2026-10-26T09:10:00.000Z\",\"not_before\":\"2026-10-26T09:00:00.000Z\",\"org_wide\":false,\"public_key_jwk\":{\"crv\":\"Ed25519\",\"kty\":\"OKP\",\"x\":\"NLTZBDFWy23PC-sKKUm3VZyUDSvLbb6MU6mzAnjjp0Y\"},\"token_hash\":\"sha256:a375998360472ac02ef1181e21466c19ef2db143cb204c0bc120acc17d991009\"},\"schema_uri\":\"https://schemas.acdp.io/v0.1.0/acdp-key-attestation.schema.json\",\"summary\":\"registry.example.com attests an ephemeral ed25519 key for did:web:agents.example.com:ci (RFC-ACDP-0021).\",\"supersedes\":null,\"title\":\"Key attestation\",\"type\":\"acdp:key-attestation\",\"version\":1,\"visibility\":\"public\"}",
+        "content_hash": "sha256:fbed72af712224f7d9d6e05a896d3a364c6c709247548a3de059198473399672",
+        "signature_value_hex": "031f3973097dd05f6c50b0439b782e73c16ec2a960e01e9e266bdd68dbf1dc7334f3d5309cd9b1f5e0e8e8873e6f7c6351ff2b7d87d56e3293a1159e31348302",
+        "signature_value_base64": "Ax85cwl90F9sULBDm3guc8Fuwqlg4B6eJmvdaNvx3HM089UwnNmx9eDo6Ic+b3xjUf8rfYfVbjKToRWeMTSDAg==",
+        "jwk_thumbprint": "Gec-ct57Gwltw072qu-aed20Ju93h-m8Qv8yjNgvMOM"
+      }
+    },
+    {
+      "name": "2 keyless-signed body",
+      "kind": "keyless_body",
+      "producer_content": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:web:agents.example.com:ci",
+        "contributors": [],
+        "title": "Nightly evaluation summary",
+        "summary": "Evaluation results published by the CI workflow with a keyless key (RFC-ACDP-0021).",
+        "type": "analysis",
+        "data_refs": [],
+        "derived_from": [],
+        "visibility": "public",
+        "key_attestation": {
+          "ctx_id": "acdp://registry.example.com/7a1c0f3e-5b2d-4c8e-9f10-2b3c4d5e6f70",
+          "content_hash": "sha256:fbed72af712224f7d9d6e05a896d3a364c6c709247548a3de059198473399672"
+        },
+        "acdp_version": "0.5.0"
+      },
+      "expected": {
+        "canonical_form": "{\"acdp_version\":\"0.5.0\",\"agent_id\":\"did:web:agents.example.com:ci\",\"contributors\":[],\"data_refs\":[],\"derived_from\":[],\"key_attestation\":{\"content_hash\":\"sha256:fbed72af712224f7d9d6e05a896d3a364c6c709247548a3de059198473399672\",\"ctx_id\":\"acdp://registry.example.com/7a1c0f3e-5b2d-4c8e-9f10-2b3c4d5e6f70\"},\"summary\":\"Evaluation results published by the CI workflow with a keyless key (RFC-ACDP-0021).\",\"supersedes\":null,\"title\":\"Nightly evaluation summary\",\"type\":\"analysis\",\"version\":1,\"visibility\":\"public\"}",
+        "content_hash": "sha256:4f41313eb0cce8e836fce522d74116e85c3ec57d942acdbd69d15302b8338123",
+        "signature": {
+          "algorithm": "ed25519",
+          "key_id": "did:web:agents.example.com:ci#acdp-kl-f7b7676c94df7e8fd9998e38f9fff04d8588b00d1801764e3f1877a3feae4477",
+          "value": "X740awlIg3YKai4X7pP15WT5tahGs0JV5j9Bt23OFBIC0585vpY56IbrZTzFm+uoHnNg+QOQTzmUbloI6KddBQ=="
+        }
+      }
+    },
+    {
+      "name": "3 proof of possession",
+      "kind": "pop",
+      "token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.TEST-ONLY-NOT-A-REAL-TOKEN.kl-001",
+      "pop_preimage": {
+        "pop_version": "acdp-key-attestation-pop/1",
+        "controller": "did:web:agents.example.com:ci",
+        "registry_did": "did:web:registry.example.com",
+        "token_hash": "sha256:a375998360472ac02ef1181e21466c19ef2db143cb204c0bc120acc17d991009",
+        "key_fingerprint": "sha256:f7b7676c94df7e8fd9998e38f9fff04d8588b00d1801764e3f1877a3feae4477"
+      },
+      "expected": {
+        "token_hash": "sha256:a375998360472ac02ef1181e21466c19ef2db143cb204c0bc120acc17d991009",
+        "pop_canonical_form": "{\"controller\":\"did:web:agents.example.com:ci\",\"key_fingerprint\":\"sha256:f7b7676c94df7e8fd9998e38f9fff04d8588b00d1801764e3f1877a3feae4477\",\"pop_version\":\"acdp-key-attestation-pop/1\",\"registry_did\":\"did:web:registry.example.com\",\"token_hash\":\"sha256:a375998360472ac02ef1181e21466c19ef2db143cb204c0bc120acc17d991009\"}",
+        "pop_value_base64": "wMkYJkQDDFPR4aWUtKkLNebbLaQxt+Qo0EYCYip81vBZVxCNcnoT2EVsOO2VaR9P9Wc4IJr4RG0dL9ImVJF8Ag=="
+      }
+    },
+    {
+      "name": "4 key-status table",
+      "kind": "classification",
+      "window": {
+        "not_before": "2026-10-26T09:00:00.000Z",
+        "not_after": "2026-10-26T09:10:00.000Z"
+      },
+      "cases": [
+        {
+          "name": "01 current",
+          "attestation": {
+            "valid": true,
+            "registry_accepted": true,
+            "bindings_ok": true,
+            "retracted": false
+          },
+          "receipt": {
+            "verified": true,
+            "registry_is_attester": true,
+            "fingerprint_matches": true,
+            "created_at": "2026-10-26T09:05:00.000Z"
+          },
+          "signature_valid": true,
+          "identity_listed_now": true,
+          "revocations": [],
+          "expected": {
+            "status": "currently_authorized"
+          }
+        },
+        {
+          "name": "02 identity removed since: historical",
+          "attestation": {
+            "valid": true,
+            "registry_accepted": true,
+            "bindings_ok": true,
+            "retracted": false
+          },
+          "receipt": {
+            "verified": true,
+            "registry_is_attester": true,
+            "fingerprint_matches": true,
+            "created_at": "2026-10-26T09:05:00.000Z"
+          },
+          "signature_valid": true,
+          "identity_listed_now": false,
+          "revocations": [],
+          "expected": {
+            "status": "historically_authorized"
+          }
+        },
+        {
+          "name": "03 revoked, receipt before T",
+          "attestation": {
+            "valid": true,
+            "registry_accepted": true,
+            "bindings_ok": true,
+            "retracted": false
+          },
+          "receipt": {
+            "verified": true,
+            "registry_is_attester": true,
+            "fingerprint_matches": true,
+            "created_at": "2026-10-26T09:05:00.000Z"
+          },
+          "signature_valid": true,
+          "identity_listed_now": true,
+          "revocations": [
+            {
+              "compromised_since": "2026-10-26T09:06:00.000Z"
+            }
+          ],
+          "expected": {
+            "status": "historically_authorized_pre_compromise"
+          }
+        },
+        {
+          "name": "04 revoked, receipt at T",
+          "attestation": {
+            "valid": true,
+            "registry_accepted": true,
+            "bindings_ok": true,
+            "retracted": false
+          },
+          "receipt": {
+            "verified": true,
+            "registry_is_attester": true,
+            "fingerprint_matches": true,
+            "created_at": "2026-10-26T09:05:00.000Z"
+          },
+          "signature_valid": true,
+          "identity_listed_now": true,
+          "revocations": [
+            {
+              "compromised_since": "2026-10-26T09:05:00.000Z"
+            }
+          ],
+          "expected": {
+            "status": "refused",
+            "reason": "revoked"
+          }
+        },
+        {
+          "name": "05 earliest T governs",
+          "attestation": {
+            "valid": true,
+            "registry_accepted": true,
+            "bindings_ok": true,
+            "retracted": false
+          },
+          "receipt": {
+            "verified": true,
+            "registry_is_attester": true,
+            "fingerprint_matches": true,
+            "created_at": "2026-10-26T09:05:00.000Z"
+          },
+          "signature_valid": true,
+          "identity_listed_now": true,
+          "revocations": [
+            {
+              "compromised_since": "2026-10-26T09:07:00.000Z"
+            },
+            {
+              "compromised_since": "2026-10-26T09:04:00.000Z"
+            }
+          ],
+          "expected": {
+            "status": "refused",
+            "reason": "revoked"
+          }
+        },
+        {
+          "name": "06 receipt at not_before is inside",
+          "attestation": {
+            "valid": true,
+            "registry_accepted": true,
+            "bindings_ok": true,
+            "retracted": false
+          },
+          "receipt": {
+            "verified": true,
+            "registry_is_attester": true,
+            "fingerprint_matches": true,
+            "created_at": "2026-10-26T09:00:00.000Z"
+          },
+          "signature_valid": true,
+          "identity_listed_now": true,
+          "revocations": [],
+          "expected": {
+            "status": "currently_authorized"
+          }
+        },
+        {
+          "name": "07 receipt at not_after is outside",
+          "attestation": {
+            "valid": true,
+            "registry_accepted": true,
+            "bindings_ok": true,
+            "retracted": false
+          },
+          "receipt": {
+            "verified": true,
+            "registry_is_attester": true,
+            "fingerprint_matches": true,
+            "created_at": "2026-10-26T09:10:00.000Z"
+          },
+          "signature_valid": true,
+          "identity_listed_now": true,
+          "revocations": [],
+          "expected": {
+            "status": "refused",
+            "reason": "outside_attestation_window"
+          }
+        },
+        {
+          "name": "08 receipt before not_before",
+          "attestation": {
+            "valid": true,
+            "registry_accepted": true,
+            "bindings_ok": true,
+            "retracted": false
+          },
+          "receipt": {
+            "verified": true,
+            "registry_is_attester": true,
+            "fingerprint_matches": true,
+            "created_at": "2026-10-26T08:59:59.999Z"
+          },
+          "signature_valid": true,
+          "identity_listed_now": true,
+          "revocations": [],
+          "expected": {
+            "status": "refused",
+            "reason": "outside_attestation_window"
+          }
+        },
+        {
+          "name": "09 no receipt",
+          "attestation": {
+            "valid": true,
+            "registry_accepted": true,
+            "bindings_ok": true,
+            "retracted": false
+          },
+          "receipt": null,
+          "signature_valid": true,
+          "identity_listed_now": true,
+          "revocations": [],
+          "expected": {
+            "status": "refused",
+            "reason": "unplaceable"
+          }
+        },
+        {
+          "name": "10 receipt from another registry",
+          "attestation": {
+            "valid": true,
+            "registry_accepted": true,
+            "bindings_ok": true,
+            "retracted": false
+          },
+          "receipt": {
+            "verified": true,
+            "registry_is_attester": false,
+            "fingerprint_matches": true,
+            "created_at": "2026-10-26T09:05:00.000Z"
+          },
+          "signature_valid": true,
+          "identity_listed_now": true,
+          "revocations": [],
+          "expected": {
+            "status": "refused",
+            "reason": "unplaceable"
+          }
+        },
+        {
+          "name": "11 receipt names another key",
+          "attestation": {
+            "valid": true,
+            "registry_accepted": true,
+            "bindings_ok": true,
+            "retracted": false
+          },
+          "receipt": {
+            "verified": true,
+            "registry_is_attester": true,
+            "fingerprint_matches": false,
+            "created_at": "2026-10-26T09:05:00.000Z"
+          },
+          "signature_valid": true,
+          "identity_listed_now": true,
+          "revocations": [],
+          "expected": {
+            "status": "refused",
+            "reason": "unplaceable"
+          }
+        },
+        {
+          "name": "12 receipt fails verification",
+          "attestation": {
+            "valid": true,
+            "registry_accepted": true,
+            "bindings_ok": true,
+            "retracted": false
+          },
+          "receipt": {
+            "verified": false,
+            "registry_is_attester": true,
+            "fingerprint_matches": true,
+            "created_at": "2026-10-26T09:05:00.000Z"
+          },
+          "signature_valid": true,
+          "identity_listed_now": true,
+          "revocations": [],
+          "expected": {
+            "status": "refused",
+            "reason": "unplaceable"
+          }
+        },
+        {
+          "name": "13 attestation invalid",
+          "attestation": {
+            "valid": false,
+            "registry_accepted": true,
+            "bindings_ok": true,
+            "retracted": false
+          },
+          "receipt": {
+            "verified": true,
+            "registry_is_attester": true,
+            "fingerprint_matches": true,
+            "created_at": "2026-10-26T09:05:00.000Z"
+          },
+          "signature_valid": true,
+          "identity_listed_now": true,
+          "revocations": [],
+          "expected": {
+            "status": "refused",
+            "reason": "attestation_invalid"
+          }
+        },
+        {
+          "name": "14 attester not accepted",
+          "attestation": {
+            "valid": true,
+            "registry_accepted": false,
+            "bindings_ok": true,
+            "retracted": false
+          },
+          "receipt": {
+            "verified": true,
+            "registry_is_attester": true,
+            "fingerprint_matches": true,
+            "created_at": "2026-10-26T09:05:00.000Z"
+          },
+          "signature_valid": true,
+          "identity_listed_now": true,
+          "revocations": [],
+          "expected": {
+            "status": "refused",
+            "reason": "untrusted_attester"
+          }
+        },
+        {
+          "name": "15 binding mismatch",
+          "attestation": {
+            "valid": true,
+            "registry_accepted": true,
+            "bindings_ok": false,
+            "retracted": false
+          },
+          "receipt": {
+            "verified": true,
+            "registry_is_attester": true,
+            "fingerprint_matches": true,
+            "created_at": "2026-10-26T09:05:00.000Z"
+          },
+          "signature_valid": true,
+          "identity_listed_now": true,
+          "revocations": [],
+          "expected": {
+            "status": "refused",
+            "reason": "attestation_mismatch"
+          }
+        },
+        {
+          "name": "16 attestation withdrawn",
+          "attestation": {
+            "valid": true,
+            "registry_accepted": true,
+            "bindings_ok": true,
+            "retracted": true
+          },
+          "receipt": {
+            "verified": true,
+            "registry_is_attester": true,
+            "fingerprint_matches": true,
+            "created_at": "2026-10-26T09:05:00.000Z"
+          },
+          "signature_valid": true,
+          "identity_listed_now": true,
+          "revocations": [],
+          "expected": {
+            "status": "refused",
+            "reason": "attestation_withdrawn"
+          }
+        },
+        {
+          "name": "17 withdrawn beats pre-compromise",
+          "attestation": {
+            "valid": true,
+            "registry_accepted": true,
+            "bindings_ok": true,
+            "retracted": true
+          },
+          "receipt": {
+            "verified": true,
+            "registry_is_attester": true,
+            "fingerprint_matches": true,
+            "created_at": "2026-10-26T09:05:00.000Z"
+          },
+          "signature_valid": true,
+          "identity_listed_now": true,
+          "revocations": [
+            {
+              "compromised_since": "2026-10-26T09:09:00.000Z"
+            }
+          ],
+          "expected": {
+            "status": "refused",
+            "reason": "attestation_withdrawn"
+          }
+        },
+        {
+          "name": "18 bad signature",
+          "attestation": {
+            "valid": true,
+            "registry_accepted": true,
+            "bindings_ok": true,
+            "retracted": false
+          },
+          "receipt": {
+            "verified": true,
+            "registry_is_attester": true,
+            "fingerprint_matches": true,
+            "created_at": "2026-10-26T09:05:00.000Z"
+          },
+          "signature_valid": false,
+          "identity_listed_now": true,
+          "revocations": [],
+          "expected": {
+            "status": "refused",
+            "reason": "invalid_signature"
+          }
+        },
+        {
+          "name": "19 controller document unreachable",
+          "attestation": {
+            "valid": true,
+            "registry_accepted": true,
+            "bindings_ok": true,
+            "retracted": false
+          },
+          "receipt": {
+            "verified": true,
+            "registry_is_attester": true,
+            "fingerprint_matches": true,
+            "created_at": "2026-10-26T09:05:00.000Z"
+          },
+          "signature_valid": true,
+          "identity_listed_now": "unreachable",
+          "revocations": [],
+          "expected": {
+            "status": "refused",
+            "reason": "controller_unreachable"
+          }
+        },
+        {
+          "name": "20 pre-compromise needs no current document",
+          "attestation": {
+            "valid": true,
+            "registry_accepted": true,
+            "bindings_ok": true,
+            "retracted": false
+          },
+          "receipt": {
+            "verified": true,
+            "registry_is_attester": true,
+            "fingerprint_matches": true,
+            "created_at": "2026-10-26T09:05:00.000Z"
+          },
+          "signature_valid": true,
+          "identity_listed_now": "unreachable",
+          "revocations": [
+            {
+              "compromised_since": "2026-10-26T09:06:00.000Z"
+            }
+          ],
+          "expected": {
+            "status": "historically_authorized_pre_compromise"
+          }
+        },
+        {
+          "name": "21 untrusted attester checked before placement",
+          "attestation": {
+            "valid": true,
+            "registry_accepted": false,
+            "bindings_ok": true,
+            "retracted": false
+          },
+          "receipt": null,
+          "signature_valid": true,
+          "identity_listed_now": true,
+          "revocations": [],
+          "expected": {
+            "status": "refused",
+            "reason": "untrusted_attester"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5 supersession table",
+      "kind": "supersession",
+      "cases": [
+        {
+          "name": "S1 same identity",
+          "predecessor": {
+            "kind": "keyless",
+            "identity": {
+              "type": "oidc",
+              "issuer": "https://token.actions.githubusercontent.com",
+              "subject": "repo:example/pipeline:ref:refs/heads/main"
+            },
+            "org_wide": false
+          },
+          "successor": {
+            "kind": "keyless",
+            "identity": {
+              "type": "oidc",
+              "issuer": "https://token.actions.githubusercontent.com",
+              "subject": "repo:example/pipeline:ref:refs/heads/main"
+            },
+            "org_wide": false
+          },
+          "expected": {
+            "result": "allowed"
+          }
+        },
+        {
+          "name": "S2 different subject",
+          "predecessor": {
+            "kind": "keyless",
+            "identity": {
+              "type": "oidc",
+              "issuer": "https://token.actions.githubusercontent.com",
+              "subject": "repo:example/pipeline:ref:refs/heads/main"
+            },
+            "org_wide": false
+          },
+          "successor": {
+            "kind": "keyless",
+            "identity": {
+              "type": "oidc",
+              "issuer": "https://token.actions.githubusercontent.com",
+              "subject": "repo:example/other:ref:refs/heads/main"
+            },
+            "org_wide": false
+          },
+          "expected": {
+            "result": "refused",
+            "reason": "keyless_identity_mismatch"
+          }
+        },
+        {
+          "name": "S3 different identity type",
+          "predecessor": {
+            "kind": "keyless",
+            "identity": {
+              "type": "spiffe",
+              "subject": "spiffe://prod.example.com/ns/agents/sa/publisher"
+            },
+            "org_wide": false
+          },
+          "successor": {
+            "kind": "keyless",
+            "identity": {
+              "type": "oidc",
+              "issuer": "https://token.actions.githubusercontent.com",
+              "subject": "repo:example/pipeline:ref:refs/heads/main"
+            },
+            "org_wide": false
+          },
+          "expected": {
+            "result": "refused",
+            "reason": "keyless_identity_mismatch"
+          }
+        },
+        {
+          "name": "S4 org-wide successor",
+          "predecessor": {
+            "kind": "keyless",
+            "identity": {
+              "type": "oidc",
+              "issuer": "https://token.actions.githubusercontent.com",
+              "subject": "repo:example/pipeline:ref:refs/heads/main"
+            },
+            "org_wide": false
+          },
+          "successor": {
+            "kind": "keyless",
+            "identity": {
+              "type": "oidc",
+              "issuer": "https://token.actions.githubusercontent.com",
+              "subject": "repo:example/other:ref:refs/heads/main"
+            },
+            "org_wide": true
+          },
+          "expected": {
+            "result": "allowed"
+          }
+        },
+        {
+          "name": "S5 controller key supersedes keyless",
+          "predecessor": {
+            "kind": "keyless",
+            "identity": {
+              "type": "oidc",
+              "issuer": "https://token.actions.githubusercontent.com",
+              "subject": "repo:example/pipeline:ref:refs/heads/main"
+            },
+            "org_wide": false
+          },
+          "successor": {
+            "kind": "controller"
+          },
+          "expected": {
+            "result": "allowed"
+          }
+        },
+        {
+          "name": "S6 keyless supersedes controller-signed",
+          "predecessor": {
+            "kind": "controller"
+          },
+          "successor": {
+            "kind": "keyless",
+            "identity": {
+              "type": "oidc",
+              "issuer": "https://token.actions.githubusercontent.com",
+              "subject": "repo:example/pipeline:ref:refs/heads/main"
+            },
+            "org_wide": false
+          },
+          "expected": {
+            "result": "refused",
+            "reason": "keyless_identity_mismatch"
+          }
+        },
+        {
+          "name": "S7 org-wide supersedes controller-signed",
+          "predecessor": {
+            "kind": "controller"
+          },
+          "successor": {
+            "kind": "keyless",
+            "identity": {
+              "type": "spiffe",
+              "subject": "spiffe://prod.example.com/ns/agents/sa/publisher"
+            },
+            "org_wide": true
+          },
+          "expected": {
+            "result": "allowed"
+          }
+        },
+        {
+          "name": "S8 org-wide predecessor does not widen the successor",
+          "predecessor": {
+            "kind": "keyless",
+            "identity": {
+              "type": "oidc",
+              "issuer": "https://token.actions.githubusercontent.com",
+              "subject": "repo:example/pipeline:ref:refs/heads/main"
+            },
+            "org_wide": true
+          },
+          "successor": {
+            "kind": "keyless",
+            "identity": {
+              "type": "oidc",
+              "issuer": "https://token.actions.githubusercontent.com",
+              "subject": "repo:example/other:ref:refs/heads/main"
+            },
+            "org_wide": false
+          },
+          "expected": {
+            "result": "refused",
+            "reason": "keyless_identity_mismatch"
+          }
+        },
+        {
+          "name": "S9 controller supersedes controller",
+          "predecessor": {
+            "kind": "controller"
+          },
+          "successor": {
+            "kind": "controller"
+          },
+          "expected": {
+            "result": "allowed"
+          }
+        }
+      ]
+    }
+  ]
+}

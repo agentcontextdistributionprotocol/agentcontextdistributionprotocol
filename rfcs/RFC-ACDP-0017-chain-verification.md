@@ -286,6 +286,8 @@ A receipt that fails is **treated as absent everywhere downstream**, as RFC-ACDP
 - **`revoked`** and **`unplaceable`**: these come from `key_revocation` (§7.9). A revocation verdict overrides this stage.
 - **`unresolvable`**: no snapshot, or a snapshot that cannot be evaluated under §5.11 or lacks the signing key, in the **latest** pass. The as-of-pass equivalent is `unknown`, with reason `no_evidence_at_as_of`. (NORMATIVE) That mapping covers only outcomes that depend on which snapshot is selected. A key that cannot resolve whatever the evidence is `unresolvable` in **both** passes, with `signature: unresolvable`. Examples are a `key_id` whose DID ≠ `body.agent_id`, an empty fragment, or a `did:key` that does not decode. Such a body is not a schema failure, so the bundle is not rejected (§4.1).
 
+*(0.5.0, Draft)* A keyless-signed node (RFC-ACDP-0021) is evaluated with these same values: the bundle carries its `acdp:key-attestation` in `contexts`, and the stage is `current` or `historical_receipt_attested` with basis `registry` per [RFC-ACDP-0021 §10](RFC-ACDP-0021-keyless-signing.md#10-chain-verification-normative). A verifier without RFC-ACDP-0021 support reaches `unresolvable`. This note adds no stage value and changes no Final rule.
+
 ### 7.7 `log`
 
 `absent`, `included`, `cannot_verify`, or `invalid`, under RFC-ACDP-0012 §9 and §9.1. An `included` value carries `tree_size`, `checkpoint_time` and `witnesses`. `witnesses` is the count of distinct trusted witness DIDs whose cosignatures verify under RFC-ACDP-0015 §8, over a verified checkpoint. A witness is trusted when it is pinned (§6.3).

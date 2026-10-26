@@ -420,6 +420,22 @@ All eight are behavioral, except `rec-007`'s executed HMAC known-answer vector `
 
 `trust-001` is executed by `scripts/conformance-runner.py` (golden body as `sig-003`, plus the reference RFC-ACDP-0020 §6.2 evaluator over the table); `trust-002`..`007` are behavioral. All seven are REQUIRED for the OPTIONAL `acdp-consumer-trust-list` profile.
 
+### Keyless signing (RFC-ACDP-0021, 0.5.0, Draft)
+
+| Fixture | Scenario | Expected |
+|---|---|---|
+| `kl-001` | Golden `acdp:key-attestation` body, a keyless-signed body, the proof of possession, a 21-case key-status table and a 9-case supersession table (executed) | JCS, `content_hash`, registry and ephemeral-key Ed25519 signatures, JWK thumbprint, fingerprint and `acdp-kl-` key_id reproduce; each case gives the pinned status or decision |
+| `kl-002` | `POST /key-attestations` validation | `aud`, issuer, identity listing, `cnf.jkt`, replay, proof of possession, `did:key` controller, X509-SVID; existing codes with `details.reason` |
+| `kl-003` | Publishing a keyless-signed body | inside the window accepted; outside, missing, foreign, mismatched or withdrawn attestation refused; non-keyless registries refuse at key resolution |
+| `kl-004` | Same-identity supersession | another identity is `not_authorized` / `keyless_identity_mismatch`; same identity, org-wide identity and DID-document key allowed |
+| `kl-005` | Consumer verification and key status | current, historical, pre-compromise, fail closed; only the two existing revocation trust classes |
+| `kl-006` | Which attesters a consumer accepts | none by default; local configuration or a `trusted` trust-list evaluation |
+| `kl-007` | Implementations without RFC-ACDP-0021 fail closed | `key_resolution_failed`; the `acdp-kl-` fragment is reserved |
+| `kl-008` | Keyless nodes in chain verification | existing key-stage values, basis `registry`; non-implementing verifiers refuse the node |
+| `kl-009` | Identity-level revocation and attestation listing | removed identities get no new attestations; per-fingerprint RFC-ACDP-0014 revocation for compromise |
+
+`kl-001` is executed by `scripts/conformance-runner.py` (the two bodies as `sig-001`, plus reference RFC-ACDP-0021 §8.2 and §7 evaluators over the tables); `kl-002`..`009` are behavioral. The registry-side fixtures are REQUIRED for `acdp-registry-keyless` and the consumer-side ones for `acdp-consumer-keyless`, both OPTIONAL.
+
 ### did:key resolution (RFC-ACDP-0001 §5.4 / §5.11.1, 0.2.0)
 
 | ID | Description | Outcome |

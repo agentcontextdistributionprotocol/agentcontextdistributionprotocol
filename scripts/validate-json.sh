@@ -30,6 +30,8 @@ SUBSCRIPTION_SCHEMA="${SCHEMA_DIR}/acdp-subscription.schema.json"
 MCP_TOOL_RESULT_SCHEMA="${SCHEMA_DIR}/acdp-mcp-tool-result.schema.json"
 TRUST_LIST_SCHEMA="${SCHEMA_DIR}/acdp-trust-list.schema.json"
 TRUST_REPORT_SCHEMA="${SCHEMA_DIR}/acdp-trust-report.schema.json"
+KEY_ATTESTATION_SCHEMA="${SCHEMA_DIR}/acdp-key-attestation.schema.json"
+KEY_ATTESTATION_REQUEST_SCHEMA="${SCHEMA_DIR}/acdp-key-attestation-request.schema.json"
 CONTEXT_SCHEMA="${SCHEMA_DIR}/acdp-context.schema.json"
 PUBLISH_REQUEST_SCHEMA="${SCHEMA_DIR}/acdp-publish-request.schema.json"
 PUBLISH_RESPONSE_SCHEMA="${SCHEMA_DIR}/acdp-publish-response.schema.json"
@@ -138,6 +140,8 @@ validate_dir_against "${EXAMPLES_DIR}/subscription"     "${SUBSCRIPTION_SCHEMA}"
 validate_dir_against "${EXAMPLES_DIR}/mcp-tool-result"  "${MCP_TOOL_RESULT_SCHEMA}"      "MCP tool-result record"
 validate_dir_against "${EXAMPLES_DIR}/trust-list"       "${TRUST_LIST_SCHEMA}"           "trust list"
 validate_dir_against "${EXAMPLES_DIR}/trust-report"     "${TRUST_REPORT_SCHEMA}"         "trust report"
+validate_dir_against "${EXAMPLES_DIR}/key-attestation"  "${KEY_ATTESTATION_SCHEMA}"      "key attestation"
+validate_dir_against "${EXAMPLES_DIR}/key-attestation-request" "${KEY_ATTESTATION_REQUEST_SCHEMA}" "key-attestation request"
 
 # Meta-shape illustrative examples — JSON syntax check only (not single payloads)
 syntax_check_dir() {

@@ -78,6 +78,32 @@
       "contains": { "const": "acdp-registry-core" },
       "description": "Profile(s) this implementation claims conformance to. MUST contain 'acdp-registry-core' for any registry. Current registered profiles are 'acdp-registry-core', 'acdp-registry-discovery', 'acdp-registry-federated', 'acdp-consumer' (see RFC-ACDP-0001 §9.1). Open vocabulary so future profiles (e.g. 'acdp-registry-receipts') can be added without a schema bump."
     },
+    "keyless": {
+      "type": "object",
+      "description": "(0.5.0, Draft) Keyless-signing configuration (RFC-ACDP-0021 §13). MUST be present when profiles contains 'acdp-registry-keyless', and absent otherwise.",
+      "required": ["accepted_oidc_issuers", "accepted_spiffe_trust_domains", "max_attestation_ttl_seconds"],
+      "properties": {
+        "accepted_oidc_issuers": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^https://[^\\s#?]+$", "maxLength": 512 },
+          "uniqueItems": true,
+          "description": "OIDC issuer URIs whose tokens this registry verifies, compared byte for byte with the token's iss."
+        },
+        "accepted_spiffe_trust_domains": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z0-9._-]+$", "maxLength": 255 },
+          "uniqueItems": true,
+          "description": "SPIFFE trust domains whose JWT-SVIDs this registry verifies."
+        },
+        "max_attestation_ttl_seconds": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 3600,
+          "description": "Longest attestation window this registry mints."
+        }
+      },
+      "additionalProperties": false
+    },
     "limits": {
       "type": "object",
       "required": ["max_payload_bytes", "max_embedded_bytes"],

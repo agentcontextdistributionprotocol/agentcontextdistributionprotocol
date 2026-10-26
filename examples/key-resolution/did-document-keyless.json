@@ -1,0 +1,42 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://w3id.org/security/suites/jws-2020/v1"
+  ],
+  "id": "did:web:agents.example.com:ci",
+  "verificationMethod": [
+    {
+      "id": "did:web:agents.example.com:ci#key-1",
+      "type": "JsonWebKey2020",
+      "controller": "did:web:agents.example.com:ci",
+      "publicKeyJwk": {
+        "kty": "OKP",
+        "crv": "Ed25519",
+        "x": "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo"
+      }
+    }
+  ],
+  "assertionMethod": [
+    "did:web:agents.example.com:ci#key-1"
+  ],
+  "service": [
+    {
+      "id": "did:web:agents.example.com:ci#acdp-keyless",
+      "type": "AcdpKeylessSigning",
+      "serviceEndpoint": {
+        "identities": [
+          {
+            "type": "oidc",
+            "issuer": "https://token.actions.githubusercontent.com",
+            "subject": "repo:example/pipeline:ref:refs/heads/main"
+          },
+          {
+            "type": "spiffe",
+            "subject": "spiffe://prod.example.com/ns/agents/sa/publisher",
+            "org_wide": true
+          }
+        ]
+      }
+    }
+  ]
+}

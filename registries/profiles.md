@@ -19,6 +19,8 @@ The schema vocabulary is open. Profiles are normatively defined in [RFC-ACDP-000
 | `acdp-consumer` | For consumer deployments | RFC-ACDP-0001 §9.1 | — |
 | `acdp-consumer-chain` | Optional (0.5.0, Draft) | RFC-ACDP-0017 §13, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
 | `acdp-consumer-trust-list` | Optional (0.5.0, Draft) | RFC-ACDP-0020 §9, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
+| `acdp-registry-keyless` | Optional (0.5.0, Draft) | RFC-ACDP-0021 §13, RFC-ACDP-0001 §9.1 | `acdp-registry-receipts`, `acdp-registry-transparency-log`, `acdp-registry-lifecycle` |
+| `acdp-consumer-keyless` | Optional (0.5.0, Draft) | RFC-ACDP-0021 §13, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
 
 (RFC-ACDP-0014, the producer key-revocation signal, deliberately defines **no profile**: a revocation is an ordinary context carried by existing surfaces; its registry-side validation binds to `acdp_version` ≥ 0.3.0 and its consumer semantics to `acdp-consumer` — RFC-ACDP-0014 §10.)
 
@@ -190,6 +192,27 @@ For consumers that decide which registries to rely on from signed trust lists (R
 |---|---|
 | **Behavioral requirements** | Issuer pins come only from configuration (§5.1). Verify each `acdp:trust-list` version (§5.2); persist the per-pin floor, refuse rollback, detect equivocation, honor only issuer-signed retractions without reverting (§5.3); select the version for T with no fallback (§5.4); evaluate bodies per §6.2 and rely only on `trusted`; union across pins, no transitive inclusion. Applied to RFC-ACDP-0017 chains, emit `acdp-trust-report/1` (§8) |
 | **Conformance fixtures** | `trust-001` (executed: golden trust-list body and §6.2 evaluation table), `trust-002` (list validation), `trust-003` (rollback, equivocation), `trust-004` (retraction), `trust-005` (as-of selection), `trust-006` (several pins), `trust-007` (bundle carriage, trust report) |
+| **`not_implemented` permitted on** | Not applicable — a consumer runs no registry endpoints |
+
+### `acdp-registry-keyless` *(0.5.0)*
+
+For registries that attest short-lived producer keys for OIDC and SPIFFE workload identities (RFC-ACDP-0021). Draft and OPTIONAL. Prerequisites `acdp-registry-receipts`, `acdp-registry-transparency-log` and `acdp-registry-lifecycle`.
+
+| | Required (in addition to the prerequisites) |
+|---|---|
+| **Endpoints** | `POST /key-attestations`, `GET /key-attestations` |
+| **Behavioral requirements** | Verify the token (accepted issuer or trust domain, `aud` = this registry's DID, optional `cnf.jkt`, single use) and the proof of possession; authorize the identity against the controller's `AcdpKeylessSigning` service; mint a public `acdp:key-attestation` body under the registry DID with a receipt and log leaf (§5). Accept an `acdp-kl-` signature only inside its attestation window and refuse withdrawn attestations (§6.3). Enforce same-identity supersession (§7). Advertise the `keyless` capabilities member (§13) |
+| **Conformance fixtures** | `kl-001` (executed), `kl-002` (attestation request), `kl-003` (keyless publish), `kl-004` (supersession), `kl-007` (fail closed), `kl-009` (identity revocation, listing) |
+| **`not_implemented` permitted on** | None of the profile's endpoints. Registries not advertising it answer both with `not_implemented` (501) |
+
+### `acdp-consumer-keyless` *(0.5.0)*
+
+For consumers that verify keyless-signed bodies (RFC-ACDP-0021). Draft and OPTIONAL. Prerequisite `acdp-consumer`.
+
+| | Required (in addition to `acdp-consumer`) |
+|---|---|
+| **Behavioral requirements** | Resolve `acdp-kl-` keys only through §8; accept attesters only from configuration or RFC-ACDP-0020 evaluation (default none, §11); place the signature with the attester's receipt inside the window; report one of the three existing key statuses or fail closed, keeping the two existing revocation trust classes (§8.2, §9); evaluate keyless chain nodes with the existing key-stage values (§10) |
+| **Conformance fixtures** | `kl-001` (executed), `kl-005` (verification and key status), `kl-006` (attester trust), `kl-007` (fail closed), `kl-008` (chain verification), `kl-009` (identity revocation) |
 | **`not_implemented` permitted on** | Not applicable — a consumer runs no registry endpoints |
 
 ## Adding a profile

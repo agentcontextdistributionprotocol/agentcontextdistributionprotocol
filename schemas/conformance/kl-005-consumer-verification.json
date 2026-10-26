@@ -1,0 +1,68 @@
+{
+  "id": "kl-005",
+  "description": "(0.5.0, Draft) Consumer verification and the key-status mapping (RFC-ACDP-0021 §8). Behavioral, consumer-side; the decision table is the executed kl-001 vector 4.",
+  "tags": [
+    "keyless",
+    "consumer",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-keyless"
+  ],
+  "input": {
+    "golden": "kl-001 (controller did:web:agents.example.com:ci, identity oidc https://token.actions.githubusercontent.com / repo:example/pipeline:ref:refs/heads/main, registry did:web:registry.example.com)"
+  },
+  "scenarios": [
+    {
+      "name": "A — all checks pass, identity still listed",
+      "expected": {
+        "key_status": "currently authorized"
+      }
+    },
+    {
+      "name": "B — identity removed from the DID document after signing",
+      "expected": {
+        "key_status": "historically authorized (receipt-attested)"
+      }
+    },
+    {
+      "name": "C — RFC-ACDP-0014 revocation of the attested fingerprint, receipt before T",
+      "expected": {
+        "key_status": "historically authorized (pre-compromise, receipt-attested)",
+        "behavior": "Trust class producer-signed when signed by a DID-document key of the controller; registry-attested when the registry published it. No other class."
+      }
+    },
+    {
+      "name": "D — same, receipt at or after T",
+      "expected": {
+        "key_status": "fail closed"
+      }
+    },
+    {
+      "name": "E — attestation retracted by its registry",
+      "expected": {
+        "key_status": "fail closed",
+        "behavior": "Applied as a registry-attested revocation of the attested fingerprint with T = not_before."
+      }
+    },
+    {
+      "name": "F — no receipt, or a receipt from a registry other than the attester",
+      "expected": {
+        "key_status": "fail closed",
+        "behavior": "unplaceable"
+      }
+    },
+    {
+      "name": "G — a producer-signed revocation signed by a non-org-wide keyless key",
+      "expected": {
+        "behavior": "Not a revocation that speaks for the controller (§9): it does not change the verdict and MAY be reported as a hint."
+      }
+    },
+    {
+      "name": "H — revocation discovery",
+      "expected": {
+        "behavior": "RFC-ACDP-0014 §8 discovery runs for agent_id = the controller exactly as for any did:web producer; no per-identity or per-key discovery is introduced."
+      }
+    }
+  ]
+}
