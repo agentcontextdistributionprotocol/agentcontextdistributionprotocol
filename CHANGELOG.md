@@ -7,7 +7,7 @@ All notable changes to ACDP are recorded here. ACDP follows the versioning polic
 **Draft-line clarifications. No existing body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. No known-answer vector or digest changed.** These are rulings on twelve questions from the second implementation (acdp-verifier-py), checked against acdp-rs.
 
 - **RFC-ACDP-0017.**
-  - RFC-ACDP-0010 §8 step 5 is deferred when the key stage is `unknown` (§7.5).
+  - RFC-ACDP-0010 §8 step 5 is deferred whenever the key stage locates no producer key (`unknown` or `unresolvable`). The receipt's `key_fingerprint` still places revocations (§7.5). The `unresolvable` case was found by the cross-implementation byte check.
   - A key that cannot resolve whatever the evidence is `unresolvable` in both passes, with `signature: unresolvable` (§7.6).
   - The signature is verified over the claimed `content_hash` (§7.4).
   - The retraction `evidence_time` is the last admitted event's verified `accepted_at` (§7.8).
