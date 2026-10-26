@@ -1,0 +1,63 @@
+{
+  "id": "trust-007",
+  "description": "(0.5.0, Draft) Carriage in an evidence bundle and the acdp-trust-report/1 object (RFC-ACDP-0020 §7, §8). Behavioral, consumer-side.",
+  "tags": [
+    "trust-list",
+    "consumer",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-trust-list"
+  ],
+  "input": {
+    "golden": "trust-001 vector 1 (tenant-acme.production, serial 7, issuer = the sig-003 did:key)",
+    "pin": {
+      "issuer": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
+      "list_id": "tenant-acme.production"
+    }
+  },
+  "scenarios": [
+    {
+      "name": "A — verdict unchanged",
+      "expected": {
+        "behavior": "Adding the golden trust-list body (and its lifecycle_events and receipt) to evidence.contexts of the chain-001 bundle leaves every member of the chain-001 verdict except evidence_digest and verdict_digest unchanged, and as_of_digest unchanged."
+      }
+    },
+    {
+      "name": "B — offline evaluation",
+      "expected": {
+        "behavior": "The verifier reads the trust list from the same bundle and reports per-node outcomes with no network access."
+      }
+    },
+    {
+      "name": "C — receipt gating",
+      "expected": {
+        "behavior": "A node whose RFC-ACDP-0017 registry_receipt stage for the pass is not ok is evaluated with no receipt, so an entry with receipt_key_fingerprints gives untrusted_registry (receipt_required)."
+      }
+    },
+    {
+      "name": "D — determinism",
+      "expected": {
+        "behavior": "Two implementations emit byte-identical JCS for the report; report_digest is SHA-256 of the JCS of the report without report_digest (examples/trust-report/golden-trust-report.json)."
+      }
+    },
+    {
+      "name": "E — binding",
+      "expected": {
+        "behavior": "verdict_digest equals the verdict's own; a report with a different verdict_digest is not applied to that verdict."
+      }
+    },
+    {
+      "name": "F — two passes",
+      "expected": {
+        "behavior": "Verifying both passes yields two reports, pass latest and pass as_of, each with its own evaluated_at."
+      }
+    },
+    {
+      "name": "G — no taint",
+      "expected": {
+        "behavior": "An untrusted node changes no chain-verdict member; refusing the chain on it is the consumer's policy."
+      }
+    }
+  ]
+}

@@ -18,6 +18,7 @@ The schema vocabulary is open. Profiles are normatively defined in [RFC-ACDP-000
 | `acdp-log-witness` | Optional (0.4.0, Final) | RFC-ACDP-0015 §10, RFC-ACDP-0001 §9.1 | — (a witness is not a registry), `acdp_version` ≥ 0.4.0 |
 | `acdp-consumer` | For consumer deployments | RFC-ACDP-0001 §9.1 | — |
 | `acdp-consumer-chain` | Optional (0.5.0, Draft) | RFC-ACDP-0017 §13, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
+| `acdp-consumer-trust-list` | Optional (0.5.0, Draft) | RFC-ACDP-0020 §9, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
 
 (RFC-ACDP-0014, the producer key-revocation signal, deliberately defines **no profile**: a revocation is an ordinary context carried by existing surfaces; its registry-side validation binds to `acdp_version` ≥ 0.3.0 and its consumer semantics to `acdp-consumer` — RFC-ACDP-0014 §10.)
 
@@ -181,6 +182,15 @@ For an **MCP signing proxy** that sits in front of an MCP server and publishes e
 | **Behavioral requirements** | One `acdp:mcp-tool-result` body per observed `tools/call`, signed with the proxy operator's own key. Salted `arguments_hash`/`result_hash`/`request_id_hash` (fresh 32-byte salt per body) whenever the result is not embedded; unsalted `endpoint_hash` that never covers env, headers or credentials. `derived_from` from the ctx_ids in the arguments, in JCS preorder. Embedding only for allowlisted tools. Never alter `content`/`structuredContent`/`isError`; return the link in `_meta` `io.acdp/provenance` only after the publish response. Fail open by default, fail closed per tool; retries reuse `Idempotency-Key: acdp-mcp-<content_hash hex>` |
 | **Conformance fixtures** | `mcp-001` (known answer, executed), `mcp-002` (no result mutation), `mcp-003` (`_meta` link shape), `mcp-004` (publish failure), `mcp-005` (`derived_from` extraction), `mcp-006` (embedding allowlist), `mcp-007` (salting) |
 | **`not_implemented` permitted on** | Not applicable — a proxy runs no registry endpoints |
+### `acdp-consumer-trust-list` *(0.5.0)*
+
+For consumers that decide which registries to rely on from signed trust lists (RFC-ACDP-0020). Draft and OPTIONAL. Prerequisite `acdp-consumer`.
+
+| | Required (in addition to `acdp-consumer`) |
+|---|---|
+| **Behavioral requirements** | Issuer pins come only from configuration (§5.1). Verify each `acdp:trust-list` version (§5.2); persist the per-pin floor, refuse rollback, detect equivocation, honor only issuer-signed retractions without reverting (§5.3); select the version for T with no fallback (§5.4); evaluate bodies per §6.2 and rely only on `trusted`; union across pins, no transitive inclusion. Applied to RFC-ACDP-0017 chains, emit `acdp-trust-report/1` (§8) |
+| **Conformance fixtures** | `trust-001` (executed: golden trust-list body and §6.2 evaluation table), `trust-002` (list validation), `trust-003` (rollback, equivocation), `trust-004` (retraction), `trust-005` (as-of selection), `trust-006` (several pins), `trust-007` (bundle carriage, trust report) |
+| **`not_implemented` permitted on** | Not applicable — a consumer runs no registry endpoints |
 
 ## Adding a profile
 Open a PR adding a row above and amending RFC-ACDP-0001 §9.1 with the profile's MUST list. Profiles MUST:

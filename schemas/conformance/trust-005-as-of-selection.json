@@ -1,0 +1,63 @@
+{
+  "id": "trust-005",
+  "description": "(0.5.0, Draft) Selecting the version for T in an as-of pass (RFC-ACDP-0020 §5.4). Behavioral, consumer-side.",
+  "tags": [
+    "trust-list",
+    "consumer",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-trust-list"
+  ],
+  "input": {
+    "golden": "trust-001 vector 1 (tenant-acme.production, serial 7, issuer = the sig-003 did:key)",
+    "pin": {
+      "issuer": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
+      "list_id": "tenant-acme.production"
+    }
+  },
+  "scenarios": [
+    {
+      "name": "A — version issued by T",
+      "expected": {
+        "behavior": "Serials 6 (issued 2026-09-01) and 7 (issued 2026-10-26) known; T = 2026-10-10: serial 6 is selected even though the consumer's present floor is 7."
+      }
+    },
+    {
+      "name": "B — later version",
+      "expected": {
+        "behavior": "T = 2026-11-01: serial 7 is selected."
+      }
+    },
+    {
+      "name": "C — no version by T",
+      "expected": {
+        "behavior": "T = 2026-08-01, before serial 6 was issued: list_invalid (no_valid_version)."
+      }
+    },
+    {
+      "name": "D — retraction after T",
+      "expected": {
+        "behavior": "Serial 6 retracted by the issuer with an event admitted after T = 2026-10-10: the retraction does not count as of T; serial 6 is used."
+      }
+    },
+    {
+      "name": "E — retraction before T",
+      "expected": {
+        "behavior": "Serial 6 retracted with an event admitted before T: list_invalid (retracted) as of T; serial 5 is not used."
+      }
+    },
+    {
+      "name": "F — expired selected version",
+      "expected": {
+        "behavior": "Serial 6's valid_until is 2026-10-05 and T = 2026-10-10 with serial 7 not yet issued: expired (list_window); no fallback to serial 5 whose window covers T."
+      }
+    },
+    {
+      "name": "G — issuer DID document as of T",
+      "expected": {
+        "behavior": "The issuer is did:web and rotated its key on 2026-10-20: serial 6 verifies against the DID document selected as of T per RFC-ACDP-0017 §6.2."
+      }
+    }
+  ]
+}

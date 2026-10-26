@@ -19,6 +19,7 @@ Types in the `acdp:` namespace are defined by an ACDP RFC but use the custom-typ
 | Type | Status | Description | Spec |
 |---|---|---|---|
 | `acdp:mcp-tool-result` | Provisional (0.5.0) | One MCP `tools/call` observed by an MCP signing proxy, which is the producer. `metadata` is an `acdp-mcp-tool-result/1` record: salted hashes of the arguments, result and request id, the upstream server's identity, timing and flags; the result itself only when allowlisted for embedding. | [RFC-ACDP-0019 §4](../rfcs/RFC-ACDP-0019-mcp-tool-result-provenance.md) |
+| `acdp:trust-list` | Provisional (0.5.0) | A registry trust list: `metadata` is an `acdp-trust-list/1` object (issuer-chosen `list_id`, strictly increasing `serial`, `issued_at`, `valid_from`/`valid_until`, and `entries` naming trusted registries with optional receipt-key pins, required profiles, scope and windows). The producer is the issuer; consumers verify it against configured issuer pins. | [RFC-ACDP-0020 §4](../rfcs/RFC-ACDP-0020-registry-trust-lists.md) |
 
 ## Custom-type format
 

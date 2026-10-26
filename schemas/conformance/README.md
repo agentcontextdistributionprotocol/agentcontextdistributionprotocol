@@ -406,6 +406,19 @@ All eight are behavioral, except `rec-007`'s executed HMAC known-answer vector `
 | `mcp-007` | Salting | salted whenever unembedded; fresh per body; `endpoint_hash` unsalted; no secrets |
 
 `mcp-001` is executed by `scripts/conformance-runner.py`; `mcp-002`..`007` are behavioral. All seven are REQUIRED for the OPTIONAL `acdp-producer-mcp-proxy` profile.
+### Registry trust lists (RFC-ACDP-0020, 0.5.0, Draft)
+
+| Fixture | Scenario | Expected |
+|---|---|---|
+| `trust-001` | Golden `acdp:trust-list` body and a 20-case evaluation table (executed) | JCS, `content_hash` and Ed25519 signature reproduce; each case gives the pinned outcome, reason and entry |
+| `trust-002` | List validation: signature, issuer, `list_id`, issuer-key pin, schema, `registry_did`/`origin`, window, revoked issuer key | the version is ignored; the pin is `list_invalid` |
+| `trust-003` | Series state: floor, rollback, equivocation, recovery | below the floor is never used; same serial with different bytes is `equivocation` |
+| `trust-004` | Retraction by the issuer and by the registry | issuer retraction withdraws without reverting; registry retraction is reported only |
+| `trust-005` | As-of selection | version issued by T, as-of retractions and floor, no fallback when the selected version is out of window |
+| `trust-006` | Several pins | union, precedence, tie-break by pin order, no transitive inclusion |
+| `trust-007` | Bundle carriage and `acdp-trust-report/1` | the chain verdict is unchanged except its digests; deterministic report bound to `verdict_digest` |
+
+`trust-001` is executed by `scripts/conformance-runner.py` (golden body as `sig-003`, plus the reference RFC-ACDP-0020 §6.2 evaluator over the table); `trust-002`..`007` are behavioral. All seven are REQUIRED for the OPTIONAL `acdp-consumer-trust-list` profile.
 
 ### did:key resolution (RFC-ACDP-0001 §5.4 / §5.11.1, 0.2.0)
 

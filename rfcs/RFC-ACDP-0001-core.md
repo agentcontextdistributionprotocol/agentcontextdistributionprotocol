@@ -654,6 +654,9 @@ An OPTIONAL consumer profile, prerequisite `acdp-consumer`, for consumers that v
 #### `acdp-registry-changes`, `acdp-registry-events`, `acdp-consumer-recall` *(0.5.0, Draft)*
 
 OPTIONAL retraction-recall profiles (RFC-ACDP-0018 §9). `acdp-registry-changes` (prerequisites `acdp-registry-lifecycle` and `acdp-registry-receipts`) serves `GET /changes`, a sequenced feed of `acdp-change/1` entries, one per reliance-changing change, carrying the existing signed evidence, and passes `rec-001`..`005` and `rec-008`. `acdp-registry-events` (prerequisite `acdp-registry-changes`, the name RFC-ACDP-0009 §2.10 reserved) adds owner-scoped webhook subscriptions whose HMAC-authenticated hints carry no change content, and passes `rec-007`. `acdp-consumer-recall` (prerequisite `acdp-consumer`) verifies every entry before acting on it and passes `rec-006`. Being Draft-line, these entries are not frozen.
+#### `acdp-consumer-trust-list` *(0.5.0, Draft)*
+
+An OPTIONAL consumer profile, prerequisite `acdp-consumer`, for consumers that decide which registries to rely on from signed `acdp:trust-list` bodies (RFC-ACDP-0020). Consumers claiming it take issuer pins only from configuration, verify and select list versions with rollback and equivocation protection (§5), evaluate bodies per §6 and rely only on `trusted`, emit `acdp-trust-report/1` when applying lists to chains (§8), and pass `trust-001..007`. Being Draft-line, this entry is not frozen.
 
 #### `acdp-producer-mcp-proxy` *(0.5.0, Draft)*
 

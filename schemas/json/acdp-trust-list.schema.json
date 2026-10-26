@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.1.0/acdp-trust-list.schema.json",
+  "title": "ACDP Trust List (acdp-trust-list/1)",
+  "description": "(0.5.0, Draft) The metadata of an 'acdp:trust-list' body (RFC-ACDP-0020 §4): the registries an issuer trusts, with optional receipt-key pins, required profiles, scope and validity windows. Closed at every level. Runtime checks not expressible here: valid_from < valid_until, and each entry's registry_did equals 'did:web:' + origin (RFC-ACDP-0020 §5.2).",
+  "type": "object",
+  "required": [
+    "trust_list_version",
+    "list_id",
+    "serial",
+    "issued_at",
+    "valid_from",
+    "valid_until",
+    "entries"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "trust_list_version": {
+      "const": "acdp-trust-list/1"
+    },
+    "list_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+      "description": "Issuer-chosen series name; with the issuer DID it names the series inside the signature (RFC-ACDP-0020 §3)."
+    },
+    "serial": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Strictly increasing within the series; orders versions and defeats rollback (RFC-ACDP-0020 §5.3)."
+    },
+    "issued_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+      "description": "Canonical millisecond RFC 3339 UTC (RFC-ACDP-0001 §5.3)."
+    },
+    "valid_from": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+      "description": "Canonical millisecond RFC 3339 UTC (RFC-ACDP-0001 §5.3)."
+    },
+    "valid_until": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+      "description": "Canonical millisecond RFC 3339 UTC (RFC-ACDP-0001 §5.3)."
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "registry_did",
+          "origin"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "registry_did": {
+            "type": "string",
+            "pattern": "^did:web:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*$",
+            "description": "MUST equal 'did:web:' + origin (RFC-ACDP-0020 §4.2; checked at runtime, §5.2 step 4)."
+          },
+          "origin": {
+            "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/hostname",
+            "description": "Registry authority as bodies name it: lowercase hostname, no port (RFC-ACDP-0020 §4.3)."
+          },
+          "receipt_key_fingerprints": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "minItems": 1,
+            "uniqueItems": true,
+            "maxItems": 16,
+            "description": "Pins the registry's receipt-signing keys (RFC-ACDP-0010 §6 fingerprints). When present, a verified receipt signed by one of them is required (RFC-ACDP-0020 §6.2)."
+          },
+          "required_profiles": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^acdp-[a-z][a-z0-9-]*$",
+              "maxLength": 64
+            },
+            "minItems": 1,
+            "uniqueItems": true,
+            "maxItems": 32,
+            "description": "Profiles the registry must advertise; 'acdp-registry-receipts' also requires a verified receipt (RFC-ACDP-0020 §6.2, §6.3)."
+          },
+          "scope": {
+            "type": "object",
+            "additionalProperties": false,
+            "minProperties": 1,
+            "description": "Constraints on trusted bodies. Every present member must hold; agent_ids and agent_id_prefixes form one constraint (RFC-ACDP-0020 §4.2).",
+            "properties": {
+              "agent_ids": {
+                "type": "array",
+                "items": {
+                  "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did"
+                },
+                "minItems": 1,
+                "uniqueItems": true,
+                "maxItems": 1000
+              },
+              "agent_id_prefixes": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^did:[a-z0-9]+:",
+                  "maxLength": 512
+                },
+                "minItems": 1,
+                "uniqueItems": true,
+                "maxItems": 100
+              },
+              "did_methods": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^did:[a-z0-9]+$"
+                },
+                "minItems": 1,
+                "uniqueItems": true,
+                "maxItems": 16
+              },
+              "types": {
+                "type": "array",
+                "items": {
+                  "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/context_type"
+                },
+                "minItems": 1,
+                "uniqueItems": true,
+                "maxItems": 100
+              }
+            }
+          },
+          "valid_from": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+            "description": "Canonical millisecond RFC 3339 UTC (RFC-ACDP-0001 §5.3)."
+          },
+          "valid_until": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+            "description": "Canonical millisecond RFC 3339 UTC (RFC-ACDP-0001 §5.3)."
+          }
+        }
+      },
+      "maxItems": 1000,
+      "description": "Trusted registries; an empty array trusts nothing."
+    }
+  }
+}

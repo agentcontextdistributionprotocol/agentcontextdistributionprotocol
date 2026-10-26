@@ -1,0 +1,81 @@
+{
+  "id": "trust-002",
+  "description": "(0.5.0, Draft) Verifying one list version (RFC-ACDP-0020 §5.2). Each scenario modifies the golden list body; with no other version at hand the pin contributes list_invalid (reason no_valid_version) and no body evaluated through it is trusted. Behavioral, consumer-side.",
+  "tags": [
+    "trust-list",
+    "consumer",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-trust-list"
+  ],
+  "input": {
+    "golden": "trust-001 vector 1 (tenant-acme.production, serial 7, issuer = the sig-003 did:key)",
+    "pin": {
+      "issuer": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
+      "list_id": "tenant-acme.production"
+    }
+  },
+  "scenarios": [
+    {
+      "name": "A — bad signature",
+      "expected": {
+        "behavior": "One byte of signature.value flipped: the version fails §5.2 step 1 and is ignored."
+      }
+    },
+    {
+      "name": "B — tampered entry",
+      "expected": {
+        "behavior": "An entry's origin changed after signing: content_hash mismatch, version ignored."
+      }
+    },
+    {
+      "name": "C — wrong issuer",
+      "expected": {
+        "behavior": "The same list re-signed by another did:key: agent_id ≠ pin.issuer (step 2), version ignored."
+      }
+    },
+    {
+      "name": "D — wrong list_id",
+      "expected": {
+        "behavior": "metadata.list_id 'tenant-acme.staging' under the same issuer: not this pin's series (step 2)."
+      }
+    },
+    {
+      "name": "E — unpinned issuer key",
+      "expected": {
+        "behavior": "pin.issuer_key_fingerprints names a different key: the verifying key is not in it (step 3), version ignored."
+      }
+    },
+    {
+      "name": "F — schema failure",
+      "expected": {
+        "behavior": "An entry carries an unknown member, or origin 'partner.example.org:8443': schema-invalid (step 4), version ignored."
+      }
+    },
+    {
+      "name": "G — registry_did and origin disagree",
+      "expected": {
+        "behavior": "An entry with registry_did 'did:web:evil.example.com' and origin 'registry.example.com': the whole version is invalid (step 4), not just the entry."
+      }
+    },
+    {
+      "name": "H — inverted window",
+      "expected": {
+        "behavior": "valid_from after valid_until: invalid (step 4)."
+      }
+    },
+    {
+      "name": "I — revoked issuer key",
+      "expected": {
+        "behavior": "A verified RFC-ACDP-0014 revocation of the issuer key with compromised_since before the list's issue: invalid (step 5)."
+      }
+    },
+    {
+      "name": "J — pin from the list",
+      "expected": {
+        "behavior": "A list that names another issuer or list as trusted has no such field to do it with, and a consumer MUST NOT add a pin from any list, registry, capabilities document or bundle (§5.1)."
+      }
+    }
+  ]
+}

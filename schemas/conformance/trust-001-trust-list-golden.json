@@ -1,0 +1,540 @@
+{
+  "id": "trust-001",
+  "description": "(0.5.0, Draft) Registry trust-list known answer (RFC-ACDP-0020 §4–§6), executed by scripts/conformance-runner.py. Vector 1 is a golden acdp:trust-list body issued by the sig-003 did:key test issuer: JCS canonical form, content_hash and the Ed25519 signature over the ASCII content_hash, exactly as sig-003, plus the §4.1 body constraints and the §5.2 step 4 runtime rules. Vector 2 is an evaluation table: each case gives a body's identity fields, an optional verified receipt (its registry_did and the fingerprint of the key that signed it), optional advertised profiles and T, and the RFC-ACDP-0020 §6.2 outcome, reason and deciding entry. Timestamps are canonical, so the runner compares them as strings. Test keypair MUST NOT be used in production.",
+  "tags": [
+    "trust-list",
+    "consumer",
+    "offline",
+    "0.5.0",
+    "known-answer",
+    "golden"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-trust-list"
+  ],
+  "test_keypair": {
+    "warning": "TEST ONLY. The private seed is publicly known (the sig-003 test seed). Never use this keypair for real trust lists.",
+    "algorithm": "ed25519",
+    "private_seed_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+    "public_key_hex": "2152f8d19b791d24453242e15f2eab6cb7cffa7b6a5ed30097960e069881db12",
+    "did_key": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3"
+  },
+  "notes": "receipt_key_fingerprints pins the rcpt-001 registry test key (seed 0x11 x 32, fingerprint sha256:10ba682c8ad13513971e8b56881aab8bd702bb807796eca81932c735a94d6e6d). A5 and B6 use the sig-001 key fingerprint as an unpinned registry key. A8 is defence in depth: schema-valid bodies are already lowercase (§4.3).",
+  "vectors": [
+    {
+      "name": "Golden trust list, tenant acme serial 7",
+      "producer_content": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
+        "contributors": [],
+        "title": "Trust list — tenant acme, production",
+        "summary": "Registries tenant acme relies on in production (RFC-ACDP-0020), serial 7.",
+        "type": "acdp:trust-list",
+        "data_refs": [],
+        "derived_from": [],
+        "visibility": "public",
+        "schema_uri": "https://schemas.acdp.io/v0.1.0/acdp-trust-list.schema.json",
+        "metadata": {
+          "trust_list_version": "acdp-trust-list/1",
+          "list_id": "tenant-acme.production",
+          "serial": 7,
+          "issued_at": "2026-10-26T00:00:00.000Z",
+          "valid_from": "2026-10-01T00:00:00.000Z",
+          "valid_until": "2027-04-01T00:00:00.000Z",
+          "entries": [
+            {
+              "registry_did": "did:web:registry.example.com",
+              "origin": "registry.example.com",
+              "receipt_key_fingerprints": [
+                "sha256:10ba682c8ad13513971e8b56881aab8bd702bb807796eca81932c735a94d6e6d"
+              ],
+              "required_profiles": [
+                "acdp-registry-receipts",
+                "acdp-registry-lifecycle"
+              ]
+            },
+            {
+              "registry_did": "did:web:partner.example.org",
+              "origin": "partner.example.org",
+              "scope": {
+                "agent_id_prefixes": [
+                  "did:web:agents.partner.example.org:"
+                ],
+                "types": [
+                  "analysis",
+                  "data_snapshot"
+                ]
+              },
+              "valid_until": "2026-12-01T00:00:00.000Z"
+            },
+            {
+              "registry_did": "did:web:sandbox.example.net",
+              "origin": "sandbox.example.net",
+              "scope": {
+                "did_methods": [
+                  "did:key"
+                ]
+              },
+              "valid_from": "2026-11-01T00:00:00.000Z"
+            },
+            {
+              "registry_did": "did:web:partner.example.org",
+              "origin": "partner.example.org",
+              "scope": {
+                "agent_ids": [
+                  "did:web:auditor.example.com"
+                ]
+              }
+            }
+          ]
+        },
+        "acdp_version": "0.5.0"
+      },
+      "expected": {
+        "canonical_form": "{\"acdp_version\":\"0.5.0\",\"agent_id\":\"did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3\",\"contributors\":[],\"data_refs\":[],\"derived_from\":[],\"metadata\":{\"entries\":[{\"origin\":\"registry.example.com\",\"receipt_key_fingerprints\":[\"sha256:10ba682c8ad13513971e8b56881aab8bd702bb807796eca81932c735a94d6e6d\"],\"registry_did\":\"did:web:registry.example.com\",\"required_profiles\":[\"acdp-registry-receipts\",\"acdp-registry-lifecycle\"]},{\"origin\":\"partner.example.org\",\"registry_did\":\"did:web:partner.example.org\",\"scope\":{\"agent_id_prefixes\":[\"did:web:agents.partner.example.org:\"],\"types\":[\"analysis\",\"data_snapshot\"]},\"valid_until\":\"2026-12-01T00:00:00.000Z\"},{\"origin\":\"sandbox.example.net\",\"registry_did\":\"did:web:sandbox.example.net\",\"scope\":{\"did_methods\":[\"did:key\"]},\"valid_from\":\"2026-11-01T00:00:00.000Z\"},{\"origin\":\"partner.example.org\",\"registry_did\":\"did:web:partner.example.org\",\"scope\":{\"agent_ids\":[\"did:web:auditor.example.com\"]}}],\"issued_at\":\"2026-10-26T00:00:00.000Z\",\"list_id\":\"tenant-acme.production\",\"serial\":7,\"trust_list_version\":\"acdp-trust-list/1\",\"valid_from\":\"2026-10-01T00:00:00.000Z\",\"valid_until\":\"2027-04-01T00:00:00.000Z\"},\"schema_uri\":\"https://schemas.acdp.io/v0.1.0/acdp-trust-list.schema.json\",\"summary\":\"Registries tenant acme relies on in production (RFC-ACDP-0020), serial 7.\",\"supersedes\":null,\"title\":\"Trust list — tenant acme, production\",\"type\":\"acdp:trust-list\",\"version\":1,\"visibility\":\"public\"}",
+        "content_hash": "sha256:206fe1d0f0c3610e9a7d55638b7baa1883b625c71373b92747f25e07f3678bf3",
+        "signature_input": "sha256:206fe1d0f0c3610e9a7d55638b7baa1883b625c71373b92747f25e07f3678bf3",
+        "signature_value_hex": "1788be3879cbc74944c67af888bddc8e2221fa9f064638c36d57a7221e530961b7101fe23d35b98c97fa7bf777eef9a5fd37927df91b858c975083220e9fb70d",
+        "signature_value_base64": "F4i+OHnLx0lExnr4iL3cjiIh+p8GRjjDbVenIh5TCWG3EB/iPTW5jJf6e/d37vml/TeSffkbhYyXUIMiDp+3DQ==",
+        "publish_request_body": {
+          "version": 1,
+          "supersedes": null,
+          "agent_id": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
+          "contributors": [],
+          "title": "Trust list — tenant acme, production",
+          "summary": "Registries tenant acme relies on in production (RFC-ACDP-0020), serial 7.",
+          "type": "acdp:trust-list",
+          "data_refs": [],
+          "derived_from": [],
+          "visibility": "public",
+          "schema_uri": "https://schemas.acdp.io/v0.1.0/acdp-trust-list.schema.json",
+          "metadata": {
+            "trust_list_version": "acdp-trust-list/1",
+            "list_id": "tenant-acme.production",
+            "serial": 7,
+            "issued_at": "2026-10-26T00:00:00.000Z",
+            "valid_from": "2026-10-01T00:00:00.000Z",
+            "valid_until": "2027-04-01T00:00:00.000Z",
+            "entries": [
+              {
+                "registry_did": "did:web:registry.example.com",
+                "origin": "registry.example.com",
+                "receipt_key_fingerprints": [
+                  "sha256:10ba682c8ad13513971e8b56881aab8bd702bb807796eca81932c735a94d6e6d"
+                ],
+                "required_profiles": [
+                  "acdp-registry-receipts",
+                  "acdp-registry-lifecycle"
+                ]
+              },
+              {
+                "registry_did": "did:web:partner.example.org",
+                "origin": "partner.example.org",
+                "scope": {
+                  "agent_id_prefixes": [
+                    "did:web:agents.partner.example.org:"
+                  ],
+                  "types": [
+                    "analysis",
+                    "data_snapshot"
+                  ]
+                },
+                "valid_until": "2026-12-01T00:00:00.000Z"
+              },
+              {
+                "registry_did": "did:web:sandbox.example.net",
+                "origin": "sandbox.example.net",
+                "scope": {
+                  "did_methods": [
+                    "did:key"
+                  ]
+                },
+                "valid_from": "2026-11-01T00:00:00.000Z"
+              },
+              {
+                "registry_did": "did:web:partner.example.org",
+                "origin": "partner.example.org",
+                "scope": {
+                  "agent_ids": [
+                    "did:web:auditor.example.com"
+                  ]
+                }
+              }
+            ]
+          },
+          "acdp_version": "0.5.0",
+          "content_hash": "sha256:206fe1d0f0c3610e9a7d55638b7baa1883b625c71373b92747f25e07f3678bf3",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3#z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
+            "value": "F4i+OHnLx0lExnr4iL3cjiIh+p8GRjjDbVenIh5TCWG3EB/iPTW5jJf6e/d37vml/TeSffkbhYyXUIMiDp+3DQ=="
+          }
+        }
+      }
+    },
+    {
+      "name": "Evaluation table (§6.2), single pin",
+      "evaluations": [
+        {
+          "name": "A1 pinned receipt, profiles unchecked offline",
+          "body": {
+            "ctx_id": "acdp://registry.example.com/3c9d7a1e-5b2f-4c8d-9e0a-1f2b3c4d5e6f",
+            "origin_registry": "registry.example.com",
+            "agent_id": "did:web:agents.example.com:test-producer",
+            "type": "analysis"
+          },
+          "T": "2026-10-27T00:00:00.000Z",
+          "receipt": {
+            "registry_did": "did:web:registry.example.com",
+            "registry_key_fingerprint": "sha256:10ba682c8ad13513971e8b56881aab8bd702bb807796eca81932c735a94d6e6d"
+          },
+          "expected": {
+            "profiles_checked": false,
+            "outcome": "trusted",
+            "entry_index": 0
+          }
+        },
+        {
+          "name": "A2 capabilities carry both required profiles",
+          "body": {
+            "ctx_id": "acdp://registry.example.com/3c9d7a1e-5b2f-4c8d-9e0a-1f2b3c4d5e6f",
+            "origin_registry": "registry.example.com",
+            "agent_id": "did:web:agents.example.com:test-producer",
+            "type": "analysis"
+          },
+          "T": "2026-10-27T00:00:00.000Z",
+          "receipt": {
+            "registry_did": "did:web:registry.example.com",
+            "registry_key_fingerprint": "sha256:10ba682c8ad13513971e8b56881aab8bd702bb807796eca81932c735a94d6e6d"
+          },
+          "capabilities_profiles": [
+            "acdp-registry-core",
+            "acdp-registry-receipts",
+            "acdp-registry-lifecycle"
+          ],
+          "expected": {
+            "profiles_checked": true,
+            "outcome": "trusted",
+            "entry_index": 0
+          }
+        },
+        {
+          "name": "A3 capabilities lack acdp-registry-lifecycle",
+          "body": {
+            "ctx_id": "acdp://registry.example.com/3c9d7a1e-5b2f-4c8d-9e0a-1f2b3c4d5e6f",
+            "origin_registry": "registry.example.com",
+            "agent_id": "did:web:agents.example.com:test-producer",
+            "type": "analysis"
+          },
+          "T": "2026-10-27T00:00:00.000Z",
+          "receipt": {
+            "registry_did": "did:web:registry.example.com",
+            "registry_key_fingerprint": "sha256:10ba682c8ad13513971e8b56881aab8bd702bb807796eca81932c735a94d6e6d"
+          },
+          "capabilities_profiles": [
+            "acdp-registry-core",
+            "acdp-registry-receipts"
+          ],
+          "expected": {
+            "profiles_checked": true,
+            "outcome": "untrusted_registry",
+            "entry_index": 0,
+            "reason": "profile_missing"
+          }
+        },
+        {
+          "name": "A4 no verified receipt where one is required",
+          "body": {
+            "ctx_id": "acdp://registry.example.com/3c9d7a1e-5b2f-4c8d-9e0a-1f2b3c4d5e6f",
+            "origin_registry": "registry.example.com",
+            "agent_id": "did:web:agents.example.com:test-producer",
+            "type": "analysis"
+          },
+          "T": "2026-10-27T00:00:00.000Z",
+          "expected": {
+            "profiles_checked": false,
+            "outcome": "untrusted_registry",
+            "entry_index": 0,
+            "reason": "receipt_required"
+          }
+        },
+        {
+          "name": "A5 receipt signed by an unpinned key",
+          "body": {
+            "ctx_id": "acdp://registry.example.com/3c9d7a1e-5b2f-4c8d-9e0a-1f2b3c4d5e6f",
+            "origin_registry": "registry.example.com",
+            "agent_id": "did:web:agents.example.com:test-producer",
+            "type": "analysis"
+          },
+          "T": "2026-10-27T00:00:00.000Z",
+          "receipt": {
+            "registry_did": "did:web:registry.example.com",
+            "registry_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070"
+          },
+          "expected": {
+            "profiles_checked": false,
+            "outcome": "untrusted_registry",
+            "entry_index": 0,
+            "reason": "receipt_key_unpinned"
+          }
+        },
+        {
+          "name": "A6 receipt names another registry DID",
+          "body": {
+            "ctx_id": "acdp://registry.example.com/3c9d7a1e-5b2f-4c8d-9e0a-1f2b3c4d5e6f",
+            "origin_registry": "registry.example.com",
+            "agent_id": "did:web:agents.example.com:test-producer",
+            "type": "analysis"
+          },
+          "T": "2026-10-27T00:00:00.000Z",
+          "receipt": {
+            "registry_did": "did:web:other.example.com",
+            "registry_key_fingerprint": "sha256:10ba682c8ad13513971e8b56881aab8bd702bb807796eca81932c735a94d6e6d"
+          },
+          "expected": {
+            "profiles_checked": false,
+            "outcome": "untrusted_registry",
+            "entry_index": 0,
+            "reason": "registry_mismatch"
+          }
+        },
+        {
+          "name": "A7 ctx_id authority differs from origin_registry",
+          "body": {
+            "ctx_id": "acdp://registry.example.com/3c9d7a1e-5b2f-4c8d-9e0a-1f2b3c4d5e6f",
+            "origin_registry": "partner.example.org",
+            "agent_id": "did:web:agents.example.com:test-producer",
+            "type": "analysis"
+          },
+          "T": "2026-10-27T00:00:00.000Z",
+          "receipt": {
+            "registry_did": "did:web:registry.example.com",
+            "registry_key_fingerprint": "sha256:10ba682c8ad13513971e8b56881aab8bd702bb807796eca81932c735a94d6e6d"
+          },
+          "expected": {
+            "profiles_checked": false,
+            "outcome": "untrusted_registry",
+            "reason": "origin_mismatch"
+          }
+        },
+        {
+          "name": "A8 authority compared case-insensitively",
+          "body": {
+            "ctx_id": "acdp://Registry.Example.COM/3c9d7a1e-5b2f-4c8d-9e0a-1f2b3c4d5e6f",
+            "origin_registry": "REGISTRY.EXAMPLE.COM",
+            "agent_id": "did:web:agents.example.com:test-producer",
+            "type": "analysis"
+          },
+          "T": "2026-10-27T00:00:00.000Z",
+          "receipt": {
+            "registry_did": "did:web:registry.example.com",
+            "registry_key_fingerprint": "sha256:10ba682c8ad13513971e8b56881aab8bd702bb807796eca81932c735a94d6e6d"
+          },
+          "expected": {
+            "profiles_checked": false,
+            "outcome": "trusted",
+            "entry_index": 0
+          }
+        },
+        {
+          "name": "B1 partner, in-scope agent and type, receipt optional",
+          "body": {
+            "ctx_id": "acdp://partner.example.org/3c9d7a1e-5b2f-4c8d-9e0a-1f2b3c4d5e6f",
+            "origin_registry": "partner.example.org",
+            "agent_id": "did:web:agents.partner.example.org:analyst",
+            "type": "analysis"
+          },
+          "T": "2026-10-27T00:00:00.000Z",
+          "expected": {
+            "profiles_checked": false,
+            "outcome": "trusted",
+            "entry_index": 1
+          }
+        },
+        {
+          "name": "B2 partner, type outside scope",
+          "body": {
+            "ctx_id": "acdp://partner.example.org/3c9d7a1e-5b2f-4c8d-9e0a-1f2b3c4d5e6f",
+            "origin_registry": "partner.example.org",
+            "agent_id": "did:web:agents.partner.example.org:analyst",
+            "type": "alert"
+          },
+          "T": "2026-10-27T00:00:00.000Z",
+          "expected": {
+            "profiles_checked": false,
+            "outcome": "out_of_scope",
+            "entry_index": 1,
+            "reason": "scope_type"
+          }
+        },
+        {
+          "name": "B3 partner, agent outside both entries",
+          "body": {
+            "ctx_id": "acdp://partner.example.org/3c9d7a1e-5b2f-4c8d-9e0a-1f2b3c4d5e6f",
+            "origin_registry": "partner.example.org",
+            "agent_id": "did:web:evil.example.com",
+            "type": "analysis"
+          },
+          "T": "2026-10-27T00:00:00.000Z",
+          "expected": {
+            "profiles_checked": false,
+            "outcome": "out_of_scope",
+            "entry_index": 1,
+            "reason": "scope_agent"
+          }
+        },
+        {
+          "name": "B4 partner, second entry for the same registry trusts the auditor",
+          "body": {
+            "ctx_id": "acdp://partner.example.org/3c9d7a1e-5b2f-4c8d-9e0a-1f2b3c4d5e6f",
+            "origin_registry": "partner.example.org",
+            "agent_id": "did:web:auditor.example.com",
+            "type": "alert"
+          },
+          "T": "2026-10-27T00:00:00.000Z",
+          "expected": {
+            "profiles_checked": false,
+            "outcome": "trusted",
+            "entry_index": 3
+          }
+        },
+        {
+          "name": "B5 partner after entry 1 retires: expired outranks out_of_scope",
+          "body": {
+            "ctx_id": "acdp://partner.example.org/3c9d7a1e-5b2f-4c8d-9e0a-1f2b3c4d5e6f",
+            "origin_registry": "partner.example.org",
+            "agent_id": "did:web:agents.partner.example.org:analyst",
+            "type": "analysis"
+          },
+          "T": "2026-12-15T00:00:00.000Z",
+          "expected": {
+            "profiles_checked": false,
+            "outcome": "expired",
+            "entry_index": 1,
+            "reason": "entry_window"
+          }
+        },
+        {
+          "name": "B6 partner with an unpinned verified receipt",
+          "body": {
+            "ctx_id": "acdp://partner.example.org/3c9d7a1e-5b2f-4c8d-9e0a-1f2b3c4d5e6f",
+            "origin_registry": "partner.example.org",
+            "agent_id": "did:web:agents.partner.example.org:analyst",
+            "type": "data_snapshot"
+          },
+          "T": "2026-10-27T00:00:00.000Z",
+          "receipt": {
+            "registry_did": "did:web:partner.example.org",
+            "registry_key_fingerprint": "sha256:139e3940e64b5491722088d9a0d741628fc826e09475d341a780acde3c4b8070"
+          },
+          "expected": {
+            "profiles_checked": false,
+            "outcome": "trusted",
+            "entry_index": 1
+          }
+        },
+        {
+          "name": "C1 sandbox before its entry window opens",
+          "body": {
+            "ctx_id": "acdp://sandbox.example.net/3c9d7a1e-5b2f-4c8d-9e0a-1f2b3c4d5e6f",
+            "origin_registry": "sandbox.example.net",
+            "agent_id": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
+            "type": "analysis"
+          },
+          "T": "2026-10-27T00:00:00.000Z",
+          "expected": {
+            "profiles_checked": false,
+            "outcome": "expired",
+            "entry_index": 2,
+            "reason": "entry_window"
+          }
+        },
+        {
+          "name": "C2 sandbox did:key producer inside the window",
+          "body": {
+            "ctx_id": "acdp://sandbox.example.net/3c9d7a1e-5b2f-4c8d-9e0a-1f2b3c4d5e6f",
+            "origin_registry": "sandbox.example.net",
+            "agent_id": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
+            "type": "analysis"
+          },
+          "T": "2026-11-05T00:00:00.000Z",
+          "expected": {
+            "profiles_checked": false,
+            "outcome": "trusted",
+            "entry_index": 2
+          }
+        },
+        {
+          "name": "C3 sandbox did:web producer",
+          "body": {
+            "ctx_id": "acdp://sandbox.example.net/3c9d7a1e-5b2f-4c8d-9e0a-1f2b3c4d5e6f",
+            "origin_registry": "sandbox.example.net",
+            "agent_id": "did:web:agents.example.com:test-producer",
+            "type": "analysis"
+          },
+          "T": "2026-11-05T00:00:00.000Z",
+          "expected": {
+            "profiles_checked": false,
+            "outcome": "out_of_scope",
+            "entry_index": 2,
+            "reason": "scope_did_method"
+          }
+        },
+        {
+          "name": "D1 registry not on the list",
+          "body": {
+            "ctx_id": "acdp://unknown.example.com/3c9d7a1e-5b2f-4c8d-9e0a-1f2b3c4d5e6f",
+            "origin_registry": "unknown.example.com",
+            "agent_id": "did:web:agents.example.com:test-producer",
+            "type": "analysis"
+          },
+          "T": "2026-10-27T00:00:00.000Z",
+          "expected": {
+            "profiles_checked": false,
+            "outcome": "untrusted_registry",
+            "reason": "no_entry"
+          }
+        },
+        {
+          "name": "D2 after the list window",
+          "body": {
+            "ctx_id": "acdp://registry.example.com/3c9d7a1e-5b2f-4c8d-9e0a-1f2b3c4d5e6f",
+            "origin_registry": "registry.example.com",
+            "agent_id": "did:web:agents.example.com:test-producer",
+            "type": "analysis"
+          },
+          "T": "2027-05-01T00:00:00.000Z",
+          "receipt": {
+            "registry_did": "did:web:registry.example.com",
+            "registry_key_fingerprint": "sha256:10ba682c8ad13513971e8b56881aab8bd702bb807796eca81932c735a94d6e6d"
+          },
+          "expected": {
+            "profiles_checked": false,
+            "outcome": "expired",
+            "reason": "list_window"
+          }
+        },
+        {
+          "name": "D3 before the list window",
+          "body": {
+            "ctx_id": "acdp://registry.example.com/3c9d7a1e-5b2f-4c8d-9e0a-1f2b3c4d5e6f",
+            "origin_registry": "registry.example.com",
+            "agent_id": "did:web:agents.example.com:test-producer",
+            "type": "analysis"
+          },
+          "T": "2026-09-15T00:00:00.000Z",
+          "receipt": {
+            "registry_did": "did:web:registry.example.com",
+            "registry_key_fingerprint": "sha256:10ba682c8ad13513971e8b56881aab8bd702bb807796eca81932c735a94d6e6d"
+          },
+          "expected": {
+            "profiles_checked": false,
+            "outcome": "expired",
+            "reason": "list_window"
+          }
+        }
+      ]
+    }
+  ]
+}
