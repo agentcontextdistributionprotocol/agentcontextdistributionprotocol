@@ -37,7 +37,7 @@
     {
       "name": "D — evidence added at or before T",
       "expected": {
-        "behavior": "Add a discovery record with completed_at <= T that changes a stage: as_of_digest changes — the auditor learns the bundles differ in evidence dated <= T."
+        "behavior": "Add a discovery record with completed_at <= T that changes a stage, e.g. an outcome `revoked` record with no applied revocation, which makes key_revocation unknown (RFC-ACDP-0017 §7.9). An outcome `unknown` record is ignored and does not qualify. as_of_digest changes — the auditor learns the bundles differ in evidence dated <= T."
       }
     },
     {

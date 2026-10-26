@@ -288,7 +288,10 @@ In the as-of pass, a checkpoint counts only if its `timestamp` ≤ T.
 
 `not_retracted`, `retracted`, `invalid`, or `unknown`.
 
-1. **Admitting events.** The pass admits a prefix of `lifecycle_events`: the longest prefix whose every event is admitted under §6.4 (as-of) or carries a verified signature (latest, RFC-ACDP-0013 §5). In the latest pass, an event with a verified event receipt (§10) has basis `registry`. An event admitted on its signature alone has basis `observed`, and the `retraction` stage takes the weakest basis among the admitted events.
+1. **Admitting events.** The pass admits a prefix of `lifecycle_events`: the longest prefix whose every event is admitted under §6.4 (as-of) or carries a verified signature (latest, RFC-ACDP-0013 §5). In the latest pass, an event with a verified event receipt (§10) has basis `registry`. (NORMATIVE) Latest-pass admission rules:
+   - A producer-actor event is verified under the latest snapshot.
+   - Its key MUST be in that snapshot's `assertionMethod`, or else in its `verificationMethod` **and** carry a verified event receipt. That second case is the receipt-attested historical key, by analogy with RFC-ACDP-0010 §10: the receipt's `event_hash` covers the signature as it was accepted.
+   - An unsigned event whose `actor` is the origin registry's DID is admitted only with a verified event receipt, in either pass (§6.4). An event admitted on its signature alone has basis `observed`, and the `retraction` stage takes the weakest basis among the admitted events.
 2. **Deriving the state.** RFC-ACDP-0013 §7.1 retraction state is derived over the admitted prefix. (NORMATIVE) The stage's `evidence_time` is the `accepted_at` of the **last** admitted event when that event's receipt verifies; otherwise the stage has no `evidence_time`. With no admitted events, the stage carries neither `basis` nor `evidence_time`.
 3. **`unknown`** in the as-of pass when an event that is not admitted precedes an admitted one. The prefix is then unprovable.
 4. **`invalid`** when §10.3 step 8 fails: the verified event receipts' `accepted_at` values decrease with index. A receipt failing any other §10.3 step (a mismatched `index`, `event_hash`, `registry_did` or signature, or step 9) is **treated as absent**, and its event has no evidence time; that alone never makes the stage `invalid`.
