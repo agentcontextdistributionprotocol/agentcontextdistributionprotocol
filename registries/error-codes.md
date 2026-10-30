@@ -69,6 +69,7 @@ When returning `superseded_target`, registries SHOULD include `details.reason` t
 |---|---|---|---|---|
 | `issuer_not_accepted` | Provisional | `key_not_authorized` | The token's issuer (or SPIFFE trust domain) is not in the registry's `keyless` capabilities. | [RFC-ACDP-0021 §5.2](../rfcs/RFC-ACDP-0021-keyless-signing.md) |
 | `token_invalid` | Provisional | `key_not_authorized` | The token fails verification: signature, expiry, or `iss`/`sub` not equal to the request's identity. | [RFC-ACDP-0021 §5.2](../rfcs/RFC-ACDP-0021-keyless-signing.md) |
+| `issuer_unreachable` | Provisional | `key_resolution_unreachable` | The issuer's published keys (OIDC JWKS or the SPIFFE bundle) cannot be fetched. The failure is transient, so the client may retry. | [RFC-ACDP-0021 §5.2](../rfcs/RFC-ACDP-0021-keyless-signing.md) |
 | `audience_mismatch` | Provisional | `key_not_authorized` | The token's `aud` does not contain the registry's `registry_did`. | [RFC-ACDP-0021 §5.2](../rfcs/RFC-ACDP-0021-keyless-signing.md) |
 | `confirmation_mismatch` | Provisional | `key_not_authorized` | The token's `cnf.jkt` is not the thumbprint of the presented key. | [RFC-ACDP-0021 §5.2](../rfcs/RFC-ACDP-0021-keyless-signing.md) |
 | `token_replayed` | Provisional | `key_not_authorized` | The token was already used for an attestation. | [RFC-ACDP-0021 §5.2](../rfcs/RFC-ACDP-0021-keyless-signing.md) |

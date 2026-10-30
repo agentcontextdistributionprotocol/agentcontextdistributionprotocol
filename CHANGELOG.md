@@ -2,6 +2,10 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Clarifications: RFC-ACDP-0021 issuer reachability and AITP pin — 2026-10-30
+
+**No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed.** RFC-ACDP-0021 §5.2 step 3 now names the transient failure when an issuer's keys cannot be fetched: `key_resolution_unreachable` (502), with the new reason token `issuer_unreachable`. §16 pins RFC-AITP-0002 at agentidentitytrustprotocol commit `c11a2c4`. Both answer acdp-registry-rs questions.
+
 ## v0.5.0 — Clarifications: RFC-ACDP-0021 draft.3, follow-up rulings — 2026-10-30
 
 **No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. No `kl-001` value and no `chain-*` known answer changed.** These rulings answer six follow-up findings from acdp-verifier-py on draft.2.
