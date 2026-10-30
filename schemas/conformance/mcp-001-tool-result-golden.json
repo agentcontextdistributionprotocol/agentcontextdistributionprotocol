@@ -1,6 +1,6 @@
 {
   "id": "mcp-001",
-  "description": "(0.5.0, Draft) Known-answer vector for an acdp:mcp-tool-result body (RFC-ACDP-0019 §4–§6). From the pinned tools/call arguments, CallToolResult, JSON-RPC request id, endpoint descriptor and salt, recompute the salted arguments_hash, result_hash and request_id_hash, the unsalted endpoint_hash, the derived_from extraction, the full ProducerContent's canonical form and content_hash, the Ed25519 signature of the did:key proxy, the Idempotency-Key, and the returned CallToolResult with its io.acdp/provenance _meta. Executed by scripts/conformance-runner.py.",
+  "description": "(0.5.0) Known-answer vector for an acdp:mcp-tool-result body (RFC-ACDP-0019 §4–§6). From the pinned tools/call arguments, CallToolResult, JSON-RPC request id, endpoint descriptor and salt, recompute the salted arguments_hash, result_hash and request_id_hash, the unsalted endpoint_hash, the derived_from extraction, the full ProducerContent's canonical form and content_hash, the Ed25519 signature of the did:key proxy, the Idempotency-Key, and the returned CallToolResult with its io.acdp/provenance _meta. Executed by scripts/conformance-runner.py.",
   "tags": [
     "mcp",
     "producer",

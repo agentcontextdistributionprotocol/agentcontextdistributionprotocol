@@ -579,7 +579,7 @@
     {
       "id": "acdp-producer-mcp-proxy",
       "inherits": null,
-      "spec_reference": "RFC-ACDP-0019 (0.5.0, Draft)",
+      "spec_reference": "RFC-ACDP-0019 §10 (0.5.0, Draft; §4 and §6 Final)",
       "behavioral_requirements": [
         "Publish one acdp:mcp-tool-result body per observed tools/call, signed with the proxy operator's own key; the proxy is the producer (RFC-ACDP-0019 §3–§4)",
         "Compute arguments_hash, result_hash and request_id_hash over salt ‖ JCS with a fresh 32-byte salt per body whenever the result is not embedded; endpoint_hash is unsalted and never covers env, headers or credentials (RFC-ACDP-0019 §4.2–§4.3)",
@@ -598,12 +598,12 @@
         "mcp-007-salting"
       ],
       "not_implemented_permitted_on": [],
-      "notes": "OPTIONAL producer-side profile. A proxy is not a registry: it publishes to one and is advertised nowhere on the wire. mcp-001 is executed by scripts/conformance-runner.py; mcp-002..007 are behavioral."
+      "notes": "OPTIONAL producer-side profile. A proxy is not a registry: it publishes to one and is advertised nowhere on the wire. mcp-001 is executed by scripts/conformance-runner.py; mcp-002..007 are behavioral. RFC-ACDP-0019's body, hashes and link are Final (2026-10-30): acdp-rs 0.18.2 and acdp-verifier-py 3928ee1 reproduce mcp-001 and pass mcp-003 at spec 546b8c8. The profile stays Draft until a second proxy passes mcp-001..007."
     },
     {
       "id": "acdp-consumer-trust-list",
       "inherits": "acdp-consumer",
-      "spec_reference": "RFC-ACDP-0020 §9 (0.5.0, Draft)",
+      "spec_reference": "RFC-ACDP-0020 §9 (0.5.0, Final)",
       "behavioral_requirements": [
         "Accept issuer pins (issuer DID + list_id, optional issuer key fingerprints) only from configuration, never from a list, registry, capabilities document or bundle (RFC-ACDP-0020 §5.1)",
         "Verify each acdp:trust-list version per §5.2; persist the per-pin highest accepted serial and never use a lower one; treat same-serial conflicting versions as equivocation; only issuer-signed retractions withdraw a version, and retracting the floor never reverts (RFC-ACDP-0020 §5.3)",
@@ -620,7 +620,7 @@
         "trust-006-multiple-lists",
         "trust-007-bundle-and-report"
       ],
-      "notes": "OPTIONAL consumer profile (0.5.0, Draft). Trust lists are ordinary bodies of type acdp:trust-list; no registry obligation is added. trust-001 is executed by the runner (golden body + §6.2 evaluation table); trust-002..007 are behavioral."
+      "notes": "OPTIONAL consumer profile. Trust lists are ordinary bodies of type acdp:trust-list; no registry obligation is added. trust-001 is executed by the runner (golden body + §6.2 evaluation table); trust-002..007 are behavioral. Final 2026-10-30: acdp-rs 0.18.2 and acdp-verifier-py 3928ee1 pass trust-001..007 at spec 546b8c8."
     },
     {
       "id": "acdp-registry-keyless",

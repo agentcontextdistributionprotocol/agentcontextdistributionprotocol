@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — MCP Tool-Result Provenance: the MCP Signing Proxy
 
 **Document:** RFC-ACDP-0019
-**Version:** 0.5.0-draft
-**Status:** Community Standards Track (Draft)
+**Version:** 0.5.0
+**Status:** Community Standards Track (Final; §5, §7 and the §10 proxy profile *(0.5.0)* Draft)
 
 This RFC specifies the **MCP signing proxy**: a process that sits between an MCP client and an MCP server, relays every message unchanged, and publishes each tool result it relays as a signed ACDP body. The client gets back the same result plus an `acdp://` link, and anyone holding the result can later prove that this proxy observed it from that server at that time. No MCP server changes; the developer changes the server command in the client configuration.
 
@@ -22,7 +22,15 @@ It depends on RFC-ACDP-0001 (Core), -0002 (Context Body), -0003 (Publish & Super
 
 ## 1. Status of This Memo
 
-This document is a **Draft** ACDP specification on the `acdp/0.5.0` line. It is open for substantive change until it is promoted. Per [VERSIONING.md](../VERSIONING.md), promotion to **Final** requires the conformance fixtures this document defines (`mcp-001`..`mcp-007`) to pass against two independent interoperating implementations.
+This document is a **Final** ACDP specification at version `0.5.0`, promoted 2026-10-30, ahead of the `acdp/0.5.0` line, which as a whole remains Draft (VERSIONING.md). Breaking changes to its Final parts now require a new RFC and a version bump.
+
+**What is Final.** The body and how a holder checks it: the `acdp:mcp-tool-result` type and the `acdp-mcp-tool-result/1` record (§4.1–§4.2), the call hashes and the salt with the consumer recomputation (§4.3), the `derived_from` rule (§4.4), and the `io.acdp/provenance` value and its link rules (§6). These are pinned by `mcp-001` and `mcp-003`, which pass against two independent interoperating implementations, both run at spec `546b8c8`:
+- acdp-rs 0.18.2 (`acdp-mcp-proxy`, `acdp-chain`);
+- acdp-verifier-py at `3928ee1`, written from this text alone.
+
+Both reproduce every `mcp-001` known answer byte for byte: the three salted hashes, `endpoint_hash`, `derived_from`, the canonical form, `content_hash`, the signature, the `Idempotency-Key` and the returned `_meta`. Both also pass `mcp-003`, including the §4.3 holder recomputation and its negatives.
+
+**Still Draft.** The proxy's own obligations remain *(0.5.0)* **Draft**, not frozen: embedding (§5), publish failure and retries (§7), and the `acdp-producer-mcp-proxy` profile (§10) with its behavioral fixtures `mcp-002` and `mcp-004`..`mcp-007`. Only one proxy implementation (acdp-rs `acdp-mcp-proxy`) exercises them; acdp-verifier-py is a consumer and runs no proxy. They are promoted when a second proxy passes `mcp-001`..`mcp-007`.
 
 The profile it defines (§10) is OPTIONAL. A registry needs nothing new to accept these bodies: an `acdp:mcp-tool-result` body is an ordinary signed body under the existing custom-type grammar. Nothing in this document invalidates any existing body, signature or `content_hash`.
 
@@ -145,7 +153,7 @@ Only the arguments count. A ctx_id that appears only in the result is an output,
 
 ---
 
-## 5. Publishing the Result Itself (NORMATIVE)
+## 5. Publishing the Result Itself (NORMATIVE) *(0.5.0, Draft)*
 
 By default the result is not published: `data_refs` is `[]` and `embedded` is `false`. Tool results can carry secrets and personal data, and many registries are public.
 
@@ -179,7 +187,7 @@ After the registry's publish response, the proxy adds one key to the result's `_
 
 ---
 
-## 7. Publish Failure (NORMATIVE)
+## 7. Publish Failure (NORMATIVE) *(0.5.0, Draft)*
 
 The publish request carries `Idempotency-Key: acdp-mcp-<hex of content_hash>` (the 64 hex characters after `sha256:`). Retries MUST resend the byte-identical body under the same key, so a retry never creates a second publication (RFC-ACDP-0003 §6).
 
@@ -222,7 +230,7 @@ None new. The proxy reports the registry's ACDP error codes verbatim in `io.acdp
 
 ---
 
-## 10. Profile: `acdp-producer-mcp-proxy` (OPTIONAL)
+## 10. Profile: `acdp-producer-mcp-proxy` (OPTIONAL) *(0.5.0, Draft)*
 
 A producer-side profile with no prerequisite. A proxy claiming it:
 

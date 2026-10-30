@@ -2,6 +2,12 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Promotion: RFC-ACDP-0020 Final; RFC-ACDP-0019 Final except the proxy obligations — 2026-10-30
+
+**No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. No fixture vector or known answer changed.** Two RFCs on the Draft `0.5.0` line reach Final on their own evidence, as RFC-ACDP-0017 did. Both implementations were run at spec `546b8c8`: acdp-rs 0.18.2 (`acdp-mcp-proxy`, `acdp-chain`; require-mode conformance) and acdp-verifier-py `3928ee1` (128 passed, 0 failed).
+- **RFC-ACDP-0020 (Registry Trust Lists) is Final.** Both implementations reproduce `trust-001` byte for byte (the golden list and all 20 evaluation cases) and pass `trust-002`..`trust-007`. The `acdp-consumer-trust-list` profile is Final. `acdp:trust-list` moves to Stable in the context-type registry, since both implementations produce signed lists.
+- **RFC-ACDP-0019 (MCP Tool-Result Provenance) is Final for the body, the call hashes and the link (§4, §6).** Both implementations reproduce every `mcp-001` known answer and pass `mcp-003`, including the §4.3 holder recomputation. The proxy obligations stay *(0.5.0)* Draft: §5 embedding, §7 publish failure, and the `acdp-producer-mcp-proxy` profile with `mcp-002` and `mcp-004`..`007`. Only acdp-rs runs a proxy. They are promoted when a second proxy passes `mcp-001`..`007`. `acdp:mcp-tool-result` stays Provisional for the same reason: it has one producer.
+
 ## v0.5.0 — Clarifications: RFC-ACDP-0021 issuer reachability and AITP pin — 2026-10-30
 
 **No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed.** RFC-ACDP-0021 §5.2 step 3 now names the transient failure when an issuer's keys cannot be fetched: `key_resolution_unreachable` (502), with the new reason token `issuer_unreachable`. §16 pins RFC-AITP-0002 at agentidentitytrustprotocol commit `c11a2c4`. Both answer acdp-registry-rs questions.

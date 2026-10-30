@@ -1,6 +1,6 @@
 {
   "id": "trust-002",
-  "description": "(0.5.0, Draft) Verifying one list version (RFC-ACDP-0020 §5.2). Each scenario modifies the golden list body; with no other version at hand the pin contributes list_invalid (reason no_valid_version) and no body evaluated through it is trusted. Behavioral, consumer-side.",
+  "description": "(0.5.0) Verifying one list version (RFC-ACDP-0020 §5.2). Each scenario modifies the golden list body; with no other version at hand the pin contributes list_invalid (reason no_valid_version) and no body evaluated through it is trusted. Behavioral, consumer-side.",
   "tags": [
     "trust-list",
     "consumer",

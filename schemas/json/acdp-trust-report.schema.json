@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.acdp.io/v0.1.0/acdp-trust-report.schema.json",
   "title": "ACDP Trust Report (acdp-trust-report/1)",
-  "description": "(0.5.0, Draft) The deterministic result of applying registry trust lists (RFC-ACDP-0020 §8), optionally bound to an RFC-ACDP-0017 verdict by verdict_digest. JCS-canonical; report_digest covers the object minus report_digest. Closed at every level.",
+  "description": "(0.5.0, Final) The deterministic result of applying registry trust lists (RFC-ACDP-0020 §8), optionally bound to an RFC-ACDP-0017 verdict by verdict_digest. JCS-canonical; report_digest covers the object minus report_digest. Closed at every level.",
   "type": "object",
   "required": [
     "trust_report_version",

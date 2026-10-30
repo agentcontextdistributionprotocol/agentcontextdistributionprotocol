@@ -1,6 +1,6 @@
 {
   "id": "mcp-003",
-  "description": "(0.5.0, Draft) Shape of the io.acdp/provenance value (RFC-ACDP-0019 §6; schema $defs/provenance).",
+  "description": "(0.5.0) Shape of the io.acdp/provenance value (RFC-ACDP-0019 §6; schema $defs/provenance).",
   "tags": [
     "mcp",
     "producer",
