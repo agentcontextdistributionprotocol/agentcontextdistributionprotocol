@@ -1,6 +1,6 @@
 {
   "id": "kl-001",
-  "description": "(0.5.0, Draft) Keyless-signing known answers (RFC-ACDP-0021), executed by scripts/conformance-runner.py. Vector 1 is a golden acdp:key-attestation body minted by the registry: JCS canonical form, content_hash and the registry's Ed25519 signature over the ASCII content_hash, plus the §5.3 metadata rules (fingerprint, JWK thumbprint, key_id fragment, window bound). Vector 2 is a keyless-signed body that references it: content_hash and the ephemeral key's signature. Vector 3 is the §5.1 proof of possession and token hash. Vector 4 is the §8 key-status table and vector 5 the §7 supersession table; the runner replays both algorithms. Test keypairs MUST NOT be used in production.",
+  "description": "(0.5.0, Draft) Keyless-signing known answers (RFC-ACDP-0021), executed by scripts/conformance-runner.py. Vector 1 is a golden acdp:key-attestation body minted by the registry: JCS canonical form, content_hash and the registry's Ed25519 signature over the ASCII content_hash, plus the §5.3 metadata rules (fingerprint, JWK thumbprint, key_id fragment, window bound). Vector 2 is a keyless-signed body that references it: content_hash and the ephemeral key's signature. Vector 3 is the §5.1 proof of possession and token hash. Vector 4 is the §8 key-status table and vector 5 the §7 supersession table; vector 6 (added in 0.5.0-draft.2) is a verify-only ecdsa-p256 proof of possession under p256_test_keypair: the 64-byte r||s form verifies and the same signature DER-encoded is rejected (§5.1); the runner replays both algorithms. Test keypairs MUST NOT be used in production.",
   "tags": [
     "keyless",
     "registry",
@@ -802,6 +802,40 @@
           }
         }
       ]
+    },
+    {
+      "name": "6 proof of possession, ecdsa-p256 (verify-only)",
+      "kind": "pop_p256",
+      "token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.TEST-ONLY-NOT-A-REAL-TOKEN.kl-001",
+      "pop_preimage": {
+        "pop_version": "acdp-key-attestation-pop/1",
+        "controller": "did:web:agents.example.com:ci",
+        "registry_did": "did:web:registry.example.com",
+        "token_hash": "sha256:a375998360472ac02ef1181e21466c19ef2db143cb204c0bc120acc17d991009",
+        "key_fingerprint": "sha256:97e9d1d2a642f9d771b3a301aaedc8c8b534dfcb7bff6813309b04d088525031"
+      },
+      "pop_value_base64": "GcnB3rNSbrTGEzqgolY2+p5CrrdDACDwZ+zY78nI/J5i3upzXXtjJyhsDI/lm2RXuak2ZfVEAnkSj8p7GLBvVQ==",
+      "pop_value_der_base64": "MEQCIBnJwd6zUm60xhM6oKJWNvqeQq63QwAg8Gfs2O/JyPyeAiBi3upzXXtjJyhsDI/lm2RXuak2ZfVEAnkSj8p7GLBvVQ==",
+      "expected": {
+        "pop_canonical_form": "{\"controller\":\"did:web:agents.example.com:ci\",\"key_fingerprint\":\"sha256:97e9d1d2a642f9d771b3a301aaedc8c8b534dfcb7bff6813309b04d088525031\",\"pop_version\":\"acdp-key-attestation-pop/1\",\"registry_did\":\"did:web:registry.example.com\",\"token_hash\":\"sha256:a375998360472ac02ef1181e21466c19ef2db143cb204c0bc120acc17d991009\"}",
+        "p1363_accepted": true,
+        "der_rejected": true
+      },
+      "notes": "ECDSA signatures are not deterministic, so this vector is verify-only: an implementation MUST accept pop_value_base64 (64-byte r||s, IEEE P1363, per RFC-ACDP-0001 §5.10) under the p256_test_keypair JWK, and MUST reject pop_value_der_base64 (the same signature DER-encoded) (RFC-ACDP-0021 §5.1)."
     }
-  ]
+  ],
+  "p256_test_keypair": {
+    "warning": "TEST ONLY. The private scalar is publicly known (= 2). Never use this keypair for real signatures.",
+    "algorithm": "ecdsa-p256",
+    "private_scalar_hex": "0000000000000000000000000000000000000000000000000000000000000002",
+    "public_key_compressed_sec1_hex": "037cf27b188d034f7e8a52380304b51ac3c08969e277f21b35a60b48fc47669978",
+    "public_key_jwk": {
+      "crv": "P-256",
+      "kty": "EC",
+      "x": "fPJ7GI0DT36KUjgDBLUaw8CJaeJ38hs1pgtI_EdmmXg",
+      "y": "B3dVENuO0EApPZrGn3Qw27p9reY86YIpngS3nSJ4c9E"
+    },
+    "jwk_thumbprint": "AhqHzaYXA5MzmDCrsseUsVBGKyfhDhvekx0THjH_xIE",
+    "key_fingerprint": "sha256:97e9d1d2a642f9d771b3a301aaedc8c8b534dfcb7bff6813309b04d088525031"
+  }
 }

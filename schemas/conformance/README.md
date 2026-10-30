@@ -424,11 +424,11 @@ All eight are behavioral, except `rec-007`'s executed HMAC known-answer vector `
 
 | Fixture | Scenario | Expected |
 |---|---|---|
-| `kl-001` | Golden `acdp:key-attestation` body, a keyless-signed body, the proof of possession, a 21-case key-status table and a 9-case supersession table (executed) | JCS, `content_hash`, registry and ephemeral-key Ed25519 signatures, JWK thumbprint, fingerprint and `acdp-kl-` key_id reproduce; each case gives the pinned status or decision |
+| `kl-001` | Golden `acdp:key-attestation` body, a keyless-signed body, the proof of possession, a verify-only ecdsa-p256 proof of possession, a 21-case key-status table and a 9-case supersession table (executed) | JCS, `content_hash`, registry and ephemeral-key Ed25519 signatures, JWK thumbprint, fingerprint and `acdp-kl-` key_id reproduce; the P-256 `r||s` PoP verifies and its DER form is rejected; each case gives the pinned status or decision |
 | `kl-002` | `POST /key-attestations` validation | `aud`, issuer, identity listing, `cnf.jkt`, replay, proof of possession, `did:key` controller, X509-SVID; existing codes with `details.reason` |
 | `kl-003` | Publishing a keyless-signed body | inside the window accepted; outside, missing, foreign, mismatched or withdrawn attestation refused; non-keyless registries refuse at key resolution |
-| `kl-004` | Same-identity supersession | another identity is `not_authorized` / `keyless_identity_mismatch`; same identity, org-wide identity and DID-document key allowed |
-| `kl-005` | Consumer verification and key status | current, historical, pre-compromise, fail closed; only the two existing revocation trust classes |
+| `kl-004` | Same-identity supersession | another identity is `not_authorized` / `keyless_identity_mismatch`; same identity, org-wide identity and DID-document key allowed; a keyless-signed lifecycle event is `key_resolution_failed` / `keyless_event_unsupported` |
+| `kl-005` | Consumer verification and key status | current, historical, pre-compromise, fail closed; only the two existing revocation trust classes; a keyless-signed revocation applies, is a hint, is `unknown` or is ignored |
 | `kl-006` | Which attesters a consumer accepts | none by default; local configuration or a `trusted` trust-list evaluation |
 | `kl-007` | Implementations without RFC-ACDP-0021 fail closed | `key_resolution_failed`; the `acdp-kl-` fragment is reserved |
 | `kl-008` | Keyless nodes in chain verification | existing key-stage values, basis `registry`; non-implementing verifiers refuse the node |

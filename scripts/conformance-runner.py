@@ -1578,6 +1578,63 @@ def check_keyless_vector(fixture, fixture_data, vector):
             return False
         return True
 
+    if kind == "pop_p256":
+        # RFC-ACDP-0021 §5.1: an ecdsa-p256 PoP is the 64-byte r||s form of
+        # RFC-ACDP-0001 §5.10; DER is rejected. ECDSA is not deterministic, so verify only.
+        from cryptography.hazmat.primitives.asymmetric import ec
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
+        from cryptography.exceptions import InvalidSignature
+        kp = fixture_data["p256_test_keypair"]
+        priv = ec.derive_private_key(int(kp["private_scalar_hex"], 16), ec.SECP256R1())
+        pub = priv.public_key()
+        comp = pub.public_bytes(serialization.Encoding.X962, serialization.PublicFormat.CompressedPoint)
+        nums = pub.public_numbers()
+        jwk = {"crv": "P-256", "kty": "EC", "x": _b64u(nums.x.to_bytes(32, "big")), "y": _b64u(nums.y.to_bytes(32, "big"))}
+        if comp.hex() != kp["public_key_compressed_sec1_hex"] or jwk != kp["public_key_jwk"]:
+            fail(fixture, name, "p256_test_keypair public key does not match its scalar")
+            return False
+        if _b64u(hashlib.sha256(jcs.canonicalize(jwk)).digest()) != kp["jwk_thumbprint"]:
+            fail(fixture, name, "p256 RFC 7638 thumbprint mismatch")
+            return False
+        fp = key_fingerprint(comp)
+        pre = vector["pop_preimage"]
+        if kp["key_fingerprint"] != fp or pre.get("key_fingerprint") != fp:
+            fail(fixture, name, "P-256 fingerprint MUST be over the 33-byte SEC1-compressed point (§5.3)")
+            return False
+        token_hash = "sha256:" + hashlib.sha256(vector["token"].encode("ascii")).hexdigest()
+        if pre.get("token_hash") != token_hash:
+            fail(fixture, name, "token_hash mismatch")
+            return False
+        canon = jcs.canonicalize(pre)
+        if canon.decode() != exp.get("pop_canonical_form"):
+            fail(fixture, name, "pop_canonical_form mismatch")
+            return False
+
+        def verify_p1363(sig):
+            if len(sig) != 64:
+                return False
+            der = encode_dss_signature(int.from_bytes(sig[:32], "big"), int.from_bytes(sig[32:], "big"))
+            try:
+                pub.verify(der, canon, ec.ECDSA(hashes.SHA256()))
+                return True
+            except InvalidSignature:
+                return False
+
+        if verify_p1363(base64.b64decode(vector["pop_value_base64"])) is not exp.get("p1363_accepted"):
+            fail(fixture, name, "the r||s PoP MUST verify")
+            return False
+        der_sig = base64.b64decode(vector["pop_value_der_base64"])
+        try:
+            pub.verify(der_sig, canon, ec.ECDSA(hashes.SHA256()))
+        except InvalidSignature:
+            fail(fixture, name, "pop_value_der_base64 must be the same signature, DER-encoded")
+            return False
+        if (not verify_p1363(der_sig)) is not exp.get("der_rejected"):
+            fail(fixture, name, "a DER-encoded PoP MUST be rejected")
+            return False
+        return True
+
     ok = True
     cases = vector.get("cases", [])
     for case in cases:
