@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Registry Trust Lists
 
 **Document:** RFC-ACDP-0020
-**Version:** 0.5.0-draft
-**Status:** Community Standards Track (Draft)
+**Version:** 0.5.0
+**Status:** Community Standards Track (Final)
 
 This RFC specifies **registry trust lists**: a signed, consumer-side document that says which registries a consumer relies on, for which producers and context types, and during which period. A tenant, an organization or a consortium publishes one. Any number of consumers apply it the same way, online or offline. It answers the question every ACDP signature leaves open: the producer signature proves who wrote a body, and the registry receipt proves which registry accepted it, but neither says whether *that registry* is one this consumer should rely on. Until now each adopter answered that with private configuration. This document gives that configuration one signed, versioned, portable shape. It depends on RFC-ACDP-0001 (Core), RFC-ACDP-0002 (Context Body), RFC-ACDP-0010 (Registry Receipts), RFC-ACDP-0013 (Lifecycle Events) and RFC-ACDP-0014 (Key Revocation), and adds an optional companion report to RFC-ACDP-0017 (Chain Verification).
 
@@ -11,7 +11,13 @@ This RFC specifies **registry trust lists**: a signed, consumer-side document th
 
 ## 1. Status of This Memo
 
-This document is a **Draft** ACDP specification on the `acdp/0.5.0` line. It is open for substantive change until it is promoted, and nothing in it is frozen. Per [VERSIONING.md](../VERSIONING.md), promotion to **Final** requires the conformance fixtures this document defines (`trust-001`..`trust-007`) to pass against two independent interoperating implementations.
+This document is a **Final** ACDP specification at version `0.5.0`, promoted 2026-10-30, ahead of the `acdp/0.5.0` line, which as a whole remains Draft (VERSIONING.md). Breaking changes now require a new RFC and a version bump.
+
+**Promotion evidence.** The conformance fixtures this document defines (`trust-001`..`trust-007`, profile `acdp-consumer-trust-list`) pass against two independent interoperating implementations, both run at spec `546b8c8`:
+- acdp-rs 0.18.2 (`acdp-mcp-proxy`, `acdp-chain`);
+- acdp-verifier-py at `3928ee1`, written from this text alone.
+
+Both reproduce `trust-001` byte for byte: the golden list's canonical form, `content_hash` and Ed25519 signature, and the pinned outcome, reason and entry of every case in the evaluation table. Both also pass the behavioral scenarios `trust-002`..`trust-007`, including the trust report bound to `verdict_digest`.
 
 The `acdp-consumer-trust-list` profile (§9) is OPTIONAL. A consumer that does not apply trust lists is unaffected. Registries have no new obligation: a trust list is an ordinary body, published, served and retracted like any other.
 
@@ -225,7 +231,7 @@ For a chain, the inputs for each node are the node's body, its receipt only when
 
 ## 9. Profile
 
-**`acdp-consumer-trust-list`** *(0.5.0, Draft, OPTIONAL)*, prerequisite `acdp-consumer`. A consumer claiming it:
+**`acdp-consumer-trust-list`** *(0.5.0, Final, OPTIONAL)*, prerequisite `acdp-consumer`. A consumer claiming it:
 
 - holds issuer pins only from configuration (§5.1);
 - verifies and selects list versions per §5, persisting the per-pin floor;

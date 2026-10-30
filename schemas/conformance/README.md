@@ -393,7 +393,7 @@ All `lc-*` fixtures are behavioral. Required for `acdp-registry-lifecycle`; `lc-
 
 All eight are behavioral, except `rec-007`'s executed HMAC known-answer vector `hint-hmac-001` (key = the UTF-8 bytes of the secret string). `rec-001`..`005` and `rec-008` are REQUIRED for the OPTIONAL `acdp-registry-changes` profile, `rec-007` for `acdp-registry-events`, and `rec-006` plus `rec-007` D–E for `acdp-consumer-recall`.
 
-### MCP tool-result provenance (RFC-ACDP-0019, 0.5.0, Draft)
+### MCP tool-result provenance (RFC-ACDP-0019, 0.5.0, Final; proxy profile Draft)
 
 | Fixture | Scenario | Pins |
 |---|---|---|
@@ -406,7 +406,7 @@ All eight are behavioral, except `rec-007`'s executed HMAC known-answer vector `
 | `mcp-007` | Salting | salted whenever unembedded; fresh per body; `endpoint_hash` unsalted; no secrets |
 
 `mcp-001` is executed by `scripts/conformance-runner.py`; `mcp-002`..`007` are behavioral. All seven are REQUIRED for the OPTIONAL `acdp-producer-mcp-proxy` profile.
-### Registry trust lists (RFC-ACDP-0020, 0.5.0, Draft)
+### Registry trust lists (RFC-ACDP-0020, 0.5.0, Final)
 
 | Fixture | Scenario | Expected |
 |---|---|---|

@@ -1,6 +1,6 @@
 {
   "id": "trust-006",
-  "description": "(0.5.0, Draft) Several issuer pins (RFC-ACDP-0020 §6.2 step 4). Behavioral, consumer-side.",
+  "description": "(0.5.0) Several issuer pins (RFC-ACDP-0020 §6.2 step 4). Behavioral, consumer-side.",
   "tags": [
     "trust-list",
     "consumer",

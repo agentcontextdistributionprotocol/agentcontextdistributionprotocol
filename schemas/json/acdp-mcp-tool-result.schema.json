@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.acdp.io/v0.1.0/acdp-mcp-tool-result.schema.json",
-  "title": "ACDP MCP Tool-Result Record (0.5.0, Draft)",
+  "title": "ACDP MCP Tool-Result Record (0.5.0, Final)",
   "description": "acdp-mcp-tool-result/1: the metadata of an acdp:mcp-tool-result body, published by an MCP signing proxy that observed one tools/call (RFC-ACDP-0019 §4). The proxy is the producer; the record binds hashes of the call, never the call itself unless a DataRef embeds the result. $defs/provenance is the value of the io.acdp/provenance key the proxy adds to the CallToolResult _meta (RFC-ACDP-0019 §6).",
   "$ref": "#/$defs/record",
   "$defs": {

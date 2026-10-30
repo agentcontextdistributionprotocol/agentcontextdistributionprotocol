@@ -18,7 +18,7 @@ The schema vocabulary is open. Profiles are normatively defined in [RFC-ACDP-000
 | `acdp-log-witness` | Optional (0.4.0, Final) | RFC-ACDP-0015 §10, RFC-ACDP-0001 §9.1 | — (a witness is not a registry), `acdp_version` ≥ 0.4.0 |
 | `acdp-consumer` | For consumer deployments | RFC-ACDP-0001 §9.1 | — |
 | `acdp-consumer-chain` | Optional (0.5.0, Draft) | RFC-ACDP-0017 §13, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
-| `acdp-consumer-trust-list` | Optional (0.5.0, Draft) | RFC-ACDP-0020 §9, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
+| `acdp-consumer-trust-list` | Optional (0.5.0, Final) | RFC-ACDP-0020 §9, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
 | `acdp-registry-keyless` | Optional (0.5.0, Draft) | RFC-ACDP-0021 §13, RFC-ACDP-0001 §9.1 | `acdp-registry-receipts`, `acdp-registry-transparency-log`, `acdp-registry-lifecycle` |
 | `acdp-consumer-keyless` | Optional (0.5.0, Draft) | RFC-ACDP-0021 §13, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
 
@@ -177,7 +177,7 @@ For consumers that act on the changes feed (RFC-ACDP-0018 §7). Draft and OPTION
 
 ### `acdp-producer-mcp-proxy` *(0.5.0)*
 
-For an **MCP signing proxy** that sits in front of an MCP server and publishes each tool result it relays as a signed ACDP body (RFC-ACDP-0019). Draft and OPTIONAL. A proxy is a producer, not a registry; it has no prerequisite profile.
+For an **MCP signing proxy** that sits in front of an MCP server and publishes each tool result it relays as a signed ACDP body (RFC-ACDP-0019). Draft and OPTIONAL: RFC-ACDP-0019's body, hashes and link (§4, §6, pinned by `mcp-001` and `mcp-003`) are Final, but the proxy obligations this profile adds (§5, §7) wait for a second proxy. A proxy is a producer, not a registry; it has no prerequisite profile.
 
 | | Required |
 |---|---|
@@ -186,7 +186,7 @@ For an **MCP signing proxy** that sits in front of an MCP server and publishes e
 | **`not_implemented` permitted on** | Not applicable — a proxy runs no registry endpoints |
 ### `acdp-consumer-trust-list` *(0.5.0)*
 
-For consumers that decide which registries to rely on from signed trust lists (RFC-ACDP-0020). Draft and OPTIONAL. Prerequisite `acdp-consumer`.
+For consumers that decide which registries to rely on from signed trust lists (RFC-ACDP-0020). Final (2026-10-30) and OPTIONAL. Prerequisite `acdp-consumer`.
 
 | | Required (in addition to `acdp-consumer`) |
 |---|---|
