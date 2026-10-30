@@ -2,7 +2,7 @@
 # Agent Context Distribution Protocol (ACDP) — Keyless Signing
 
 **Document:** RFC-ACDP-0021
-**Version:** 0.5.0-draft
+**Version:** 0.5.0-draft.2
 **Status:** Community Standards Track (Draft)
 
 This RFC specifies **keyless signing**: a producer that runs as a workload (a CI job, a container, a serverless function) signs bodies with a short-lived key it generates on the spot, instead of a long-lived key listed in its DID document. The workload proves who it is with a token it already has (an OIDC ID token or a SPIFFE JWT-SVID). A registry checks that token, checks that the producer's `did:web` document authorizes that workload identity, and publishes a signed, logged **key attestation** binding the ephemeral key to the producer DID for a few minutes. Bodies signed with the key point at the attestation. Consumers verify the attestation, place the signature inside its window with the registry receipt, and report one of the three existing key statuses. It depends on RFC-ACDP-0001 (Core), RFC-ACDP-0003 (Publish), RFC-ACDP-0010 (Registry Receipts), RFC-ACDP-0012 (Transparency Log), RFC-ACDP-0013 (Lifecycle Events), RFC-ACDP-0014 (Key Revocation), RFC-ACDP-0017 (Chain Verification) and RFC-ACDP-0020 (Registry Trust Lists), and reuses the identity descriptor of RFC-AITP-0002.
@@ -15,7 +15,9 @@ This document is a **Draft** ACDP specification on the `acdp/0.5.0` line. It is 
 
 Both profiles it defines, `acdp-registry-keyless` and `acdp-consumer-keyless` (§13), are OPTIONAL. Registries and consumers that implement neither are unaffected, and they refuse keyless bodies by the ordinary key-resolution rules they already follow (§12).
 
-Nothing in this document invalidates any existing body, signature, `content_hash`, receipt, log leaf, checkpoint, cosignature or verdict. The `signature` object, the RFC-ACDP-0001 §5.7 exclusion set and the RFC-ACDP-0010 §6 fingerprint encoding are unchanged. It adds no wire error code, no key-authorization state, no revocation trust class, no RFC-ACDP-0017 stage value and no evidence-bundle member. The one amendment to Final text, to RFC-ACDP-0003 §3.1 step 3, is *(0.5.0)*-marked and applies only to keyless-signed bodies (§7).
+Nothing in this document invalidates any existing body, signature, `content_hash`, receipt, log leaf, checkpoint, cosignature or verdict. The `signature` object, the RFC-ACDP-0001 §5.7 exclusion set and the RFC-ACDP-0010 §6 fingerprint encoding are unchanged. It adds no wire error code, no key-authorization state, no revocation trust class, no RFC-ACDP-0017 stage value and no evidence-bundle member. The one amendment to Final text, to RFC-ACDP-0003 §3.1 step 3, is *(0.5.0)*-marked and applies only to keyless-signed bodies (§7). It adds one OPTIONAL RFC-ACDP-0017 `pinned` member, `keyless_attesters` (§10); `pinned` is a caller option, not a bundle member, and existing `chain-*` known answers are unchanged.
+
+**Revision 0.5.0-draft.2 (2026-10-30)** applies the rulings on the second implementation's findings (acdp-verifier-py): unevaluable revocations are `unknown` (§8.1), retraction follows the RFC-ACDP-0013 fold (§9.2), the chain rules of §10 are spelled out, `pinned.keyless_attesters` (§10), the trust-list inputs (§11), the P-256 proof form (§5.1, `kl-001` vector 6), method-level refusal (§4.2), the `key_attestation` presence rules for consumers (§6.2), keyless-signed revocations (§9.3), and **keyless keys no longer sign lifecycle events** (§6.3).
 
 ---
 
@@ -87,7 +89,7 @@ The service lives in the controller's document, which RFC-ACDP-0001 §5.11 alrea
 
 ### 4.2 The reserved `acdp-kl-` fragment (NORMATIVE)
 
-The fragment prefix `acdp-kl-` is reserved for keyless key ids (§6.1). A DID document MUST NOT contain a `verificationMethod` whose `id` fragment begins `acdp-kl-`. Registries and consumers MUST refuse to resolve such a method: a registry returns `key_resolution_failed` on publish and a consumer fails closed (`kl-007` B). Without this rule a controller (or an attacker who can edit its document) could pre-list a keyless key id and have old verifiers accept bodies that keyless-aware verifiers would refuse.
+The fragment prefix `acdp-kl-` is reserved for keyless key ids (§6.1). A DID document MUST NOT contain a `verificationMethod` whose `id` fragment begins `acdp-kl-`. Registries and consumers MUST refuse to resolve such a method. The refusal is at method level: the method is never usable for any signature, while the rest of the document (its other methods and services, including `AcdpKeylessSigning`) still resolves. A registry returns `key_resolution_failed` on a publish whose key id names such a method, and a consumer fails closed for any signature that names it (`kl-007` B). Without this rule a controller (or an attacker who can edit its document) could pre-list a keyless key id and have old verifiers accept bodies that keyless-aware verifiers would refuse.
 
 ---
 
@@ -116,7 +118,7 @@ The proof-of-possession preimage is the JSON object
   "key_fingerprint": "sha256:<RFC-ACDP-0010 §6 fingerprint of the ephemeral key>" }
 ```
 
-canonicalized with JCS (RFC 8785). The proof is REQUIRED even when the token carries a `cnf` claim. Most workload issuers cannot put the workload's key in the token, and the proof binds the key to this token, this controller and this registry in every case.
+canonicalized with JCS (RFC 8785). The `pop` encoding follows RFC-ACDP-0001 §5.10 for the algorithm: for `ed25519` the 64-byte RFC 8032 signature; for `ecdsa-p256` the 64-byte `r||s` form (IEEE P1363) over SHA-256. A DER-encoded ECDSA signature MUST be rejected (`pop_invalid`). `kl-001` vector 6 pins the P-256 form. The proof is REQUIRED even when the token carries a `cnf` claim. Most workload issuers cannot put the workload's key in the token, and the proof binds the key to this token, this controller and this registry in every case.
 
 The request is a write. It authenticates by its token, not by an RFC-ACDP-0008 HTTP signature, so registries MUST accept it without one. Registries SHOULD rate-limit it per `(issuer, subject)` and per source address.
 
@@ -160,7 +162,7 @@ A key attestation is a body with:
 | `not_before`, `not_after` | The attestation window. `not_before` < `not_after`, at most 3600 seconds apart. |
 | `token_hash` | `sha256:` + hex SHA-256 of the token's ASCII bytes. |
 
-A verifier checks the runtime rules the schema cannot express: `key_fingerprint` is the fingerprint of `public_key_jwk`, `key_id` is derived from it per §6.1, and the window bound holds. A body that fails any rule in this section is **attestation invalid**. Attestations are immutable; one is withdrawn only by retraction (§9.2).
+A verifier checks the runtime rules the schema cannot express: `key_fingerprint` is the fingerprint of `public_key_jwk`, `key_id` is derived from it per §6.1, and the window bound holds. A body that fails any rule in this section is **attestation invalid**. An attestation's bytes are immutable. It is withdrawn by retraction and restored only by republication, both by the attesting registry (§9.2).
 
 `kl-001` vector 1 is a golden attestation with its canonical form, `content_hash` and registry signature.
 
@@ -193,6 +195,7 @@ A keyless-signed body carries a producer-signed field naming its attestation:
 - `ctx_id` names the attestation and `content_hash` pins its bytes.
 - The field is ProducerContent: it is inside the `content_hash` preimage under RFC-ACDP-0001 §5.7, so the ephemeral key signs it and nobody can re-point a body at another attestation. The exclusion set is unchanged.
 - `agent_id` MUST equal the attestation's `controller`, and `signature.key_id` and `signature.algorithm` MUST equal its `key_id` and `algorithm`.
+- A consumer claiming `acdp-consumer-keyless` enforces both presence rules too: a keyless key id with no `key_attestation` fails at §8.1 step 1 (`attestation_invalid`), and a `key_attestation` on a body whose key id is not a keyless key id fails closed with `attestation_mismatch` (§12).
 
 Signing is unchanged: the ephemeral key signs the ASCII bytes of the `content_hash` (RFC-ACDP-0001 §5.8). `kl-001` vector 2 is a golden keyless-signed body.
 
@@ -211,7 +214,9 @@ When a registry advertising `acdp-registry-keyless` receives a publish whose `si
 7. The registry SHOULD re-check that the identity is still listed in the controller's document, with its normal caching. Failure: `key_not_authorized`, `identity_not_authorized`.
 8. Signature verification (step 7 of RFC-ACDP-0003 §2.1) uses `public_key_jwk`. Failure: `invalid_signature`.
 
-The receipt's and log leaf's `key_fingerprint` is the attested `key_fingerprint`, which is the RFC-ACDP-0010 §6 fingerprint of the signing key, as for any body. Lifecycle events signed with a keyless key (RFC-ACDP-0013) are verified the same way, with the event's own registry-assigned time in place of `created_at`.
+The receipt's and log leaf's `key_fingerprint` is the attested `key_fingerprint`, which is the RFC-ACDP-0010 §6 fingerprint of the signing key, as for any body.
+
+**Lifecycle events (NORMATIVE).** In this version a keyless key MUST NOT sign an RFC-ACDP-0013 lifecycle event. The event format has no member that carries an attestation, so no consumer could verify such an event. A producer-actor event MUST be signed by a key in the controller's DID document. A registry advertising `acdp-registry-keyless` refuses an event whose signing key id is a keyless key id with `key_resolution_failed` (400), `details.reason` = `keyless_event_unsupported` (`kl-004` F); a registry without the profile refuses it at key resolution anyway. Carrying an attestation on events is reserved in RFC-ACDP-0009 §2.14.
 
 A registry not advertising `acdp-registry-keyless` runs RFC-ACDP-0001 §5.11 unchanged. The DID document has no `acdp-kl-` method, so step 4 fails and the publish is refused with `key_resolution_failed` (`kl-003` J).
 
@@ -231,7 +236,7 @@ Otherwise the publish is refused with `not_authorized` (403) and `details.reason
 
 The rule follows from what the controller authorized. A controller that lists `repo:example/pipeline:ref:refs/heads/main` has authorized that workflow to publish, not to rewrite lineages another workflow owns. Without the rule any listed identity could supersede, and so mark as `superseded`, every lineage of the controller.
 
-The same rule governs lifecycle events signed with a keyless key: a producer-actor `retracted` or `republished` event (RFC-ACDP-0013) on a body is accepted only if its signing key could have superseded that body. A registry not advertising the profile never sees a keyless successor, because it refuses the publish at key resolution (§6.3).
+Lifecycle events cannot be keyless-signed in this version (§6.3), so this rule governs supersession only. A registry not advertising the profile never sees a keyless successor, because it refuses the publish at key resolution (§6.3).
 
 `kl-001` vector 5 is the decision table and `kl-004` the registry scenarios.
 
@@ -245,14 +250,14 @@ A consumer claiming `acdp-consumer-keyless` that meets a keyless key id runs thi
 
 The checks run in a fixed order, and the first failure decides:
 
-1. **Attestation valid.** The attestation's bytes hash to `key_attestation.content_hash`, its signature verifies under its `agent_id` per RFC-ACDP-0001 §5.11, its receipt verifies, and it meets §5.3. Failure: `attestation_invalid`.
+1. **Attestation valid.** The body carries `key_attestation` (§6.2). The attestation's bytes hash to `key_attestation.content_hash`, its signature verifies under its `agent_id` per RFC-ACDP-0001 §5.11, its receipt verifies, and it meets §5.3. Failure: `attestation_invalid`.
 2. **Attester accepted.** The attesting registry is one the consumer accepts (§11). Failure: `untrusted_attester`.
 3. **Bindings.** `agent_id`, `signature.key_id` and `signature.algorithm` match the attestation. Failure: `attestation_mismatch`.
 4. **Placement.** The body's `registry_receipt` verifies (RFC-ACDP-0010 §8), was issued by the attesting registry, and its `key_fingerprint` equals the attested one. Failure: `unplaceable`.
 5. **Window.** The receipt's `created_at` lies in `[not_before, not_after)`. Failure: `outside_attestation_window`.
 6. **Signature.** The signature verifies under `public_key_jwk`. Failure: `invalid_signature`.
 7. **Withdrawn.** The attestation is not retracted (§9.2). Failure: `attestation_withdrawn`.
-8. **Revocations.** If any RFC-ACDP-0014 revocation applies to the attested fingerprint (§9.3), let T be the earliest `compromised_since`. If the receipt's `created_at` ≥ T, fail: `revoked`. Otherwise the status is **historically authorized (pre-compromise)**, and no current DID document is needed.
+8. **Revocations.** If any RFC-ACDP-0014 revocation applies to the attested fingerprint (§9.3), let T be the earliest `compromised_since`. If the receipt's `created_at` ≥ T, fail: `revoked`. Otherwise the status is **historically authorized (pre-compromise)**, and no current DID document is needed. Only a verified revocation that applies counts here. A candidate revocation that targets the fingerprint but cannot be evaluated (§9.3) does not change the status: it makes the revocation result `unknown`, by RFC-ACDP-0014 §7 precedence (unknown overrides not-revoked and pre-compromise; a refusal still wins).
 9. **Identity now.** Fetch the controller's current document. If the identity is listed, **currently authorized**. If it is not, **historically authorized**. If the document cannot be fetched, fail transiently: `controller_unreachable`.
 
 The receipt is the only timestamp that places a keyless signature: the receipt's `created_at` is the time the attester saw it. A consumer MUST NOT place it by the body's own fields or by its own clock.
@@ -269,7 +274,7 @@ A keyless key adds no key-authorization state. The outcome of §8.1 maps onto th
 | any failure in steps 1–8 | **fail closed** | The body MUST NOT be relied on. The reason token says why. |
 | step 9, `controller_unreachable` | **fail closed** (transient) | Retry later. |
 
-A consumer reports a keyless key's status as exactly one of these. An implementation that models key status as a closed enumeration needs no new member. `kl-001` vector 4 is the 21-case table and `kl-005` the scenarios.
+A consumer reports a keyless key's status as exactly one of these, together with its revocation result. When that result is `unknown` (§8.1 step 8), the consumer reports the status from steps 1–9 with `key_revocation: unknown`, never as not-revoked, and a consumer whose policy fails closed on an unknown revocation result refuses the body, as RFC-ACDP-0014 §7 requires for any key. An implementation that models key status as a closed enumeration needs no new member. `kl-001` vector 4 is the 21-case table and `kl-005` the scenarios.
 
 ---
 
@@ -283,6 +288,8 @@ The controller stops a workload identity from signing by removing it from its `A
 
 An attesting registry withdraws an attestation by retracting it with a registry-actor RFC-ACDP-0013 `retracted` event, for example after learning that a token was stolen or the issuer misbehaved. A consumer MUST treat a retracted attestation as a **registry-attested** revocation (RFC-ACDP-0014 §7) of the attested fingerprint with `compromised_since` = `not_before`. Every body signed with that key then fails closed (`attestation_withdrawn`, §8.1 step 7). The registry is the only party that vouched for the key, so its withdrawal removes all support for it. No new revocation trust class is involved.
 
+The attestation's retraction state is the RFC-ACDP-0013 fold of the lifecycle events on it, counting only events signed by the attesting registry; an event by any other actor is disregarded for this purpose. A later registry-actor `republished` event restores the attestation, and from then on it no longer counts as a revocation. A verifier evaluating an as-of instant applies the fold as of that instant (RFC-ACDP-0017 §7.8).
+
 ### 9.3 Key revocation (NORMATIVE)
 
 RFC-ACDP-0014 applies to keyless keys by fingerprint, unchanged. A `key-revocation` body names the attested `key_fingerprint` as `metadata.revoked_key_fingerprint`, with `compromised_since`; the revoked key's controller is the attestation's `controller`. Its trust class follows RFC-ACDP-0014 §7:
@@ -292,21 +299,34 @@ RFC-ACDP-0014 applies to keyless keys by fingerprint, unchanged. A `key-revocati
 
 A revocation signed by a non-org-wide keyless key does not speak for the controller. Consumers MUST NOT apply it, and MAY report it as a hint (`kl-005` G). This stops a stolen workload credential from minting revocations that knock out the controller's other keys.
 
+**Evaluating a keyless-signed revocation (NORMATIVE).** A consumer evaluates the revocation's signer with §8.1 steps 1–7, using the same attester acceptance as for bodies (§11). It does not run step 8, so there is no recursion into revocations of the signer's own key, and it does not run step 9, because both of its outcomes authorize the signer. The outcomes are:
+
+| Signer evaluation | Effect on the revocation |
+|---|---|
+| Passes, attestation `org_wide` | Producer-signed; it applies (`kl-005` I). |
+| Passes, not org-wide | Not applied; MAY be reported as a hint (`kl-005` J, as G). |
+| Not evaluable: no RFC-ACDP-0021 support, attester not accepted (step 2), or attestation unavailable | The revocation lookup is `unknown` (§8.1 step 8, RFC-ACDP-0014 §7), never not-revoked (`kl-005` K). |
+| Definitively invalid: step 1 fails on the attestation's hash, signature, receipt or §5.3 rules, or steps 3–6 fail, or step 7 (withdrawn) | Ignored, as is any RFC-ACDP-0014 revocation whose signature fails (`kl-005` L). |
+
 Revocation discovery (RFC-ACDP-0014 §8) runs by `agent_id`, exactly as for any `did:web` producer. Keyless signing adds no per-identity or per-key discovery path, so consumers that cache revocations by producer DID need no change. To revoke every key a leaked identity received, the controller lists them with `GET /key-attestations` (§5.4) and revokes each fingerprint whose window ends after the compromise (`kl-009` D).
 
 ---
 
 ## 10. Chain Verification (NORMATIVE)
 
-In RFC-ACDP-0017 a keyless node is evaluated with the existing stage vocabularies, and the bundle format is unchanged:
+In RFC-ACDP-0017 a keyless node is evaluated with the existing stage vocabularies, and the bundle format is unchanged. §8.1 is split across the stages as follows:
 
-- The attestation is an ordinary context. The bundle carries it, with its receipt, in `contexts`, as it carries revocation bodies. The controller's DID-document snapshots serve as for any `did:web` producer.
-- The `key` stage (RFC-ACDP-0017 §7.6) runs §8.1 against the chosen snapshot. **currently authorized** gives `current`, and **historically authorized** gives `historical_receipt_attested`. The basis is `registry`, because the attester's receipt placed the signature.
-- **pre-compromise** and `revoked` come from the `key_revocation` stage (§7.9) as for any key. A retracted attestation is an admitted registry-actor retraction there (§9.2).
-- If the attestation is not in the bundle, the stage is `unresolvable` in the latest pass, and `unknown` with reason `no_evidence_at_as_of` in the as-of pass. Any other §8.1 failure gives `unresolvable` in both passes, with `signature: unresolvable`.
+- **Evidence.** The attestation is an ordinary context. The bundle carries it, with its receipt, in `contexts`, as it carries revocation bodies. The controller's DID-document snapshots serve as for any `did:web` producer.
+- **`key` stage** (RFC-ACDP-0017 §7.6). It runs §8.1 steps 1–5 and step 9 against the chosen snapshot. **currently authorized** gives `current`, and **historically authorized** gives `historical_receipt_attested`. The basis is `registry`, and `evidence_time` is the body receipt's `created_at`, because the attester's receipt placed the signature. This holds also when the attester was accepted through a trust list.
+- **`signature` stage** (RFC-ACDP-0017 §7.4). It runs §8.1 step 6 with the attested `public_key_jwk`. A failure is `signature: invalid`, with the `key` stage as located, as for a pinned key that does not verify (RFC-ACDP-0017 §6.3).
+- **`key_revocation` stage** (RFC-ACDP-0017 §7.9). §8.1 steps 7 and 8 are never reported by the `key` stage. **pre-compromise** and `revoked` come from this stage as for any key, and a retracted attestation is an admitted registry-actor retraction here (§9.2), so a withdrawn key gives `key_revocation: revoked` and `key: revoked` (`kl-008` D).
+- **Missing evidence.** When the attestation is absent from the bundle, when it is not yet admitted at T (its receipt's `created_at` is after T), or when no controller snapshot is selectable at T, the `key` stage is `unresolvable` in the latest pass, and `unknown` with reason `no_evidence_at_as_of` in the as-of pass (the `signature` stage is then omitted, RFC-ACDP-0017 §7.4).
+- **Other failures.** Any other failure of steps 1–5 on evidence that is present gives `key: unresolvable` and `signature: unresolvable` in both passes.
+- **Attester acceptance.** `verify_chain` takes the §11 accepted attesters only from *(0.5.0)* `pinned.keyless_attesters` (RFC-ACDP-0017 §6.3), or from an RFC-ACDP-0020 `trusted` evaluation through that RFC's chain integration. It MUST NOT consult local configuration outside `pinned`, so `options_digest` captures which attesters a verdict relied on.
+- **Lifecycle events.** An RFC-ACDP-0013 event whose signing key id is a keyless key id is not admitted: its signer is unresolvable (§6.3).
 - A verifier without RFC-ACDP-0021 support reaches `key: unresolvable` and `signature: unresolvable` for the node, so the node is refused, never `ok` (`kl-008` E).
 
-The verdict schema, the stage values and the `chain-*` known answers are unchanged.
+The verdict schema, the stage values and the `chain-*` known answers are unchanged. The evidence schema's `#/$defs/pinned` gains only the OPTIONAL `keyless_attesters` member, absent when empty, so no existing `options_digest` moves.
 
 ---
 
@@ -316,6 +336,8 @@ An attestation is only as good as the registry that minted it, so a consumer MUS
 
 - the consumer's local keyless configuration names its DID; or
 - the consumer applies RFC-ACDP-0020 trust lists and the keyless-signed body evaluates `trusted` (RFC-ACDP-0020 §6.2) with the attesting registry as its receipting registry. §6.3 step 2 makes the attester and the receipting registry the same for every body accepted on publish.
+
+**Trust-list inputs (NORMATIVE).** The trust-list evaluation runs at §8.1 step 2, before placement, with these RFC-ACDP-0020 §6.2 inputs: the evaluated body is the keyless-signed body; the receipting registry R is the attestation's issuing registry (its `agent_id`); and the registry key fingerprint is that of the key that signed the attestation's receipt, which step 1 verified. Step 4 then requires the body's own receipt to come from that same registry, so a body receipted elsewhere is `unplaceable`. For chain verification the local-configuration path is `pinned.keyless_attesters` (§10).
 
 The default accepts none: a consumer with no keyless configuration and no trust list refuses every keyless-signed body (`untrusted_attester`, `kl-006` A). A trust-list outcome other than `trusted` also refuses it. RFC-ACDP-0020's schema, outcomes and report are unchanged.
 
@@ -333,7 +355,7 @@ Implementations that do not implement this document MUST fail closed on keyless-
 
 No implementation MAY accept a keyless-signed body by treating `key_attestation` as advisory or by skipping key resolution. A verifier that does not run §8 MUST treat the body as unverifiable.
 
-A body that is not keyless-signed but carries `key_attestation` is invalid at publish (§6.2). A consumer verifying such a body ignores the field and verifies the signature by §5.11 as usual.
+A body that is not keyless-signed but carries `key_attestation` is invalid at publish (§6.2). A consumer claiming `acdp-consumer-keyless` fails closed on such a body with `attestation_mismatch` (§6.2). A consumer that implements neither profile has no rule for the field and verifies the signature by §5.11 as usual.
 
 ---
 
@@ -364,7 +386,7 @@ This document adds no wire error code. Every refusal reuses a code whose meaning
 
 The choice was checked against the reference SDK. acdp-rs maps wire codes it knows onto `AcdpError` variants and sends any other code to a catch-all `AcdpError::Registry(WireError)` variant (the enum is `#[non_exhaustive]`), so a new code would not have broken it. Existing codes were still preferred: an SDK or registry that matches on the code keeps working, a client that retries on `key_not_authorized` behaves sensibly, and the reason tokens can change while this document is Draft without touching the three-way-synced code enum.
 
-The consumer-side reasons of §8.1 (`attestation_invalid`, `untrusted_attester`, `unplaceable`, `outside_attestation_window`, `attestation_withdrawn`, `revoked`, `controller_unreachable`) are verification results, not wire errors. Consumers SHOULD report them with these names.
+The consumer-side reasons of §8.1 (`attestation_invalid`, `untrusted_attester`, `attestation_mismatch`, `unplaceable`, `outside_attestation_window`, `attestation_withdrawn`, `revoked`, `controller_unreachable`) are verification results, not wire errors. Consumers SHOULD report them with these names.
 
 ---
 
@@ -372,11 +394,11 @@ The consumer-side reasons of §8.1 (`attestation_invalid`, `untrusted_attester`,
 
 | Fixture | Covers |
 |---|---|
-| `kl-001` | Executed. Golden attestation, keyless-signed body and proof of possession, all recomputed with `jcs`; the §8.2 table (21 cases) and the §7 table (9 cases), replayed by reference evaluators in `scripts/conformance-runner.py`. |
+| `kl-001` | Executed. Golden attestation, keyless-signed body and proof of possession, all recomputed with `jcs`; a verify-only ecdsa-p256 proof of possession (vector 6: the `r||s` form accepted, DER rejected); the §8.2 table (21 cases) and the §7 table (9 cases), replayed by reference evaluators in `scripts/conformance-runner.py`. |
 | `kl-002` | §5: audience mismatch, issuer, identity not listed, `cnf`, replay, proof, `did:key` controller, X509-SVID. |
 | `kl-003` | §6: inside and outside the window, missing, foreign, mismatched and withdrawn attestations, non-keyless registries. |
-| `kl-004` | §7: refused cross-identity supersession, allowed same-identity and org-wide supersession, lifecycle events. |
-| `kl-005` | §8 and §9: the status mapping and the two trust classes. |
+| `kl-004` | §7: refused cross-identity supersession, allowed same-identity and org-wide supersession; §6.3: keyless-signed lifecycle events refused. |
+| `kl-005` | §8 and §9: the status mapping, the two trust classes, and the four outcomes for a keyless-signed revocation. |
 | `kl-006` | §11: untrusted attester, local configuration, trust-list gating. |
 | `kl-007` | §12: old verifiers fail closed; the reserved fragment. |
 | `kl-008` | §10: keyless chain nodes. |

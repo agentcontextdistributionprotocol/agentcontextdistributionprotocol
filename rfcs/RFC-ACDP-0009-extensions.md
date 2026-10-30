@@ -219,6 +219,16 @@ The `key_attestation` member name `fulcio_certificate`, the fragment prefix `acd
 
 **Why deferred:** it brings X.509 path validation, the Fulcio root and its rotation, and Rekor inclusion proofs into ACDP verification, a second trust root beside the registry, and an offline story RFC-ACDP-0017 bundles would have to carry. Registry attestation already gives receipts, logging and RFC-ACDP-0020 trust gating with no new machinery. The binding waits for an adopter that needs it.
 
+### 2.14 Keyless-signed lifecycle events — **RESERVED (0.5.0)**
+
+RFC-ACDP-0021 §6.3 forbids keyless keys from signing RFC-ACDP-0013 lifecycle events, because an event has no member that names the attestation of its signing key. A future amendment may add one, mirroring the body's `key_attestation {ctx_id, content_hash}`, so that a workload can retract or republish the bodies it published without the controller's DID-document key. The RFC-ACDP-0021 §7 identity rule would then govern such events as it governs supersession.
+
+#### Reserved names
+
+The lifecycle-event member name `key_attestation` is RESERVED for this use and MUST NOT be used by extensions.
+
+**Why deferred:** the event schema is closed, so carrying an attestation is a schema change to a Final format, and every RFC-ACDP-0017 event check would need a keyless path. Requiring a DID-document key for events costs a keyless producer little, since retraction is rare and the controller holds that key. The amendment waits for an adopter that needs workload-signed events.
+
 ---
 
 ## 3. Forward Compatibility

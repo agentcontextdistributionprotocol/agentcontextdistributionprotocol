@@ -2,6 +2,22 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Clarifications: RFC-ACDP-0021 second-implementation rulings (0.5.0-draft.2) — 2026-10-30
+
+**No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. `kl-001` vectors 1–5 and every `chain-*` known answer are unchanged.** These rulings answer the thirteen findings acdp-verifier-py raised implementing RFC-ACDP-0021 from the text alone. Two of them change behavior, and both are Draft:
+- **Keyless keys no longer sign lifecycle events (§6.3, §7).** The event format has no place to carry an attestation. A producer-actor event needs a DID-document key, and a registry refuses a keyless-signed event with `key_resolution_failed` / `keyless_event_unsupported` (new reason token). `kl-004` F changes accordingly, and event carriage is reserved in RFC-ACDP-0009 §2.14.
+- **New `pinned` member (RFC-ACDP-0017 §6.3).** The OPTIONAL `pinned.keyless_attesters` lists accepted attesters for `verify_chain`, so `options_digest` covers them. It is omitted when empty, so existing digests do not move; `acdp-evidence.schema.json` `#/$defs/pinned` gains it.
+
+The rest are clarifications:
+- **Unknown revocations (§8.1 step 8, §8.2).** A candidate revocation that can't be evaluated makes the revocation result `unknown`, reported alongside the status, never not-revoked.
+- **Retraction (§9.2).** An attestation's retraction state is the RFC-ACDP-0013 fold over events signed by the attesting registry; `republished` restores it.
+- **Chain stages (§10).** Steps 1–5 and 9 feed the `key` stage, step 6 the `signature` stage (a failure is `signature: invalid`), and steps 7–8 the `key_revocation` stage. Three missing-evidence cases are as-of `unknown`. Basis `registry`, `evidence_time` = the body receipt's `created_at`. Keyless-signed events are not admitted.
+- **Trust-list inputs (§11).** R is the attestation's registry, and the fingerprint is the attestation receipt's signing key.
+- **P-256 proof of possession (§5.1).** It is the 64-byte `r||s` form; DER is rejected. New `kl-001` vector 6, verify-only.
+- **Reserved fragment (§4.2).** Refusal is per method.
+- **`key_attestation` presence (§6.2, §12).** A consumer fails closed on a missing or misplaced field.
+- **Keyless-signed revocations (§9.3).** The signer is evaluated with steps 1–7: it applies, is a hint, is `unknown`, or is ignored. New `kl-005` I–L.
+
 ## v0.5.0 — Draft: RFC-ACDP-0021 Keyless Signing — 2026-10-26
 
 **No existing body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. The `signature` object, the RFC-ACDP-0001 §5.7 exclusion set and the RFC-ACDP-0010 §6 fingerprint encoding are unchanged, and no wire error code was added.** RFC-ACDP-0021 lets a workload sign with a short-lived key instead of a long-lived DID-document key.

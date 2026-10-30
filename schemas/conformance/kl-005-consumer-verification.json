@@ -63,6 +63,31 @@
       "expected": {
         "behavior": "RFC-ACDP-0014 §8 discovery runs for agent_id = the controller exactly as for any did:web producer; no per-identity or per-key discovery is introduced."
       }
+    },
+    {
+      "name": "I — key revocation of a DID-document-era key signed by a keyless key whose attestation is org_wide; signer passes §8.1 steps 1–7",
+      "expected": {
+        "behavior": "Producer-signed (RFC-ACDP-0021 §9.3); the revocation applies."
+      }
+    },
+    {
+      "name": "J — same, signer's attestation not org_wide",
+      "expected": {
+        "behavior": "Not applied; MAY be reported as a hint (as G)."
+      }
+    },
+    {
+      "name": "K — same, signer not evaluable: consumer without RFC-ACDP-0021 support, attester not accepted (§11), or attestation unavailable",
+      "expected": {
+        "key_revocation": "unknown",
+        "behavior": "The revocation lookup is unknown, never not-revoked (RFC-ACDP-0021 §8.1 step 8, RFC-ACDP-0014 §7). A consumer failing closed on unknown refuses the body."
+      }
+    },
+    {
+      "name": "L — same, signer definitively invalid: attestation hash, signature, receipt or §5.3 failure, a step 3–6 failure, or the attestation withdrawn",
+      "expected": {
+        "behavior": "Ignored, as any RFC-ACDP-0014 revocation whose signature fails; the verdict is unchanged."
+      }
     }
   ]
 }

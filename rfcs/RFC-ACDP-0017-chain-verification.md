@@ -216,7 +216,8 @@ The chosen snapshot is evaluated under RFC-ACDP-0001 §5.11 as though it were th
 - DID-document snapshots, each bound to the instant at which the caller vouches for it;
 - registry DIDs whose receipt keys the caller trusts;
 - witness DIDs;
-- discovery vantages: hostnames whose RFC-ACDP-0014 §8 discovery records the caller vouches for. A `revocation_discovery` record whose `vantage` is pinned has basis `pinned` rather than `observed`.
+- discovery vantages: hostnames whose RFC-ACDP-0014 §8 discovery records the caller vouches for. A `revocation_discovery` record whose `vantage` is pinned has basis `pinned` rather than `observed`;
+- *(0.5.0)* keyless attesters: registry DIDs the caller accepts as RFC-ACDP-0021 key attesters ([RFC-ACDP-0021 §10, §11](RFC-ACDP-0021-keyless-signing.md)). This member is Draft; a verifier without RFC-ACDP-0021 support rejects it as an unknown member, as for any options that fail the shape (§6.1(4)).
 
 (NORMATIVE) `pinned` is a JSON object with these members, each OPTIONAL:
 
@@ -225,11 +226,12 @@ The chosen snapshot is evaluated under RFC-ACDP-0001 §5.11 as though it were th
   "snapshots":  [{ "did": "did:web:…", "document": { }, "instant": "2026-09-20T00:00:00.000Z" }],
   "registries": ["did:web:…"],
   "witnesses":  ["did:web:…"],
-  "vantages":   ["registry.example.com"]
+  "vantages":   ["registry.example.com"],
+  "keyless_attesters": ["did:web:…"]
 }
 ```
 
-`registries`, `witnesses` and `vantages` are sorted ascending by UTF-8 bytes and deduplicated. `snapshots` are sorted by `did`, then `instant`, and deduplicated. Two pinned snapshots with the same `did` and `instant` but different `document`s are an error under §6.1(4). An empty array member is omitted. A caller that pins nothing passes `pinned` absent, `null` or `{}`; all three are equivalent. The shape is `#/$defs/pinned` in `acdp-evidence.schema.json`, and options that fail it are rejected as in §6.1(4).
+`registries`, `witnesses`, `vantages` and `keyless_attesters` are sorted ascending by UTF-8 bytes and deduplicated. `snapshots` are sorted by `did`, then `instant`, and deduplicated. Two pinned snapshots with the same `did` and `instant` but different `document`s are an error under §6.1(4). An empty array member is omitted. A caller that pins nothing passes `pinned` absent, `null` or `{}`; all three are equivalent. The shape is `#/$defs/pinned` in `acdp-evidence.schema.json`, and options that fail it are rejected as in §6.1(4).
 
 A pinned snapshot takes part in §6.2 selection like an observed one, but its basis is `pinned`. Pinning promotes a basis. It never overrides a failed check: a pinned key that does not verify a signature is still `signature: invalid`.
 

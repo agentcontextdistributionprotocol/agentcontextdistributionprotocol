@@ -159,7 +159,8 @@
         },
         "registries": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did" } },
         "witnesses": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did" } },
-        "vantages": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/hostname" } }
+        "vantages": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/hostname" } },
+        "keyless_attesters": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did" }, "description": "(0.5.0, Draft) Registry DIDs accepted as RFC-ACDP-0021 key attesters (RFC-ACDP-0021 §10, §11). Sorted and deduplicated like the other arrays; omitted when empty." }
       },
       "additionalProperties": false
     }

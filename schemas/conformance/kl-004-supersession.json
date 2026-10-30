@@ -52,13 +52,14 @@
       }
     },
     {
-      "name": "F — lifecycle event (RFC-ACDP-0013) signed with a keyless key on a body attested to another identity",
+      "name": "F — lifecycle event (RFC-ACDP-0013) signed with a keyless key",
       "expected": {
-        "error_code": "not_authorized",
-        "http_status": 403,
+        "error_code": "key_resolution_failed",
+        "http_status": 400,
         "details": {
-          "reason": "keyless_identity_mismatch"
-        }
+          "reason": "keyless_event_unsupported"
+        },
+        "behavior": "Keyless keys do not sign lifecycle events in this version (RFC-ACDP-0021 §6.3). The refusal applies whatever the event's target and the key's identity, org_wide included."
       }
     }
   ]
