@@ -2,6 +2,16 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Clarifications: RFC-ACDP-0021 draft.3, follow-up rulings — 2026-10-30
+
+**No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. No `kl-001` value and no `chain-*` known answer changed.** These rulings answer six follow-up findings from acdp-verifier-py on draft.2.
+- **N1:** a forged keyless signature is `signature: invalid` with the key stage as located, as draft.2's §10 already says.
+- **N2:** a `key_attestation` that breaks the §6.2 presence rules gives `key: unresolvable` and `signature: unresolvable` in chain verification.
+- **N3:** an unevaluable keyless-signed revocation makes `key_revocation` `{value: unknown, revocation_ctx_id}`, with no basis or evidence_time (new behavioral `kl-008` F).
+- **N4:** a revocation signer whose evidence cannot be obtained is *unavailable*, which gives `unknown`. That covers a missing attestation, receipt or attester DID document, or the wrong attestation being supplied. Evidence that is obtained but fails a check is *invalid*, and the revocation is ignored (§9.3).
+- **N5:** `verify_chain` takes attesters from `pinned.keyless_attesters` only. The trust-list path is for direct verification, and callers pin what their trust lists accept.
+- **N6:** a registry-actor event admitted on the attester's RFC-ACDP-0013 §10.3 event receipt counts as the attester's event (§9.2).
+
 ## v0.5.0 — Clarifications: RFC-ACDP-0021 second-implementation rulings (0.5.0-draft.2) — 2026-10-30
 
 **No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. `kl-001` vectors 1–5 and every `chain-*` known answer are unchanged.** These rulings answer the thirteen findings acdp-verifier-py raised implementing RFC-ACDP-0021 from the text alone. Two of them change behavior, and both are Draft:

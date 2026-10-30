@@ -55,6 +55,16 @@
         "signature": "unresolvable",
         "behavior": "The node is refused, never ok."
       }
+    },
+    {
+      "name": "F — the only revocation candidate for the node's attested fingerprint is keyless-signed and unevaluable (its signer's attester is not in pinned.keyless_attesters); no other revocation applies",
+      "expected": {
+        "key_revocation": {
+          "value": "unknown",
+          "revocation_ctx_id": "<the candidate revocation's ctx_id>"
+        },
+        "behavior": "No basis or evidence_time on the stage. The node is unknown, never ok. An applying revocation (revoked) or unplaceable would win over it."
+      }
     }
   ]
 }
