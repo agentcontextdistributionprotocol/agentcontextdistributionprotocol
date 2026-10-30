@@ -130,7 +130,7 @@ A registry advertising `acdp-registry-keyless` processes the request in this ord
 
 1. **Schema.** Validate against `acdp-key-attestation-request/1`. Failure: `schema_violation` (400).
 2. **Issuer acceptance.** For `oidc`, `identity.issuer` MUST appear in `keyless.accepted_oidc_issuers` (§13.1). For `spiffe`, the trust domain of `identity.subject` MUST appear in `keyless.accepted_spiffe_trust_domains`. Failure: `key_not_authorized` (403), `issuer_not_accepted`. This check precedes any fetch of issuer keys.
-3. **Token.** Verify the token per RFC-AITP-0002 §2.3 (OIDC) or §6 (SPIFFE JWT-SVID): signature under the issuer's published keys, `exp` in the future, `iat` and `nbf` (when present) not in the future beyond 60 seconds of skew, `iss` equal to `identity.issuer` (or the SPIFFE trust domain's issuer) and `sub` equal to `identity.subject`, byte for byte. Failure: `key_not_authorized`, `token_invalid`.
+3. **Token.** Verify the token per RFC-AITP-0002 §2.3 (OIDC) or §6 (SPIFFE JWT-SVID): signature under the issuer's published keys, `exp` in the future, `iat` and `nbf` (when present) not in the future beyond 60 seconds of skew, `iss` equal to `identity.issuer` (or the SPIFFE trust domain's issuer) and `sub` equal to `identity.subject`, byte for byte. Failure: `key_not_authorized`, `token_invalid`. If the issuer's published keys cannot be fetched (a network failure, a timeout or a 5xx response), the failure is transient: `key_resolution_unreachable` (502), `issuer_unreachable`, and the client may retry.
    - **Audience.** The token's `aud` (a string, or an array) MUST contain the registry's own `registry_did`, byte for byte. A hostname, URL or another registry's DID does not count. Failure: `key_not_authorized`, `audience_mismatch`. This stops a token minted for one registry from being replayed at another.
    - **Confirmation.** If the token carries `cnf.jkt`, it MUST equal the RFC 7638 thumbprint of `public_key_jwk` (base64url SHA-256 of its JCS bytes). Failure: `key_not_authorized`, `confirmation_mismatch`.
    - **Single use.** The registry MUST refuse a `token_hash` it has already attested while that token is unexpired. Failure: `key_not_authorized`, `token_replayed`.
@@ -433,7 +433,7 @@ The `kl-001` keys are publicly known test seeds and MUST NOT be used outside tes
 - **[RFC 7517]** JSON Web Key; **[RFC 7638]** JWK Thumbprint; **[RFC 7800]** Proof-of-Possession Key Semantics for JWTs (`cnf`); **[RFC 8785]** JSON Canonicalization Scheme.
 - **[OIDC Core]** OpenID Connect Core 1.0 — ID tokens.
 - **[SPIFFE]** SPIFFE ID and JWT-SVID specifications.
-- **[RFC-AITP-0002]** Agent Identity & Trust Protocol — Identity: the identity descriptor (`type`, `issuer`, `subject`, `proof`), the identity hint, and the OIDC (§2.3) and SPIFFE (§6) verification rules this document reuses.
+- **[RFC-AITP-0002]** Agent Identity & Trust Protocol — Identity: the identity descriptor (`type`, `issuer`, `subject`, `proof`), the identity hint, and the OIDC (§2.3) and SPIFFE (§6) verification rules this document reuses. Normative reference: `rfcs/RFC-AITP-0002-identity.md` in https://github.com/agentidentitytrustprotocol/agentidentitytrustprotocol at commit `c11a2c4`. A later AITP revision applies only once this document re-pins it.
 - **[Sigstore]** Fulcio and Rekor — the design this document adapts, with the registry as attester and its log as Rekor.
 - RFC-ACDP-0001, 0003, 0007, 0008, 0010, 0012, 0013, 0014, 0017, 0020 (this repository).
 
