@@ -88,6 +88,19 @@
       "expected": {
         "behavior": "Ignored, as any RFC-ACDP-0014 revocation whose signature fails; the verdict is unchanged."
       }
+    },
+    {
+      "name": "M — the attesting registry has rotated the key that signed the attestation: the key is in its current verificationMethod but no longer in assertionMethod, and the attestation's receipt verifies with key_fingerprint equal to that key",
+      "expected": {
+        "behavior": "Step 1 passes via the RFC-ACDP-0010 §10 historical arm. The keyless body's status is decided by steps 8–9 as usual (currently or historically authorized, or pre-compromise); the retired attester key does not lower it."
+      }
+    },
+    {
+      "name": "N — same, but the retired key has been removed from verificationMethod entirely (compromise)",
+      "expected": {
+        "reason": "attestation_invalid",
+        "behavior": "Fails closed regardless of the attestation's receipt."
+      }
     }
   ]
 }

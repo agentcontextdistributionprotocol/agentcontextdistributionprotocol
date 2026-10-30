@@ -2,6 +2,10 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Clarifications: RFC-ACDP-0021 draft.4, attester key rotation — 2026-10-30
+
+**No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. No `kl-001` value changed.** RFC-ACDP-0021 §8.1 step 1 verified an attestation's signature against the attesting registry's current `assertionMethod` only. So after a routine rotation of that key, every attestation it had signed failed as `attestation_invalid`, and with them every keyless body resting on those attestations. Step 1 now applies the RFC-ACDP-0010 §10 historical arm through the attestation's own receipt. Removing the key from `verificationMethod` remains the compromise signal and fails closed. New behavioral scenarios `kl-005` M and N. Reported by acdp-registry-rs.
+
 ## v0.5.0 — Promotion: RFC-ACDP-0020 Final; RFC-ACDP-0019 Final except the proxy obligations — 2026-10-30
 
 **No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. No fixture vector or known answer changed.** Two RFCs on the Draft `0.5.0` line reach Final on their own evidence, as RFC-ACDP-0017 did. Both implementations were run at spec `546b8c8`: acdp-rs 0.18.2 (`acdp-mcp-proxy`, `acdp-chain`; require-mode conformance) and acdp-verifier-py `3928ee1` (128 passed, 0 failed).

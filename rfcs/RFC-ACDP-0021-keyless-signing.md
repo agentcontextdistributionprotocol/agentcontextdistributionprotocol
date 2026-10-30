@@ -2,7 +2,7 @@
 # Agent Context Distribution Protocol (ACDP) — Keyless Signing
 
 **Document:** RFC-ACDP-0021
-**Version:** 0.5.0-draft.3
+**Version:** 0.5.0-draft.4
 **Status:** Community Standards Track (Draft)
 
 This RFC specifies **keyless signing**: a producer that runs as a workload (a CI job, a container, a serverless function) signs bodies with a short-lived key it generates on the spot, instead of a long-lived key listed in its DID document. The workload proves who it is with a token it already has (an OIDC ID token or a SPIFFE JWT-SVID). A registry checks that token, checks that the producer's `did:web` document authorizes that workload identity, and publishes a signed, logged **key attestation** binding the ephemeral key to the producer DID for a few minutes. Bodies signed with the key point at the attestation. Consumers verify the attestation, place the signature inside its window with the registry receipt, and report one of the three existing key statuses. It depends on RFC-ACDP-0001 (Core), RFC-ACDP-0003 (Publish), RFC-ACDP-0010 (Registry Receipts), RFC-ACDP-0012 (Transparency Log), RFC-ACDP-0013 (Lifecycle Events), RFC-ACDP-0014 (Key Revocation), RFC-ACDP-0017 (Chain Verification) and RFC-ACDP-0020 (Registry Trust Lists), and reuses the identity descriptor of RFC-AITP-0002.
@@ -16,6 +16,8 @@ This document is a **Draft** ACDP specification on the `acdp/0.5.0` line. It is 
 Both profiles it defines, `acdp-registry-keyless` and `acdp-consumer-keyless` (§13), are OPTIONAL. Registries and consumers that implement neither are unaffected, and they refuse keyless bodies by the ordinary key-resolution rules they already follow (§12).
 
 Nothing in this document invalidates any existing body, signature, `content_hash`, receipt, log leaf, checkpoint, cosignature or verdict. The `signature` object, the RFC-ACDP-0001 §5.7 exclusion set and the RFC-ACDP-0010 §6 fingerprint encoding are unchanged. It adds no wire error code, no key-authorization state, no revocation trust class, no RFC-ACDP-0017 stage value and no evidence-bundle member. The one amendment to Final text, to RFC-ACDP-0003 §3.1 step 3, is *(0.5.0)*-marked and applies only to keyless-signed bodies (§7). It adds one OPTIONAL RFC-ACDP-0017 `pinned` member, `keyless_attesters` (§10); `pinned` is a caller option, not a bundle member, and existing `chain-*` known answers are unchanged.
+
+**Revision 0.5.0-draft.4 (2026-10-30)** keeps attestations verifiable across a rotation of the attester's signing key. §8.1 step 1 now applies the RFC-ACDP-0010 §10 historical arm to the attestation's own signature (`kl-005` M, N). No `kl-001` value changes.
 
 **Revision 0.5.0-draft.3 (2026-10-30)** answers six follow-up findings from acdp-verifier-py. It defines the edge between an unavailable and an invalid revocation signer (§9.3), the `key_revocation` stage shape for an unevaluable keyless revocation (§10, `kl-008` F), the chain stages for a misplaced `key_attestation` (§10), and receipted registry events (§9.2). Chain attesters now come from `pinned` only (§10, §11). No `kl-001` value changes.
 
@@ -253,6 +255,9 @@ A consumer claiming `acdp-consumer-keyless` that meets a keyless key id runs thi
 The checks run in a fixed order, and the first failure decides:
 
 1. **Attestation valid.** The body carries `key_attestation` (§6.2). The attestation's bytes hash to `key_attestation.content_hash`, its signature verifies under its `agent_id` per RFC-ACDP-0001 §5.11, its receipt verifies, and it meets §5.3. Failure: `attestation_invalid`.
+   - **Attester key rotation.** An attestation always carries a receipt, so the RFC-ACDP-0010 §10 historical arm applies to its signature, as a MUST. When the attestation's receipt verifies and its `key_fingerprint` is the fingerprint of a key in the attesting registry's current `verificationMethod`, the attestation signature verifies against that key even if the key has left `assertionMethod`. Step 1 then passes. The retired key does not lower the status of the keyless body; that status still comes from steps 8 and 9. The receipt's own key follows RFC-ACDP-0010 §9.
+   - **Compromise.** A key removed from `verificationMethod` entirely is the registry's compromise signal, and an attestation signed by it fails: `attestation_invalid`. A registry that rotates after compromise re-issues live attestations under the successor key; it cannot re-issue past ones, so bodies resting on them become unverifiable.
+   - A registry rotating for any other reason MUST keep the retired key in `verificationMethod`, as RFC-ACDP-0010 §9 already requires of receipt keys (`kl-005` M, N).
 2. **Attester accepted.** The attesting registry is one the consumer accepts (§11). Failure: `untrusted_attester`.
 3. **Bindings.** `agent_id`, `signature.key_id` and `signature.algorithm` match the attestation. Failure: `attestation_mismatch`.
 4. **Placement.** The body's `registry_receipt` verifies (RFC-ACDP-0010 §8), was issued by the attesting registry, and its `key_fingerprint` equals the attested one. Failure: `unplaceable`.
