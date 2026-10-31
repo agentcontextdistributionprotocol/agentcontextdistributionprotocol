@@ -2,6 +2,10 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Clarifications: profile-table and changelog repairs — 2026-10-30
+
+**No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and no profile changed status.** The `registries/profiles.md` summary table now lists all 17 profiles in `profiles.json`. It was missing `acdp-registry-changes`, `acdp-registry-events`, `acdp-consumer-recall` and `acdp-producer-mcp-proxy`, all Draft. It also listed `acdp-consumer-chain` as Draft, though the profile has been Final since 2026-10-26 (RFC-ACDP-0001 §9.1). A stray merge-conflict marker left in this file by the RFC-ACDP-0021 draft is removed. Reported by the acdp-docs knowledge-base refresh.
+
 ## v0.5.0 — Clarifications: RFC-ACDP-0021 draft.4, attester key rotation — 2026-10-30
 
 **No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. No `kl-001` value changed.** RFC-ACDP-0021 §8.1 step 1 verified an attestation's signature against the attesting registry's current `assertionMethod` only. So after a routine rotation of that key, every attestation it had signed failed as `attestation_invalid`, and with them every keyless body resting on those attestations. Step 1 now applies the RFC-ACDP-0010 §10 historical arm through the attestation's own receipt. Removing the key from `verificationMethod` remains the compromise signal and fails closed. New behavioral scenarios `kl-005` M and N. Reported by acdp-registry-rs.
@@ -59,7 +63,6 @@ The rest are clarifications:
 ## v0.5.0 — Clarifications & tooling: OpenTelemetry attribute registry — 2026-10-26
 
 **No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed.** New registry [`registries/otel-attributes.md`](registries/otel-attributes.md) gives span attribute names in the `acdp.` namespace, all Provisional. Producer side: `acdp.ctx_id`, `acdp.lineage_id`, `acdp.version`, `acdp.content_hash`, `acdp.producer`, `acdp.registry`, `acdp.type`, `acdp.derived_from` and `acdp.publish.error`. Consumer side: `acdp.input.ctx_ids`, `acdp.input.verified`, `acdp.input.chain_verdict`, `acdp.input.chain_verdict_as_of` and `acdp.input.verdict_digest`. The attributes are telemetry only: they are never evidence, and never carry body content or the RFC-ACDP-0019 salt. Agent-SDK hooks and the MCP proxy use these names.
-||||||| parent of 5dba497 (spec(0021): keyless signing with registry-attested ephemeral keys (Draft, 0.5.0))
 
 ## v0.5.0 — Clarifications: RFC-ACDP-0020 second-implementation rulings — 2026-10-26
 
