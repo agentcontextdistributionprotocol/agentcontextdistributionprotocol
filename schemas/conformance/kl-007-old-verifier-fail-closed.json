@@ -1,6 +1,6 @@
 {
   "id": "kl-007",
-  "description": "(0.5.0, Draft) Implementations without RFC-ACDP-0021 support fail closed (RFC-ACDP-0021 §12). Behavioral, registry- and consumer-side.",
+  "description": "(0.5.0) Implementations without RFC-ACDP-0021 support fail closed (RFC-ACDP-0021 §12). Behavioral, registry- and consumer-side.",
   "tags": [
     "keyless",
     "consumer",

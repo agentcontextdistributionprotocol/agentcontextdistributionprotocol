@@ -1,6 +1,6 @@
 {
   "id": "kl-009",
-  "description": "(0.5.0, Draft) Identity-level revocation and attestation listing (RFC-ACDP-0021 §9). Behavioral.",
+  "description": "(0.5.0) Identity-level revocation and attestation listing (RFC-ACDP-0021 §9). Behavioral.",
   "tags": [
     "keyless",
     "registry",

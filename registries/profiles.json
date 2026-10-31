@@ -625,7 +625,7 @@
     {
       "id": "acdp-registry-keyless",
       "inherits": "acdp-registry-receipts",
-      "spec_reference": "RFC-ACDP-0021 §13 (0.5.0, Draft)",
+      "spec_reference": "RFC-ACDP-0021 §13 (0.5.0, Draft; consumer side Final)",
       "required_endpoints_added": [
         "POST /key-attestations",
         "GET /key-attestations"
@@ -639,12 +639,12 @@
         "kl-009-identity-revocation"
       ],
       "not_implemented_permitted_on": [],
-      "notes": "OPTIONAL registry profile. Also requires acdp-registry-transparency-log and acdp-registry-lifecycle (attestations are logged, and withdrawn by retraction) and acdp_version >= 0.5.0; the capabilities document MUST carry the keyless member. A registry advertising it verifies OIDC tokens and JWT-SVIDs for the issuers and trust domains it lists, checks the controller's AcdpKeylessSigning DID-document service, and mints public acdp:key-attestation bodies under its own DID. No new wire error code: refusals use existing codes with RFC-ACDP-0021 details.reason tokens. kl-001 is executed by scripts/conformance-runner.py; the other kl-* fixtures are behavioral. Registries not advertising it MUST answer both endpoints with not_implemented (501) and, by ordinary RFC-ACDP-0001 §5.11 resolution, reject acdp-kl- signatures (kl-007)."
+      "notes": "OPTIONAL registry profile. Also requires acdp-registry-transparency-log and acdp-registry-lifecycle (attestations are logged, and withdrawn by retraction) and acdp_version >= 0.5.0; the capabilities document MUST carry the keyless member. A registry advertising it verifies OIDC tokens and JWT-SVIDs for the issuers and trust domains it lists, checks the controller's AcdpKeylessSigning DID-document service, and mints public acdp:key-attestation bodies under its own DID. No new wire error code: refusals use existing codes with RFC-ACDP-0021 details.reason tokens. kl-001 is executed by scripts/conformance-runner.py; the other kl-* fixtures are behavioral. Registries not advertising it MUST answer both endpoints with not_implemented (501) and, by ordinary RFC-ACDP-0001 §5.11 resolution, reject acdp-kl- signatures (kl-007). Stays Draft until a second registry passes kl-001..004, kl-007 and kl-009; only acdp-registry-rs implements it."
     },
     {
       "id": "acdp-consumer-keyless",
       "inherits": "acdp-consumer",
-      "spec_reference": "RFC-ACDP-0021 §13 (0.5.0, Draft)",
+      "spec_reference": "RFC-ACDP-0021 §13 (0.5.0, Final)",
       "behavioral_requirements": [
         "Resolve an acdp-kl- signature only through the RFC-ACDP-0021 §8 procedure, never through §5.11 or any other path; without it, fail closed (§12)",
         "Accept attestations only from registries the consumer's configuration or RFC-ACDP-0020 trust evaluation accepts; the default accepts none (§11)",
@@ -660,7 +660,7 @@
         "kl-008-chain-verification",
         "kl-009-identity-revocation"
       ],
-      "notes": "OPTIONAL consumer profile (0.5.0, Draft). Adds no key-status value, no revocation trust class, no chain-verdict vocabulary and no evidence-bundle member. kl-001 is executed by scripts/conformance-runner.py (attestation, keyless body, proof of possession, and the §8.2 and §7 tables); the other kl-* fixtures are behavioral."
+      "notes": "OPTIONAL consumer profile. Adds no key-status value, no revocation trust class, no chain-verdict vocabulary and no evidence-bundle member. kl-001 is executed by scripts/conformance-runner.py (attestation, keyless body, proof of possession, and the §8.2 and §7 tables); the other kl-* fixtures are behavioral. Final 2026-10-31: acdp-rs 0.19.0 and acdp-verifier-py 0195978 reproduce kl-001 and pass kl-005..009 at spec da386c4, and agree byte for byte on a chain verdict over real acdp-registry-rs keyless output."
     }
   ],
   "fixture_families": {

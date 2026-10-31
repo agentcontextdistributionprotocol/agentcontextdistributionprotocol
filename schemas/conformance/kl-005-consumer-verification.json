@@ -1,6 +1,6 @@
 {
   "id": "kl-005",
-  "description": "(0.5.0, Draft) Consumer verification and the key-status mapping (RFC-ACDP-0021 §8). Behavioral, consumer-side; the decision table is the executed kl-001 vector 4.",
+  "description": "(0.5.0) Consumer verification and the key-status mapping (RFC-ACDP-0021 §8). Behavioral, consumer-side; the decision table is the executed kl-001 vector 4.",
   "tags": [
     "keyless",
     "consumer",
