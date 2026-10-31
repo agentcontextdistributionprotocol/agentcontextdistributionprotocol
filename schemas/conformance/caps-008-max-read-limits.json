@@ -1,6 +1,6 @@
 {
   "id": "caps-008",
-  "description": "(0.5.0, Draft) Capabilities document carrying the OPTIONAL limits.max_reads_per_minute and limits.max_anonymous_reads_per_minute fields (RFC-ACDP-0007 §3.2 and §3.5 check 12; RFC-ACDP-0008 §4.3). They are the nominal read ceilings per authenticated principal and per source address respectively, integer >= 1, advisory for consumer pacing. A schema-valid document carrying them MUST be accepted by a consumer tracking the 0.5.0 schema; zero, negative or non-integer values MUST be rejected as schema_violation (the schema pins `type: integer, minimum: 1`). The limits sub-object stays closed (additionalProperties: false); this is a 0.5.0 additive schema edit, the same posture as max_publish_per_minute in 0.3.0.",
+  "description": "(0.5.0, Draft) Capabilities document carrying the OPTIONAL limits.max_reads_per_minute and limits.max_anonymous_reads_per_minute fields (RFC-ACDP-0007 §3.2 and §3.5 check 12; RFC-ACDP-0008 §4.3). They are the nominal read ceilings per authenticated principal and per source address respectively, integer >= 1, advisory for consumer pacing. A schema-valid document carrying them MUST be accepted by a consumer tracking the 0.5.0 schema; zero, negative or non-integer values MUST be rejected as schema_violation (the schema pins `type: integer, minimum: 1`). These are 0.5.0 additions to a limits object that was closed through 0.4.0 (the same posture as max_publish_per_minute in 0.3.0); from 0.5.0 limits is open (schema-010).",
   "tags": ["capabilities", "happy-path", "negative", "validation", "limits", "rate-limiting", "0.5.0"],
   "input": {
     "endpoint": "GET /.well-known/acdp.json",
@@ -29,7 +29,7 @@
       "limits.max_reads_per_minute and limits.max_anonymous_reads_per_minute, when present, are integers >= 1",
       "their presence does NOT change RFC-ACDP-0008 §4.3 obligations: 429 responses MUST carry Retry-After, which remains the authoritative backoff signal, and a registry MAY enforce tighter dynamic limits",
       "consumers SHOULD pace reads below the advertised ceiling for the principal they authenticate as (or, anonymously, for their source address)",
-      "the limits sub-object remains closed: any field outside the schema's limits properties is still a schema_violation (schema-010)",
+      "from 0.5.0 the limits sub-object is open: an unknown limits field is tolerated (schema-010), while these known fields keep their value constraints",
       "bearer_static in read_authentication_methods is an ordinary member of the open method vocabulary (registries/auth-methods.md) and needs no special handling at capabilities-validation time"
     ]
   },
@@ -50,5 +50,5 @@
       "expected": { "outcome": "reject", "error_code": "schema_violation", "reason": "violates type: integer" }
     }
   ],
-  "rationale": "A hosted registry needs a documented way to bound read traffic, and consumers need to know the bound to pace below it rather than discover it through 429s. The accept case pins that consumers tracking the 0.5.0 schema accept both fields; the reject variants pin the value constraints. Each reject variant is the accept-case document with the single named value substituted. Conditional on acdp_version >= 0.5.0 because earlier strict validators of the closed limits object reject the new fields by design."
+  "rationale": "A hosted registry needs a documented way to bound read traffic, and consumers need to know the bound to pace below it rather than discover it through 429s. The accept case pins that consumers tracking the 0.5.0 schema accept both fields; the reject variants pin the value constraints. Each reject variant is the accept-case document with the single named value substituted. Conditional on acdp_version >= 0.5.0 because pre-0.5.0 strict validators of the then-closed limits object reject the new fields by design."
 }

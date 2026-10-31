@@ -1,6 +1,6 @@
 {
   "id": "caps-006",
-  "description": "Capabilities document contains an unknown top-level field. The CapabilitiesDocument schema is OPEN (additionalProperties: true at top level — see acdp-capabilities.schema.json line 105 and RFC-ACDP-0007 §3.3) so future versions can advertise new capability flags without a schema bump. Consumers MUST tolerate unknown top-level fields. The `limits` sub-object remains CLOSED (additionalProperties: false at line 102); this fixture exercises top-level openness specifically.",
+  "description": "Capabilities document contains an unknown top-level field. The CapabilitiesDocument schema is OPEN (additionalProperties: true at top level — see acdp-capabilities.schema.json line 105 and RFC-ACDP-0007 §3.3) so future versions can advertise new capability flags without a schema bump. Consumers MUST tolerate unknown top-level fields. The `limits` sub-object was CLOSED through 0.4.0 and is OPEN from 0.5.0 (schema-010); this fixture exercises top-level openness specifically.",
   "tags": ["capabilities", "happy-path", "forward-compatibility", "schema-openness"],
   "input": {
     "endpoint": "GET /.well-known/acdp.json",
@@ -26,7 +26,7 @@
     "consumer_action": "Pass the schema check, route the unknown fields into a catch-all extension map per the implementer-note recipes in RFC-ACDP-0007 §3.3 (Rust serde flatten, Python pydantic extra=allow, Go map[string]any, etc.), and continue with the operation that required fetching capabilities.",
     "negative_examples": {
       "closed_decoder_failure": "An implementation using #[serde(deny_unknown_fields)] (Rust), pydantic with extra='forbid' (Python), or zod's .strict() (TypeScript) will fail this fixture. That is a conformance failure: forward-compat tolerance for unknown top-level fields is normative.",
-      "limits_extra_field": "If the unknown field were placed inside `limits` instead of at the top level, the document MUST be rejected — `limits` is closed (additionalProperties: false). See caps-005 for the fixed-value case and the implementer note in RFC-ACDP-0007 §3.3."
+      "limits_extra_field": "Through 0.4.0, an unknown field placed inside `limits` instead of at the top level made the document a schema_violation (`limits` was closed). From 0.5.0 `limits` is open and such a field MUST be tolerated too (schema-010). Known limits fields keep their value constraints (caps-005)."
     },
     "rationale": "The whole point of the open top-level schema is to make it possible to ship new capability flags (push subscriptions, receipts, walks, etc.) without breaking every deployed v0.1.0 consumer the moment the first registry advertises them. A consumer that treats unknown top-level fields as errors will silently fail the next time ACDP grows."
   }

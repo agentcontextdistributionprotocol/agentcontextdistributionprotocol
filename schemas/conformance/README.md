@@ -508,13 +508,13 @@ These fixtures are required for `acdp-registry-federated` profile conformance (r
 | `schema-007` | `match_summary` with `domain: null` — non-nullable bare string | reject: `schema_violation` |
 | `schema-008` | Body `signature` object with an extra field (closed sub-schema) | reject: `schema_violation` |
 | `schema-009` | Body `data_period` object with an extra field (closed sub-schema) | reject: `schema_violation` |
-| `schema-010` | Capabilities `limits` sub-object with an extra field (closed sub-schema inside the open document) | reject: `schema_violation` |
+| `schema-010` | *(0.5.0, Draft)* Capabilities `limits` sub-object with an extra field (open from 0.5.0; closed through 0.4.0) | accept (0.5.0 consumers tolerate); through 0.4.0: reject `schema_violation` |
 | `schema-011` | `DataRef.format` is `null` — optional, non-nullable string; MUST be omitted, not nulled (RFC-ACDP-0002 §6.8) | reject: `schema_violation` |
 | `schema-012` | `DataRef.location` is `null` — not nullable; mutual exclusivity with `embedded` does not make it nullable (RFC-ACDP-0002 §6.8) | reject: `schema_violation` |
 | `schema-013` | Error envelope `error.details` is `null` — optional, non-nullable object; MUST be omitted, not nulled | reject: `schema_violation` |
 | `schema-014` | Capabilities `limits.idempotency_key_ttl_seconds` is `null` — optional, non-nullable integer; MUST be omitted, not nulled | reject: `schema_violation` |
 
-`schema-005`..`schema-007` pin the absent-vs-null wire convention (RFC-ACDP-0005 §2.2.1): an optional field whose schema types it as a bare string is NOT nullable on the wire; `null` is rejected, `supersedes` (typed `string | null`) is the contrasting legitimately-nullable field. `schema-008`..`schema-010` pin the closed nested schemas in the openness map. `schema-011`..`schema-014` extend the absent-vs-null convention to `DataRef` optional fields (`format`, `location` — RFC-ACDP-0002 §6.8), the error envelope (`error.details`), and the capabilities document (`limits.idempotency_key_ttl_seconds`): in every case an unset optional field MUST be omitted, and an explicit `null` is a `schema_violation`.
+`schema-005`..`schema-007` pin the absent-vs-null wire convention (RFC-ACDP-0005 §2.2.1): an optional field whose schema types it as a bare string is NOT nullable on the wire; `null` is rejected, `supersedes` (typed `string | null`) is the contrasting legitimately-nullable field. `schema-008`..`schema-009` pin closed nested schemas in the openness map; *(0.5.0)* `schema-010` pins that `limits`, closed through 0.4.0, is open from 0.5.0. `schema-011`..`schema-014` extend the absent-vs-null convention to `DataRef` optional fields (`format`, `location` — RFC-ACDP-0002 §6.8), the error envelope (`error.details`), and the capabilities document (`limits.idempotency_key_ttl_seconds`): in every case an unset optional field MUST be omitted, and an explicit `null` is a `schema_violation`.
 
 ### Pagination cursors (RFC-ACDP-0005 §2.5.4)
 
