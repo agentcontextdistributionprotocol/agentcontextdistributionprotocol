@@ -2,6 +2,10 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Clarifications & tooling: posture paragraph reflects RFC-ACDP-0021 consumer side Final — 2026-10-31
+
+No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. The README's canonical "Project status" paragraph, which sibling repos copy verbatim, now says the consumer side of RFC-ACDP-0021 is Final and its registry side Draft, matching #115. acdp-verifier-py found that #115 left it unchanged.
+
 ## v0.5.0 — Promotion: RFC-ACDP-0021 Final for the consumer side — 2026-10-31
 
 **No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. No fixture vector or known answer changed.** RFC-ACDP-0021 (Keyless Signing) reaches Final for everything a consumer reads or verifies:

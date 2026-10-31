@@ -21,7 +21,7 @@ The **current stable version** of ACDP is **`acdp/0.4.0` (`Final`)**; a `0.5.0` 
      posture/copies.json in the agentcontextdistributionprotocol/.github repo. -->
 ## Project status
 
-ACDP is maintained by a single maintainer on a best-effort basis; changes land when a consumer needs them, with no SLA. The stable surface is the 0.1.0 / 0.2.0 / 0.3.0 / 0.4.0 Final lines, which are wire-frozen. On the open 0.5.0 line, RFC-ACDP-0017, RFC-ACDP-0020 and most of RFC-ACDP-0019 are Final. RFC-ACDP-0016, RFC-ACDP-0018, RFC-ACDP-0021 and the *(0.5.0)* amendments are Draft, and RFC-ACDP-0009 is Reserved; a Draft surface is not dependable until promoted. Promotion to Final requires the conformance pack to pass against two independent implementations (`acdp-rs` and `acdp-verifier-py`); the second implementation is therefore part of the protocol's governance machinery, not an optional extra. Security reports: see SECURITY.md in the org profile.
+ACDP is maintained by a single maintainer on a best-effort basis; changes land when a consumer needs them, with no SLA. The stable surface is the 0.1.0 / 0.2.0 / 0.3.0 / 0.4.0 Final lines, which are wire-frozen. On the open 0.5.0 line, RFC-ACDP-0017, RFC-ACDP-0020, most of RFC-ACDP-0019 and the consumer side of RFC-ACDP-0021 are Final. RFC-ACDP-0016, RFC-ACDP-0018, the registry side of RFC-ACDP-0021 and the *(0.5.0)* amendments are Draft, and RFC-ACDP-0009 is Reserved; a Draft surface is not dependable until promoted. Promotion to Final requires the conformance pack to pass against two independent implementations (`acdp-rs` and `acdp-verifier-py`); the second implementation is therefore part of the protocol's governance machinery, not an optional extra. Security reports: see SECURITY.md in the org profile.
 
 ---
 
