@@ -17,7 +17,11 @@ The schema vocabulary is open. Profiles are normatively defined in [RFC-ACDP-000
 | `acdp-registry-lifecycle` | Optional (0.3.0, Final) | RFC-ACDP-0013 §10, RFC-ACDP-0001 §9.1 | `acdp-registry-core`, `acdp_version` ≥ 0.3.0 |
 | `acdp-log-witness` | Optional (0.4.0, Final) | RFC-ACDP-0015 §10, RFC-ACDP-0001 §9.1 | — (a witness is not a registry), `acdp_version` ≥ 0.4.0 |
 | `acdp-consumer` | For consumer deployments | RFC-ACDP-0001 §9.1 | — |
-| `acdp-consumer-chain` | Optional (0.5.0, Draft) | RFC-ACDP-0017 §13, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
+| `acdp-consumer-chain` | Optional (0.5.0, Final) | RFC-ACDP-0017 §13, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
+| `acdp-registry-changes` | Optional (0.5.0, Draft) | RFC-ACDP-0018 §3–§6, RFC-ACDP-0001 §9.1 | `acdp-registry-lifecycle`, `acdp-registry-receipts` |
+| `acdp-registry-events` | Optional (0.5.0, Draft) | RFC-ACDP-0018 §8, RFC-ACDP-0001 §9.1 | `acdp-registry-changes` |
+| `acdp-consumer-recall` | Optional (0.5.0, Draft) | RFC-ACDP-0018 §7, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
+| `acdp-producer-mcp-proxy` | Optional (0.5.0, Draft) | RFC-ACDP-0019 §5, §7, RFC-ACDP-0001 §9.1 | — (a proxy is a producer, not a registry) |
 | `acdp-consumer-trust-list` | Optional (0.5.0, Final) | RFC-ACDP-0020 §9, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
 | `acdp-registry-keyless` | Optional (0.5.0, Draft) | RFC-ACDP-0021 §13, RFC-ACDP-0001 §9.1 | `acdp-registry-receipts`, `acdp-registry-transparency-log`, `acdp-registry-lifecycle` |
 | `acdp-consumer-keyless` | Optional (0.5.0, Draft) | RFC-ACDP-0021 §13, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
