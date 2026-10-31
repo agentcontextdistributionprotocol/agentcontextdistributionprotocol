@@ -2,6 +2,10 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Clarifications & tooling: version matrix v0.5.0 row lists the RFCs and profiles on the line — 2026-10-31
+
+No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. The `docs/version-matrix.md` v0.5.0 row said the line defined "no new profile" and named only RFC-ACDP-0016 and the amendments. It now names the Final and Draft RFCs on the line (0016–0021) and the eight profiles they define, with each one's status as in `registries/profiles.md`. acdp-docs reported the gap.
+
 ## v0.5.0 — Clarifications & tooling: posture paragraph reflects RFC-ACDP-0021 consumer side Final — 2026-10-31
 
 No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. The README's canonical "Project status" paragraph, which sibling repos copy verbatim, now says the consumer side of RFC-ACDP-0021 is Final and its registry side Draft, matching #115. acdp-verifier-py found that #115 left it unchanged.
