@@ -2,6 +2,10 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Clarifications & tooling: README profile table and version matrix brought current — 2026-10-31
+
+No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. The README conformance-profile table now lists all 17 profiles in `registries/profiles.md`, adding `acdp-log-witness`, the RFC-ACDP-0017–0021 consumer, registry and producer profiles, and the `acdp-producer-mcp-proxy` exception to the "no producer-only profile" sentence. `docs/version-matrix.md` now names acdp-rs `0.19.0` (crates.io, npm and PyPI) and `acdp-registry-server` `v0.7.0` as current, says which acdp-rs release first carried RFC-ACDP-0017, 0019, 0020 and 0021, and updates the acdp-verifier-py spec pin to `1560e0f`.
+
 ## v0.5.0 — Clarifications & tooling: RFC index and status sweep (#83) — 2026-10-31
 
 **No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and no RFC changed status.** The documents that list RFCs now cover all 21 and match the statuses in `rfcs/README.md`:

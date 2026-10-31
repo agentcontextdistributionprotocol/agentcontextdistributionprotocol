@@ -193,9 +193,18 @@ Evaluating ACDP against MCP, A2A, C2PA, AT Protocol, or DIDComm? Read **[docs/ac
 | `acdp-registry-head-receipts` *(0.3.0)* | + 0011 | Mints lineage-head receipts on every `GET /lineages/{lineage_id}/current` response. |
 | `acdp-registry-transparency-log` *(0.3.0)* | + 0012 | Serves the append-only Merkle log: checkpoints, inclusion/consistency proofs, leaf enumeration. |
 | `acdp-registry-lifecycle` *(0.3.0)* | + 0013 | Retraction/republication endpoints, append-only lifecycle events, `status: retracted`. |
+| `acdp-log-witness` *(0.4.0)* | 0015 | A witness node, not a registry: verifies and cosigns transparency-log checkpoints. |
+| `acdp-registry-changes` *(0.5.0, Draft)* | + 0018 | Serves the signed changes feed that consumers poll for recall. |
+| `acdp-registry-events` *(0.5.0, Draft)* | + 0018 | Sends content-free webhook hints telling subscribers to pull the changes feed. |
+| `acdp-registry-keyless` *(0.5.0, Draft)* | + 0021 | Accepts keyless publishes: verifies an OIDC workload token and issues a receipted key attestation. |
 | `acdp-consumer` | 0001, 0002, 0004 (read), 0006, 0008 (+ 0010/0011/0012/0013/0014/0015 verification surfaces under 0.2.0/0.3.0/0.4.0) | A consumer that retrieves, verifies, and visibility-checks contexts. |
+| `acdp-consumer-chain` *(0.5.0)* | + 0017 | Verifies a `derived_from` chain offline and as of a given time, from an evidence bundle. |
+| `acdp-consumer-recall` *(0.5.0, Draft)* | + 0018 | Follows a registry's changes feed and detects retractions and revocations of relied-on contexts. |
+| `acdp-consumer-trust-list` *(0.5.0)* | + 0020 | Evaluates contexts against a signed, versioned trust list of producers and registries. |
+| `acdp-consumer-keyless` *(0.5.0, Draft)* | + 0021 | Verifies keyless-signed contexts through their key attestations and receipts. |
+| `acdp-producer-mcp-proxy` *(0.5.0, Draft)* | 0019 | An MCP proxy that signs and publishes tool results as ACDP bodies. |
 
-There is no producer-only profile: producers MUST be able to verify any context they publish, and that requires the same cryptographic core as a registry.
+Apart from `acdp-producer-mcp-proxy`, there is no producer-only profile: producers MUST be able to verify any context they publish, and that requires the same cryptographic core as a registry. [registries/profiles.md](registries/profiles.md) is the authoritative list, with each profile's fixtures and prerequisites.
 
 ---
 
