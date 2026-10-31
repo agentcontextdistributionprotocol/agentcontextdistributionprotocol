@@ -2,6 +2,14 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Draft amendment: the capabilities `limits` sub-object is open (RFC-ACDP-0007 §3.3.1) — 2026-10-31
+
+No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and no error code changed. This relaxes a constraint: no previously valid document becomes invalid.
+
+- **`limits` is Open from 0.5.0** (RFC-ACDP-0007 §3.3.1, `acdp-capabilities.schema.json`). The sub-object goes from `additionalProperties: false` to `true`. Consumers implementing 0.5.0 MUST tolerate an unknown `limits` field and MAY ignore it. Known fields keep their types, ranges and required-ness, so an invalid value is still a `schema_violation`. Why: limits are advisory pacing hints, and while `limits` was closed every new limit was a hard break for every deployed consumer, forcing a coordinated rollout per field.
+- **Rollout.** Consumers implementing 0.4.0 or earlier may still reject unknown `limits` fields, so the staging rule for the read ceilings added on this line (RFC-ACDP-0007 §3.2, RFC-ACDP-0008 §4.3) stays. Limits fields added after this change need no staging for 0.5.0+ consumers.
+- **Fixtures.** `schema-010` flips from reject to accept for 0.5.0 consumers, recording the 0.4.0 reject expectation under `expected.pre_0_5_0`. `caps-006`, `caps-007` and `caps-008` notes, the RFC-ACDP-0007 openness map and fixture lists, `registries/profiles.md` and the conformance README are updated to match.
+
 ## v0.5.0 — Draft amendment: review follow-ups to the static bearer read token and read rate limits — 2026-10-31
 
 No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and no schema or error-code enum changed. These are review follow-ups to the same-day read-token amendment, all within *(0.5.0)* Draft text.

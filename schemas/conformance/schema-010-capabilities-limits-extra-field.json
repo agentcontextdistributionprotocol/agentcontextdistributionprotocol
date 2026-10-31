@@ -1,7 +1,7 @@
 {
   "id": "schema-010",
-  "description": "A capabilities document whose `limits` sub-object carries an unknown field. The capabilities document is OPEN at the top level (additionalProperties: true — see caps-006 / schema-004), but its `limits` sub-object is CLOSED (additionalProperties: false; see acdp-capabilities.schema.json and the openness map in RFC-ACDP-0007 §3.3.1). New limit keys are added by a spec version bump, not by registries inventing fields. Consumers fetching /.well-known/acdp.json MUST reject a document whose `limits` carries an unknown field as schema_violation — even though they MUST tolerate unknown keys at the document top level.",
-  "tags": ["schema-openness", "negative", "capabilities", "limits", "closed-schema"],
+  "description": "(0.5.0, Draft) A capabilities document whose `limits` sub-object carries an unknown field. From 0.5.0 `limits` is OPEN (additionalProperties: true; acdp-capabilities.schema.json and the openness map in RFC-ACDP-0007 §3.3.1), like the document top level (caps-006 / schema-004). A consumer implementing 0.5.0 MUST tolerate the unknown field: it MUST NOT reject the document and MAY ignore the field. Through 0.4.0 `limits` was CLOSED and this same document was a schema_violation; a consumer implementing only 0.4.0 or earlier is held to that earlier expectation (expected.pre_0_5_0).",
+  "tags": ["schema-openness", "capabilities", "limits", "forward-compatibility", "0.5.0"],
   "input": {
     "endpoint": "GET /.well-known/acdp.json",
     "response_body_excerpt": {
@@ -13,10 +13,14 @@
     }
   },
   "expected": {
-    "outcome": "failure",
-    "consumer_outcome": "reject",
-    "consumer_error": "schema_violation",
-    "error_code": "schema_violation",
-    "rationale": "limits is a closed sub-object inside an open document. This split is deliberate: forward-compat capability FLAGS belong at the document top level (open), but the resource LIMITS that gate the protocol (max_payload_bytes, max_embedded_bytes, idempotency_key_ttl_seconds) are a fixed, version-pinned set. An unknown limits key is a misconfiguration or a version-drift bug, not a forward-compatible extension. Companion to caps-006 / schema-004, which pin the open behavior of the document top level."
+    "outcome": "accept",
+    "consumer_outcome": "accept",
+    "consumer_action": "Pass the schema check, ignore (or retain in an extension map) the unknown `limits` key, and continue with the operation that required fetching capabilities. Known limits fields are still validated: a known field with an invalid value remains a schema_violation (caps-005, caps-007, caps-008, schema-014).",
+    "pre_0_5_0": {
+      "consumer_outcome": "reject",
+      "consumer_error": "schema_violation",
+      "note": "Through 0.4.0 `limits` was closed (additionalProperties: false), and this fixture pinned rejection."
+    },
+    "rationale": "Limits are advisory pacing hints a consumer can safely ignore. While `limits` was closed, every new limit was a hard break for every deployed consumer and forced a coordinated rollout per field. Opening it relaxes a constraint: no previously valid document becomes invalid, and limits fields added after 0.5.0 never need staging for 0.5.0+ consumers. Companion to caps-006 / schema-004, which pin the open top level."
   }
 }

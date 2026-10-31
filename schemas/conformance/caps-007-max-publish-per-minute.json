@@ -25,7 +25,7 @@
       "limits.max_publish_per_minute, when present, is an integer >= 1",
       "presence of the field does NOT change RFC-ACDP-0008 §4.3 obligations: per-agent rate limiting is REQUIRED regardless, and 429 responses MUST carry Retry-After",
       "producers SHOULD use the value to pace publishes below the limiter's threshold; Retry-After on an actual 429 remains the authoritative backoff signal",
-      "the limits sub-object remains closed: any field beyond max_payload_bytes / max_embedded_bytes / idempotency_key_ttl_seconds / max_publish_per_minute is still a schema_violation (schema-010)"
+      "through 0.4.0 the limits sub-object was closed, so any field beyond max_payload_bytes / max_embedded_bytes / idempotency_key_ttl_seconds / max_publish_per_minute was a schema_violation; from 0.5.0 limits is open and unknown fields are tolerated (schema-010)"
     ]
   },
   "reject_variants": [
