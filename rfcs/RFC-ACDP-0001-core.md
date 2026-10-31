@@ -268,7 +268,7 @@ The table below is the authoritative, versioned list of fields excluded from Pro
 | `origin_registry` | body | No | 0.1.0 | Registry-assigned at publish time. |
 | `created_at` | body | No | 0.1.0 | Registry-assigned at publish time (§5.3). |
 | `registry_state` | top-level, outside body | N/A — outside body | 0.1.0 | Mutable, registry-derived state (RFC-ACDP-0004 §4). Never part of the body and therefore never an input to `content_hash`. |
-| `registry_receipt` | top-level, outside body | N/A — outside body | reserved | Reserved by RFC-ACDP-0009 §2.7 for future registry-binding receipts. v0.1.0 consumers MUST ignore this field if present. |
+| `registry_receipt` | top-level, outside body | N/A — outside body | reserved (0.1.0); 0.2.0 | Reserved by RFC-ACDP-0009 §2.7 for future registry-binding receipts. v0.1.0 consumers MUST ignore this field if present. *(0.2.0)* Defined by [RFC-ACDP-0010](RFC-ACDP-0010-registry-receipts.md) (Registry Receipts), which promoted the reservation. |
 
 **Unknown body fields (NORMATIVE).** Body fields not listed in this table AND not in the published body schema (`schemas/json/acdp-context-body.schema.json`) are **included** in ProducerContent by default. This is the forward-compatibility guarantee from §6 made concrete: future producer-controlled fields added in minor versions are automatically covered by the producer signature without an exclusion-set update. The fixture `can-008-body-with-unknown-producer-field.json` is the positive case (an unknown producer field MUST be retained for hashing).
 

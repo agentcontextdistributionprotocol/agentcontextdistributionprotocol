@@ -68,8 +68,14 @@ docs:
 	@echo " 15. rfcs/RFC-ACDP-0013-lifecycle-events.md (0.3.0)"
 	@echo " 16. rfcs/RFC-ACDP-0014-key-revocation.md (0.3.0)"
 	@echo " 17. rfcs/RFC-ACDP-0015-witness-cosigning.md (0.4.0)"
-	@echo " 18. docs/overview.md"
-	@echo " 19. docs/integration-guide.md"
+	@echo " 18. rfcs/RFC-ACDP-0016-external-anchors.md (0.5.0, Draft)"
+	@echo " 19. rfcs/RFC-ACDP-0017-chain-verification.md (0.5.0, Final; §10-§11 Draft)"
+	@echo " 20. rfcs/RFC-ACDP-0018-retraction-recall.md (0.5.0, Draft)"
+	@echo " 21. rfcs/RFC-ACDP-0019-mcp-tool-result-provenance.md (0.5.0, Final; §5, §7, §10 Draft)"
+	@echo " 22. rfcs/RFC-ACDP-0020-registry-trust-lists.md (0.5.0, Final)"
+	@echo " 23. rfcs/RFC-ACDP-0021-keyless-signing.md (0.5.0, Draft)"
+	@echo " 24. docs/overview.md"
+	@echo " 25. docs/integration-guide.md"
 
 # ── Clean ────────────────────────────────────────────────────────────────────
 

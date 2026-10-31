@@ -4,21 +4,21 @@ This directory contains the normative RFCs that define the Agent Context Distrib
 
 | RFC | Title | Status |
 |---|---|---|
-| [RFC-ACDP-0001](RFC-ACDP-0001-core.md) | Core — identifiers, JCS, hashing, signatures | Final (0.1.0; 0.2.0/0.3.0 amendments Final; **§5.1's request-media-type sentence is *(0.5.0)* Draft**) |
-| [RFC-ACDP-0002](RFC-ACDP-0002-context-body.md) | Context Body | Final (0.1.0; 0.3.0 amendment Final) |
+| [RFC-ACDP-0001](RFC-ACDP-0001-core.md) | Core — identifiers, JCS, hashing, signatures | Final (0.1.0; 0.2.0/0.3.0 amendments Final; **§5.1's request-media-type sentence, §5.10's strict Ed25519 rule and §5.11's forced DID re-fetch are *(0.5.0)* Draft**) |
+| [RFC-ACDP-0002](RFC-ACDP-0002-context-body.md) | Context Body | Final (0.1.0; 0.3.0 amendment Final; **§4.2's consumer `lineage_id`/`origin_registry` checks are *(0.5.0)* Draft**) |
 | [RFC-ACDP-0003](RFC-ACDP-0003-publish.md) | Publish & Supersession | Final (0.1.0; 0.2.0/0.3.0 amendments Final; **§2.1's media-type pre-step is *(0.5.0)* Draft**) |
-| [RFC-ACDP-0004](RFC-ACDP-0004-retrieval.md) | Retrieval & Lineage | Final (0.1.0; 0.2.0/0.3.0 amendments Final) |
-| [RFC-ACDP-0005](RFC-ACDP-0005-discovery.md) | Discovery (keyword search) | Final (0.1.0; 0.3.0 amendment Final) |
+| [RFC-ACDP-0004](RFC-ACDP-0004-retrieval.md) | Retrieval & Lineage | Final (0.1.0; 0.2.0/0.3.0 amendments Final; **§2.1's consumer lineage checks are *(0.5.0)* Draft**) |
+| [RFC-ACDP-0005](RFC-ACDP-0005-discovery.md) | Discovery (keyword search) | Final (0.1.0; 0.3.0 amendment Final; **§2.3's consumer search completeness is *(0.5.0)* Draft**) |
 | [RFC-ACDP-0006](RFC-ACDP-0006-cross-registry.md) | Cross-Registry References | Final |
 | [RFC-ACDP-0007](RFC-ACDP-0007-capabilities.md) | Capabilities & Errors | Final (0.1.0; 0.2.0/0.3.0/0.4.0 amendments Final; **§4.1 and the `unsupported_media_type` row are *(0.5.0)* Draft**) |
-| [RFC-ACDP-0008](RFC-ACDP-0008-security.md) | Security & Threat Model | Final (0.1.0; 0.2.0/0.3.0 amendments Final) |
+| [RFC-ACDP-0008](RFC-ACDP-0008-security.md) | Security & Threat Model | Final (0.1.0; 0.2.0/0.3.0 amendments Final; **§6.2's `bearer_jwt` read authentication is *(0.5.0)* Draft**) |
 | [RFC-ACDP-0009](RFC-ACDP-0009-extensions.md) | Extensions (attestations, walks, push) | Reserved (§2.7 promoted to RFC-ACDP-0010; §2.1 promoted to RFC-ACDP-0013; §2.11 promoted to RFC-ACDP-0012; §2.12 promoted to RFC-ACDP-0015; §2.10 defined by RFC-ACDP-0018, Draft) |
-| [RFC-ACDP-0010](RFC-ACDP-0010-registry-receipts.md) | Registry Receipts | Final (acdp/0.2.0) |
+| [RFC-ACDP-0010](RFC-ACDP-0010-registry-receipts.md) | Registry Receipts | Final (acdp/0.2.0; **§8/§9's receipt-key status reporting is *(0.5.0)* Draft**) |
 | [RFC-ACDP-0011](RFC-ACDP-0011-lineage-head-receipts.md) | Lineage-Head Receipts | Final (acdp/0.3.0) |
-| [RFC-ACDP-0012](RFC-ACDP-0012-transparency-log.md) | Registry Transparency Log | Final (acdp/0.3.0) |
+| [RFC-ACDP-0012](RFC-ACDP-0012-transparency-log.md) | Registry Transparency Log | Final (acdp/0.3.0; **§9.1's `cannot_verify` inclusion rule is *(0.5.0)* Draft**) |
 | [RFC-ACDP-0013](RFC-ACDP-0013-lifecycle-events.md) | Lifecycle Events & Retraction | Final (acdp/0.3.0) |
-| [RFC-ACDP-0014](RFC-ACDP-0014-key-revocation.md) | Producer Key-Revocation Signal | Final (acdp/0.3.0; **§4's predecessor-keyed enforcement and §10's interim-form retirement are *(0.5.0)* Draft**) |
-| [RFC-ACDP-0015](RFC-ACDP-0015-witness-cosigning.md) | Transparency-Log Witness Cosigning | Final (acdp/0.4.0) |
+| [RFC-ACDP-0014](RFC-ACDP-0014-key-revocation.md) | Producer Key-Revocation Signal | Final (acdp/0.3.0; **§4's predecessor-keyed enforcement, §7's consumer caching, attribution and precedence rules, §8's discovery outcome classes and §10's interim-form retirement are *(0.5.0)* Draft**) |
+| [RFC-ACDP-0015](RFC-ACDP-0015-witness-cosigning.md) | Transparency-Log Witness Cosigning | Final (acdp/0.4.0; **§8's verified-checkpoint quorum precondition is *(0.5.0)* Draft**) |
 | [RFC-ACDP-0016](RFC-ACDP-0016-external-anchors.md) | Typed External Anchors | Draft (acdp/0.5.0) |
 | [RFC-ACDP-0017](RFC-ACDP-0017-chain-verification.md) | Chain Verification and Evidence Bundles | Final (acdp/0.5.0; **§10–§11 registry amendments are *(0.5.0)* Draft**) |
 | [RFC-ACDP-0018](RFC-ACDP-0018-retraction-recall.md) | Retraction Recall: the Changes Feed and Change Hints | Draft (acdp/0.5.0) |

@@ -2,6 +2,16 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Clarifications & tooling: RFC index and status sweep (#83) — 2026-10-31
+
+**No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and no RFC changed status.** The documents that list RFCs now cover all 21 and match the statuses in `rfcs/README.md`:
+- `README.md`: layout tree, RFC list and status prose, with the reading order pointing to `rfcs/README.md` after RFC-ACDP-0010.
+- the `make docs` reading order.
+- `rfcs/README.md`: the status table now marks the 2026-10-04/05/16 *(0.5.0)* Draft amendments in RFCs 0001, 0002, 0004, 0005, 0008, 0010, 0012, 0014 and 0015.
+- `VERSIONING.md`: the 0.5.0 paragraph now names those amendments.
+
+RFC-ACDP-0001 §2's `registry_receipt` row keeps its v0.1.0 reservation text and now points to RFC-ACDP-0010, which defines the field. Reported by the acdp-docs knowledge-base refresh.
+
 ## v0.5.0 — Clarifications: profile-table and changelog repairs — 2026-10-30
 
 **No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and no profile changed status.** The `registries/profiles.md` summary table now lists all 17 profiles in `profiles.json`. It was missing `acdp-registry-changes`, `acdp-registry-events`, `acdp-consumer-recall` and `acdp-producer-mcp-proxy`, all Draft. It also listed `acdp-consumer-chain` as Draft, though the profile has been Final since 2026-10-26 (RFC-ACDP-0001 §9.1). A stray merge-conflict marker left in this file by the RFC-ACDP-0021 draft is removed. Reported by the acdp-docs knowledge-base refresh.
