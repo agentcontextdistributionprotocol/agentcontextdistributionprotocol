@@ -129,6 +129,16 @@
           "minimum": 1,
           "description": "OPTIONAL (0.3.0, RFC-ACDP-0007 §3.2, RFC-ACDP-0008 §4.3): the nominal per-agent publish ceiling this registry enforces on POST /contexts, in requests per minute. Advisory for producer pacing; its presence does NOT relax the RFC-ACDP-0008 §4.3 requirements (per-agent rate limiting is REQUIRED regardless, and 429 responses MUST carry Retry-After). The one 0.3.0 addition to this closed sub-object — strict pre-0.3.0 validators of `limits` will reject documents carrying it."
         },
+        "max_reads_per_minute": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "(0.5.0, Draft) OPTIONAL (RFC-ACDP-0007 §3.2, RFC-ACDP-0008 §4.3): the nominal read ceiling this registry enforces per authenticated principal (effective_requester_did) across its read endpoints, in requests per minute. Advisory for consumer pacing; 429 responses MUST still carry Retry-After, which remains the authoritative backoff signal."
+        },
+        "max_anonymous_reads_per_minute": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "(0.5.0, Draft) OPTIONAL (RFC-ACDP-0007 §3.2, RFC-ACDP-0008 §4.3): the nominal read ceiling this registry enforces per source address on anonymous reads, in requests per minute. Meaningful only when anonymous_public_reads is true. Advisory; 429 responses MUST still carry Retry-After."
+        },
         "change_retention_seconds": {
           "type": "integer",
           "minimum": 2592000,

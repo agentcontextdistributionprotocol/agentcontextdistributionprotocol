@@ -165,6 +165,7 @@ These fixtures exercise the §6.2 contract and the §6.2.1 ordering/atomicity gu
 | ID | Description | Outcome |
 |---|---|---|
 | `rate-001` | Wire shape of `rate_limited` response: HTTP 429, standard error envelope, `Retry-After` MUST be present (integer seconds or HTTP-date; a limiter without an exact refill horizon emits a conservative estimate — RFC-ACDP-0008 §4.3) | failure: `rate_limited` |
+| `rate-002` | *(0.5.0, Draft)* Wire shape of a **read** `rate_limited` refusal (RFC-ACDP-0008 §4.3): HTTP 429, standard envelope, mandatory `Retry-After`; never 404/403; authenticated reads keyed by `effective_requester_did`, anonymous by source address. Consumers MUST NOT retry before `Retry-After`. Self-test only; conditional on `acdp_version` ≥ 0.5.0 for registries | failure: `rate_limited` |
 
 Rate-limit triggering depends on registry policy (window, bucket, threshold), so this fixture pins only the wire shape. Implementers MUST self-test the trigger by configuring a known per-agent rate per the recipe in `rate-001-rate-limited-response-shape.json`.
 
@@ -483,6 +484,7 @@ These fixtures are required for `acdp-registry-federated` profile conformance (r
 | `caps-005` | `limits.max_embedded_bytes != 65536` | reject: `schema_violation` |
 | `caps-006` | Unknown top-level field — consumer MUST tolerate (open schema) | accept |
 | `caps-007` | *(0.3.0)* `limits.max_publish_per_minute` present and ≥ 1 — OPTIONAL advisory per-agent publish ceiling (RFC-ACDP-0007 §3.2, RFC-ACDP-0008 §4.3); reject variants pin zero / negative / non-integer values | accept (valid doc); reject variants: `schema_violation` |
+| `caps-008` | *(0.5.0, Draft)* `limits.max_reads_per_minute` and `limits.max_anonymous_reads_per_minute` present and ≥ 1 — OPTIONAL advisory read ceilings (RFC-ACDP-0007 §3.2 / §3.5 check 12, RFC-ACDP-0008 §4.3); reject variants pin zero / negative / non-integer values. Conditional on `acdp_version` ≥ 0.5.0 for registries | accept (valid doc); reject variants: `schema_violation` |
 
 ### Registry-state `status` pattern (RFC-ACDP-0004 §4.1)
 

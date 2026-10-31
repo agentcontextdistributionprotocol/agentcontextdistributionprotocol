@@ -229,6 +229,16 @@ The lifecycle-event member name `key_attestation` is RESERVED for this use and M
 
 **Why deferred:** the event schema is closed, so carrying an attestation is a schema change to a Final format, and every RFC-ACDP-0017 event check would need a keyless path. Requiring a DID-document key for events costs a keyless producer little, since retraction is rare and the controller holds that key. The amendment waits for an adopter that needs workload-signed events.
 
+### 2.15 Signed-request read authentication — **RESERVED (0.5.0)**
+
+RFC-ACDP-0008 §6.2 lists HTTP Message Signatures [RFC 9421] as a read-authentication method but does not profile it, and the *(0.5.0)* `bearer_jwt` and `bearer_static` methods are both bearer credentials: whoever holds the token can replay it until it expires or is revoked. A future profile may define proof-of-possession reads, either as an RFC 9421 profile (fixed covered components such as `@method`, `@authority`, `@path` and `created`, a `keyid` that is a DID URL resolving to a key in the requester's DID document, a freshness window and a replay cache) or as DPoP-style per-request proofs. The credential would then be bound to the registry authority by construction and would never be a shared secret, which suits consumers that already hold signing keys in a KMS or HSM.
+
+#### Reserved names
+
+The `read_authentication_methods` value `dpop` (already reserved in `registries/auth-methods.md`) and the profile name `acdp-registry-signed-reads` are RESERVED for this use and MUST NOT be used by extensions. `http_signatures` keeps its existing unprofiled meaning until such a profile is defined.
+
+**Why deferred:** a signed-request profile is a wire protocol in its own right, with its own known-answer fixtures, and it puts a DID-document resolution and a replay check on every read, the hottest path a registry serves. `bearer_static` (rotation, revocation, hashed storage, authority-scoped) and the RFC-ACDP-0008 §4.3 read quotas meet the immediate need of bounding and attributing read traffic at a fraction of that cost. The profile waits for an adopter that needs reads authenticated without a shared secret.
+
 ---
 
 ## 3. Forward Compatibility

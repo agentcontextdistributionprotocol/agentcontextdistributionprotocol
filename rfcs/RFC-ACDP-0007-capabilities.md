@@ -56,11 +56,13 @@ Returns the registry's capability declaration. Conforms to [`schemas/json/acdp-c
 
 | Field | Type | Description |
 |---|---|---|
-| `read_authentication_methods` | array of string | Read-authentication methods supported by this registry. At least one MUST be declared if the registry serves any non-public contexts. Defined values: `http_signatures`, `mtls`, `oauth`, `bearer_jwt` *(0.5.0)*. See RFC-ACDP-0008 §6.2. |
+| `read_authentication_methods` | array of string | Read-authentication methods supported by this registry. At least one MUST be declared if the registry serves any non-public contexts. Defined values: `http_signatures`, `mtls`, `oauth`, `bearer_jwt` *(0.5.0)*, `bearer_static` *(0.5.0)*. See RFC-ACDP-0008 §6.2. |
 | `anonymous_public_reads` | boolean | Whether anonymous (unauthenticated) reads are permitted for public contexts. Default `false`. See RFC-ACDP-0008 §6.3. |
 | `supports_idempotency_key` | boolean | Whether this registry honors the `Idempotency-Key` header on `POST /contexts`. Default `false`. See RFC-ACDP-0003 §6. *(0.3.0)* A registry advertising `acdp_version` ≥ 0.3.0 MUST support the header and MUST advertise this field as `true` — the field stays in the document for introspection even though its value is no longer free (RFC-ACDP-0003 §6.4; §3.5 item 10; fixture `idem-007`). |
 | `limits.idempotency_key_ttl_seconds` | integer | How long this registry retains idempotency-key mappings, in seconds. MUST be present when `supports_idempotency_key` is true. Range 86400 (24h) to 604800 (7d). |
 | `limits.max_publish_per_minute` | integer | *(0.3.0)* OPTIONAL. The nominal per-agent publish ceiling this registry enforces on `POST /contexts`, in requests per minute. Integer ≥ 1. Advisory: producers SHOULD use it to pace publishes below the limiter's threshold. Its presence does NOT change the RFC-ACDP-0008 §4.3 requirements — per-agent rate limiting is REQUIRED whether or not the ceiling is advertised, and 429 responses MUST still carry `Retry-After`. The `limits` sub-object is a closed schema (§3.3.1), so this field is a 0.3.0 schema addition: strict pre-0.3.0 validators of `limits` will reject documents carrying it (same compatibility posture as `registry_receipt` on the closed publish response — validators must track the additive schema edit). Fixture `caps-007`. |
+| `limits.max_reads_per_minute` | integer | *(0.5.0)* OPTIONAL. The nominal read ceiling this registry enforces per authenticated principal (`effective_requester_did`, RFC-ACDP-0008 §6.2) across its read endpoints, in requests per minute. Integer ≥ 1. Advisory: consumers SHOULD use it to pace reads below the limiter's threshold. Its presence does NOT change the RFC-ACDP-0008 §4.3 requirements: 429 responses MUST still carry `Retry-After`, which remains the authoritative backoff signal, and a registry MAY enforce tighter dynamic limits. Fixture `caps-008`. |
+| `limits.max_anonymous_reads_per_minute` | integer | *(0.5.0)* OPTIONAL. The nominal read ceiling this registry enforces per source address on anonymous reads (RFC-ACDP-0008 §6.3), in requests per minute. Integer ≥ 1. Meaningful only when `anonymous_public_reads` is `true`. Advisory in the same sense as `max_reads_per_minute`. Fixture `caps-008`. |
 
 ### 3.3 Forward-compatible additions
 
@@ -111,7 +113,7 @@ Conformant consumers MUST reject deserializing a closed-schema object that conta
 
 The table above governs every shape across the schema set; the fixtures are representative, not exhaustive.
 
-*(0.3.0)* Closed does not mean frozen: a closed schema can still gain a field through an additive schema edit in a minor version — the closure means only that fields *not in the schema* are rejected. The `limits` sub-object remains **Closed** (`additionalProperties: false`) and gains the OPTIONAL `max_publish_per_minute` field in 0.3.0 (§3.2), exactly as the closed publish response gained `registry_receipt` in 0.2.0. Validators MUST track the current schema text; a `limits` object carrying any field beyond `max_payload_bytes`, `max_embedded_bytes`, `idempotency_key_ttl_seconds`, and *(0.3.0)* `max_publish_per_minute` remains a `schema_violation` (fixture `schema-010`).
+*(0.3.0)* Closed does not mean frozen: a closed schema can still gain a field through an additive schema edit in a minor version — the closure means only that fields *not in the schema* are rejected. The `limits` sub-object remains **Closed** (`additionalProperties: false`) and gains the OPTIONAL `max_publish_per_minute` field in 0.3.0 (§3.2), exactly as the closed publish response gained `registry_receipt` in 0.2.0. Validators MUST track the current schema text; a `limits` object carrying any field beyond `max_payload_bytes`, `max_embedded_bytes`, `idempotency_key_ttl_seconds`, *(0.3.0)* `max_publish_per_minute`, *(0.5.0)* `max_reads_per_minute` and `max_anonymous_reads_per_minute`, and the *(0.5.0)* changes-feed limits defined by RFC-ACDP-0018 §9 (`change_retention_seconds`, `max_change_filters`) remains a `schema_violation` (fixture `schema-010`). The *(0.5.0)* additions follow the same additive-edit posture as `max_publish_per_minute` did in 0.3.0: strict validators of `limits` that do not track the 0.5.0 schema will reject documents carrying them.
 
 ### 3.4 Example
 
@@ -148,6 +150,7 @@ After fetching `/.well-known/acdp.json`, consumers and cross-registry resolvers 
 9. If the registry serves any non-public contexts, `read_authentication_methods` MUST be non-empty (RFC-ACDP-0008 §6.2). **(value, cross-field)**
 10. *(0.3.0)* If `acdp_version` ≥ `0.3.0`, `supports_idempotency_key` MUST be present and `true` (RFC-ACDP-0003 §6.4) — and check 8 therefore always applies. A 0.3.0-advertising registry without idempotency support is self-contradictory and NON-CONFORMANT. **(value, cross-field)** Fixture `idem-007`.
 11. *(0.3.0)* If `limits.max_publish_per_minute` is present, it MUST be an integer ≥ 1 (schema-enforced: zero, negative, or non-integer values are a `schema_violation`). Fixture `caps-007`.
+12. *(0.5.0)* If `limits.max_reads_per_minute` or `limits.max_anonymous_reads_per_minute` is present, it MUST be an integer ≥ 1 (schema-enforced, as in check 11). Fixture `caps-008`.
 
 A consumer encountering a capabilities document that fails any of the checks above MUST NOT proceed with the operation that required fetching capabilities (publish, retrieval, cross-registry resolution). Implementations SHOULD surface the failing check to operators so the registry can be corrected. The conformance fixtures `caps-001..007` (`schemas/conformance/caps-001-valid-minimal.json` through `caps-007-max-publish-per-minute.json`) plus *(0.3.0)* `idem-007` pin representative positive and negative payloads for the checklist.
 
@@ -170,6 +173,8 @@ server = RegistryServer.try_new(store, caps, authority)
   # - caps.acdp_version >= 0.3.0 AND caps.supports_idempotency_key != true   (0.3.0)
   # - caps.limits.max_publish_per_minute is not None
   #     AND caps.limits.max_publish_per_minute < 1                           (0.3.0)
+  # - caps.limits.max_reads_per_minute or max_anonymous_reads_per_minute
+  #     is present AND < 1                                                   (0.5.0)
   # - caps serves any non-public visibility AND caps.read_authentication_methods is empty
 ```
 
@@ -262,7 +267,7 @@ The full registry is maintained in [`registries/error-codes.md`](../registries/e
 | `not_found` | 404 | Resource not found. (Also returned for visibility-restricted contexts to non-audience requesters; see RFC-ACDP-0008 §4.5.) | RFC-ACDP-0004 §7 |
 | `superseded_target` | 400 / 409 | The `supersedes` target is invalid. `details.reason` provides specifics. HTTP 400 for static violations (`not_found`, `lineage_mismatch`, `cross_registry_supersession_unsupported`, `lineage_walk_failed`); HTTP 409 Conflict for race conditions (`already_superseded`, `version_mismatch`). | RFC-ACDP-0001 §5.6.1, RFC-ACDP-0003 §2.1 steps 9–10, §3.1 |
 | `unsupported_algorithm` | 400 | Signature algorithm not in the registry's `supported_signature_algorithms`. | RFC-ACDP-0001 §5.10, RFC-ACDP-0003 §2.1 step 5 |
-| `rate_limited` | 429 | Per-agent rate limit exceeded. | RFC-ACDP-0008 §4.3 |
+| `rate_limited` | 429 | Rate limit exceeded: per-agent on publish; *(0.5.0)* per authenticated principal or per source address on reads. | RFC-ACDP-0008 §4.3 |
 | `payload_too_large` | 413 | Request body exceeds `limits.max_payload_bytes`. | RFC-ACDP-0003 §2.1 step 2 |
 | `embedded_too_large` | 413 | An embedded data reference exceeds 64 KB. | RFC-ACDP-0002 §6.3, RFC-ACDP-0003 §2.1 step 3 |
 | `key_resolution_failed` | 400 | The signing key referenced by `signature.key_id` could not be resolved due to a permanent condition: the DID document parsed successfully but does not contain the requested key fragment; the fragment is missing from `key_id`; or the producer DID resolves to a network target forbidden by SSRF policy (RFC-ACDP-0008 §4.8). For `did:key`, resolution is pure (RFC-ACDP-0001 §5.11.1) and the same code covers its step 1-4 failures: a `signature.key_id` fragment that does not byte-equal the method-specific identifier, a method-specific identifier that is not valid base58-btc under the `z` multibase prefix, a multicodec prefix that is neither `0xed01` nor `0x8024`, or a key-byte length that does not match the curve — none of which involves a DID document or a network fetch. Fixtures `dk-001`, `dk-002`, `dk-004`; `dk-002` (cases 1-2 only) and `dk-004` tolerate `schema_violation` from a registry whose stricter grammar rejects the *encoding*; `dk-001` does not, because its fault is the *key material* (an unsupported curve), whose remedy is to re-key rather than to fix the request — and neither does `dk-002` case 3 (`z6Mk`), which decodes cleanly and is likewise a step-3 rejection. Producer error; not retryable. | RFC-ACDP-0003 §2.1 step 6, RFC-ACDP-0008 §4.8 |
