@@ -249,7 +249,7 @@ ETag: "sha256:5f8d88d6758cfd43be875d49edc9eaa494de8ec645bf7de6c592b15bbb1e2e3c"
 | `ctx_id` does not exist | `not_found` | 404 |
 | Visibility-restricted, requester not in audience | `not_found` | 404 |
 | Path malformed (e.g. invalid `ctx_id` syntax) | `schema_violation` | 400 |
-| Per-agent rate limit hit | `rate_limited` | 429 |
+| Read rate limit hit (per principal / per source address, RFC-ACDP-0008 §4.3) | `rate_limited` | 429 |
 
 ---
 

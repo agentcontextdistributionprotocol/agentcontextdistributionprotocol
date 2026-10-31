@@ -38,7 +38,7 @@
     "registry_must": [
       "Include a Retry-After header on every 429 rate_limited response (integer seconds or HTTP-date). No omission case: an unbounded/approximate limiter emits a conservative estimate."
     ],
-    "consumer_behavior": "On HTTP 429, consumers MUST back off; Retry-After is now guaranteed present on conformant registries, and consumers SHOULD wait at least that long before retrying (consumers still MUST tolerate its absence from non-conformant or pre-round-5 registries and fall back to their own backoff). Retry without backoff is a producer bug and MAY trigger registry-level escalation (longer windows, broader buckets).",
+    "consumer_behavior": "On HTTP 429, consumers MUST back off; Retry-After is now guaranteed present on conformant registries, and consumers SHOULD wait at least that long before retrying (consumers still MUST tolerate its absence from non-conformant or pre-round-5 registries and fall back to their own backoff). Retry without backoff is a producer bug and MAY trigger registry-level escalation (longer windows, broader buckets). (0.5.0) For implementations of the 0.5.0 line this SHOULD is a MUST: consumers MUST NOT retry before Retry-After elapses (RFC-ACDP-0008 §4.3; fixture rate-002).",
     "rationale": "Rate-limit responses are a load-shedding signal, not an error in the producer's request content. Honoring the wire shape and Retry-After lets producers behave well under load; ignoring them either fails their work (no retry) or amplifies the load (retry-storm)."
   },
   "implementer_self_test_recipe": [

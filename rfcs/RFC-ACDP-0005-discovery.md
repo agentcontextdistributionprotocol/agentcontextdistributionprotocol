@@ -215,7 +215,7 @@ A registry MUST NOT include restricted contexts in `total_estimate` for non-audi
 | Cause | Code | HTTP |
 |---|---|---|
 | Filter value malformed | `schema_violation` | 400 |
-| Per-agent rate limit hit | `rate_limited` | 429 |
+| Read rate limit hit (per principal / per source address, RFC-ACDP-0008 §4.3) | `rate_limited` | 429 |
 
 ---
 

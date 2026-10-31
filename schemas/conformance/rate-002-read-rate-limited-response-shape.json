@@ -43,7 +43,7 @@
   "implementer_self_test_recipe": [
     "1. Configure the registry with a known read rate for an authenticated test principal (e.g. 20 reads per 60 seconds) and a known anonymous rate per source address.",
     "2. Authenticated: issue 21 GET /contexts/{ctx_id} requests as the test principal within 60 seconds. Assert the 21st is HTTP 429 with error.code = 'rate_limited' and a Retry-After header.",
-    "3. Assert a second authenticated principal from the same source address is not refused (the quota is keyed by effective_requester_did).",
+    "3. If the registry keys authenticated reads by effective_requester_did (a SHOULD, RFC-ACDP-0008 §4.3), assert a second authenticated principal from the same source address is not refused. A registry that also applies a per-address cap may refuse it and still conform.",
     "4. Anonymous: repeat step 2 without credentials from one source address and assert the same refusal shape.",
     "5. Assert that a request issued after the indicated wait succeeds."
   ]

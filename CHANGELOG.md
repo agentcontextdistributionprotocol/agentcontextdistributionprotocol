@@ -2,6 +2,16 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Draft amendment: review follow-ups to the static bearer read token and read rate limits — 2026-10-31
+
+No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and no schema or error-code enum changed. These are review follow-ups to the same-day read-token amendment, all within *(0.5.0)* Draft text.
+
+- **Rollout of the read ceilings (RFC-ACDP-0008 §4.3, RFC-ACDP-0007 §3.2).** `limits` is closed, so a pre-0.5.0 consumer rejects a document carrying `max_reads_per_minute` / `max_anonymous_reads_per_minute` and then may not proceed with retrieval. Registries SHOULD NOT advertise them until their consumers track the 0.5.0 schema; enforcing a read limiter does not depend on advertising it. RFC-ACDP-0007 §3.2 now also lists RFC-ACDP-0018's `change_retention_seconds`, `max_change_filters` and `max_changes_page`, which are profile-gated and so carry no such hazard.
+- **`bearer_static` binding (RFC-ACDP-0008 §6.2).** Proof of control of the requester's DID is now REQUIRED before issuance; the only exception is a DID the operator itself administers. The previous "or otherwise establish the binding under its own deployment policy" allowed binding a token to an arbitrary DID, and with it reading that DID's restricted contexts.
+- **Token hygiene.** At least 128 bits from a CSPRNG; `Authorization` header only (the RFC 6750 query and form methods are refused); never logged. Consumers send the token only to the issuing registry's origin, never to another origin, including DataRef hosts, log and witness endpoints and cross-origin redirects. `registries/auth-methods.md` updated to match.
+- **Rejection.** Any token that fails validation (unknown, malformed, expired, revoked) gets `not_authorized` (403), decided before the resource lookup and without anonymous fallback. Revocation takes effect within a documented bound (SHOULD be ≤ 5 minutes); optional expiry SHOULD be supported. The `not_authorized` call-site lists in RFC-ACDP-0007 §5 and `registries/error-codes.md` name this case.
+- **Fixtures and tables.** `rate-002` recipe step 3 is conditional on keying by `effective_requester_did` (a SHOULD). `rate-001`'s consumer behaviour points to the 0.5.0 MUST. RFC-ACDP-0004 and RFC-ACDP-0005 error tables say "Read rate limit hit" instead of "Per-agent". RFC-ACDP-0007 §3.5 lists `caps-008`. The conformance README's rate paragraph covers both fixtures.
+
 ## v0.5.0 — Draft amendment: static bearer read token and read rate limits (RFC-ACDP-0008 §4.3/§6.2, RFC-ACDP-0007 §3.2) — 2026-10-31
 
 **No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. No existing fixture vector or known answer changed.** A downstream consumer that needs to read from hosted registries asked for a defined way to authenticate to, and be rate-limited by, a registry. Most of the pieces already existed (the `bearer_jwt` method, anonymous public reads, the 429 envelope, RFC-ACDP-0006 §4.4's no-credentials-on-hops rule); this *(0.5.0)* Draft amendment fills the two gaps:
