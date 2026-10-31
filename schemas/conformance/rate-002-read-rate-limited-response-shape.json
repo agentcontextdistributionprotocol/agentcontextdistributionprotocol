@@ -1,0 +1,50 @@
+{
+  "id": "rate-002",
+  "description": "(0.5.0, Draft) When a read rate limit is exceeded, the registry MUST refuse with rate_limited (HTTP 429), the standard error envelope (RFC-ACDP-0007 §4) and a mandatory Retry-After header, exactly as for publishes (RFC-ACDP-0008 §4.3 read rate limiting). Authenticated reads are keyed by effective_requester_did and anonymous reads by source address. This fixture pins the wire shape; black-box conformance testing cannot deterministically trigger a read limit on an arbitrary registry, so implementers that rate-limit reads MUST self-test the trigger per the recipe. A registry that does not rate-limit reads satisfies it vacuously.",
+  "tags": ["retrieval", "rate-limiting", "error-envelope", "wire-shape", "0.5.0"],
+  "input": {
+    "scenario": "A consumer issues GET requests to a read endpoint faster than the registry's read limit for its principal (authenticated) or source address (anonymous). The exact rate, window and bucket are registry-defined.",
+    "endpoint": "GET /contexts/{ctx_id} (any read endpoint: retrieval, lineage, search, changes feed, log or lifecycle reads)",
+    "headers": { "Accept": "application/acdp+json", "Authorization": "Bearer <token> (authenticated variant only; absent for the anonymous variant)" }
+  },
+  "expected": {
+    "outcome": "failure",
+    "http_status": 429,
+    "headers": {
+      "Content-Type": "application/acdp+json",
+      "Retry-After": "MUST be present. Integer seconds or an HTTP-date (RFC 7231 §7.1.3). A limiter without an exact refill horizon emits a conservative estimate rather than omitting the header (RFC-ACDP-0008 §4.3)."
+    },
+    "response_body": {
+      "error": {
+        "code": "rate_limited",
+        "message": "Read rate limit exceeded. Retry after the time indicated by the Retry-After header.",
+        "details": {
+          "scope": "read-per-principal"
+        }
+      }
+    },
+    "response_body_constraints": {
+      "MUST_have_key": "error",
+      "error_code_MUST_be": "rate_limited",
+      "error_details_optional": "details fields (scope, retry_after_seconds, etc.) are illustrative and registry-specific; error.details is open. Consumers MUST tolerate any subset. An anonymous refusal SHOULD NOT echo the source address back."
+    },
+    "registry_must_not": [
+      "Answer a read-rate refusal with not_found (404) or not_authorized (403): a throttled consumer would conclude the context is absent or forbidden.",
+      "Return 503 Service Unavailable for per-principal or per-address read limiting.",
+      "Key an anonymous read quota on a client-supplied value (e.g. an untrusted X-Forwarded-For); only a forwarding header set by a trusted proxy may supply the source address (RFC-ACDP-0008 §4.3, §6.4).",
+      "Return a non-application/acdp+json body."
+    ],
+    "registry_must": [
+      "Include a Retry-After header on every 429 rate_limited response, read or write."
+    ],
+    "consumer_behavior": "Consumers MUST honor Retry-After on every 429 from an ACDP endpoint: they MUST NOT retry the refused request before the indicated time has elapsed, and SHOULD defer further requests to the same registry under the same principal (or from the same address) until then. Absent Retry-After (a non-conformant registry), consumers MUST still back off and SHOULD use exponential backoff with jitter.",
+    "rationale": "Without a bounded, documented read tier a hosted registry cannot serve anonymous public reads and authenticated consumers side by side. Pinning the refusal to the same shape as publish limiting means one client code path handles both."
+  },
+  "implementer_self_test_recipe": [
+    "1. Configure the registry with a known read rate for an authenticated test principal (e.g. 20 reads per 60 seconds) and a known anonymous rate per source address.",
+    "2. Authenticated: issue 21 GET /contexts/{ctx_id} requests as the test principal within 60 seconds. Assert the 21st is HTTP 429 with error.code = 'rate_limited' and a Retry-After header.",
+    "3. Assert a second authenticated principal from the same source address is not refused (the quota is keyed by effective_requester_did).",
+    "4. Anonymous: repeat step 2 without credentials from one source address and assert the same refusal shape.",
+    "5. Assert that a request issued after the indicated wait succeeds."
+  ]
+}

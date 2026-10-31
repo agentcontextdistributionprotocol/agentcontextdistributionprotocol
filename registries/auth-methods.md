@@ -12,6 +12,7 @@ The schema vocabulary is open. Registries advertise the methods they accept; con
 | `mtls` | Optional | [RFC 8705 — OAuth 2.0 Mutual-TLS](https://datatracker.ietf.org/doc/html/rfc8705) |
 | `oauth` | Optional | [RFC 6749 — OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc6749) |
 | `bearer_jwt` | Optional (Provisional, 0.5.0) | Registry-issued bearer JWT obtained by a DID challenge (the registry verifies proof of control of the requester's DID key), presented per [RFC 6750](https://datatracker.ietf.org/doc/html/rfc6750) with claims per [RFC 7519](https://datatracker.ietf.org/doc/html/rfc7519). Normative rules: RFC-ACDP-0008 §6.2. |
+| `bearer_static` | Optional (Provisional, 0.5.0) | Opaque, registry-issued, long-lived read token bound at issuance to one requester DID, presented per [RFC 6750](https://datatracker.ietf.org/doc/html/rfc6750); the registry stores only a hash and supports rotation and revocation; the token is sent only to the issuing registry, never to another registry, a DID host or on a cross-registry hop. Issuance is deployment-defined. Normative rules: RFC-ACDP-0008 §6.2. |
 
 ## Adding a method
 

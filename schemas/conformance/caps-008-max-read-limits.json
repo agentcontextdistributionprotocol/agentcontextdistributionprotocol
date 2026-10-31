@@ -1,0 +1,54 @@
+{
+  "id": "caps-008",
+  "description": "(0.5.0, Draft) Capabilities document carrying the OPTIONAL limits.max_reads_per_minute and limits.max_anonymous_reads_per_minute fields (RFC-ACDP-0007 §3.2 and §3.5 check 12; RFC-ACDP-0008 §4.3). They are the nominal read ceilings per authenticated principal and per source address respectively, integer >= 1, advisory for consumer pacing. A schema-valid document carrying them MUST be accepted by a consumer tracking the 0.5.0 schema; zero, negative or non-integer values MUST be rejected as schema_violation (the schema pins `type: integer, minimum: 1`). The limits sub-object stays closed (additionalProperties: false); this is a 0.5.0 additive schema edit, the same posture as max_publish_per_minute in 0.3.0.",
+  "tags": ["capabilities", "happy-path", "negative", "validation", "limits", "rate-limiting", "0.5.0"],
+  "input": {
+    "endpoint": "GET /.well-known/acdp.json",
+    "response_body": {
+      "acdp_version": "0.5.0",
+      "registry_did": "did:web:registry.example.com",
+      "supported_signature_algorithms": ["ed25519"],
+      "supported_did_methods": ["did:web"],
+      "supports_idempotency_key": true,
+      "anonymous_public_reads": true,
+      "read_authentication_methods": ["bearer_static"],
+      "profiles": ["acdp-registry-core"],
+      "limits": {
+        "max_payload_bytes": 1048576,
+        "max_embedded_bytes": 65536,
+        "idempotency_key_ttl_seconds": 86400,
+        "max_publish_per_minute": 60,
+        "max_reads_per_minute": 600,
+        "max_anonymous_reads_per_minute": 60
+      }
+    }
+  },
+  "expected": {
+    "outcome": "accept",
+    "checks": [
+      "limits.max_reads_per_minute and limits.max_anonymous_reads_per_minute, when present, are integers >= 1",
+      "their presence does NOT change RFC-ACDP-0008 §4.3 obligations: 429 responses MUST carry Retry-After, which remains the authoritative backoff signal, and a registry MAY enforce tighter dynamic limits",
+      "consumers SHOULD pace reads below the advertised ceiling for the principal they authenticate as (or, anonymously, for their source address)",
+      "the limits sub-object remains closed: any field outside the schema's limits properties is still a schema_violation (schema-010)",
+      "bearer_static in read_authentication_methods is an ordinary member of the open method vocabulary (registries/auth-methods.md) and needs no special handling at capabilities-validation time"
+    ]
+  },
+  "reject_variants": [
+    {
+      "name": "reads-zero",
+      "response_body_override": { "limits.max_reads_per_minute": 0 },
+      "expected": { "outcome": "reject", "error_code": "schema_violation", "reason": "violates minimum: 1 — a ceiling of zero reads per minute advertises an unusable registry" }
+    },
+    {
+      "name": "anonymous-reads-negative",
+      "response_body_override": { "limits.max_anonymous_reads_per_minute": -1 },
+      "expected": { "outcome": "reject", "error_code": "schema_violation", "reason": "violates minimum: 1" }
+    },
+    {
+      "name": "reads-non-integer",
+      "response_body_override": { "limits.max_reads_per_minute": 600.5 },
+      "expected": { "outcome": "reject", "error_code": "schema_violation", "reason": "violates type: integer" }
+    }
+  ],
+  "rationale": "A hosted registry needs a documented way to bound read traffic, and consumers need to know the bound to pace below it rather than discover it through 429s. The accept case pins that consumers tracking the 0.5.0 schema accept both fields; the reject variants pin the value constraints. Each reject variant is the accept-case document with the single named value substituted. Conditional on acdp_version >= 0.5.0 because earlier strict validators of the closed limits object reject the new fields by design."
+}
