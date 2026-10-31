@@ -1,6 +1,6 @@
 {
   "id": "kl-008",
-  "description": "(0.5.0, Draft) Keyless nodes in RFC-ACDP-0017 chain verification (RFC-ACDP-0021 §10). Behavioral; verdict schema, stage vocabularies and chain KATs are unchanged.",
+  "description": "(0.5.0) Keyless nodes in RFC-ACDP-0017 chain verification (RFC-ACDP-0021 §10). Behavioral; verdict schema, stage vocabularies and chain KATs are unchanged.",
   "tags": [
     "keyless",
     "consumer",

@@ -1,6 +1,6 @@
 {
   "id": "kl-006",
-  "description": "(0.5.0, Draft) Which registries' attestations a consumer accepts (RFC-ACDP-0021 §11). Behavioral, consumer-side.",
+  "description": "(0.5.0) Which registries' attestations a consumer accepts (RFC-ACDP-0021 §11). Behavioral, consumer-side.",
   "tags": [
     "keyless",
     "consumer",

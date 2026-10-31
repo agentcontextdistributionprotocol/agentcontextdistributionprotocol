@@ -1,6 +1,6 @@
 {
   "id": "kl-001",
-  "description": "(0.5.0, Draft) Keyless-signing known answers (RFC-ACDP-0021), executed by scripts/conformance-runner.py. Vector 1 is a golden acdp:key-attestation body minted by the registry: JCS canonical form, content_hash and the registry's Ed25519 signature over the ASCII content_hash, plus the §5.3 metadata rules (fingerprint, JWK thumbprint, key_id fragment, window bound). Vector 2 is a keyless-signed body that references it: content_hash and the ephemeral key's signature. Vector 3 is the §5.1 proof of possession and token hash. Vector 4 is the §8 key-status table and vector 5 the §7 supersession table; vector 6 (added in 0.5.0-draft.2) is a verify-only ecdsa-p256 proof of possession under p256_test_keypair: the 64-byte r||s form verifies and the same signature DER-encoded is rejected (§5.1); the runner replays both algorithms. Test keypairs MUST NOT be used in production.",
+  "description": "(0.5.0) Keyless-signing known answers (RFC-ACDP-0021), executed by scripts/conformance-runner.py. Vector 1 is a golden acdp:key-attestation body minted by the registry: JCS canonical form, content_hash and the registry's Ed25519 signature over the ASCII content_hash, plus the §5.3 metadata rules (fingerprint, JWK thumbprint, key_id fragment, window bound). Vector 2 is a keyless-signed body that references it: content_hash and the ephemeral key's signature. Vector 3 is the §5.1 proof of possession and token hash. Vector 4 is the §8 key-status table and vector 5 the §7 supersession table; vector 6 (added in 0.5.0-draft.2) is a verify-only ecdsa-p256 proof of possession under p256_test_keypair: the 64-byte r||s form verifies and the same signature DER-encoded is rejected (§5.1); the runner replays both algorithms. Test keypairs MUST NOT be used in production.",
   "tags": [
     "keyless",
     "registry",
@@ -33,7 +33,7 @@
     "jwk_thumbprint": "Gec-ct57Gwltw072qu-aed20Ju93h-m8Qv8yjNgvMOM",
     "key_fingerprint": "sha256:f7b7676c94df7e8fd9998e38f9fff04d8588b00d1801764e3f1877a3feae4477"
   },
-  "notes": "The token is a placeholder string, not a JWT: kl-001 pins only token_hash. Token verification itself (issuer keys, aud, exp, cnf.jkt) follows AITP RFC-AITP-0002 §2 and is exercised behaviorally by kl-002. Timestamps are canonical, so the runner compares them as strings.",
+  "notes": "The token is a placeholder string, not a JWT: kl-001 pins only token_hash. Token verification itself (issuer keys, aud, exp, cnf.jkt) follows AITP RFC-AITP-0002 §2 and is exercised behaviorally by kl-002. Timestamps are canonical, so the runner compares them as strings. Cross-implementation known answer (2026-10-31): acdp-rs 0.19.0 and acdp-verifier-py 0195978 reproduce every vector byte for byte at spec da386c4. The consumer-side values (vectors 1, 2 and 4) back RFC-ACDP-0021's Final consumer side. Vectors 3, 5 and 6 are frozen too, though the registry sections they exercise stay Draft.",
   "vectors": [
     {
       "name": "1 attestation body",

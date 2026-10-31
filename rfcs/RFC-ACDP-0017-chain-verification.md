@@ -217,7 +217,7 @@ The chosen snapshot is evaluated under RFC-ACDP-0001 §5.11 as though it were th
 - registry DIDs whose receipt keys the caller trusts;
 - witness DIDs;
 - discovery vantages: hostnames whose RFC-ACDP-0014 §8 discovery records the caller vouches for. A `revocation_discovery` record whose `vantage` is pinned has basis `pinned` rather than `observed`;
-- *(0.5.0)* keyless attesters: registry DIDs the caller accepts as RFC-ACDP-0021 key attesters ([RFC-ACDP-0021 §10, §11](RFC-ACDP-0021-keyless-signing.md)). This member is Draft; a verifier without RFC-ACDP-0021 support rejects it as an unknown member, as for any options that fail the shape (§6.1(4)).
+- *(0.5.0)* keyless attesters: registry DIDs the caller accepts as RFC-ACDP-0021 key attesters ([RFC-ACDP-0021 §10, §11](RFC-ACDP-0021-keyless-signing.md)). This member is Final with RFC-ACDP-0021's consumer side (2026-10-31); a verifier without RFC-ACDP-0021 support rejects it as an unknown member, as for any options that fail the shape (§6.1(4)).
 
 (NORMATIVE) `pinned` is a JSON object with these members, each OPTIONAL:
 
@@ -288,7 +288,7 @@ A receipt that fails is **treated as absent everywhere downstream**, as RFC-ACDP
 - **`revoked`** and **`unplaceable`**: these come from `key_revocation` (§7.9). A revocation verdict overrides this stage.
 - **`unresolvable`**: no snapshot, or a snapshot that cannot be evaluated under §5.11 or lacks the signing key, in the **latest** pass. The as-of-pass equivalent is `unknown`, with reason `no_evidence_at_as_of`. (NORMATIVE) That mapping covers only outcomes that depend on which snapshot is selected. A key that cannot resolve whatever the evidence is `unresolvable` in **both** passes, with `signature: unresolvable`. Examples are a `key_id` whose DID ≠ `body.agent_id`, an empty fragment, or a `did:key` that does not decode. Such a body is not a schema failure, so the bundle is not rejected (§4.1).
 
-*(0.5.0, Draft)* A keyless-signed node (RFC-ACDP-0021) is evaluated with these same values: the bundle carries its `acdp:key-attestation` in `contexts`, and the stage is `current` or `historical_receipt_attested` with basis `registry` per [RFC-ACDP-0021 §10](RFC-ACDP-0021-keyless-signing.md#10-chain-verification-normative). A verifier without RFC-ACDP-0021 support reaches `unresolvable`. This note adds no stage value and changes no Final rule.
+*(0.5.0)* A keyless-signed node (RFC-ACDP-0021) is evaluated with these same values: the bundle carries its `acdp:key-attestation` in `contexts`, and the stage is `current` or `historical_receipt_attested` with basis `registry` per [RFC-ACDP-0021 §10](RFC-ACDP-0021-keyless-signing.md#10-chain-verification-normative). A verifier without RFC-ACDP-0021 support reaches `unresolvable`. This note adds no stage value and changes no Final rule.
 
 ### 7.7 `log`
 

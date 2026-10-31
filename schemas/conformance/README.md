@@ -420,7 +420,7 @@ All eight are behavioral, except `rec-007`'s executed HMAC known-answer vector `
 
 `trust-001` is executed by `scripts/conformance-runner.py` (golden body as `sig-003`, plus the reference RFC-ACDP-0020 §6.2 evaluator over the table); `trust-002`..`007` are behavioral. All seven are REQUIRED for the OPTIONAL `acdp-consumer-trust-list` profile.
 
-### Keyless signing (RFC-ACDP-0021, 0.5.0, Draft)
+### Keyless signing (RFC-ACDP-0021, 0.5.0, Final; registry profile Draft)
 
 | Fixture | Scenario | Expected |
 |---|---|---|
