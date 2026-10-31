@@ -2,6 +2,21 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Promotion: RFC-ACDP-0021 Final for the consumer side — 2026-10-31
+
+**No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. No fixture vector or known answer changed.** RFC-ACDP-0021 (Keyless Signing) reaches Final for everything a consumer reads or verifies:
+- the `AcdpKeylessSigning` service entry and the reserved `acdp-kl-` fragment (§4);
+- the attestation body (§5.3);
+- the keyless key id and `key_attestation` (§6.1–§6.2);
+- consumer verification (§8), revocation and withdrawal as consumers apply them (§9), chain verification (§10), attester acceptance (§11) and failing closed (§12);
+- the `acdp-consumer-keyless` profile.
+
+The evidence, all at spec `da386c4`:
+- **Two consumer implementations.** acdp-rs 0.19.0 and acdp-verifier-py `0195978` reproduce every `kl-001` value byte for byte and pass `kl-005`..`kl-009`. `kl-001` is now a cross-implementation known answer.
+- **One end-to-end run against real registry output.** acdp-registry-rs (PR #509, released in `acdp-registry-server` v0.8.0; keyless on, local OIDC issuer) minted an attestation and accepted a keyless-signed body. The two consumers then reached the same RFC-ACDP-0017 verdict over that output, `ok` in both passes, with byte-identical `options_digest`, `evidence_digest`, `as_of_digest` and `verdict_digest`.
+
+The registry side stays *(0.5.0)* Draft, because only one registry implements it: §5.1–§5.2, §5.4, §6.3, §7, §13.1, the `acdp-registry-keyless` profile, and `kl-002`..`kl-004`. `acdp:key-attestation` and the keyless reason tokens stay Provisional for the same reason. New rule anchors: `acdp.rule.keyless-key-id` and `acdp.rule.keyless-verification`.
+
 ## v0.5.0 — Clarifications & tooling: README profile table and version matrix brought current — 2026-10-31
 
 No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. The README conformance-profile table now lists all 17 profiles in `registries/profiles.md`, adding `acdp-log-witness`, the RFC-ACDP-0017–0021 consumer, registry and producer profiles, and the `acdp-producer-mcp-proxy` exception to the "no producer-only profile" sentence. `docs/version-matrix.md` now names acdp-rs `0.19.0` (crates.io, npm and PyPI) and `acdp-registry-server` `v0.7.0` as current, says which acdp-rs release first carried RFC-ACDP-0017, 0019, 0020 and 0021, and updates the acdp-verifier-py spec pin to `1560e0f`.

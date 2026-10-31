@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Keyless Signing
 
 **Document:** RFC-ACDP-0021
-**Version:** 0.5.0-draft.4
-**Status:** Community Standards Track (Draft)
+**Version:** 0.5.0
+**Status:** Community Standards Track (Final for the consumer side; the registry side, §5.1–§5.2, §5.4, §6.3, §7, §13.1 and the `acdp-registry-keyless` profile, *(0.5.0)* Draft)
 
 This RFC specifies **keyless signing**: a producer that runs as a workload (a CI job, a container, a serverless function) signs bodies with a short-lived key it generates on the spot, instead of a long-lived key listed in its DID document. The workload proves who it is with a token it already has (an OIDC ID token or a SPIFFE JWT-SVID). A registry checks that token, checks that the producer's `did:web` document authorizes that workload identity, and publishes a signed, logged **key attestation** binding the ephemeral key to the producer DID for a few minutes. Bodies signed with the key point at the attestation. Consumers verify the attestation, place the signature inside its window with the registry receipt, and report one of the three existing key statuses. It depends on RFC-ACDP-0001 (Core), RFC-ACDP-0003 (Publish), RFC-ACDP-0010 (Registry Receipts), RFC-ACDP-0012 (Transparency Log), RFC-ACDP-0013 (Lifecycle Events), RFC-ACDP-0014 (Key Revocation), RFC-ACDP-0017 (Chain Verification) and RFC-ACDP-0020 (Registry Trust Lists), and reuses the identity descriptor of RFC-AITP-0002.
 
@@ -11,7 +11,32 @@ This RFC specifies **keyless signing**: a producer that runs as a workload (a CI
 
 ## 1. Status of This Memo
 
-This document is a **Draft** ACDP specification on the `acdp/0.5.0` line. It is open for substantive change until it is promoted, and nothing in it is frozen. Per [VERSIONING.md](../VERSIONING.md), promotion to **Final** requires the conformance fixtures this document defines (`kl-001`..`kl-009`) to pass against two independent interoperating implementations.
+This document is a **Final** ACDP specification at version `0.5.0` for its consumer side, promoted 2026-10-31, ahead of the `acdp/0.5.0` line, which as a whole remains Draft (VERSIONING.md). Breaking changes to its Final parts now require a new RFC and a version bump.
+
+**What is Final.** Everything a consumer reads or verifies:
+- the `AcdpKeylessSigning` service entry in the controller's DID document (§4.1) and the reserved `acdp-kl-` fragment (§4.2);
+- the attestation body (§5.3, `schemas/json/acdp-key-attestation.schema.json`);
+- the keyless key id and the `key_attestation` field (§6.1–§6.2);
+- consumer verification and the status mapping (§8);
+- revocation and withdrawal as a consumer applies them (§9);
+- chain verification and `pinned.keyless_attesters` (§10), attester acceptance (§11), and failing closed (§12);
+- the consumer-side reasons (§13.3) and the `acdp-consumer-keyless` profile (§13.2).
+
+They are pinned by `kl-001`, a cross-implementation known answer, and exercised by `kl-005`..`kl-009`. All of these pass against two independent interoperating consumer implementations, both run at spec `da386c4`:
+- acdp-rs 0.19.0 (`acdp-client`, `acdp-chain`; require-mode conformance 76/76, `keyless_verify` 23/23, chain keyless 20/20);
+- acdp-verifier-py at `0195978`, written from this text alone (128 passed, 0 failed).
+
+Both reproduce every `kl-001` value byte for byte: the golden attestation and keyless body, both proofs of possession (including vector 6's `r||s` form accepted and DER rejected), and the §8.2 and §7 tables.
+
+**End to end.** The consumer side was also checked against real registry output. acdp-registry-rs (PR #509, `a819a68`, keyless on, local OIDC issuer) minted an attestation and accepted a keyless-signed body. Run independently over that output and its RFC-ACDP-0017 bundle, acdp-verifier-py and acdp-rs reached the same verdict: `ok` in both passes, with byte-identical `options_digest`, `evidence_digest`, `as_of_digest` and `verdict_digest`. `verify_keyless` reported currently authorized, and the `issuer_unreachable` error path matched §5.2.
+
+**Still Draft.** The registry's obligations remain *(0.5.0)* **Draft**, not frozen, because only one registry implements them (acdp-registry-rs):
+- the attestation request and its processing (§5.1–§5.2) and listing (§5.4);
+- the keyless publish path (§6.3) and supersession enforcement (§7);
+- the `keyless` capabilities member (§13.1) and the `acdp-registry-keyless` profile (§13.2), with the registry-side fixtures `kl-002`, `kl-003` and `kl-004`;
+- the keyless reason tokens in `registries/error-codes.md`, which stay Provisional.
+
+They are promoted when a second registry passes `kl-001`..`kl-004`, `kl-007` and `kl-009`. The `kl-001` values for the proof of possession (vectors 3 and 6) and the §7 table (vector 5) are frozen with the rest of `kl-001`, so later changes to the Draft registry sections must keep them.
 
 Both profiles it defines, `acdp-registry-keyless` and `acdp-consumer-keyless` (§13), are OPTIONAL. Registries and consumers that implement neither are unaffected, and they refuse keyless bodies by the ordinary key-resolution rules they already follow (§12).
 
@@ -99,7 +124,7 @@ The fragment prefix `acdp-kl-` is reserved for keyless key ids (§6.1). A DID do
 
 ## 5. Key Attestation
 
-### 5.1 The request: `POST /key-attestations` (NORMATIVE)
+### 5.1 The request: `POST /key-attestations` (NORMATIVE) *(0.5.0, Draft)*
 
 A workload requests an attestation with `POST /key-attestations`, `Content-Type: application/json`, and an `acdp-key-attestation-request/1` body (`schemas/json/acdp-key-attestation-request.schema.json`; example in `examples/key-attestation-request/`):
 
@@ -126,7 +151,7 @@ canonicalized with JCS (RFC 8785). The `pop` encoding follows RFC-ACDP-0001 §5.
 
 The request is a write. It authenticates by its token, not by an RFC-ACDP-0008 HTTP signature, so registries MUST accept it without one. Registries SHOULD rate-limit it per `(issuer, subject)` and per source address.
 
-### 5.2 Processing (NORMATIVE)
+### 5.2 Processing (NORMATIVE) *(0.5.0, Draft)*
 
 A registry advertising `acdp-registry-keyless` processes the request in this order and stops at the first failure. Every refusal uses an existing wire error code (RFC-ACDP-0007 §5) with the `details.reason` shown; §13.3 explains why no code was added.
 
@@ -170,7 +195,7 @@ A verifier checks the runtime rules the schema cannot express: `key_fingerprint`
 
 `kl-001` vector 1 is a golden attestation with its canonical form, `content_hash` and registry signature.
 
-### 5.4 Listing: `GET /key-attestations` (NORMATIVE)
+### 5.4 Listing: `GET /key-attestations` (NORMATIVE) *(0.5.0, Draft)*
 
 `GET /key-attestations?controller=<did>` returns every attestation the registry minted for the controller, newest first: `{items: [{ctx_id, content_hash, metadata}], next_cursor}`, paginated like RFC-ACDP-0005 search. Optional `issuer` and `subject` parameters narrow it to one identity. The endpoint is public, like the attestations. It lets a controller find every key attested for a leaked identity, so it can revoke them (§9.3).
 
@@ -205,7 +230,7 @@ Signing is unchanged: the ephemeral key signs the ASCII bytes of the `content_ha
 
 The field is schema-valid in `acdp-context-body` and `acdp-publish-request`. A registry advertising `acdp_version` < `0.5.0` MUST reject a publish carrying it with `schema_violation` (`kl-007` C), as for `anchors` (RFC-ACDP-0016).
 
-### 6.3 Publish path (NORMATIVE)
+### 6.3 Publish path (NORMATIVE) *(0.5.0, Draft)*
 
 When a registry advertising `acdp-registry-keyless` receives a publish whose `signature.key_id` is a keyless key id, it replaces RFC-ACDP-0003 §2.1 step 6's key resolution (and only that) with these checks, in order:
 
@@ -226,7 +251,7 @@ A registry not advertising `acdp-registry-keyless` runs RFC-ACDP-0001 §5.11 unc
 
 ---
 
-## 7. Supersession (NORMATIVE)
+## 7. Supersession (NORMATIVE) *(0.5.0, Draft)*
 
 *(0.5.0)* This section amends RFC-ACDP-0003 §3.1 step 3 for keyless-signed bodies. Step 3 still requires the successor's `agent_id` to equal the predecessor's. A registry advertising `acdp-registry-keyless` then also applies this rule, where "keyless" describes how a body is signed:
 
@@ -370,7 +395,7 @@ A body that is not keyless-signed but carries `key_attestation` is invalid at pu
 
 ## 13. Capabilities, Profiles and Errors
 
-### 13.1 Capabilities (NORMATIVE)
+### 13.1 Capabilities (NORMATIVE) *(0.5.0, Draft)*
 
 A registry advertising `acdp-registry-keyless` MUST include a top-level `keyless` member in its capabilities document (`schemas/json/acdp-capabilities.schema.json`, example `examples/capabilities/acdp-capabilities-keyless.json`), and MUST NOT include it otherwise:
 
@@ -384,8 +409,8 @@ Producers read it to pick a registry, and to request a token whose `aud` is that
 
 ### 13.2 Profiles (NORMATIVE)
 
-- **`acdp-registry-keyless`** *(OPTIONAL)*. Prerequisites `acdp-registry-receipts`, `acdp-registry-transparency-log` and `acdp-registry-lifecycle`, with `acdp_version` ≥ `0.5.0`. Serves `POST /key-attestations` and `GET /key-attestations` (§5), accepts keyless-signed publishes (§6.3), enforces §7, and advertises `keyless`. Fixtures: `kl-001`, `kl-002`, `kl-003`, `kl-004`, `kl-007`, `kl-009`.
-- **`acdp-consumer-keyless`** *(OPTIONAL)*. Prerequisite `acdp-consumer`. Runs §8 for keyless key ids and no other resolution, applies §9 and §11, and evaluates keyless chain nodes per §10. Fixtures: `kl-001`, `kl-005`, `kl-006`, `kl-007`, `kl-008`, `kl-009`.
+- **`acdp-registry-keyless`** *(OPTIONAL; (0.5.0, Draft))*. Prerequisites `acdp-registry-receipts`, `acdp-registry-transparency-log` and `acdp-registry-lifecycle`, with `acdp_version` ≥ `0.5.0`. Serves `POST /key-attestations` and `GET /key-attestations` (§5), accepts keyless-signed publishes (§6.3), enforces §7, and advertises `keyless`. Fixtures: `kl-001`, `kl-002`, `kl-003`, `kl-004`, `kl-007`, `kl-009`.
+- **`acdp-consumer-keyless`** *(OPTIONAL; Final)*. Prerequisite `acdp-consumer`. Runs §8 for keyless key ids and no other resolution, applies §9 and §11, and evaluates keyless chain nodes per §10. Fixtures: `kl-001`, `kl-005`, `kl-006`, `kl-007`, `kl-008`, `kl-009`.
 
 Both are listed in `registries/profiles.md` and RFC-ACDP-0001 §9.1.
 

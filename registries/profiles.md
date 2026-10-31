@@ -24,7 +24,7 @@ The schema vocabulary is open. Profiles are normatively defined in [RFC-ACDP-000
 | `acdp-producer-mcp-proxy` | Optional (0.5.0, Draft) | RFC-ACDP-0019 §5, §7, RFC-ACDP-0001 §9.1 | — (a proxy is a producer, not a registry) |
 | `acdp-consumer-trust-list` | Optional (0.5.0, Final) | RFC-ACDP-0020 §9, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
 | `acdp-registry-keyless` | Optional (0.5.0, Draft) | RFC-ACDP-0021 §13, RFC-ACDP-0001 §9.1 | `acdp-registry-receipts`, `acdp-registry-transparency-log`, `acdp-registry-lifecycle` |
-| `acdp-consumer-keyless` | Optional (0.5.0, Draft) | RFC-ACDP-0021 §13, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
+| `acdp-consumer-keyless` | Optional (0.5.0, Final) | RFC-ACDP-0021 §13, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
 
 (RFC-ACDP-0014, the producer key-revocation signal, deliberately defines **no profile**: a revocation is an ordinary context carried by existing surfaces; its registry-side validation binds to `acdp_version` ≥ 0.3.0 and its consumer semantics to `acdp-consumer` — RFC-ACDP-0014 §10.)
 
@@ -200,7 +200,7 @@ For consumers that decide which registries to rely on from signed trust lists (R
 
 ### `acdp-registry-keyless` *(0.5.0)*
 
-For registries that attest short-lived producer keys for OIDC and SPIFFE workload identities (RFC-ACDP-0021). Draft and OPTIONAL. Prerequisites `acdp-registry-receipts`, `acdp-registry-transparency-log` and `acdp-registry-lifecycle`.
+For registries that attest short-lived producer keys for OIDC and SPIFFE workload identities (RFC-ACDP-0021). Draft and OPTIONAL: RFC-ACDP-0021's consumer side is Final (2026-10-31), but the registry obligations this profile adds (§5.1–§5.2, §5.4, §6.3, §7, §13.1) wait for a second registry. Prerequisites `acdp-registry-receipts`, `acdp-registry-transparency-log` and `acdp-registry-lifecycle`.
 
 | | Required (in addition to the prerequisites) |
 |---|---|
@@ -211,11 +211,11 @@ For registries that attest short-lived producer keys for OIDC and SPIFFE workloa
 
 ### `acdp-consumer-keyless` *(0.5.0)*
 
-For consumers that verify keyless-signed bodies (RFC-ACDP-0021). Draft and OPTIONAL. Prerequisite `acdp-consumer`.
+For consumers that verify keyless-signed bodies (RFC-ACDP-0021). Final (2026-10-31) and OPTIONAL. Prerequisite `acdp-consumer`.
 
 | | Required (in addition to `acdp-consumer`) |
 |---|---|
-| **Behavioral requirements** | Resolve `acdp-kl-` keys only through §8; accept attesters only from configuration or RFC-ACDP-0020 evaluation (default none, §11); place the signature with the attester's receipt inside the window; report one of the three existing key statuses or fail closed, keeping the two existing revocation trust classes (§8.2, §9); evaluate keyless chain nodes with the existing key-stage values (§10) |
+| **Behavioral requirements** | Resolve `acdp-kl-` keys only through §8; accept attesters only from configuration or RFC-ACDP-0020 evaluation (default none, §11), and in chain verification only from `pinned.keyless_attesters` (§10); place the signature with the attester's receipt inside the window; report one of the three existing key statuses or fail closed, keeping the two existing revocation trust classes (§8.2, §9); evaluate keyless chain nodes with the existing key-stage values (§10) |
 | **Conformance fixtures** | `kl-001` (executed), `kl-005` (verification and key status), `kl-006` (attester trust), `kl-007` (fail closed), `kl-008` (chain verification), `kl-009` (identity revocation) |
 | **`not_implemented` permitted on** | Not applicable — a consumer runs no registry endpoints |
 
