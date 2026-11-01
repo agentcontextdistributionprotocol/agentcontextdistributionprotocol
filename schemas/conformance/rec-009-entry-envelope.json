@@ -643,7 +643,7 @@
         "ctx_id": "acdp://registry.example.com/cccccccc-cccc-4ccc-8ccc-cccccccccccc",
         "lineage_id": "lin:sha256:469c127169eca9e773600267b72e89239fc1b7634496dc1e6f233073a21aaa3e",
         "agent_id": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
-        "recorded_at": "2026-10-04T00:00:00Z",
+        "recorded_at": "2026-10-04T00:00:00.001Z",
         "superseded_by": "acdp://registry.example.com/dddddddd-dddd-4ddd-8ddd-dddddddddddd",
         "registry_receipt": {
           "registry_did": "did:web:registry.example.com",
@@ -680,7 +680,7 @@
         "verdict": "reject",
         "reason": "recorded_at_mismatch"
       },
-      "_note": "Timestamp equality is string equality: 00:00:00Z is not 00:00:00.000Z."
+      "_note": "recorded_at must equal registry_receipt.created_at exactly. Both are pinned to the canonical millisecond form by their schemas, so the mismatch is a different instant rather than a different precision; an entry that is not canonical fails the entry schema check before this rule runs."
     }
   ]
 }

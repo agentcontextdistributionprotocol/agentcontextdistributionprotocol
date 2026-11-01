@@ -2,6 +2,10 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Fixture fix: `rec-009` vector `env-sup-recorded-at` uses a canonical timestamp — 2026-11-01
+
+No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. The `env-sup-recorded-at` vector in `rec-009` gave the entry a `recorded_at` of `2026-10-04T00:00:00Z`. `acdp-change.schema.json` pins `recorded_at` to the canonical millisecond form, so a consumer that validates the entry first rejected it with `schema_violation` before the envelope rule ran, not with the pinned `recorded_at_mismatch`. The registry receipt pins `created_at` to the same form, so a precision-only mismatch can never be schema-valid. The vector now uses `2026-10-04T00:00:00.001Z`, a different instant, and still expects `recorded_at_mismatch`. Reported by acdp-verifier-py.
+
 ## v0.5.0 — Draft clarifications: retraction-recall feed semantics from a second implementation (RFC-ACDP-0018) — 2026-11-01
 
 No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. No change-entry or response member and no error code was added, so the `acdp-change/1` and changes-response wire shapes are unchanged. These clarifications come from the friction a second, independent consumer implementation reported while building on the changes feed.
