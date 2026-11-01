@@ -383,16 +383,17 @@ All `lc-*` fixtures are behavioral. Required for `acdp-registry-lifecycle`; `lc-
 
 | Fixture | Scenario | Expected |
 |---|---|---|
-| `rec-001` | Feed mechanics: ascending `seq`, paging, polling at the head, `since=head`, entry immutability | `next_cursor` always present; `has_more` correct; bad `limit`/`kind` → `schema_violation` |
+| `rec-001` | Feed mechanics: ascending `seq`, paging, polling at the head, `since=head`, entry immutability, over-maximum `limit` | `next_cursor` always present; `has_more` correct; `limit` < 1 or bad `kind` → `schema_violation`; `limit` above `max_changes_page` clamped |
 | `rec-002` | Retract, republish, supersede, key revocation, plain publish, idempotent retry | exactly one entry per reliance-changing change, evidence byte-identical to `registry_state`; none for a plain publish or a retry |
 | `rec-003` | Watch filters by `ctx_id`, `lineage_id`, `agent_id`, `kind` | OR within and across watch members, AND with `kind`; a `ctx_id` watch hears its producer's key revocation; over-limit → `schema_violation` |
 | `rec-004` | Restricted/private entries; supersession to a restricted version; long hidden runs; cursor replay | visibility no wider than retrieval; empty page with `has_more: true` never ends the feed; cursors re-scoped |
-| `rec-005` | Cursor age and validity | durable past one hour; before oldest retained → `cursor_expired`; malformed → `invalid_cursor`; limits advertised |
-| `rec-006` | Consumer verification of entries (consumer) | invalid signature, receipt, supersession or out-of-scope revocation changes nothing; duplicates processed once; `cursor_expired` → resync |
+| `rec-005` | Cursor age and validity | durable past one hour; before oldest retained → `cursor_expired`; malformed → `invalid_cursor`; limits advertised; an issued cursor no longer placeable, or from before a sequence reset → `cursor_expired` (E–F self-test) |
+| `rec-006` | Consumer verification of entries (consumer) | invalid signature, receipt, supersession or out-of-scope revocation changes nothing; duplicates processed once; `cursor_expired`, or `invalid_cursor` on a persisted cursor → resync clearing `seq` dedup; a reused `seq` after resync is new; revocation matched by the retrieved fingerprint; feed silence ≠ unrevoked; a short page is not the head |
 | `rec-007` | Subscriptions and hints (A–C, F–H registry; D–E receiver) | owner-scoped, `secret` once; HMAC `ACDP-Signature`; no content in hints; SSRF rejections at creation and delivery; receiver pulls its own cursor |
 | `rec-008` | Atomicity under concurrent lifecycle and supersession | no change without its entry, no entry without its change, per-context index order |
+| `rec-009` | Entry envelope known answers (consumer, executed) | 13 vectors: `recorded_at` equality, per-kind `ctx_id`/`lineage_id`, no self-supersession, JCS (not byte) equality of the entry's evidence with the served copy → accept or reject with the first failing check |
 
-All eight are behavioral, except `rec-007`'s executed HMAC known-answer vector `hint-hmac-001` (key = the UTF-8 bytes of the secret string). `rec-001`..`005` and `rec-008` are REQUIRED for the OPTIONAL `acdp-registry-changes` profile, `rec-007` for `acdp-registry-events`, and `rec-006` plus `rec-007` D–E for `acdp-consumer-recall`.
+All are behavioral, except `rec-007`'s executed HMAC known-answer vector `hint-hmac-001` (key = the UTF-8 bytes of the secret string) and `rec-009`'s executed envelope known answers; the runner dispatches each `rec-*` vector on its shape (`secret` vs `entry`). `rec-001`..`005` and `rec-008` are REQUIRED for the OPTIONAL `acdp-registry-changes` profile, `rec-007` for `acdp-registry-events`, and `rec-006`, `rec-009` plus `rec-007` D–E for `acdp-consumer-recall`.
 
 ### MCP tool-result provenance (RFC-ACDP-0019, 0.5.0, Final; proxy profile Draft)
 

@@ -66,6 +66,12 @@
         "error_code": "schema_violation",
         "http_status": 400
       }
+    },
+    {
+      "name": "G — limit above the maximum is clamped",
+      "expected": {
+        "behavior": "With capabilities.limits.max_changes_page = M, a request with limit = M + 1 (or larger) succeeds: the page holds at most M entries, and has_more / next_cursor carry the rest. It MUST NOT fail with schema_violation (RFC-ACDP-0018 §5.1)."
+      }
     }
   ]
 }

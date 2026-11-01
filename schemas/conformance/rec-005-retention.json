@@ -57,6 +57,24 @@
       "expected": {
         "behavior": "capabilities.limits carries change_retention_seconds >= 2592000, max_change_filters >= 100 and max_changes_page >= 100."
       }
+    },
+    {
+      "name": "E — issued cursor the registry can no longer place",
+      "self_test": true,
+      "expected": {
+        "behavior": "Self-test (black-box testing cannot rotate a registry's cursor key): obtain a cursor, rotate the cursor-protection key (or otherwise rebuild the feed), then poll with the old cursor. The registry answers cursor_expired, not invalid_cursor, because it issued that cursor (RFC-ACDP-0018 §5.4). invalid_cursor stays reserved for scenario C's unparseable or forged input.",
+        "error_code": "cursor_expired",
+        "http_status": 400
+      }
+    },
+    {
+      "name": "F — cursors from before a sequence reset",
+      "self_test": true,
+      "expected": {
+        "behavior": "Self-test: obtain cursors at several positions, restore the feed from a backup that predates some served entries (so seq values will be reused), then poll with each pre-restore cursor, including one beyond the restored head. Every pre-restore cursor is refused with cursor_expired; none is honoured, so no consumer can silently skip the entries that reuse its numbers (RFC-ACDP-0018 §5.3).",
+        "error_code": "cursor_expired",
+        "http_status": 400
+      }
     }
   ]
 }

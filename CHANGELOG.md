@@ -2,6 +2,18 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Draft clarifications: retraction-recall feed semantics from a second implementation (RFC-ACDP-0018) — 2026-11-01
+
+No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. No change-entry or response member and no error code was added, so the `acdp-change/1` and changes-response wire shapes are unchanged. These clarifications come from the friction a second, independent consumer implementation reported while building on the changes feed.
+
+- **Cursors a registry issued but can no longer place** (§5.4, §7). Such a cursor (rotated key, sequence reset, restore, any rebuild) MUST get `cursor_expired`; `invalid_cursor` is only for an unparseable or forged cursor. Consumers MUST resync on `cursor_expired`, and also on `invalid_cursor` returned for a cursor they persisted.
+- **Sequence reuse** (§5.3, §7). `seq` is never reused while a pre-reuse cursor is honoured; a registry that resets its sequence (for example a restore from backup) MUST refuse every pre-reset cursor with `cursor_expired`. Consumers MUST process entries idempotently; (authority, `seq`) dedup is allowed only between resyncs and MUST be cleared on resync. This replaces "deduplicate by (authority, `seq`)", which a reused `seq` would turn into a silent skip.
+- **`limit` above `max_changes_page`** (§5.1) is clamped, not refused; `has_more` / `next_cursor` govern, and a consumer MUST NOT infer the head from a short page.
+- **`key_revocation` entries are keyed by controller** (§4, §7 step 3). The revoked key is matched by the retrieved revocation's producer-signed `metadata.revoked_key_fingerprint`, never by an entry value; consumers SHOULD record each relied context's signing-key fingerprint at reliance time.
+- **The feed is registry-local for revocations** (§7). Feed silence is not evidence a key is unrevoked; recall consumers MUST also run RFC-ACDP-0014 §8 discovery on a schedule. Mirroring other registries' revocations is reserved in new RFC-ACDP-0009 §2.16 (`foreign_key_revocation`, `source_registry`).
+- **Promotion criteria** (§1). Split by side, as for RFC-ACDP-0021: the consumer side is promoted when a second independent consumer passes the consumer fixtures; the registry side stays Draft until a second registry passes the registry fixtures. Nothing is promoted here.
+- **Fixtures.** `rec-001` G (clamp), `rec-005` E–F (self-test: unplaceable and pre-reset cursors → `cursor_expired`), `rec-006` G reworded plus I–M (resync on `invalid_cursor`, reused `seq` after resync, fingerprint matching, discovery, short page). New executed **`rec-009`**: 13 envelope-consistency known answers for the §7 rules, required by `acdp-consumer-recall`. `scripts/conformance-runner.py` now dispatches each `rec-*` vector on its shape, so the `rec-007` HMAC check no longer runs on every `rec-*` vector.
+
 ## v0.5.0 — Draft amendment: the capabilities `limits` sub-object is open (RFC-ACDP-0007 §3.3.1) — 2026-10-31
 
 No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and no error code changed. This relaxes a constraint: no previously valid document becomes invalid.

@@ -177,8 +177,8 @@ For consumers that act on the changes feed (RFC-ACDP-0018 §7). Draft and OPTION
 
 | | Required (in addition to `acdp-consumer`) |
 |---|---|
-| **Behavioral requirements** | A change entry is a hint until verified: `lifecycle` via RFC-ACDP-0013 §5 and RFC-ACDP-0017 §10.3, then the full-list retraction state; `superseded` via retrieval and the `supersedes`/lineage check; `key_revocation` via RFC-ACDP-0014 §5–§7. A failing entry changes nothing. Deduplicate by (authority, `seq`); on `cursor_expired` re-verify every watched context. On a hint, verify `ACDP-Signature` and pull from the persisted cursor (§8.2) |
-| **Conformance fixtures** | `rec-006` (consumer verification), `rec-007` scenarios D–E |
+| **Behavioral requirements** | A change entry is a hint until verified: `lifecycle` via RFC-ACDP-0013 §5 and RFC-ACDP-0017 §10.3, then the full-list retraction state; `superseded` via retrieval and the `supersedes`/lineage check; `key_revocation` via RFC-ACDP-0014 §5–§7. A failing entry changes nothing. Process entries idempotently; (authority, `seq`) dedup only between resyncs, cleared on resync; on `cursor_expired`, or `invalid_cursor` for a persisted cursor, re-verify every watched context. Match a `key_revocation` by the retrieved revocation's signed fingerprint; run RFC-ACDP-0014 §8 discovery on a schedule; never infer the head from a short page. On a hint, verify `ACDP-Signature` and pull from the persisted cursor (§8.2) |
+| **Conformance fixtures** | `rec-006` (consumer verification), `rec-007` scenarios D–E, `rec-009` (entry envelope known answers, executed) |
 | **`not_implemented` permitted on** | Not applicable — a consumer runs no registry endpoints |
 
 ### `acdp-producer-mcp-proxy` *(0.5.0)*
