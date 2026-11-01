@@ -555,7 +555,17 @@
         "rec-008-atomicity"
       ],
       "not_implemented_permitted_on": [],
-      "notes": "Advertising this profile is the RFC-ACDP-0018 §3–§6 contract: one acdp-change/1 entry per reliance-changing change (lifecycle event, supersession, key revocation) and none otherwise, carrying the existing signed evidence verbatim; registry-wide strictly increasing seq committed atomically with the change; next_cursor always present; durable cursors retained >= change_retention_seconds (>= 30 days), cursor_expired before the oldest retained entry; watch filters by ctx_id/lineage_id/agent_id/kind with no per-watch state; visibility no wider than retrieval. Also requires acdp-registry-receipts (event receipts, RFC-ACDP-0017 §10) and acdp_version >= 0.5.0; capabilities.limits MUST carry change_retention_seconds, max_change_filters and max_changes_page. Registries not advertising it MUST answer GET /changes with not_implemented (501). All rec-* fixtures are behavioral."
+      "notes": "Advertising this profile is the RFC-ACDP-0018 §3–§6 contract: one acdp-change/1 entry per reliance-changing change (lifecycle event, supersession, key revocation) and none otherwise, carrying the existing signed evidence verbatim; registry-wide strictly increasing seq committed atomically with the change; next_cursor always present; durable cursors retained >= change_retention_seconds (>= 30 days), cursor_expired before the oldest retained entry; watch filters by ctx_id/lineage_id/agent_id/kind with no per-watch state; visibility no wider than retrieval. Also requires acdp-registry-receipts (event receipts, RFC-ACDP-0017 §10) and acdp_version >= 0.5.0; capabilities.limits MUST carry change_retention_seconds, max_change_filters and max_changes_page. Registries not advertising it MUST answer GET /changes with not_implemented (501). All rec-* fixtures are behavioral. (2026-11-01) OPTIONAL bucket filters (§6.1): a registry advertising limits.max_change_bucket_length (4..16) accepts lineage_bucket / agent_bucket values of 1..that many lowercase hex digits, matches by prefix of SHA-256 over the entry's lineage_id / agent_id, returns the whole bucket, and is bound by rec-010 A–F. A page SHOULD stay under 1 MiB serialized (§5.2, rec-001 H), and gzip SHOULD be honoured.",
+      "conditional_fixtures": [
+        {
+          "fixtures": [
+            "rec-010-bucket-filters"
+          ],
+          "required_when": "limits.max_change_bucket_length is advertised (2026-11-01): the registry supports RFC-ACDP-0018 §6.1 bucket filters; rec-010 scenarios A–F and the executed bucket-derivation vectors apply. A registry that does not advertise it SHOULD refuse lineage_bucket / agent_bucket with schema_violation.",
+          "capability_key": "limits.max_change_bucket_length",
+          "capability_match": "present"
+        }
+      ]
     },
     {
       "id": "acdp-registry-events",
@@ -581,14 +591,25 @@
         "A failing entry changes no reliance decision and prompts direct re-verification (RFC-ACDP-0018 §7)",
         "Process entries idempotently; (registry authority, seq) dedup only between resyncs, cleared on resync; persist next_cursor only after processing; on cursor_expired, or invalid_cursor for a persisted cursor, re-verify every watched context and resume from since=head (RFC-ACDP-0018 §7)",
         "Match a key_revocation by the retrieved revocation's signed metadata.revoked_key_fingerprint, never the entry; run RFC-ACDP-0014 §8 discovery on a schedule, since feed silence is not non-revocation; never infer the head from a short page (RFC-ACDP-0018 §5.1, §7)",
-        "On a change hint verify ACDP-Signature (constant time, |t - now| <= 300 s) and pull from the persisted cursor, never head_cursor (RFC-ACDP-0018 §8.2)"
+        "On a change hint verify ACDP-Signature (constant time, |t - now| <= 300 s) and pull from the persisted cursor, never head_cursor (RFC-ACDP-0018 §8.2)",
+        "Accept a /changes response body up to 1 MiB and retry an oversized page with a smaller limit, never the unchanged request; when using bucket filters, derive buckets as SHA-256 hex prefixes of the exact lineage_id / agent_id string, send them only to a registry advertising limits.max_change_bucket_length, and apply an exact local match before verification (RFC-ACDP-0018 §5.2, §6.1)"
       ],
       "required_fixtures": [
         "rec-006-consumer-verification",
         "rec-007-change-hints",
         "rec-009-entry-envelope"
       ],
-      "notes": "OPTIONAL consumer profile. rec-007 scenarios D–E apply here. rec-009 is an executed known answer for the §7 envelope-consistency rules."
+      "notes": "OPTIONAL consumer profile. rec-007 scenarios D–E apply here. rec-009 is an executed known answer for the §7 envelope-consistency rules.",
+      "conditional_fixtures": [
+        {
+          "fixtures": [
+            "rec-010-bucket-filters"
+          ],
+          "required_when": "the consumer uses RFC-ACDP-0018 §6.1 bucket filters (2026-11-01): rec-010 scenarios G–I and the executed bucket-derivation vectors apply — derive buckets exactly, filter a bucket response locally before §7 verification, and send no bucket to a registry that does not advertise limits.max_change_bucket_length.",
+          "capability_key": "limits.max_change_bucket_length",
+          "capability_match": "present"
+        }
+      ]
     },
     {
       "id": "acdp-producer-mcp-proxy",

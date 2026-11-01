@@ -249,6 +249,26 @@ The `acdp-change/1` `kind` value `foreign_key_revocation` and the entry member n
 
 **Why deferred:** mirroring needs a new entry kind and member, which closed `acdp-change/1` parsers reject, so it is a wire change for every deployed consumer. It also makes each registry poll or federate with others, which drifts towards cross-registry fan-out that the protocol deliberately leaves to consumers. RFC-ACDP-0014 §8 discovery already covers the need without any registry coordination. The extension waits for an adopter whose discovery cost is shown to be prohibitive.
 
+### 2.17 Private watch filters beyond buckets — **RESERVED (0.5.0)**
+
+RFC-ACDP-0018 §6.1 bucket filters let a consumer watch the changes feed while revealing only hash-prefix buckets. They stop helping once a consumer's watch set covers most buckets. Two stronger designs could serve a consumer that watches many values: a **client-sent compact filter** (for example a Bloom filter over the watched `lineage_id` and `agent_id` values, whose false-positive rate is the consumer's deniability), and **private information retrieval** or private set intersection, in which the registry serves entries without learning which ones matched.
+
+#### Reserved names
+
+The `GET /changes` parameter names `watch_filter` and `watch_filter_encoding`, the `limits` member `max_watch_filter_bytes`, and the profile name `acdp-registry-private-watch` are RESERVED for this use and MUST NOT be used by extensions.
+
+**Why deferred:** a compact filter is a wire format in its own right (hash functions, sizing, encoding and known-answer fixtures), and the registry must test every entry against it, so it saves egress but not registry work. Single-server private retrieval costs the registry work linear in the feed on every request. Neither helps while the consumer's retrievals are linkable (RFC-ACDP-0018 §10), and no adopter has yet measured a feed large enough to need them. The trigger to revisit is a watched registry sustaining about a million entries a day, together with a consumer whose retrievals are unlinkable.
+
+### 2.18 Changes-feed mirrors — **RESERVED (0.5.0)**
+
+A third party could serve a registry's changes feed verbatim, so that a consumer tails the mirror and the origin registry never sees who watches what. Every entry carries its signed evidence (RFC-ACDP-0018 §4), so the consumer can still verify entries end to end. RFC-ACDP-0018 §7's origin binding would need to name the origin authority the mirror declares, rather than the authority serving the feed.
+
+#### Reserved names
+
+The capabilities member `mirrors_changes_of`, the response member `origin_authority`, and the profile name `acdp-changes-mirror` are RESERVED for this use and MUST NOT be used by extensions.
+
+**Why deferred:** a mirror hides the reliance set only if the consumer also retrieves bodies from somewhere other than the origin, which is body replication (§2.6), a much larger feature. A multi-tenant consumer that tails a feed for its tenants is already their mirror. The extension waits for an adopter that runs a mirror for consumers other than itself.
+
 ---
 
 ## 3. Forward Compatibility

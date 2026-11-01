@@ -1,0 +1,152 @@
+{
+  "id": "rec-010",
+  "description": "(0.5.0) Bucket watch filters (RFC-ACDP-0018 §6.1): lineage_bucket and agent_bucket match by a prefix of SHA-256 over the watched value, so the registry learns a bucket, not the value. Registry scenarios A–F are behavioral and apply when the registry advertises limits.max_change_bucket_length; consumer scenarios G–I are behavioral; the bucket-derivation vectors are executed by scripts/conformance-runner.py.",
+  "tags": [
+    "rec",
+    "registry",
+    "consumer",
+    "0.5.0",
+    "changes",
+    "privacy"
+  ],
+  "applies_to_profiles": [
+    "acdp-registry-changes",
+    "acdp-consumer-recall"
+  ],
+  "input": {
+    "registry": "registry.example.com",
+    "capabilities": {
+      "profiles": [
+        "acdp-registry-core",
+        "acdp-registry-receipts",
+        "acdp-registry-lifecycle",
+        "acdp-registry-changes"
+      ],
+      "acdp_version": "0.5.0",
+      "limits": {
+        "change_retention_seconds": 2592000,
+        "max_change_filters": 100,
+        "max_changes_page": 100,
+        "max_change_bucket_length": 8
+      }
+    },
+    "setup": "Producer P publishes X (lineage Lx) and Y (lineage Ly), where the first hex digit of SHA-256(Lx) equals that of SHA-256(Ly) and their 4-digit prefixes differ. X and Y are both retracted. P's key is revoked by R (controller P). An unrelated producer Q's context V (lineage Lv, in a different 1-digit bucket from Lx) is retracted."
+  },
+  "scenarios": [
+    {
+      "name": "A — lineage bucket returns the whole bucket",
+      "expected": {
+        "behavior": "lineage_bucket=<first hex digit of SHA-256(Lx)> returns the retractions of both X and Y (same bucket), and not V's. The registry MUST NOT narrow the result to any single lineage: every visible entry whose lineage_id hashes into the bucket is returned."
+      }
+    },
+    {
+      "name": "B — longer bucket narrows",
+      "expected": {
+        "behavior": "lineage_bucket=<first 4 hex digits of SHA-256(Lx)> returns X's retraction and not Y's."
+      }
+    },
+    {
+      "name": "C — agent bucket hears revocations by controller",
+      "expected": {
+        "behavior": "agent_bucket=<first 4 hex digits of SHA-256(P)> returns X's and Y's retractions and R's key_revocation entry (its agent_id is the controller P, §4)."
+      }
+    },
+    {
+      "name": "D — combination with other filters",
+      "expected": {
+        "behavior": "Bucket values are OR'd with each other and with ctx_id, lineage_id and agent_id; kind is AND'd with the result. lineage_bucket=<bucket of Lv>&agent_bucket=<bucket of P>&kind=key_revocation returns R's entry only. Each bucket value counts once toward max_change_filters: a request whose ctx_id, lineage_id, agent_id, kind, lineage_bucket and agent_bucket values total more than max_change_filters is schema_violation (400)."
+      }
+    },
+    {
+      "name": "E — malformed bucket values",
+      "expected": {
+        "behavior": "Each of these is schema_violation (400): an empty value; a value with an upper-case hex digit; a value with a non-hex character; a value longer than max_change_bucket_length (here 9 digits)."
+      }
+    },
+    {
+      "name": "F — cursors and visibility are unchanged",
+      "expected": {
+        "behavior": "A bucket-filtered page follows every §5 rule: ascending seq, next_cursor always present, an empty page with has_more: true when the bucket matches nothing in the scanned range, and visibility no wider than retrieval (§5.5). A restricted entry in the bucket stays hidden from a requester who may not retrieve it."
+      }
+    },
+    {
+      "name": "G — consumer derives buckets correctly (consumer)",
+      "expected": {
+        "behavior": "The consumer computes each bucket as the first n lowercase hex digits of SHA-256 over the UTF-8 bytes of the lineage_id or agent_id exactly as it appears in entries, per the vectors below."
+      }
+    },
+    {
+      "name": "H — consumer filters locally (consumer)",
+      "expected": {
+        "behavior": "Given scenario A's response, a consumer watching only Lx processes X's retraction and ignores Y's: a bucket response is a candidate set, and the consumer applies its own exact match before §7 verification. It MUST NOT treat Y's entry as concerning anything it relies on."
+      }
+    },
+    {
+      "name": "I — no buckets without the limit (consumer)",
+      "expected": {
+        "behavior": "A registry's capabilities omit limits.max_change_bucket_length. The consumer sends no lineage_bucket or agent_bucket parameter to it: it polls unfiltered, or with exact filters if it accepts revealing them. It never sends a bucket longer than the advertised maximum."
+      }
+    }
+  ],
+  "vectors": [
+    {
+      "name": "bucket-lineage-001",
+      "bucket_of": "lin:sha256:a3cb6a87c1601b9f6dddd8d54709b01df3e05f1095b43e6d58e3a862bf9906fa",
+      "member": "lineage_id",
+      "sha256_hex": "1f54677c32bda0fce357ac477603794f48739d9e1590b5ad5fa7ee48801432de",
+      "expected": {
+        "1": "1",
+        "4": "1f54",
+        "8": "1f54677c"
+      },
+      "not_bucket_4": "6baa",
+      "_note": "The input is the whole lineage_id string, prefix included. Hashing only the 64-hex digest after 'lin:sha256:' gives not_bucket_4, which is wrong."
+    },
+    {
+      "name": "bucket-lineage-002",
+      "bucket_of": "lin:sha256:9eb5e0ee5d9a110edc81f7e1fdafca3e3f521650fb58b8bb09c53f29bec58592",
+      "member": "lineage_id",
+      "sha256_hex": "fdd0e7e87d1c2056989122d13b8031a5be52be71358f0f4e99539a24c07a65fc",
+      "expected": {
+        "1": "f",
+        "4": "fdd0",
+        "8": "fdd0e7e8"
+      }
+    },
+    {
+      "name": "bucket-agent-did-key",
+      "bucket_of": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
+      "member": "agent_id",
+      "sha256_hex": "ad90ec18fd5e0735b1e5eeab571e8dc9f733dcd65276387844c8236fefb87977",
+      "expected": {
+        "1": "a",
+        "4": "ad90",
+        "8": "ad90ec18"
+      }
+    },
+    {
+      "name": "bucket-agent-did-web",
+      "bucket_of": "did:web:agents.example.com:test-producer",
+      "member": "agent_id",
+      "sha256_hex": "7a3e4116a94f4d654b8953a260b2203e2504014c4a70234198f69304dbd1d79e",
+      "expected": {
+        "1": "7",
+        "4": "7a3e",
+        "8": "7a3e4116"
+      }
+    },
+    {
+      "name": "bucket-agent-did-web-port",
+      "bucket_of": "did:web:registry.example.com%3A8443",
+      "member": "agent_id",
+      "sha256_hex": "cf5a338210f6c09d7715ee5a9271c03304b35a995e74db80da7db719595c5bf0",
+      "expected": {
+        "1": "c",
+        "4": "cf5a",
+        "8": "cf5a3382"
+      },
+      "not_bucket_4": "d1b2",
+      "_note": "The DID string exactly as it appears in the entry, percent-encoding included. Decoding %3A to ':' first gives not_bucket_4, which is wrong."
+    }
+  ]
+}
