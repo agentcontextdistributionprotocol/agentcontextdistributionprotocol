@@ -19,7 +19,14 @@ It depends on RFC-ACDP-0001, -0003, -0004, -0005, -0006, -0008, -0010, -0013, -0
 
 ## 1. Status of This Memo
 
-This document is a **Draft** ACDP specification on the `acdp/0.5.0` line. It is open for substantive change until it is promoted. Per [VERSIONING.md](../VERSIONING.md), promotion to **Final** requires the conformance fixtures this document defines (`rec-001`..`rec-008`) to pass against two independent interoperating implementations.
+This document is a **Draft** ACDP specification on the `acdp/0.5.0` line. It is open for substantive change until it is promoted. Per [VERSIONING.md](../VERSIONING.md), promotion to **Final** requires the conformance fixtures this document defines (`rec-001`..`rec-009`) to pass against two independent interoperating implementations.
+
+Promotion is split by side, as for RFC-ACDP-0021:
+
+- **Consumer side** (§7, the `acdp-consumer-recall` profile, and the consumer fixtures `rec-006`, `rec-007` D–E and `rec-009`): promoted when a second consumer implementation, independent of the first, passes those fixtures against an SDK carrying the 2026-11-01 clarifications in this document.
+- **Registry side** (§4–§6, §8, the `acdp-registry-changes` and `acdp-registry-events` profiles, and the registry fixtures): stays Draft until a second registry implementation passes the registry fixtures.
+
+Nothing is promoted by this paragraph; it states the criteria.
 
 All three profiles it defines (§9) are OPTIONAL. A registry or consumer that claims none of them is unaffected.
 
@@ -81,7 +88,7 @@ Common members:
 - **`seq`**: the entry's sequence number (§5.3).
 - **`kind`**: `lifecycle`, `superseded` or `key_revocation` (§3).
 - **`ctx_id`**, **`lineage_id`**: the affected context and its lineage.
-- **`agent_id`**: the producer whose reliance the change touches. For `lifecycle` and `superseded` it is the affected context's `body.agent_id`. For `key_revocation` it is the revoked key's controller: `metadata.revoked_key_controller` when present, else the revocation body's `agent_id` (RFC-ACDP-0014 §4).
+- **`agent_id`**: the producer whose reliance the change touches. For `lifecycle` and `superseded` it is the affected context's `body.agent_id`. For `key_revocation` it is the revoked key's controller: `metadata.revoked_key_controller` when present, else the revocation body's `agent_id` (RFC-ACDP-0014 §4). A `key_revocation` entry is therefore a hint **keyed by controller**, not by key: it does not name the revoked key. The revoked key is named by the producer-signed `metadata.revoked_key_fingerprint` of the revocation body the consumer retrieves (RFC-ACDP-0014 §4), and RFC-ACDP-0014 §7 matching is done against that signed value (§7 step 3). An entry copy of the fingerprint would be an unsigned duplicate that the consumer would have to re-check anyway, so the entry deliberately carries none.
 - **`recorded_at`**: the registry's clock at commit. It equals the evidence's own registry time, as below, so it adds no new claim.
 
 Evidence members, by kind:
@@ -103,13 +110,15 @@ The entry carries **evidence, not verdicts**. Nothing in it is believed because 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `since` | string | A feed cursor from an earlier response. Absent: start at the oldest retained entry. The literal `head`: return no entries and a cursor at the current head (§5.4). |
-| `limit` | integer | Maximum entries to return. Default 100. A registry MUST accept any value up to `limits.max_changes_page` (§9). |
+| `limit` | integer | Maximum entries to return. Default 100. A registry MUST accept any value up to `limits.max_changes_page` (§9). *(clarified 2026-11-01)* A larger value is not an error: the registry MUST clamp it to `limits.max_changes_page`, and `has_more` / `next_cursor` (§5.2) carry the rest. |
 | `ctx_id` | string, repeatable | Watch filter (§6). |
 | `lineage_id` | string, repeatable | Watch filter (§6). |
 | `agent_id` | string, repeatable | Watch filter (§6). |
 | `kind` | string, repeatable | Restrict to these kinds (§6). |
 
 A request carrying more filter values in total than `limits.max_change_filters` MUST fail with `schema_violation` (400). So MUST an unknown `kind` value, or a `limit` below 1.
+
+Because a `limit` may be clamped, and because filtering and visibility thin a page (§5.2, §5.5), a consumer MUST NOT infer that it has reached the head from a page shorter than the `limit` it sent. Only `has_more: false` says that no committed entry lies past `next_cursor`.
 
 ### 5.2 Response
 
@@ -129,7 +138,7 @@ An empty `changes` with `has_more: true` is not the end of the feed. The RFC-ACD
 
 ### 5.3 Sequence and atomicity
 
-- `seq` is assigned at commit, is strictly increasing across the whole registry, and is never reused.
+- `seq` is assigned at commit, is strictly increasing across the whole registry, and is never reused while any cursor issued before the reuse is still honoured. *(clarified 2026-11-01)* A registry that resets its sequence (for example by restoring the feed from a backup that predates entries it already served) MUST refuse **every** cursor issued before the reset with `cursor_expired` (§5.4). It MUST NOT go on honouring such a cursor, because a consumer holding one would silently skip the entries that reuse its numbers. Rotating the cursor-protection key at the reset is one way to meet this.
 - Gaps are permitted. Filtering and visibility (§6, §5.5) remove entries, and a registry MAY skip values. A consumer MUST NOT infer completeness from contiguity.
 - An entry is immutable. A registry MUST serve the same object for a given `seq` on every read.
 - An entry is committed **atomically** with the change it records: in the same transaction as the appended event and its event receipt, or the accepted body and its receipt. A registry MUST NOT expose a change in `registry_state` (or `/current`) without its feed entry, nor a feed entry without the change.
@@ -140,6 +149,7 @@ Feed cursors are **durable**. This overrides the one-hour session bound of RFC-A
 
 - A registry MUST retain entries, and honour cursors pointing at them, for at least `limits.change_retention_seconds` (§9), which MUST be ≥ 2592000 (30 days).
 - A cursor pointing before the oldest retained entry MUST fail with `cursor_expired` (400). A cursor the registry cannot parse MUST fail with `invalid_cursor` (400).
+- *(clarified 2026-11-01)* A well-formed cursor that this registry issued but can no longer place MUST fail with `cursor_expired`, not `invalid_cursor`. That covers a cursor protected under a rotated key, one issued before a sequence reset (§5.3), one beyond the current head after a restore, and one invalidated by any other rebuild of the feed. `invalid_cursor` is reserved for a cursor that is unparseable or forged, one the registry could never have issued. The distinction tells the consumer what to do: `cursor_expired` means "you missed entries, resync" (§7).
 - `since=head` lets a new consumer start at the present without replaying history. It returns `changes: []` and the head cursor.
 
 ### 5.5 Visibility
@@ -189,6 +199,8 @@ A change entry is a **hint until verified**. A consumer claiming `acdp-consumer-
    - Retrieve the revocation context and verify it under RFC-ACDP-0014 §5 (producer-signed) or §6 (registry-attested).
    - Verify its served `registry_receipt` under RFC-ACDP-0010 §8, whichever arm applies; the entry's `registry_receipt` MUST be JCS-equal to it. Equality with a verified served receipt is sufficient: the entry's copy needs no separate signature check.
    - Apply RFC-ACDP-0014 §7: the producer scope, the compromise boundary and the earliest-`compromised_since` fold over its lineage.
+   - Match the revoked key using the retrieved, verified revocation's `metadata.revoked_key_fingerprint`, never a value from the entry (§4). The entry names only the controller, so one entry can concern any of that controller's keys, and a consumer MUST check which of its relied contexts were signed by the revoked key before changing any reliance decision.
+   - (Informative) To make that check local, a consumer SHOULD record the signing-key fingerprint of each context at the time it relies on it. A consumer that did not can recover it by re-retrieving the relied context.
 
 The remaining rules apply to every kind:
 
@@ -196,9 +208,10 @@ The remaining rules apply to every kind:
 - **Origin binding.** For every kind, the retrieved body (the affected context, `superseded_by`, or the revocation context) MUST have `origin_registry` equal to the authority serving the feed. The feed is registry-local, and supersession never crosses registries (RFC-ACDP-0003).
 - **Held prefix.** "Already holds and has verified" (step 1) is the caller's assertion: a held event list covering indexes `0` to `index − 1`. With no such list, the consumer re-retrieves, and the byte-equality rule applies.
 - **Failure.** An entry that fails verification MUST NOT change any reliance decision. Failure is itself a signal: the registry or the path to it may be faulty. The consumer SHOULD re-verify the affected context directly from its own retrieval, since a faulty source could equally drop a real entry.
-- **Idempotency.** Delivery is at-least-once, because a consumer may re-read after a crash. Consumers MUST deduplicate by (`registry authority`, `seq`) and process idempotently.
+- **Idempotency.** Delivery is at-least-once, because a consumer may re-read after a crash. *(clarified 2026-11-01)* Consumers MUST process entries idempotently: applying the same verified entry twice MUST leave the same reliance state as applying it once. A consumer MAY additionally deduplicate by (`registry authority`, `seq`), but only between resyncs: `seq` can be reused after a sequence reset (§5.3), so a consumer that keeps (authority, `seq`) dedup state MUST clear it for that authority on every resync. After a resync, an entry whose `seq` was seen before the resync is a new entry.
 - **Cursor persistence.** A consumer SHOULD persist `next_cursor` only after it has processed every entry before it.
-- **Resync.** On `cursor_expired`, the consumer has missed an unknown set of entries. It MUST re-verify every watched context directly (RFC-ACDP-0004 retrieval, or `verify_chain`), then resume from `since=head`.
+- **Resync.** On `cursor_expired`, the consumer has missed an unknown set of entries. It MUST re-verify every watched context directly (RFC-ACDP-0004 retrieval, or `verify_chain`), then resume from `since=head`. *(clarified 2026-11-01)* A consumer MUST resync the same way on `invalid_cursor` returned for a cursor that it persisted from an earlier response: the registry issued that cursor, so the answer means the registry can no longer place it, whatever code the registry chose (§5.4). It also MUST clear any (authority, `seq`) dedup state for that authority (Idempotency, above).
+- **Registry-local revocations.** The feed carries only key revocations that **this** registry accepted (Origin binding, above). A producer may publish its revocation to a different registry, and RFC-ACDP-0014 §6 scopes a registry-attested revocation to that registry's own contexts. The absence of a `key_revocation` entry is therefore not evidence that a key is unrevoked. A consumer claiming `acdp-consumer-recall` MUST also run RFC-ACDP-0014 §8 discovery on a schedule for the producers of the contexts it relies on. Mirroring other registries' revocations into a feed is reserved (RFC-ACDP-0009 §2.16).
 - **Completeness is not proven.** The feed is a notification channel, not a completeness proof (§10). A consumer whose reliance is high-stakes SHOULD also re-verify on a schedule. RFC-ACDP-0017's `as_of_digest` lets it prove what it knew when it relied.
 
 ---
@@ -269,7 +282,7 @@ A `callback_url` failing these rules at creation is rejected (§8.1).
   - Its `capabilities.limits` MUST carry `max_subscriptions_per_requester` (≥ 1).
 - **`acdp-consumer-recall`**, prerequisite `acdp-consumer`.
   - Obligations: §7, and the §8.2 receiver duty when it uses hints.
-  - Fixtures: `rec-006`, and `rec-007` scenarios D–E.
+  - Fixtures: `rec-006`, `rec-009`, and `rec-007` scenarios D–E.
 - A registry not advertising a profile MUST answer its endpoints with `not_implemented` (501).
 - **Errors.** None new. The document uses `schema_violation`, `cursor_expired`, `invalid_cursor`, `not_authorized`, `not_found` and `not_implemented`.
 
@@ -294,16 +307,17 @@ A `callback_url` failing these rules at creation is rejected (§8.1).
 
 | Fixture | Covers |
 |---|---|
-| `rec-001` | Feed mechanics: ascending `seq`, entry immutability across reads, `next_cursor` always present, `has_more`, `since=head`, polling at the head (§5.2–§5.4) |
+| `rec-001` | Feed mechanics: ascending `seq`, entry immutability across reads, `next_cursor` always present, `has_more`, `since=head`, polling at the head, an over-maximum `limit` clamped (§5.1–§5.4) |
 | `rec-002` | One entry per reliance-changing change and none otherwise: retract and republish give `lifecycle`, a superseding publish gives `superseded`, a `key-revocation` gives `key_revocation`, a plain publish gives nothing. The evidence is byte-identical to the served objects (§3, §4) |
 | `rec-003` | Watch filters: OR within and across `ctx_id`/`lineage_id`/`agent_id`, AND with `kind`; a `ctx_id` watch hears its producer's key revocation; over-limit or unknown filters give `schema_violation` (§5.1, §6) |
 | `rec-004` | Visibility: restricted and private entries hidden, `superseded` visible only with the new version, an empty page with `has_more`, a cursor replayed by another requester re-scoped (§5.5) |
-| `rec-005` | Retention: a cursor before the oldest retained entry gives `cursor_expired`, a malformed one gives `invalid_cursor`; cursors stay valid past one hour (§5.4) |
-| `rec-006` | Consumer verification (consumer): a bad event signature, a failing event receipt, a `superseded_by` that does not supersede, and a revocation out of producer scope each change nothing; valid entries trigger re-evaluation; duplicates deduplicated by `seq`; `cursor_expired` forces a resync (§7) |
+| `rec-005` | Retention: a cursor before the oldest retained entry gives `cursor_expired`, a malformed one gives `invalid_cursor`; cursors stay valid past one hour; an issued cursor the registry can no longer place, or one from before a sequence reset, gives `cursor_expired` (self-test) (§5.3, §5.4) |
+| `rec-006` | Consumer verification (consumer): a bad event signature, a failing event receipt, a `superseded_by` that does not supersede, and a revocation out of producer scope each change nothing; valid entries trigger re-evaluation; duplicates processed once; `cursor_expired`, or `invalid_cursor` on a persisted cursor, forces a resync that clears `seq` dedup; a revocation matched by the retrieved fingerprint; feed silence is not non-revocation; a short page is not the head (§5.1, §7) |
 | `rec-007` | Hints: subscription create, get and delete, `secret` shown once, owner scoping, HMAC header verification, stale `t` rejected, SSRF rejections of `callback_url`, no change content in the hint, receiver pulls from its own cursor (§8) |
 | `rec-008` | Atomicity: every event receipt in `registry_state` has its feed entry; a context's events appear in index order; no entry without its change (§5.3) |
+| `rec-009` | Entry envelope consistency (consumer, executable): known answers for the §7 envelope rules (`recorded_at` equality, per-kind `ctx_id` and `lineage_id`, no self-supersession, JCS equality of the entry's evidence with the served copy), each `{entry, served} → accept \| reject(reason)` (§7) |
 
-All eight are **behavioral** in this Draft, except `rec-007`'s HMAC known-answer vector `hint-hmac-001`, which the runner executes.
+All are **behavioral** in this Draft, except `rec-007`'s HMAC known-answer vector `hint-hmac-001` and the `rec-009` envelope known answers, which the runner executes.
 
 ---
 

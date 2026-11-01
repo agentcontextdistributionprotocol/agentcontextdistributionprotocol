@@ -239,6 +239,16 @@ The `read_authentication_methods` value `dpop` (already reserved in `registries/
 
 **Why deferred:** a signed-request profile is a wire protocol in its own right, with its own known-answer fixtures, and it puts a DID-document resolution and a replay check on every read, the hottest path a registry serves. `bearer_static` (rotation, revocation, hashed storage, authority-scoped) and the RFC-ACDP-0008 §4.3 read quotas meet the immediate need of bounding and attributing read traffic at a fraction of that cost. The profile waits for an adopter that needs reads authenticated without a shared secret.
 
+### 2.16 Mirroring foreign key revocations in the changes feed — **RESERVED (0.5.0)**
+
+RFC-ACDP-0018's changes feed is registry-local: it carries only key revocations that the serving registry itself accepted, and RFC-ACDP-0018 §7 requires a recall consumer to run RFC-ACDP-0014 §8 discovery for revocations published elsewhere. A future extension may let a registry mirror revocations it learns of from other registries into its own feed, for example as a distinct entry kind carrying the foreign revocation's origin authority and its origin receipt, so a consumer watching one registry hears about a producer's revocation wherever it was published.
+
+#### Reserved names
+
+The `acdp-change/1` `kind` value `foreign_key_revocation` and the entry member name `source_registry` are RESERVED for this use and MUST NOT be used by extensions.
+
+**Why deferred:** mirroring needs a new entry kind and member, which closed `acdp-change/1` parsers reject, so it is a wire change for every deployed consumer. It also makes each registry poll or federate with others, which drifts towards cross-registry fan-out that the protocol deliberately leaves to consumers. RFC-ACDP-0014 §8 discovery already covers the need without any registry coordination. The extension waits for an adopter whose discovery cost is shown to be prohibitive.
+
 ---
 
 ## 3. Forward Compatibility

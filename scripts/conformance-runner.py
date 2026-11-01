@@ -1238,6 +1238,47 @@ def check_hint_hmac(fixture, vector):
     return ok
 
 
+def change_envelope_verdict(entry, served):
+    """RFC-ACDP-0018 §7 envelope consistency, in rec-009's check_order.
+    Returns (verdict, reason)."""
+    kind = entry.get("kind")
+    ev = "event_receipt" if kind == "lifecycle" else "registry_receipt"
+    t = entry[ev]["accepted_at" if kind == "lifecycle" else "created_at"]
+    if entry.get("recorded_at") != t:
+        return "reject", "recorded_at_mismatch"
+    if kind == "lifecycle":
+        if entry["event"].get("ctx_id") != entry["ctx_id"] or entry["event_receipt"].get("ctx_id") != entry["ctx_id"]:
+            return "reject", "ctx_id_mismatch"
+    elif kind == "key_revocation":
+        if entry["registry_receipt"].get("ctx_id") != entry["ctx_id"]:
+            return "reject", "ctx_id_mismatch"
+    elif kind == "superseded":
+        if entry["registry_receipt"].get("ctx_id") != entry.get("superseded_by"):
+            return "reject", "ctx_id_mismatch"
+        if entry.get("superseded_by") == entry["ctx_id"]:
+            return "reject", "self_supersession"
+        if entry["registry_receipt"].get("lineage_id") != entry.get("lineage_id"):
+            return "reject", "lineage_id_mismatch"
+    else:
+        return "reject", "unknown_kind"
+    mine, theirs = (entry["event"], served.get("lifecycle_event")) if kind == "lifecycle" \
+        else (entry["registry_receipt"], served.get("registry_receipt"))
+    if theirs is None or jcs.canonicalize(mine) != jcs.canonicalize(theirs):
+        return "reject", "evidence_mismatch"
+    return "accept", None
+
+
+def check_change_envelope(fixture, vector):
+    """rec-009 entry-envelope known answer (RFC-ACDP-0018 §7)."""
+    name = vector.get("name", "?")
+    verdict, reason = change_envelope_verdict(vector["entry"], vector.get("served", {}))
+    exp = vector.get("expected", {})
+    if verdict != exp.get("verdict") or reason != exp.get("reason"):
+        fail(fixture, name, f"expected {exp.get('verdict')}/{exp.get('reason')}, computed {verdict}/{reason}")
+        return False
+    return True
+
+
 _CTX_ID_RE = None
 
 
@@ -1743,10 +1784,18 @@ for path in sorted(CONFORMANCE.glob("*.json")):
             if check_revocation_class(fixture_id, v):
                 passes += 1
     elif fixture_id.startswith("rec-") and "vectors" in data:
-        # rec-007 carries the change-hint HMAC known answer; every other rec-*
-        # scenario is behavioral.
+        # rec-007 carries the change-hint HMAC known answer and rec-009 the
+        # entry-envelope known answers; dispatched per vector on its shape
+        # ("secret" vs "entry"). Every other rec-* scenario is behavioral.
         for v in _vectors(data, fixture_id):
-            if check_hint_hmac(fixture_id, v):
+            if "entry" in v:
+                ok = check_change_envelope(fixture_id, v)
+            elif "secret" in v:
+                ok = check_hint_hmac(fixture_id, v)
+            else:
+                fail(fixture_id, v.get("name", "?"), "rec-* vector has neither 'entry' nor 'secret'")
+                ok = False
+            if ok:
                 passes += 1
     elif fixture_id.startswith("mcp-") and "vectors" in data:
         # mcp-001 carries the tool-result known answer; mcp-002..007 are

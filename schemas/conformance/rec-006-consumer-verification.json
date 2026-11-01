@@ -1,6 +1,6 @@
 {
   "id": "rec-006",
-  "description": "(0.5.0) A change entry is a hint until verified (RFC-ACDP-0018 §7). Behavioral, consumer-side.",
+  "description": "(0.5.0) A change entry is a hint until verified (RFC-ACDP-0018 §7), plus the consumer's cursor, resync, idempotency, revocation-matching and discovery duties. Behavioral, consumer-side.",
   "tags": [
     "rec",
     "consumer",
@@ -57,7 +57,7 @@
     {
       "name": "G — duplicate",
       "expected": {
-        "behavior": "The same (authority, seq) delivered twice is processed once."
+        "behavior": "The same verified entry delivered twice leaves the same reliance state as delivering it once (idempotent processing). Deduplicating by (authority, seq) is allowed only between resyncs (RFC-ACDP-0018 §7 Idempotency)."
       }
     },
     {
@@ -65,6 +65,37 @@
       "expected": {
         "behavior": "On cursor_expired the consumer re-verifies every watched context directly, then resumes from since=head.",
         "error_code": "cursor_expired"
+      }
+    },
+    {
+      "name": "I — invalid_cursor on a persisted cursor",
+      "expected": {
+        "behavior": "The consumer polls with a next_cursor it persisted from an earlier response and the registry answers invalid_cursor (400). The consumer treats it exactly as cursor_expired: it re-verifies every watched context directly, clears its (authority, seq) dedup state for that authority, and resumes from since=head. It MUST NOT stop watching or retry the same cursor forever.",
+        "error_code": "invalid_cursor"
+      }
+    },
+    {
+      "name": "J — seq reused after a resync",
+      "expected": {
+        "behavior": "Before a resync the consumer processed seq 1042. After the resync (scenario H or I), the feed serves a different entry at seq 1042. The consumer verifies and processes it as a new entry; it MUST NOT drop it as a duplicate."
+      }
+    },
+    {
+      "name": "K — revocation matched by the retrieved fingerprint",
+      "expected": {
+        "behavior": "A key_revocation entry names controller D. The consumer relies on two contexts by D, signed by different keys. It retrieves and verifies the revocation and matches metadata.revoked_key_fingerprint from that signed body: only the context signed by the revoked key is marked for re-evaluation (subject to RFC-ACDP-0014 §7's compromise boundary); the context signed by D's other key is unchanged. The entry itself carries no fingerprint, and the consumer MUST NOT match on anything but the retrieved, verified value."
+      }
+    },
+    {
+      "name": "L — feed silence is not non-revocation",
+      "expected": {
+        "behavior": "The producer of a relied context publishes a key revocation to a different registry. The feed of the serving registry carries no key_revocation entry. The consumer still learns of the revocation through its scheduled RFC-ACDP-0014 §8 discovery for that producer; it MUST NOT treat the absence of a feed entry as evidence the key is unrevoked."
+      }
+    },
+    {
+      "name": "M — a short page is not the head",
+      "expected": {
+        "behavior": "The consumer sends limit=500 to a registry whose max_changes_page is 100. The registry returns 100 entries with has_more: true. The consumer requests again at once from next_cursor; it MUST NOT conclude from the clamped or filtered page size that it reached the head. Only has_more: false says no committed entry lies past next_cursor."
       }
     }
   ]
