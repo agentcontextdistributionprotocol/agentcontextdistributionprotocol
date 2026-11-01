@@ -141,7 +141,7 @@ An empty `changes` with `has_more: true` is not the end of the feed. The RFC-ACD
 
 *(2026-11-01)* **Page size in bytes.** A page of `limit` entries can be larger than a consumer's response bound, because entries carry their evidence verbatim (about 1–1.5 KB each).
 
-- A registry SHOULD keep the serialized response body at or below **1 MiB** (1048576 bytes, measured before any content coding). It does so by ending the page early, with `has_more: true` and `next_cursor` after the last included entry. This is the only reason, besides `limit`, for which a registry MAY end a page early. A page MUST still carry at least one entry when a matching, visible entry is available, whatever its size.
+- A registry SHOULD keep the serialized response body at or below **1 MiB** (1048576 bytes, measured before any content coding). It MAY end a page early to do so, with `has_more: true` and `next_cursor` after the last included entry. As with every short page (§5.1), this does not signal the head. A single entry larger than the bound is still returned, alone on its page.
 - A consumer MUST accept a response body of up to 1 MiB. On a response larger than it accepts, a consumer SHOULD request the same `since` again with a smaller `limit`. It SHOULD NOT repeat the unchanged request, which would fail the same way forever.
 
 *(2026-11-01)* **Compression.** A registry SHOULD honour `Accept-Encoding: gzip` on `GET /changes` with `Content-Encoding: gzip`, and a consumer SHOULD send it. The 1 MiB bound above applies to the decoded body, and a consumer MUST bound the decoded size it is willing to read, so a compressed response cannot exhaust it.
@@ -178,7 +178,7 @@ A hidden entry is omitted entirely. It never appears redacted.
 
 A **watch** is the filter a consumer passes to `/changes`. The registry stores nothing per watch.
 
-- Values within one parameter are OR'd. `ctx_id`, `lineage_id` and `agent_id` are OR'd with each other: an entry matches when any of them matches. `kind` is AND'd with that result. With no `ctx_id`, `lineage_id` or `agent_id` value, every visible entry matches.
+- Values within one parameter are OR'd. `ctx_id`, `lineage_id` and `agent_id` are OR'd with each other: an entry matches when any of them matches. `kind` is AND'd with that result. With no `ctx_id`, `lineage_id`, `agent_id`, `lineage_bucket` or `agent_bucket` value (§6.1), every visible entry matches.
 - `ctx_id=X` matches an entry whose `ctx_id` is X. It ALSO matches a `key_revocation` entry whose `agent_id` equals the `agent_id` of context X, when the registry holds X. Revoking a producer's key is a reliance change for every context that producer signed, so a consumer watching a context hears about its producer's revocations without watching the producer separately.
 - `lineage_id=L` matches every entry whose `lineage_id` is L. That covers every version's retraction and every supersession in the lineage.
 - `agent_id=D` matches every entry whose `agent_id` is D.
@@ -200,20 +200,23 @@ An exact watch filter tells the registry which contexts, lineages and producers 
 
 - accept `lineage_bucket` and `agent_bucket` values of 1 to `max_change_bucket_length` lowercase hex digits (`[0-9a-f]`), and refuse any other value with `schema_violation` (400);
 - match `lineage_bucket=b` against every entry whose `lineage_id` has a bucket starting with `b`, and `agent_bucket=b` against every entry whose `agent_id` does. A `key_revocation` entry's `agent_id` is the revoked key's controller (§4), so a producer's bucket hears its revocations;
-- combine bucket values exactly like the §6 watch members: OR'd with each other and with `ctx_id`, `lineage_id` and `agent_id`, and AND'd with `kind`;
+- combine bucket values exactly like the §6 watch members: OR'd with each other and with `ctx_id`, `lineage_id` and `agent_id`, and AND'd with `kind`. A bucket matches only the entry's own `lineage_id` or `agent_id`: the §6 rule by which `ctx_id=X` also matches its producer's key revocations has no bucket counterpart;
 - return the **whole** bucket. A registry MUST NOT narrow a bucket result, and every §5 rule (cursors, `has_more`, visibility) applies unchanged.
 
-Bucket filters apply to `GET /changes` only. A subscription filter (§8.1) carries no bucket member, since a subscription is authenticated and owner-scoped and so names its owner anyway.
+Bucket filters apply to `GET /changes` only; a subscription filter (§8.1) carries no bucket member. A consumer that watches by bucket and wants hints SHOULD subscribe with a filter of `kind` values only, which reveals nothing about what it watches. It then pulls with its bucket filter, as §8.2 permits.
 
 A registry that does not advertise `max_change_bucket_length` SHOULD refuse a bucket parameter with `schema_violation`, so that a consumer is never silently given an unfiltered or wrongly filtered page.
 
-**Consumer.** A consumer MUST NOT send a bucket parameter to a registry that does not advertise `max_change_bucket_length`, nor a bucket longer than the advertised value. A bucket response is a **candidate set**: the consumer MUST apply its own exact match to each entry before §7 verification, and an entry outside its watch MUST NOT change any reliance decision.
+**Consumer.** A consumer MUST NOT send a bucket parameter to a registry that does not advertise `max_change_bucket_length`, nor a bucket longer than the advertised value. A bucket response is a **candidate set**: the consumer MUST apply its own exact match to each entry, under the §6 rules for the exact values it watches (including the `ctx_id` rule for its producers' key revocations), before §7 verification. An entry outside its watch MUST NOT change any reliance decision. A consumer that watches contexts by bucket instead of by `ctx_id` MUST also send the `agent_bucket` of each of their producers, or it stops hearing those producers' key revocations.
 
 **What a bucket hides (informative).** The registry learns the set of buckets, not the values. With *N* distinct values of that kind known to the registry, a bucket of length *n* covers about *N* / 16ⁿ of them, so a consumer chooses *n* for the crowd it wants to hide in. Some limits apply:
 
 - **Crowd size.** A consumer SHOULD choose *n* so that each bucket is expected to hold at least *k* values for a *k* it documents in its own deployment; 100 is a reasonable floor. A consumer cannot verify *N*. It can estimate it from the distinct `lineage_id` and `agent_id` values in an unfiltered read of the feed.
 - **Intersection.** A registry that sees a consumer's bucket set change over time can intersect the sets to narrow down the values that persist. A consumer SHOULD therefore send the same bucket set on every request, add buckets as it starts to rely on new values, and drop buckets only rarely. It SHOULD NOT send exact filters for values it also watches by bucket.
 - **Large watch sets.** A consumer watching about 16ⁿ values or more covers nearly every bucket and gains nothing over an unfiltered read, which it SHOULD use instead. The `max_change_filters` limit bounds the bucket set in the same way.
+- **Small populations.** The crowd is the population of that kind of value, not of all values. A registry may know only tens of producers, and then an `agent_bucket` of any length hides little.
+- **Correlated buckets.** The registry knows which lineages belong to which producer. A consumer that sends both a `lineage_bucket` and the matching `agent_bucket` lets the registry intersect the two, so the effective crowd is much smaller than either estimate.
+- **Fingerprinting.** A stable bucket set is itself a persistent fingerprint: it links every request that carries it, which works against making requests unlinkable (§10). Stability defends against intersection, not against linking.
 - **Retrieval.** Bucket filters hide nothing from a registry that also sees the consumer retrieve, under a linkable identity, the contexts it relies on, for example during §7 verification or scheduled re-verification. See §10.
 
 ---
@@ -286,7 +289,7 @@ When one or more entries committed after the last hint match a subscription's fi
   - `rec-007` carries a known-answer vector (`hint-hmac-001`), which `scripts/conformance-runner.py` executes. This authenticates the hint to its subscriber. It is **not** a producer or registry signature and conveys no authenticity for any change (RFC-ACDP-0009 §2.10).
 - **Coalescing.** A registry MAY send one hint for many entries and MAY drop a hint while an earlier one for the same subscription is undelivered. A hint is "pull now", not "one change happened".
 - **Delivery.** Delivery is best-effort. A registry SHOULD retry a failed delivery (a non-2xx response or a timeout) with exponential backoff for at least one hour. It MAY disable a subscription that has failed for 72 hours, and then MUST answer `GET` on it with `"status": "disabled"`.
-- **Receiver duty.** On a hint, the receiver pulls `GET /changes?since=<its own persisted cursor>` with the subscription's filter. It MUST NOT jump to `head_cursor`, which is informational, or it skips entries. It MUST NOT treat the absence of hints as the absence of changes.
+- **Receiver duty.** On a hint, the receiver pulls `GET /changes?since=<its own persisted cursor>` with the subscription's filter, or with any filter that selects at least the same entries, such as a §6.1 bucket filter combined with the subscription's `kind` values. It MUST NOT jump to `head_cursor`, which is informational, or it skips entries. It MUST NOT treat the absence of hints as the absence of changes.
 
 ### 8.3 Callback safety
 
@@ -334,7 +337,7 @@ A `callback_url` failing these rules at creation is rejected (§8.1).
 
   The leaf kind RFC-ACDP-0017 §12 reserves for events would make lifecycle withholding detectable.
 - **Visibility.** The feed is a search-like surface. §5.5 keeps it no wider than retrieval, so a cursor or a hint never reveals a hidden context. A hint is sent only for entries visible to the owner and carries no content, so even a leaked hint body reveals only that *something* matched.
-- **Watch filters reveal interest.** *(revised 2026-11-01)* An exact watch filter tells the registry which contexts, lineages and producers a consumer relies on. A consumer can poll an unfiltered feed and filter locally, at the cost of bandwidth, or use bucket filters (§6.1), which reveal only buckets. Neither hides the reliance set on its own: the registry also sees the consumer **retrieve** the contexts it relies on, during §7 verification of a matching entry and during any scheduled re-verification. A registry that can link those reads to one consumer, by source address or by authenticated identity (RFC-ACDP-0008 §6.2), reconstructs the set from them, whatever the feed filter was. A consumer that needs to hide its reliance set from the registry operator SHOULD make its retrievals unlinkable as well, for example anonymous reads from shared egress addresses. Stronger designs (client-sent compact filters, private retrieval, feed mirrors) are reserved in RFC-ACDP-0009 §2.17 and §2.18.
+- **Watch filters reveal interest.** *(revised 2026-11-01)* An exact watch filter tells the registry which contexts, lineages and producers a consumer relies on. A consumer can poll an unfiltered feed and filter locally, at the cost of bandwidth, or use bucket filters (§6.1), which reveal only buckets. Neither hides the reliance set on its own: the registry also sees the consumer **retrieve** the contexts it relies on, during §7 verification of a matching entry and during any scheduled re-verification. A registry that can link those reads to one consumer, by source address or by authenticated identity (RFC-ACDP-0008 §6.2), reconstructs the set from them, whatever the feed filter was. A consumer that needs to hide its reliance set from the registry operator SHOULD make its retrievals unlinkable as well, for example anonymous reads from shared egress addresses. That is possible only for `public` contexts: restricted and private contexts need authenticated reads (RFC-ACDP-0008 §6.2), which identify the consumer. Stronger designs (client-sent compact filters, private retrieval, feed mirrors) are reserved in RFC-ACDP-0009 §2.17 and §2.18.
 - **Webhooks are outbound requests to attacker-chosen URLs.** §8.3 is mandatory for that reason. The HMAC `t` bound limits replay. Secrets are shown once and SHOULD be stored hashed or encrypted at rest.
 - **Hints are not evidence.** A forged or replayed hint can only cause an extra pull, which is harmless.
 

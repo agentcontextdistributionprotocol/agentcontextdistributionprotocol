@@ -30,7 +30,7 @@
         "max_change_bucket_length": 8
       }
     },
-    "setup": "Producer P publishes X (lineage Lx) and Y (lineage Ly), where the first hex digit of SHA-256(Lx) equals that of SHA-256(Ly) and their 4-digit prefixes differ. X and Y are both retracted. P's key is revoked by R (controller P). An unrelated producer Q's context V (lineage Lv, in a different 1-digit bucket from Lx) is retracted."
+    "setup": "Producer P publishes X (lineage Lx) and Y (lineage Ly), where the first hex digit of SHA-256(Lx) equals that of SHA-256(Ly) and their 4-digit prefixes differ. Lineages derive from registry-assigned ctx_ids, so the harness publishes candidate contexts until two meet the condition; candidates that are never retracted record no entry (§3). X and Y are both retracted. P's key is revoked by R (controller P). An unrelated producer Q's context V (lineage Lv, in a different 1-digit bucket from Lx) is retracted."
   },
   "scenarios": [
     {
@@ -78,7 +78,7 @@
     {
       "name": "H — consumer filters locally (consumer)",
       "expected": {
-        "behavior": "Given scenario A's response, a consumer watching only Lx processes X's retraction and ignores Y's: a bucket response is a candidate set, and the consumer applies its own exact match before §7 verification. It MUST NOT treat Y's entry as concerning anything it relies on."
+        "behavior": "Given scenario A's response, a consumer watching only Lx processes X's retraction and ignores Y's: a bucket response is a candidate set, and the consumer applies its own exact match, under the §6 rules for the values it watches, before §7 verification. It MUST NOT treat Y's entry as concerning anything it relies on. A consumer that watches context X by bucket rather than by ctx_id also sends the agent_bucket of X's producer P, so it still hears R's key_revocation (scenario C) and keeps it, since R's agent_id is P."
       }
     },
     {

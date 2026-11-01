@@ -76,7 +76,7 @@
     {
       "name": "H — page kept under 1 MiB",
       "expected": {
-        "behavior": "(2026-11-01, SHOULD) With max_changes_page at 1000 and 1000 lifecycle entries of about 1.4 KB each committed, limit=1000 returns a page whose serialized body is at most 1 MiB, with has_more: true and next_cursor after its last entry; the next request continues from there with no entry skipped or repeated. A single entry larger than 1 MiB is still returned on its own page."
+        "behavior": "(2026-11-01, SHOULD) This scenario overrides the input: the registry advertises max_changes_page = 1000. With 1000 lifecycle entries of about 1.4 KB each committed, limit=1000 returns a page whose serialized body is at most 1 MiB, with has_more: true and next_cursor after its last entry; the next request continues from there with no entry skipped or repeated. A single entry larger than 1 MiB is still returned, alone on its page."
       }
     }
   ]

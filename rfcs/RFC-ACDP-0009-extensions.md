@@ -267,7 +267,7 @@ A third party could serve a registry's changes feed verbatim, so that a consumer
 
 The capabilities member `mirrors_changes_of`, the response member `origin_authority`, and the profile name `acdp-changes-mirror` are RESERVED for this use and MUST NOT be used by extensions.
 
-**Why deferred:** a mirror hides the reliance set only if the consumer also retrieves bodies from somewhere other than the origin, which is body replication (§2.6), a much larger feature. A multi-tenant consumer that tails a feed for its tenants is already their mirror. The extension waits for an adopter that runs a mirror for consumers other than itself.
+**Why deferred:** a mirror hides the reliance set only if the consumer also retrieves bodies from somewhere other than the origin, which needs body replication across registries, a much larger feature than federation peering (§2.6). A multi-tenant consumer that tails a feed for its tenants is already their mirror. The extension waits for an adopter that runs a mirror for consumers other than itself.
 
 ---
 

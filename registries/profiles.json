@@ -606,8 +606,8 @@
             "rec-010-bucket-filters"
           ],
           "required_when": "the consumer uses RFC-ACDP-0018 §6.1 bucket filters (2026-11-01): rec-010 scenarios G–I and the executed bucket-derivation vectors apply — derive buckets exactly, filter a bucket response locally before §7 verification, and send no bucket to a registry that does not advertise limits.max_change_bucket_length.",
-          "capability_key": "limits.max_change_bucket_length",
-          "capability_match": "present"
+          "capability_key": "consumer_uses_bucket_filters",
+          "capability_match": true
         }
       ]
     },
