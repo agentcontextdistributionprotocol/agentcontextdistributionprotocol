@@ -1238,6 +1238,27 @@ def check_hint_hmac(fixture, vector):
     return ok
 
 
+def check_change_bucket(fixture, vector):
+    """rec-010 bucket derivation known answer (RFC-ACDP-0018 §6.1): the bucket of
+    length n is the first n lowercase hex digits of SHA-256 over the UTF-8 bytes
+    of the lineage_id or agent_id exactly as it appears in entries.
+    not_bucket_4, when present, pins a wrong input reading."""
+    name = vector.get("name", "?")
+    h = hashlib.sha256(vector["bucket_of"].encode("utf-8")).hexdigest()
+    ok = True
+    if h != vector.get("sha256_hex"):
+        fail(fixture, name, f"sha256_hex {vector.get('sha256_hex')} != computed {h}")
+        ok = False
+    for n, b in vector.get("expected", {}).items():
+        if h[:int(n)] != b:
+            fail(fixture, name, f"bucket length {n}: expected {b}, computed {h[:int(n)]}")
+            ok = False
+    if "not_bucket_4" in vector and vector["not_bucket_4"] == h[:4]:
+        fail(fixture, name, "not_bucket_4 must differ from the correct 4-digit bucket")
+        ok = False
+    return ok
+
+
 def change_envelope_verdict(entry, served):
     """RFC-ACDP-0018 §7 envelope consistency, in rec-009's check_order.
     Returns (verdict, reason)."""
@@ -1784,16 +1805,19 @@ for path in sorted(CONFORMANCE.glob("*.json")):
             if check_revocation_class(fixture_id, v):
                 passes += 1
     elif fixture_id.startswith("rec-") and "vectors" in data:
-        # rec-007 carries the change-hint HMAC known answer and rec-009 the
-        # entry-envelope known answers; dispatched per vector on its shape
-        # ("secret" vs "entry"). Every other rec-* scenario is behavioral.
+        # rec-007 carries the change-hint HMAC known answer, rec-009 the
+        # entry-envelope known answers and rec-010 the bucket derivations;
+        # dispatched per vector on its shape ("secret", "entry" or
+        # "bucket_of"). Every other rec-* scenario is behavioral.
         for v in _vectors(data, fixture_id):
             if "entry" in v:
                 ok = check_change_envelope(fixture_id, v)
             elif "secret" in v:
                 ok = check_hint_hmac(fixture_id, v)
+            elif "bucket_of" in v:
+                ok = check_change_bucket(fixture_id, v)
             else:
-                fail(fixture_id, v.get("name", "?"), "rec-* vector has neither 'entry' nor 'secret'")
+                fail(fixture_id, v.get("name", "?"), "rec-* vector has none of 'entry', 'secret' or 'bucket_of'")
                 ok = False
             if ok:
                 passes += 1

@@ -8,7 +8,7 @@
 This RFC specifies **retraction recall**: how a consumer that relied on a context learns, later, that it should no longer rely on it. Retractions, supersessions and key revocations are already recorded and verifiable (RFC-ACDP-0013, RFC-ACDP-0003, RFC-ACDP-0014), but only a consumer that goes back and looks ever sees them. This document adds:
 
 - the **changes feed** (`GET /changes`): a registry-local, append-only, sequenced log of every reliance-changing change. Each entry (`acdp-change/1`) carries the signed evidence for the change, so a consumer verifies it rather than believing it;
-- **watch filters**: stateless query filters by `ctx_id`, `lineage_id`, producer `agent_id` and change kind;
+- **watch filters**: stateless query filters by `ctx_id`, `lineage_id`, producer `agent_id` and change kind, plus *(0.5.0, 2026-11-01)* OPTIONAL **bucket filters** that select by a hash prefix, so the registry learns a bucket rather than the watched value (§6.1);
 - **change hints** (`acdp-change-hint/1`): an OPTIONAL webhook saying only "there are new changes for you, pull now".
 
 The feed is the normative channel and the hint is an optimization. A lost hint loses nothing, because the next pull returns every entry since the consumer's cursor. Indirect impact (contexts *derived from* a retracted one) is found through the existing `derived_from` search (RFC-ACDP-0005 §2) or by re-running chain verification (RFC-ACDP-0017). The registry keeps no fan-out state.
@@ -19,11 +19,11 @@ It depends on RFC-ACDP-0001, -0003, -0004, -0005, -0006, -0008, -0010, -0013, -0
 
 ## 1. Status of This Memo
 
-This document is a **Draft** ACDP specification on the `acdp/0.5.0` line. It is open for substantive change until it is promoted. Per [VERSIONING.md](../VERSIONING.md), promotion to **Final** requires the conformance fixtures this document defines (`rec-001`..`rec-009`) to pass against two independent interoperating implementations.
+This document is a **Draft** ACDP specification on the `acdp/0.5.0` line. It is open for substantive change until it is promoted. Per [VERSIONING.md](../VERSIONING.md), promotion to **Final** requires the conformance fixtures this document defines (`rec-001`..`rec-010`) to pass against two independent interoperating implementations.
 
 Promotion is split by side, as for RFC-ACDP-0021:
 
-- **Consumer side** (§7, the `acdp-consumer-recall` profile, and the consumer fixtures `rec-006`, `rec-007` D–E and `rec-009`): promoted when a second consumer implementation, independent of the first, passes those fixtures against an SDK carrying the 2026-11-01 clarifications in this document.
+- **Consumer side** (§7, the `acdp-consumer-recall` profile, and the consumer fixtures `rec-006`, `rec-007` D–E, `rec-009` and `rec-010` G–I): promoted when a second consumer implementation, independent of the first, passes those fixtures against an SDK carrying the 2026-11-01 clarifications in this document.
 - **Registry side** (§4–§6, §8, the `acdp-registry-changes` and `acdp-registry-events` profiles, and the registry fixtures): stays Draft until a second registry implementation passes the registry fixtures.
 
 Nothing is promoted by this paragraph; it states the criteria.
@@ -46,7 +46,8 @@ The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **
 | **Affected context** | The context whose reliance the change touches: the `ctx_id` of a change entry. |
 | **Sequence number (`seq`)** | A registry-wide, strictly increasing integer assigned to each change entry at commit (§5.3). |
 | **Feed cursor** | An opaque, durable position in the feed (§5.4). |
-| **Watch filter** | The set of `ctx_id`, `lineage_id`, `agent_id` and `kind` values a consumer passes to select entries (§6). |
+| **Watch filter** | The set of `ctx_id`, `lineage_id`, `agent_id`, `kind`, `lineage_bucket` and `agent_bucket` values a consumer passes to select entries (§6). |
+| **Bucket** | The first *n* lowercase hex digits of SHA-256 over a `lineage_id` or `agent_id` (§6.1). |
 | **Change hint** | A webhook delivery that carries no change content, only the fact that new matching entries exist (§8). |
 
 ---
@@ -115,8 +116,10 @@ The entry carries **evidence, not verdicts**. Nothing in it is believed because 
 | `lineage_id` | string, repeatable | Watch filter (§6). |
 | `agent_id` | string, repeatable | Watch filter (§6). |
 | `kind` | string, repeatable | Restrict to these kinds (§6). |
+| `lineage_bucket` | string, repeatable | *(2026-11-01)* Bucket filter over `lineage_id` (§6.1). |
+| `agent_bucket` | string, repeatable | *(2026-11-01)* Bucket filter over `agent_id` (§6.1). |
 
-A request carrying more filter values in total than `limits.max_change_filters` MUST fail with `schema_violation` (400). So MUST an unknown `kind` value, or a `limit` below 1.
+A request carrying more filter values in total than `limits.max_change_filters` MUST fail with `schema_violation` (400). Every value of every filter parameter above counts. So MUST an unknown `kind` value, a `limit` below 1, or a malformed bucket value (§6.1).
 
 Because a `limit` may be clamped, and because filtering and visibility thin a page (§5.2, §5.5), a consumer MUST NOT infer that it has reached the head from a page shorter than the `limit` it sent. Only `has_more: false` says that no committed entry lies past `next_cursor`.
 
@@ -135,6 +138,13 @@ The response is validated by [`acdp-changes-response.schema.json`](../schemas/js
 - **`has_more`**: `true` when entries past `next_cursor` were already committed when the response was built. A consumer that sees `true` SHOULD request again at once.
 
 An empty `changes` with `has_more: true` is not the end of the feed. The RFC-ACDP-0005 §2.5 post-filtering rule applies unchanged: visibility filtering MUST NOT end a page early.
+
+*(2026-11-01)* **Page size in bytes.** A page of `limit` entries can be larger than a consumer's response bound, because entries carry their evidence verbatim (about 1–1.5 KB each).
+
+- A registry SHOULD keep the serialized response body at or below **1 MiB** (1048576 bytes, measured before any content coding). It MAY end a page early to do so, with `has_more: true` and `next_cursor` after the last included entry. As with every short page (§5.1), this does not signal the head. A single entry larger than the bound is still returned, alone on its page.
+- A consumer MUST accept a response body of up to 1 MiB. On a response larger than it accepts, a consumer SHOULD request the same `since` again with a smaller `limit`. It SHOULD NOT repeat the unchanged request, which would fail the same way forever.
+
+*(2026-11-01)* **Compression.** A registry SHOULD honour `Accept-Encoding: gzip` on `GET /changes` with `Content-Encoding: gzip`, and a consumer SHOULD send it. The 1 MiB bound above applies to the decoded body, and a consumer MUST bound the decoded size it is willing to read, so a compressed response cannot exhaust it.
 
 ### 5.3 Sequence and atomicity
 
@@ -168,7 +178,7 @@ A hidden entry is omitted entirely. It never appears redacted.
 
 A **watch** is the filter a consumer passes to `/changes`. The registry stores nothing per watch.
 
-- Values within one parameter are OR'd. `ctx_id`, `lineage_id` and `agent_id` are OR'd with each other: an entry matches when any of them matches. `kind` is AND'd with that result. With no `ctx_id`, `lineage_id` or `agent_id` value, every visible entry matches.
+- Values within one parameter are OR'd. `ctx_id`, `lineage_id` and `agent_id` are OR'd with each other: an entry matches when any of them matches. `kind` is AND'd with that result. With no `ctx_id`, `lineage_id`, `agent_id`, `lineage_bucket` or `agent_bucket` value (§6.1), every visible entry matches.
 - `ctx_id=X` matches an entry whose `ctx_id` is X. It ALSO matches a `key_revocation` entry whose `agent_id` equals the `agent_id` of context X, when the registry holds X. Revoking a producer's key is a reliance change for every context that producer signed, so a consumer watching a context hears about its producer's revocations without watching the producer separately.
 - `lineage_id=L` matches every entry whose `lineage_id` is L. That covers every version's retraction and every supersession in the lineage.
 - `agent_id=D` matches every entry whose `agent_id` is D.
@@ -179,6 +189,35 @@ A **watch** is the filter a consumer passes to `/changes`. The registry stores n
 - A consumer that holds evidence for a whole chain re-runs `verify_chain` (RFC-ACDP-0017) on it. The latest pass reports `retracted_after_as_of` and `revoked_after_as_of` drift for every affected node at any depth.
 
 A consumer relying on a derived context SHOULD watch the `lineage_id`s of the contexts it transitively depends on, or the producers of those contexts. That is the cheap way to hear about indirect changes. Server-side traversal (RFC-ACDP-0009 §2.5) stays reserved.
+
+### 6.1 Bucket filters *(0.5.0, 2026-11-01)*
+
+An exact watch filter tells the registry which contexts, lineages and producers a consumer relies on (§10). A bucket filter tells it only a **bucket**: a short prefix of a hash of the watched value, which many unrelated values share. The registry returns every entry in the bucket, and the consumer picks out its own.
+
+**Derivation.** The bucket of length *n* of a value *v* is the first *n* characters of lowercase hex(SHA-256(UTF-8(*v*))). *v* is the `lineage_id` or `agent_id` string exactly as it appears in change entries, prefix and percent-encoding included (`lin:sha256:…`, `did:web:…%3A8443`). `rec-010` pins known answers.
+
+**Registry (OPTIONAL).** A registry that supports bucket filters MUST advertise `limits.max_change_bucket_length` (§9). It then MUST:
+
+- accept `lineage_bucket` and `agent_bucket` values of 1 to `max_change_bucket_length` lowercase hex digits (`[0-9a-f]`), and refuse any other value with `schema_violation` (400);
+- match `lineage_bucket=b` against every entry whose `lineage_id` has a bucket starting with `b`, and `agent_bucket=b` against every entry whose `agent_id` does. A `key_revocation` entry's `agent_id` is the revoked key's controller (§4), so a producer's bucket hears its revocations;
+- combine bucket values exactly like the §6 watch members: OR'd with each other and with `ctx_id`, `lineage_id` and `agent_id`, and AND'd with `kind`. A bucket matches only the entry's own `lineage_id` or `agent_id`: the §6 rule by which `ctx_id=X` also matches its producer's key revocations has no bucket counterpart;
+- return the **whole** bucket. A registry MUST NOT narrow a bucket result, and every §5 rule (cursors, `has_more`, visibility) applies unchanged.
+
+Bucket filters apply to `GET /changes` only; a subscription filter (§8.1) carries no bucket member. A consumer that watches by bucket and wants hints SHOULD subscribe with a filter of `kind` values only, which reveals nothing about what it watches. It then pulls with its bucket filter, as §8.2 permits.
+
+A registry that does not advertise `max_change_bucket_length` SHOULD refuse a bucket parameter with `schema_violation`, so that a consumer is never silently given an unfiltered or wrongly filtered page.
+
+**Consumer.** A consumer MUST NOT send a bucket parameter to a registry that does not advertise `max_change_bucket_length`, nor a bucket longer than the advertised value. A bucket response is a **candidate set**: the consumer MUST apply its own exact match to each entry, under the §6 rules for the exact values it watches (including the `ctx_id` rule for its producers' key revocations), before §7 verification. An entry outside its watch MUST NOT change any reliance decision. A consumer that watches contexts by bucket instead of by `ctx_id` MUST also send the `agent_bucket` of each of their producers, or it stops hearing those producers' key revocations.
+
+**What a bucket hides (informative).** The registry learns the set of buckets, not the values. With *N* distinct values of that kind known to the registry, a bucket of length *n* covers about *N* / 16ⁿ of them, so a consumer chooses *n* for the crowd it wants to hide in. Some limits apply:
+
+- **Crowd size.** A consumer SHOULD choose *n* so that each bucket is expected to hold at least *k* values for a *k* it documents in its own deployment; 100 is a reasonable floor. A consumer cannot verify *N*. It can estimate it from the distinct `lineage_id` and `agent_id` values in an unfiltered read of the feed.
+- **Intersection.** A registry that sees a consumer's bucket set change over time can intersect the sets to narrow down the values that persist. A consumer SHOULD therefore send the same bucket set on every request, add buckets as it starts to rely on new values, and drop buckets only rarely. It SHOULD NOT send exact filters for values it also watches by bucket.
+- **Large watch sets.** A consumer watching about 16ⁿ values or more covers nearly every bucket and gains nothing over an unfiltered read, which it SHOULD use instead. The `max_change_filters` limit bounds the bucket set in the same way.
+- **Small populations.** The crowd is the population of that kind of value, not of all values. A registry may know only tens of producers, and then an `agent_bucket` of any length hides little.
+- **Correlated buckets.** The registry knows which lineages belong to which producer. A consumer that sends both a `lineage_bucket` and the matching `agent_bucket` lets the registry intersect the two, so the effective crowd is much smaller than either estimate.
+- **Fingerprinting.** A stable bucket set is itself a persistent fingerprint: it links every request that carries it, which works against making requests unlinkable (§10). Stability defends against intersection, not against linking.
+- **Retrieval.** Bucket filters hide nothing from a registry that also sees the consumer retrieve, under a linkable identity, the contexts it relies on, for example during §7 verification or scheduled re-verification. See §10.
 
 ---
 
@@ -250,7 +289,7 @@ When one or more entries committed after the last hint match a subscription's fi
   - `rec-007` carries a known-answer vector (`hint-hmac-001`), which `scripts/conformance-runner.py` executes. This authenticates the hint to its subscriber. It is **not** a producer or registry signature and conveys no authenticity for any change (RFC-ACDP-0009 §2.10).
 - **Coalescing.** A registry MAY send one hint for many entries and MAY drop a hint while an earlier one for the same subscription is undelivered. A hint is "pull now", not "one change happened".
 - **Delivery.** Delivery is best-effort. A registry SHOULD retry a failed delivery (a non-2xx response or a timeout) with exponential backoff for at least one hour. It MAY disable a subscription that has failed for 72 hours, and then MUST answer `GET` on it with `"status": "disabled"`.
-- **Receiver duty.** On a hint, the receiver pulls `GET /changes?since=<its own persisted cursor>` with the subscription's filter. It MUST NOT jump to `head_cursor`, which is informational, or it skips entries. It MUST NOT treat the absence of hints as the absence of changes.
+- **Receiver duty.** On a hint, the receiver pulls `GET /changes?since=<its own persisted cursor>` with the subscription's filter, or with any filter that selects at least the same entries, such as a §6.1 bucket filter combined with the subscription's `kind` values. It MUST NOT jump to `head_cursor`, which is informational, or it skips entries. It MUST NOT treat the absence of hints as the absence of changes.
 
 ### 8.3 Callback safety
 
@@ -276,13 +315,14 @@ A `callback_url` failing these rules at creation is rejected (§8.1).
     - `change_retention_seconds` (≥ 2592000);
     - `max_change_filters` (≥ 100);
     - `max_changes_page` (≥ 100).
+  - *(2026-11-01)* OPTIONAL bucket filters (§6.1): a registry that supports them advertises `limits.max_change_bucket_length` (4 to 16) and is then also bound by `rec-010` A–F.
 - **`acdp-registry-events`**, prerequisite `acdp-registry-changes`. This is the name RFC-ACDP-0009 §2.10 reserved, now defined as §8.
   - Endpoints: `POST /subscriptions`, `GET /subscriptions/{id}` and `DELETE /subscriptions/{id}`.
   - Fixture: `rec-007`.
   - Its `capabilities.limits` MUST carry `max_subscriptions_per_requester` (≥ 1).
 - **`acdp-consumer-recall`**, prerequisite `acdp-consumer`.
   - Obligations: §7, and the §8.2 receiver duty when it uses hints.
-  - Fixtures: `rec-006`, `rec-009`, and `rec-007` scenarios D–E.
+  - Fixtures: `rec-006`, `rec-009`, and `rec-007` scenarios D–E; `rec-010` G–I when it uses bucket filters.
 - A registry not advertising a profile MUST answer its endpoints with `not_implemented` (501).
 - **Errors.** None new. The document uses `schema_violation`, `cursor_expired`, `invalid_cursor`, `not_authorized`, `not_found` and `not_implemented`.
 
@@ -297,7 +337,7 @@ A `callback_url` failing these rules at creation is rejected (§8.1).
 
   The leaf kind RFC-ACDP-0017 §12 reserves for events would make lifecycle withholding detectable.
 - **Visibility.** The feed is a search-like surface. §5.5 keeps it no wider than retrieval, so a cursor or a hint never reveals a hidden context. A hint is sent only for entries visible to the owner and carries no content, so even a leaked hint body reveals only that *something* matched.
-- **Watch filters reveal interest.** A registry learns which contexts a consumer relies on. A consumer that wants to hide this can poll an unfiltered feed and filter locally, at the cost of bandwidth.
+- **Watch filters reveal interest.** *(revised 2026-11-01)* An exact watch filter tells the registry which contexts, lineages and producers a consumer relies on. A consumer can poll an unfiltered feed and filter locally, at the cost of bandwidth, or use bucket filters (§6.1), which reveal only buckets. Neither hides the reliance set on its own: the registry also sees the consumer **retrieve** the contexts it relies on, during §7 verification of a matching entry and during any scheduled re-verification. A registry that can link those reads to one consumer, by source address or by authenticated identity (RFC-ACDP-0008 §6.2), reconstructs the set from them, whatever the feed filter was. A consumer that needs to hide its reliance set from the registry operator SHOULD make its retrievals unlinkable as well, for example anonymous reads from shared egress addresses. That is possible only for `public` contexts: restricted and private contexts need authenticated reads (RFC-ACDP-0008 §6.2), which identify the consumer. Stronger designs (client-sent compact filters, private retrieval, feed mirrors) are reserved in RFC-ACDP-0009 §2.17 and §2.18.
 - **Webhooks are outbound requests to attacker-chosen URLs.** §8.3 is mandatory for that reason. The HMAC `t` bound limits replay. Secrets are shown once and SHOULD be stored hashed or encrypted at rest.
 - **Hints are not evidence.** A forged or replayed hint can only cause an extra pull, which is harmless.
 
@@ -307,17 +347,18 @@ A `callback_url` failing these rules at creation is rejected (§8.1).
 
 | Fixture | Covers |
 |---|---|
-| `rec-001` | Feed mechanics: ascending `seq`, entry immutability across reads, `next_cursor` always present, `has_more`, `since=head`, polling at the head, an over-maximum `limit` clamped (§5.1–§5.4) |
+| `rec-001` | Feed mechanics: ascending `seq`, entry immutability across reads, `next_cursor` always present, `has_more`, `since=head`, polling at the head, an over-maximum `limit` clamped, a page kept under 1 MiB (§5.1–§5.4) |
 | `rec-002` | One entry per reliance-changing change and none otherwise: retract and republish give `lifecycle`, a superseding publish gives `superseded`, a `key-revocation` gives `key_revocation`, a plain publish gives nothing. The evidence is byte-identical to the served objects (§3, §4) |
 | `rec-003` | Watch filters: OR within and across `ctx_id`/`lineage_id`/`agent_id`, AND with `kind`; a `ctx_id` watch hears its producer's key revocation; over-limit or unknown filters give `schema_violation` (§5.1, §6) |
 | `rec-004` | Visibility: restricted and private entries hidden, `superseded` visible only with the new version, an empty page with `has_more`, a cursor replayed by another requester re-scoped (§5.5) |
 | `rec-005` | Retention: a cursor before the oldest retained entry gives `cursor_expired`, a malformed one gives `invalid_cursor`; cursors stay valid past one hour; an issued cursor the registry can no longer place, or one from before a sequence reset, gives `cursor_expired` (self-test) (§5.3, §5.4) |
-| `rec-006` | Consumer verification (consumer): a bad event signature, a failing event receipt, a `superseded_by` that does not supersede, and a revocation out of producer scope each change nothing; valid entries trigger re-evaluation; duplicates processed once; `cursor_expired`, or `invalid_cursor` on a persisted cursor, forces a resync that clears `seq` dedup; a revocation matched by the retrieved fingerprint; feed silence is not non-revocation; a short page is not the head (§5.1, §7) |
+| `rec-006` | Consumer verification (consumer): a bad event signature, a failing event receipt, a `superseded_by` that does not supersede, and a revocation out of producer scope each change nothing; valid entries trigger re-evaluation; duplicates processed once; `cursor_expired`, or `invalid_cursor` on a persisted cursor, forces a resync that clears `seq` dedup; a revocation matched by the retrieved fingerprint; feed silence is not non-revocation; a short page is not the head; an oversized page is retried with a smaller `limit` (§5.1, §5.2, §7) |
 | `rec-007` | Hints: subscription create, get and delete, `secret` shown once, owner scoping, HMAC header verification, stale `t` rejected, SSRF rejections of `callback_url`, no change content in the hint, receiver pulls from its own cursor (§8) |
 | `rec-008` | Atomicity: every event receipt in `registry_state` has its feed entry; a context's events appear in index order; no entry without its change (§5.3) |
 | `rec-009` | Entry envelope consistency (consumer, executable): known answers for the §7 envelope rules (`recorded_at` equality, per-kind `ctx_id` and `lineage_id`, no self-supersession, JCS equality of the entry's evidence with the served copy), each `{entry, served} → accept \| reject(reason)` (§7) |
+| `rec-010` | Bucket filters: derivation known answers (executable); a bucket returns every entry in it and only those; longer buckets narrow; `agent_bucket` hears revocations by controller; OR/AND combination and the `max_change_filters` count; malformed values give `schema_violation`; cursors and visibility unchanged (registry A–F, when `max_change_bucket_length` is advertised); the consumer filters a bucket response locally and sends no bucket to a registry that does not advertise support (consumer G–I) (§6.1) |
 
-All are **behavioral** in this Draft, except `rec-007`'s HMAC known-answer vector `hint-hmac-001` and the `rec-009` envelope known answers, which the runner executes.
+All are **behavioral** in this Draft, except `rec-007`'s HMAC known-answer vector `hint-hmac-001`, the `rec-009` envelope known answers and the `rec-010` bucket derivations, which the runner executes.
 
 ---
 
@@ -329,7 +370,7 @@ All are **behavioral** in this Draft, except `rec-007`'s HMAC known-answer vecto
 - RFC-ACDP-0005 §2, §2.5, §3 — search, `derived_from`, cursors, visibility
 - RFC-ACDP-0006 §7 — SSRF protections
 - RFC-ACDP-0008 §4.5, §6.2 — visibility, authenticated reads
-- RFC-ACDP-0009 §2.4, §2.5, §2.10 — reserved subscriptions, walks and the webhook profile
+- RFC-ACDP-0009 §2.4, §2.5, §2.10, §2.17, §2.18 — reserved subscriptions, walks, the webhook profile, private watch filters and feed mirrors
 - RFC-ACDP-0010 — registry receipts
 - RFC-ACDP-0012 — transparency log
 - RFC-ACDP-0013 §4–§7 — lifecycle events and retraction state

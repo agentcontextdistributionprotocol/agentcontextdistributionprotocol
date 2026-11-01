@@ -97,6 +97,12 @@
       "expected": {
         "behavior": "The consumer sends limit=500 to a registry whose max_changes_page is 100. The registry returns 100 entries with has_more: true. The consumer requests again at once from next_cursor; it MUST NOT conclude from the clamped or filtered page size that it reached the head. Only has_more: false says no committed entry lies past next_cursor."
       }
+    },
+    {
+      "name": "N — an oversized page is retried smaller",
+      "expected": {
+        "behavior": "(2026-11-01) A registry returns a 1.4 MB page for limit=1000. A consumer whose response bound is 1 MiB does not repeat the same request with backoff (which would stall forever); it requests the same since again with a smaller limit, and goes on from that page's next_cursor. A response of up to 1 MiB is always accepted."
+      }
     }
   ]
 }

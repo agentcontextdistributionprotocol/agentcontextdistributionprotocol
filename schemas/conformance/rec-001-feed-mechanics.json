@@ -72,6 +72,12 @@
       "expected": {
         "behavior": "With capabilities.limits.max_changes_page = M, a request with limit = M + 1 (or larger) succeeds: the page holds at most M entries, and has_more / next_cursor carry the rest. It MUST NOT fail with schema_violation (RFC-ACDP-0018 §5.1)."
       }
+    },
+    {
+      "name": "H — page kept under 1 MiB",
+      "expected": {
+        "behavior": "(2026-11-01, SHOULD) This scenario overrides the input: the registry advertises max_changes_page = 1000. With 1000 lifecycle entries of about 1.4 KB each committed, limit=1000 returns a page whose serialized body is at most 1 MiB, with has_more: true and next_cursor after its last entry; the next request continues from there with no entry skipped or repeated. A single entry larger than 1 MiB is still returned, alone on its page."
+      }
     }
   ]
 }

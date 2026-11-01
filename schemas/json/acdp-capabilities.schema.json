@@ -154,6 +154,12 @@
           "minimum": 100,
           "description": "(0.5.0, Draft) Largest GET /changes limit this registry accepts. MUST be advertised with acdp-registry-changes (RFC-ACDP-0018 §5.1, §9)."
         },
+        "max_change_bucket_length": {
+          "type": "integer",
+          "minimum": 4,
+          "maximum": 16,
+          "description": "(0.5.0, Draft) OPTIONAL: the longest lineage_bucket / agent_bucket value, in hex digits, this registry accepts on GET /changes. Its presence advertises bucket-filter support; the registry then accepts every length from 1 to this value (RFC-ACDP-0018 §6.1, §9)."
+        },
         "max_subscriptions_per_requester": {
           "type": "integer",
           "minimum": 1,
@@ -161,7 +167,7 @@
         }
       },
       "additionalProperties": true,
-      "$comment": "Open sub-object from 0.5.0 (Draft; RFC-ACDP-0007 §3.3.1, fixture schema-010): consumers MUST tolerate unknown limits fields; known fields keep their constraints. Closed (additionalProperties: false) through 0.4.0. v0.1.0 defines max_payload_bytes, max_embedded_bytes, idempotency_key_ttl_seconds; 0.3.0 adds the optional max_publish_per_minute; 0.5.0 (Draft) adds the optional read ceilings and the RFC-ACDP-0018 change-feed and subscription limits."
+      "$comment": "Open sub-object from 0.5.0 (Draft; RFC-ACDP-0007 §3.3.1, fixture schema-010): consumers MUST tolerate unknown limits fields; known fields keep their constraints. Closed (additionalProperties: false) through 0.4.0. v0.1.0 defines max_payload_bytes, max_embedded_bytes, idempotency_key_ttl_seconds; 0.3.0 adds the optional max_publish_per_minute; 0.5.0 (Draft) adds the optional read ceilings and the RFC-ACDP-0018 change-feed, bucket-filter and subscription limits."
     }
   },
   "additionalProperties": true,
