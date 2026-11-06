@@ -228,7 +228,7 @@ Apart from `acdp-producer-mcp-proxy`, there is no producer-only profile: produce
 - **RFC-ACDP-0016 Typed External Anchors** *(0.5.0, Draft)* — an optional producer-signed `anchors` field genesis-links a body to a non-ACDP, content-addressed external artifact.
 - **RFC-ACDP-0017 Chain Verification and Evidence Bundles** *(0.5.0, Final; §10–§11 Draft)* — offline, as-of verification of a whole `derived_from` graph from an `acdp-evidence/1` bundle, with a byte-identical verdict.
 - **RFC-ACDP-0018 Retraction Recall** *(0.5.0, Draft)* — a sequenced `GET /changes` feed of retractions, supersessions and key revocations, with optional change hints.
-- **RFC-ACDP-0019 MCP Tool-Result Provenance** *(0.5.0, Final; §5, §7, §10 Draft)* — an MCP signing proxy publishes each relayed tool result as a signed `acdp:mcp-tool-result` body.
+- **RFC-ACDP-0019 MCP Tool-Result Provenance** *(0.5.0, Final; §3.1–§3.2, §5, §7, §10 Draft)* — an MCP signing proxy publishes each relayed tool result as a signed `acdp:mcp-tool-result` body.
 - **RFC-ACDP-0020 Registry Trust Lists** *(0.5.0, Final)* — a signed `acdp:trust-list` body says which registries a consumer relies on, for which producers and types, and when.
 - **RFC-ACDP-0021 Keyless Signing** *(0.5.0, Draft)* — workloads sign with short-lived keys attested by a registry from an OIDC token or JWT-SVID.
 

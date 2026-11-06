@@ -3,7 +3,7 @@
 
 **Document:** RFC-ACDP-0019
 **Version:** 0.5.0
-**Status:** Community Standards Track (Final; §5, §7 and the §10 proxy profile *(0.5.0)* Draft)
+**Status:** Community Standards Track (Final; §3.1–§3.2, §5, §7 and the §10 proxy profile *(0.5.0)* Draft)
 
 This RFC specifies the **MCP signing proxy**: a process that sits between an MCP client and an MCP server, relays every message unchanged, and publishes each tool result it relays as a signed ACDP body. The client gets back the same result plus an `acdp://` link, and anyone holding the result can later prove that this proxy observed it from that server at that time. No MCP server changes; the developer changes the server command in the client configuration.
 
@@ -30,7 +30,7 @@ This document is a **Final** ACDP specification at version `0.5.0`, promoted 202
 
 Both reproduce every `mcp-001` known answer byte for byte: the three salted hashes, `endpoint_hash`, `derived_from`, the canonical form, `content_hash`, the signature, the `Idempotency-Key` and the returned `_meta`. Both also pass `mcp-003`, including the §4.3 holder recomputation and its negatives.
 
-**Still Draft.** The proxy's own obligations remain *(0.5.0)* **Draft**, not frozen: embedding (§5), publish failure and retries (§7), and the `acdp-producer-mcp-proxy` profile (§10) with its behavioral fixtures `mcp-002` and `mcp-004`..`mcp-007`. Only one proxy implementation (acdp-rs `acdp-mcp-proxy`) exercises them; acdp-verifier-py is a consumer and runs no proxy. They are promoted when a second proxy passes `mcp-001`..`mcp-007`.
+**Still Draft.** The proxy's own obligations remain *(0.5.0)* **Draft**, not frozen: embedding (§5), publish failure and retries (§7), the handling of MCP revisions without an `initialize` handshake and of results that are not yet complete (§3.1–§3.2, *(0.5.0, 2026-11-06)*), and the `acdp-producer-mcp-proxy` profile (§10) with its behavioral fixtures `mcp-002` and `mcp-004`..`mcp-008`. Only one proxy implementation (acdp-rs `acdp-mcp-proxy`) exercises them; acdp-verifier-py is a consumer and runs no proxy. They are promoted when a second proxy passes `mcp-001`..`mcp-008`.
 
 The profile it defines (§10) is OPTIONAL. A registry needs nothing new to accept these bodies: an `acdp:mcp-tool-result` body is an ordinary signed body under the existing custom-type grammar. Nothing in this document invalidates any existing body, signature or `content_hash`.
 
@@ -44,7 +44,7 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 |---|---|
 | **Upstream server** | The MCP server the proxy forwards to. |
 | **Client** | The MCP client (the agent host) that called the proxy as if it were the server. |
-| **Call** | One `tools/call` request and its response. |
+| **Call** | One `tools/call` request and the result that completes it (§3.2). |
 | **Arguments** | The request's `params.arguments` object (`{}` when absent). |
 | **Result** | The `CallToolResult` the upstream server returned. |
 | **Hashed result** | The result restricted to those of `content`, `structuredContent` and `isError` that are present (§4.3). |
@@ -63,10 +63,45 @@ The proxy relays every MCP message unchanged except that it adds one `_meta` key
 
 (NORMATIVE) Edge cases of "a call it relays":
 - A `tools/call` answered with a JSON-RPC **error** (no `CallToolResult`) produces no body. The proxy relays the error unchanged and adds nothing to it.
-- A `tools/call` result that arrives before the upstream `initialize` result is a publish failure (§7), handled under the tool's fail-open or fail-closed policy. The record cannot be built without the negotiated protocol version and `serverInfo`.
-- In a JSON-RPC batch, each element is handled as if it had arrived alone. The proxy MAY hold the batch until every element's publish has settled.
+- Under an MCP revision with an `initialize` handshake, a `tools/call` result that arrives before the upstream `initialize` result is a publish failure (§7), handled under the tool's fail-open or fail-closed policy (§3.1).
+- A result that is not yet complete (`input_required`, or a task handle) produces no body of its own (§3.2).
+- In a JSON-RPC batch (MCP revisions before 2025-06-18), each element is handled as if it had arrived alone. The proxy MAY hold the batch until every element's publish has settled.
 
 Upstream servers that sign their own results, and proxies that carry such a signature alongside their own, are out of scope for this version. A proxy MUST NOT claim a result was upstream-signed.
+
+### 3.1 Protocol revision and server identity (NORMATIVE) *(0.5.0, Draft, 2026-11-06)*
+
+The proxy fills `mcp_protocol_version` and `server.name` / `server.version` (§4.2) from what it observed upstream. Where they come from depends on the request's era. A server may serve both eras at once, so the proxy classifies **each request**, not the connection:
+
+- **Without the handshake** (MCP 2026-07-28 and later): the forwarded request's `_meta` carries `io.modelcontextprotocol/protocolVersion`.
+  - `mcp_protocol_version` is that value. Over HTTP the `MCP-Protocol-Version` header must equal it; a server rejects a mismatch with a JSON-RPC error, which produces no body (§3).
+  - `server.name` and `server.version` come from `io.modelcontextprotocol/serverInfo` in the result's `_meta`. For a task-delivered result (§3.2) that is the `_meta` of the `tasks/get` response, falling back to the inner `result`'s `_meta`.
+  - If the result carries none, they MAY come from the `io.modelcontextprotocol/serverInfo` of a `server/discover` response from the same upstream endpoint, while that response is within its `ttlMs`. The proxy MAY send `server/discover` itself for this.
+  - If no server identity is available, `server.name` is `unknown` and `server.version` is absent. This is **not** a publish failure.
+- **With the handshake** (any other request, including a legacy session on a server that supports both eras): from the upstream `initialize` result's `protocolVersion` and `serverInfo`. A result that arrives before that `initialize` result is a publish failure (§7), because the proxy cannot yet know either value.
+
+These values are self-reported, and MCP does not verify them. They describe the server; `endpoint_hash`, not `server.name`, identifies it (§4.2).
+
+### 3.2 Results that are not yet complete (NORMATIVE) *(0.5.0, Draft, 2026-11-06)*
+
+From MCP 2026-07-28, a `tools/call` result has a `resultType`. An absent `resultType` means `complete`. `resultType` is outside the hashed result (§4.3), so it never changes `result_hash`.
+
+- **`complete`.** This is the call's outcome. The proxy publishes for it as in §4–§7.
+- **`input_required`** (multi-round requests). The server needs more input before it can finish. The proxy relays the result unchanged, publishes no body for it, and adds no `io.acdp/provenance`. The client then sends a new `tools/call` request with its own `id`, carrying `inputResponses` and possibly `requestState`. That request is a call of its own. When its result is `complete`, the proxy publishes for it exactly as in §4, from that request alone:
+  - `arguments_hash` covers its `params.arguments`, and `request_id_hash` its `id`;
+  - `started_at` is when the proxy forwarded it.
+
+  `inputResponses` and `requestState` are not hashed. Earlier rounds are not bound, even if their arguments differed. The record proves the arguments of the completing request and the result, not the input the client supplied along the way.
+- **`task`** (the `io.modelcontextprotocol/tasks` extension). The task handle is not the outcome. The proxy relays it unchanged and publishes no body for it. Covering task-delivered results is OPTIONAL. A proxy that does not cover them MUST say so in its documentation, and a holder of such a result has no link. A proxy that covers them:
+  - publishes **once per task**, when it first relays a `tasks/get` response whose task is `completed`. That body records the `result` that response carries. The record takes `tool`, `arguments_hash` and `request_id_hash` from the `tools/call` request that created the task. `started_at` is when the proxy forwarded that request, and `completed_at` is when it received the first completed response.
+  - adds `io.acdp/provenance` (§6) to that inner `result`'s `_meta`, and returns the **same** value on every later `tasks/get` for the task. It never publishes a second body for a repeated poll.
+  - treats a completed task whose creating request it no longer holds (for example after a restart) as a publish failure (§7).
+  - publishes no body for a task that ends `failed` or `cancelled`, as for a JSON-RPC error (§3).
+  - under fail-closed (§7), replaces the inner `result` with the §7 failure result and leaves the task's `status` unchanged.
+  - delivers a completed task's `result` to the client only in a `tasks/get` response that carries the link. A task-status notification that would carry the `result` is relayed with the `result` removed, so the client fetches it with `tasks/get`.
+- **Any other value.** MCP treats it as invalid. The proxy relays the message unchanged and publishes no body.
+
+In §6, "the result" for a task-delivered body is the inner `result`. "The request" in §4.2–§4.3 is always the request that §3.2 names, so the record, the hashes and the §4.3 recomputation are unchanged.
 
 ---
 
@@ -94,9 +129,9 @@ The record is closed: `schemas/json/acdp-mcp-tool-result.schema.json` (`$defs/re
 | Member | Required | Value |
 |---|---|---|
 | `record_version` | Yes | `acdp-mcp-tool-result/1` |
-| `mcp_protocol_version` | Yes | The MCP protocol revision negotiated with the upstream server at `initialize` (e.g. `2025-06-18`), or `unknown` if the server reported none. |
-| `server.name` | Yes | `serverInfo.name` from the upstream `initialize` result, or `unknown` if the server reported none. |
-| `server.version` | No | `serverInfo.version`, when the server reported one. |
+| `mcp_protocol_version` | Yes | The MCP protocol revision in use with the upstream server (§3.1): negotiated at `initialize`, or carried in the request's `_meta` from 2026-07-28 (e.g. `2025-06-18`, `2026-07-28`), or `unknown` if none was reported. |
+| `server.name` | Yes | `serverInfo.name` as observed per §3.1, or `unknown` if the server reported none. |
+| `server.version` | No | `serverInfo.version`, when the server reported one (§3.1). |
 | `server.transport` | Yes | `stdio`, `streamable-http` or `sse`. |
 | `server.endpoint_hash` | Yes | H(JCS(endpoint descriptor)), unsalted (below). |
 | `tool` | Yes | The request's `params.name`. |
@@ -108,6 +143,8 @@ The record is closed: `schemas/json/acdp-mcp-tool-result.schema.json` (`$defs/re
 | `embedded` | Yes | `true` when `data_refs` carries the hashed result (§5). |
 | `started_at` | Yes | When the proxy forwarded the request upstream, canonical millisecond RFC 3339 UTC (`.000Z` form). |
 | `completed_at` | Yes | When the proxy received the result, same form. |
+
+*(0.5.0, 2026-11-06)* The three rows above now refer to §3.1 for where the values come from on an MCP revision without `initialize`. Their values and meaning are unchanged, and every existing record stays valid.
 
 **Length limits (NORMATIVE).** `server.name`, `server.version` and `mcp_protocol_version` longer than their schema limits are truncated to the limit, counted in Unicode scalar values. These fields describe the server; truncating them loses detail but does not misidentify anything, because `endpoint_hash` identifies the server. `tool` is never truncated, because a truncated tool name could name a different tool. A call whose tool name exceeds the limit is a publish failure (§7).
 
@@ -240,7 +277,8 @@ A producer-side profile with no prerequisite. A proxy claiming it:
 - embeds only for allowlisted tools (§5);
 - never alters the relayed result and returns the link per §6;
 - handles failures per §7;
-- passes `mcp-001`..`mcp-007`.
+- handles MCP revisions without `initialize` and results that are not yet complete per §3.1–§3.2, and states in its documentation whether it covers task-delivered results;
+- passes `mcp-001`..`mcp-008`.
 
 A proxy is not a registry and advertises the profile in its own documentation; nothing on the ACDP wire carries it.
 
@@ -257,6 +295,7 @@ A proxy is not a registry and advertises the profile in its own documentation; n
 | `mcp-005` | `derived_from` extraction order, near-misses, arguments only, cap (§4.4) |
 | `mcp-006` | Embedding only by allowlist, and the DataRef shapes (§5) |
 | `mcp-007` | Salting rules and keeping secrets out (§4.2–§4.3, §8.2) |
+| `mcp-008` | *(0.5.0, 2026-11-06)* MCP 2026-07-28 sessions: revision and server identity from `_meta` without `initialize`, a missing server identity is not a failure, `input_required` and task handles publish nothing, the completing result is published, and the legacy before-`initialize` failure (§3.1–§3.2) |
 
 The `mcp-001` known-answer values:
 
