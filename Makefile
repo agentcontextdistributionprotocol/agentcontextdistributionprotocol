@@ -74,8 +74,9 @@ docs:
 	@echo " 21. rfcs/RFC-ACDP-0019-mcp-tool-result-provenance.md (0.5.0, Final; §5, §7, §10 Draft)"
 	@echo " 22. rfcs/RFC-ACDP-0020-registry-trust-lists.md (0.5.0, Final)"
 	@echo " 23. rfcs/RFC-ACDP-0021-keyless-signing.md (0.5.0, Final; registry side Draft)"
-	@echo " 24. docs/overview.md"
-	@echo " 25. docs/integration-guide.md"
+	@echo " 24. rfcs/RFC-ACDP-0022-a2a-artifact-provenance.md (0.5.0, Draft)"
+	@echo " 25. docs/overview.md"
+	@echo " 26. docs/integration-guide.md"
 
 # ── Clean ────────────────────────────────────────────────────────────────────
 

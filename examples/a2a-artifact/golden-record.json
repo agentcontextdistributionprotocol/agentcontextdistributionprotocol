@@ -1,0 +1,12 @@
+{
+  "record_version": "acdp-a2a-artifact/1",
+  "a2a_protocol_version": "1.0",
+  "artifact_id_hash": "sha256:5917dccf6292d2a7564c9d6b467bd72b988c97ab69dba174245224b5c4b66156",
+  "task_id_hash": "sha256:13fdf32204313ca4cbe4376d2fd544c131e9edb4d37cbf53fdea937836316e6c",
+  "context_id_hash": "sha256:9eb6ace274bb43e7095cffdd0b5c7ac975c6ebade2e4b5385be048f0f87dc260",
+  "parts_hash": "sha256:11fe7c879a5f786129b918ac9b087666942da00d60d9aa6eba248e5d76fc24a8",
+  "salted": true,
+  "embedded": false,
+  "name": "Q3 card-fraud summary",
+  "completed_at": "2026-11-06T09:15:42.318Z"
+}

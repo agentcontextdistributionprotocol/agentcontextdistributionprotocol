@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.acdp.io/v0.1.0/acdp-a2a-artifact.schema.json",
+  "title": "ACDP A2A Artifact Record (0.5.0, Draft)",
+  "description": "acdp-a2a-artifact/1: the record an A2A server agent carries under metadata[\"acdp:a2a\"] of the body it signs for one completed artifact (RFC-ACDP-0022 §4). The body's type is the agent's own domain type; this record only binds the body to the A2A artifact by salted hashes. $defs/link is the value of Artifact.metadata[\"io.acdp/provenance\"] (RFC-ACDP-0022 §6), the RFC-ACDP-0019 §6 value reused unchanged. $defs/inputs is the value of Message.metadata[\"io.acdp/provenance\"] (§7). $defs/card_params is the params object of the Agent Card extension https://acdp.io/ext/a2a/v1 (§9).",
+  "$ref": "#/$defs/record",
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "record": {
+      "type": "object",
+      "required": [
+        "record_version",
+        "a2a_protocol_version",
+        "artifact_id_hash",
+        "task_id_hash",
+        "context_id_hash",
+        "parts_hash",
+        "salted",
+        "embedded",
+        "completed_at"
+      ],
+      "properties": {
+        "record_version": { "const": "acdp-a2a-artifact/1" },
+        "a2a_protocol_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "The A2A protocol version the task was served under: the protocolVersion of the AgentInterface the request arrived on, e.g. 1.0."
+        },
+        "artifact_id_hash": { "$ref": "#/$defs/hash", "description": "§5 over the artifactId string." },
+        "role": {
+          "const": "ROLE_AGENT",
+          "description": "Present only under an A2A revision whose Artifact carries a role (A2A #2411). An agent signs only artifacts it authored."
+        },
+        "task_id_hash": { "$ref": "#/$defs/hash", "description": "§5 over the task id string." },
+        "context_id_hash": { "$ref": "#/$defs/hash", "description": "§5 over the context id string." },
+        "parts_hash": { "$ref": "#/$defs/hash", "description": "§5 over the assembled parts array in its A2A JSON form (RFC-ACDP-0022 §5.1)." },
+        "salted": { "type": "boolean", "description": "true when the four hashes are over salt ‖ JCS(value) (RFC-ACDP-0022 §5)." },
+        "embedded": { "type": "boolean", "description": "true when a data_refs entry carries the parts (RFC-ACDP-0022 §5.3)." },
+        "name": { "type": "string", "minLength": 1, "maxLength": 256, "description": "The artifact's name, truncated to 256 Unicode scalar values, when the agent records it." },
+        "description": { "type": "string", "minLength": 1, "maxLength": 1024, "description": "The artifact's description, truncated to 1024 Unicode scalar values, when the agent records it." },
+        "completed_at": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/rfc3339_timestamp" }
+      },
+      "additionalProperties": false
+    },
+    "link": {
+      "description": "Value of Artifact.metadata[\"io.acdp/provenance\"]: exactly the RFC-ACDP-0019 §6 value (published link or fail-open failure).",
+      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-mcp-tool-result.schema.json#/$defs/provenance"
+    },
+    "inputs": {
+      "description": "Value of Message.metadata[\"io.acdp/provenance\"] on a client message: the ACDP contexts the client cites as inputs (RFC-ACDP-0022 §7).",
+      "type": "object",
+      "required": ["inputs"],
+      "properties": {
+        "inputs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1000,
+          "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "card_params": {
+      "description": "params of the Agent Card AgentExtension https://acdp.io/ext/a2a/v1 (RFC-ACDP-0022 §9). An untrusted pointer. A2A JSON (camelCase) names. Unknown members are ignored by clients.",
+      "type": "object",
+      "required": ["registry", "agentId"],
+      "properties": {
+        "registry": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/hostname" },
+        "agentId": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did" }
+      },
+      "additionalProperties": true
+    }
+  }
+}

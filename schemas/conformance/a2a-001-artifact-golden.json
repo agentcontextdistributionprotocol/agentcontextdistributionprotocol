@@ -1,0 +1,622 @@
+{
+  "id": "a2a-001",
+  "description": "(0.5.0, Draft) Known-answer vector for an A2A artifact published by the agent that produced it (RFC-ACDP-0022 §4–§8). From two pinned TaskArtifactUpdateEvent chunks, the task and context ids, the client's cited inputs and the salt, recompute the assembled parts, the salted artifact_id_hash, task_id_hash, context_id_hash and parts_hash (sha256 over salt ‖ JCS(value), no domain tag), the derived_from list, the acdp-a2a-artifact/1 record under metadata[\"acdp:a2a\"], the canonical form, content_hash, the Ed25519 signature of the did:key agent (the sig-001 zero seed), the Idempotency-Key, the io.acdp/provenance link on the final chunk and the Task snapshot, the Card binding to the agent's AITP AID, and the holder verdicts for the pinned negatives. Executed by scripts/conformance-runner.py.",
+  "tags": [
+    "a2a",
+    "producer",
+    "consumer",
+    "golden",
+    "0.5.0",
+    "known-answer"
+  ],
+  "applies_to_profiles": [
+    "acdp-producer-a2a",
+    "acdp-consumer-a2a"
+  ],
+  "test_keypair": {
+    "warning": "TEST ONLY. The private seed is publicly known (the sig-001 zero seed). Never use this keypair for real publications.",
+    "private_seed_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+    "public_key_hex": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29",
+    "public_key_base64": "O2onvM62pC1io6jQKm8Nc2UyFXcd4kOmOsBIoYtZ2ik=",
+    "did_key": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"
+  },
+  "vectors": [
+    {
+      "name": "a2a-kat-001 — streamed in two chunks, salted, not embedded, did:key agent",
+      "inputs": {
+        "a2a_protocol_version": "1.0",
+        "task_id": "0d4c6f1e-2b3a-4c5d-8e9f-a0b1c2d3e4f5",
+        "context_id": "c295ea44-7543-4f78-b524-7a38915ad6e4",
+        "chunks": [
+          {
+            "taskId": "0d4c6f1e-2b3a-4c5d-8e9f-a0b1c2d3e4f5",
+            "contextId": "c295ea44-7543-4f78-b524-7a38915ad6e4",
+            "artifact": {
+              "artifactId": "fraud-summary",
+              "name": "Q3 card-fraud summary",
+              "parts": [
+                {
+                  "text": "EMEA 0.42%, AMER 0.31%, APAC 0.27%"
+                }
+              ],
+              "metadata": {
+                "com.example/trace": "abc123"
+              }
+            },
+            "append": false,
+            "lastChunk": false
+          },
+          {
+            "taskId": "0d4c6f1e-2b3a-4c5d-8e9f-a0b1c2d3e4f5",
+            "contextId": "c295ea44-7543-4f78-b524-7a38915ad6e4",
+            "artifact": {
+              "artifactId": "fraud-summary",
+              "parts": [
+                {
+                  "data": {
+                    "quarter": "2026-Q3",
+                    "rates": {
+                      "AMER": 0.31,
+                      "APAC": 0.27,
+                      "EMEA": 0.42
+                    }
+                  },
+                  "mediaType": "application/json"
+                }
+              ],
+              "metadata": {
+                "com.example/trace": "abc123"
+              }
+            },
+            "append": true,
+            "lastChunk": true
+          }
+        ],
+        "message_metadata": {
+          "io.acdp/provenance": {
+            "inputs": [
+              "acdp://registry.example.com/7b1d0c52-3e4f-4a6b-8c9d-0e1f2a3b4c5d",
+              "acdp://registry.example.com/0f9e8d7c-6b5a-4c3d-9e2f-1a0b9c8d7e6f",
+              "acdp://registry.example.com/7b1d0c52-3e4f-4a6b-8c9d-0e1f2a3b4c5d"
+            ]
+          }
+        },
+        "verified_inputs": [
+          "acdp://registry.example.com/7b1d0c52-3e4f-4a6b-8c9d-0e1f2a3b4c5d",
+          "acdp://registry.example.com/0f9e8d7c-6b5a-4c3d-9e2f-1a0b9c8d7e6f"
+        ],
+        "salt": "QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl8",
+        "agent_card_extensions": [
+          {
+            "uri": "https://agentidentitytrustprotocol.io/ext/a2a/v1",
+            "required": false,
+            "params": {
+              "aid": "aid:pubkey:O2onvM62pC1io6jQKm8Nc2UyFXcd4kOmOsBIoYtZ2ik",
+              "manifestUrl": "https://agent.example.com/.well-known/aitp-manifest",
+              "securityScheme": "aitp"
+            }
+          },
+          {
+            "uri": "https://acdp.io/ext/a2a/v1",
+            "description": "Artifacts are signed ACDP bodies (RFC-ACDP-0022).",
+            "required": false,
+            "params": {
+              "registry": "registry.example.com",
+              "agentId": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"
+            }
+          }
+        ]
+      },
+      "producer_content": {
+        "version": 1,
+        "supersedes": null,
+        "agent_id": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
+        "contributors": [],
+        "title": "Q3 card-fraud summary",
+        "type": "analysis",
+        "domain": "payments.fraud",
+        "data_refs": [],
+        "derived_from": [
+          "acdp://registry.example.com/7b1d0c52-3e4f-4a6b-8c9d-0e1f2a3b4c5d",
+          "acdp://registry.example.com/0f9e8d7c-6b5a-4c3d-9e2f-1a0b9c8d7e6f"
+        ],
+        "visibility": "private",
+        "metadata": {
+          "com.example/report": {
+            "quarter": "2026-Q3",
+            "method": "rolling-90d"
+          },
+          "acdp:a2a": {
+            "record_version": "acdp-a2a-artifact/1",
+            "a2a_protocol_version": "1.0",
+            "artifact_id_hash": "sha256:5917dccf6292d2a7564c9d6b467bd72b988c97ab69dba174245224b5c4b66156",
+            "task_id_hash": "sha256:13fdf32204313ca4cbe4376d2fd544c131e9edb4d37cbf53fdea937836316e6c",
+            "context_id_hash": "sha256:9eb6ace274bb43e7095cffdd0b5c7ac975c6ebade2e4b5385be048f0f87dc260",
+            "parts_hash": "sha256:11fe7c879a5f786129b918ac9b087666942da00d60d9aa6eba248e5d76fc24a8",
+            "salted": true,
+            "embedded": false,
+            "name": "Q3 card-fraud summary",
+            "completed_at": "2026-11-06T09:15:42.318Z"
+          }
+        },
+        "acdp_version": "0.5.0"
+      },
+      "expected": {
+        "salt_hex": "404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f",
+        "assembled_parts": [
+          {
+            "text": "EMEA 0.42%, AMER 0.31%, APAC 0.27%"
+          },
+          {
+            "data": {
+              "quarter": "2026-Q3",
+              "rates": {
+                "AMER": 0.31,
+                "APAC": 0.27,
+                "EMEA": 0.42
+              }
+            },
+            "mediaType": "application/json"
+          }
+        ],
+        "parts_preimage_hex": "404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f5b7b2274657874223a22454d454120302e3432252c20414d455220302e3331252c204150414320302e323725227d2c7b2264617461223a7b2271756172746572223a22323032362d5133222c227261746573223a7b22414d4552223a302e33312c2241504143223a302e32372c22454d4541223a302e34327d7d2c226d6564696154797065223a226170706c69636174696f6e2f6a736f6e227d5d",
+        "artifact_id_hash": "sha256:5917dccf6292d2a7564c9d6b467bd72b988c97ab69dba174245224b5c4b66156",
+        "task_id_hash": "sha256:13fdf32204313ca4cbe4376d2fd544c131e9edb4d37cbf53fdea937836316e6c",
+        "context_id_hash": "sha256:9eb6ace274bb43e7095cffdd0b5c7ac975c6ebade2e4b5385be048f0f87dc260",
+        "parts_hash": "sha256:11fe7c879a5f786129b918ac9b087666942da00d60d9aa6eba248e5d76fc24a8",
+        "derived_from": [
+          "acdp://registry.example.com/7b1d0c52-3e4f-4a6b-8c9d-0e1f2a3b4c5d",
+          "acdp://registry.example.com/0f9e8d7c-6b5a-4c3d-9e2f-1a0b9c8d7e6f"
+        ],
+        "idempotency_key": "acdp-a2a-73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
+        "canonical_form": "{\"acdp_version\":\"0.5.0\",\"agent_id\":\"did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp\",\"contributors\":[],\"data_refs\":[],\"derived_from\":[\"acdp://registry.example.com/7b1d0c52-3e4f-4a6b-8c9d-0e1f2a3b4c5d\",\"acdp://registry.example.com/0f9e8d7c-6b5a-4c3d-9e2f-1a0b9c8d7e6f\"],\"domain\":\"payments.fraud\",\"metadata\":{\"acdp:a2a\":{\"a2a_protocol_version\":\"1.0\",\"artifact_id_hash\":\"sha256:5917dccf6292d2a7564c9d6b467bd72b988c97ab69dba174245224b5c4b66156\",\"completed_at\":\"2026-11-06T09:15:42.318Z\",\"context_id_hash\":\"sha256:9eb6ace274bb43e7095cffdd0b5c7ac975c6ebade2e4b5385be048f0f87dc260\",\"embedded\":false,\"name\":\"Q3 card-fraud summary\",\"parts_hash\":\"sha256:11fe7c879a5f786129b918ac9b087666942da00d60d9aa6eba248e5d76fc24a8\",\"record_version\":\"acdp-a2a-artifact/1\",\"salted\":true,\"task_id_hash\":\"sha256:13fdf32204313ca4cbe4376d2fd544c131e9edb4d37cbf53fdea937836316e6c\"},\"com.example/report\":{\"method\":\"rolling-90d\",\"quarter\":\"2026-Q3\"}},\"supersedes\":null,\"title\":\"Q3 card-fraud summary\",\"type\":\"analysis\",\"version\":1,\"visibility\":\"private\"}",
+        "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
+        "signature_value_hex": "d6284892587ec15ac6b999494e9f5edb39c576f1de987b41fb4266c72c075a13abaf70440a4e7cb5589de6f86e65f3b105ad10020dfb1d36b6ac96aee8639208",
+        "signature_value_base64": "1ihIklh+wVrGuZlJTp9e2znFdvHemHtB+0JmxywHWhOrr3BECk58tVid5vhuZfOxBa0QAg37HTa2rJau6GOSCA==",
+        "publish_request_body": {
+          "version": 1,
+          "supersedes": null,
+          "agent_id": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
+          "contributors": [],
+          "title": "Q3 card-fraud summary",
+          "type": "analysis",
+          "domain": "payments.fraud",
+          "data_refs": [],
+          "derived_from": [
+            "acdp://registry.example.com/7b1d0c52-3e4f-4a6b-8c9d-0e1f2a3b4c5d",
+            "acdp://registry.example.com/0f9e8d7c-6b5a-4c3d-9e2f-1a0b9c8d7e6f"
+          ],
+          "visibility": "private",
+          "metadata": {
+            "com.example/report": {
+              "quarter": "2026-Q3",
+              "method": "rolling-90d"
+            },
+            "acdp:a2a": {
+              "record_version": "acdp-a2a-artifact/1",
+              "a2a_protocol_version": "1.0",
+              "artifact_id_hash": "sha256:5917dccf6292d2a7564c9d6b467bd72b988c97ab69dba174245224b5c4b66156",
+              "task_id_hash": "sha256:13fdf32204313ca4cbe4376d2fd544c131e9edb4d37cbf53fdea937836316e6c",
+              "context_id_hash": "sha256:9eb6ace274bb43e7095cffdd0b5c7ac975c6ebade2e4b5385be048f0f87dc260",
+              "parts_hash": "sha256:11fe7c879a5f786129b918ac9b087666942da00d60d9aa6eba248e5d76fc24a8",
+              "salted": true,
+              "embedded": false,
+              "name": "Q3 card-fraud summary",
+              "completed_at": "2026-11-06T09:15:42.318Z"
+            }
+          },
+          "acdp_version": "0.5.0",
+          "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
+          "signature": {
+            "algorithm": "ed25519",
+            "key_id": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp#z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
+            "value": "1ihIklh+wVrGuZlJTp9e2znFdvHemHtB+0JmxywHWhOrr3BECk58tVid5vhuZfOxBa0QAg37HTa2rJau6GOSCA=="
+          }
+        },
+        "final_chunk": {
+          "taskId": "0d4c6f1e-2b3a-4c5d-8e9f-a0b1c2d3e4f5",
+          "contextId": "c295ea44-7543-4f78-b524-7a38915ad6e4",
+          "artifact": {
+            "artifactId": "fraud-summary",
+            "parts": [
+              {
+                "data": {
+                  "quarter": "2026-Q3",
+                  "rates": {
+                    "AMER": 0.31,
+                    "APAC": 0.27,
+                    "EMEA": 0.42
+                  }
+                },
+                "mediaType": "application/json"
+              }
+            ],
+            "metadata": {
+              "com.example/trace": "abc123",
+              "io.acdp/provenance": {
+                "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
+                "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
+                "registry": "registry.example.com",
+                "salt": "QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl8"
+              }
+            }
+          },
+          "append": true,
+          "lastChunk": true
+        },
+        "task_snapshot_artifact": {
+          "artifactId": "fraud-summary",
+          "name": "Q3 card-fraud summary",
+          "parts": [
+            {
+              "text": "EMEA 0.42%, AMER 0.31%, APAC 0.27%"
+            },
+            {
+              "data": {
+                "quarter": "2026-Q3",
+                "rates": {
+                  "AMER": 0.31,
+                  "APAC": 0.27,
+                  "EMEA": 0.42
+                }
+              },
+              "mediaType": "application/json"
+            }
+          ],
+          "metadata": {
+            "com.example/trace": "abc123",
+            "io.acdp/provenance": {
+              "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
+              "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
+              "registry": "registry.example.com",
+              "salt": "QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl8"
+            }
+          }
+        },
+        "aitp_aid": "aid:pubkey:O2onvM62pC1io6jQKm8Nc2UyFXcd4kOmOsBIoYtZ2ik",
+        "holder_negatives": [
+          {
+            "name": "N1 — one changed byte in a text part",
+            "held_artifact": {
+              "artifactId": "fraud-summary",
+              "name": "Q3 card-fraud summary",
+              "parts": [
+                {
+                  "text": "EMEA 0.43%, AMER 0.31%, APAC 0.27%"
+                },
+                {
+                  "data": {
+                    "quarter": "2026-Q3",
+                    "rates": {
+                      "AMER": 0.31,
+                      "APAC": 0.27,
+                      "EMEA": 0.42
+                    }
+                  },
+                  "mediaType": "application/json"
+                }
+              ],
+              "metadata": {
+                "com.example/trace": "abc123",
+                "io.acdp/provenance": {
+                  "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
+                  "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
+                  "registry": "registry.example.com",
+                  "salt": "QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl8"
+                }
+              }
+            },
+            "expected_failure": "parts_mismatch"
+          },
+          {
+            "name": "N2 — parts reordered",
+            "held_artifact": {
+              "artifactId": "fraud-summary",
+              "name": "Q3 card-fraud summary",
+              "parts": [
+                {
+                  "data": {
+                    "quarter": "2026-Q3",
+                    "rates": {
+                      "AMER": 0.31,
+                      "APAC": 0.27,
+                      "EMEA": 0.42
+                    }
+                  },
+                  "mediaType": "application/json"
+                },
+                {
+                  "text": "EMEA 0.42%, AMER 0.31%, APAC 0.27%"
+                }
+              ],
+              "metadata": {
+                "com.example/trace": "abc123",
+                "io.acdp/provenance": {
+                  "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
+                  "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
+                  "registry": "registry.example.com",
+                  "salt": "QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl8"
+                }
+              }
+            },
+            "expected_failure": "parts_mismatch"
+          },
+          {
+            "name": "N3 — part mediaType dropped",
+            "held_artifact": {
+              "artifactId": "fraud-summary",
+              "name": "Q3 card-fraud summary",
+              "parts": [
+                {
+                  "text": "EMEA 0.42%, AMER 0.31%, APAC 0.27%"
+                },
+                {
+                  "data": {
+                    "quarter": "2026-Q3",
+                    "rates": {
+                      "AMER": 0.31,
+                      "APAC": 0.27,
+                      "EMEA": 0.42
+                    }
+                  }
+                }
+              ],
+              "metadata": {
+                "com.example/trace": "abc123",
+                "io.acdp/provenance": {
+                  "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
+                  "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
+                  "registry": "registry.example.com",
+                  "salt": "QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl8"
+                }
+              }
+            },
+            "expected_failure": "parts_mismatch"
+          },
+          {
+            "name": "N4 — artifactId changed",
+            "held_artifact": {
+              "artifactId": "fraud-summary-2",
+              "name": "Q3 card-fraud summary",
+              "parts": [
+                {
+                  "text": "EMEA 0.42%, AMER 0.31%, APAC 0.27%"
+                },
+                {
+                  "data": {
+                    "quarter": "2026-Q3",
+                    "rates": {
+                      "AMER": 0.31,
+                      "APAC": 0.27,
+                      "EMEA": 0.42
+                    }
+                  },
+                  "mediaType": "application/json"
+                }
+              ],
+              "metadata": {
+                "com.example/trace": "abc123",
+                "io.acdp/provenance": {
+                  "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
+                  "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
+                  "registry": "registry.example.com",
+                  "salt": "QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl8"
+                }
+              }
+            },
+            "expected_failure": "artifact_id_mismatch"
+          },
+          {
+            "name": "N5 — name changed",
+            "held_artifact": {
+              "artifactId": "fraud-summary",
+              "name": "Q4 card-fraud summary",
+              "parts": [
+                {
+                  "text": "EMEA 0.42%, AMER 0.31%, APAC 0.27%"
+                },
+                {
+                  "data": {
+                    "quarter": "2026-Q3",
+                    "rates": {
+                      "AMER": 0.31,
+                      "APAC": 0.27,
+                      "EMEA": 0.42
+                    }
+                  },
+                  "mediaType": "application/json"
+                }
+              ],
+              "metadata": {
+                "com.example/trace": "abc123",
+                "io.acdp/provenance": {
+                  "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
+                  "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
+                  "registry": "registry.example.com",
+                  "salt": "QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl8"
+                }
+              }
+            },
+            "expected_failure": "label_mismatch"
+          },
+          {
+            "name": "N6 — link salt replaced (all 0x00)",
+            "held_artifact": {
+              "artifactId": "fraud-summary",
+              "name": "Q3 card-fraud summary",
+              "parts": [
+                {
+                  "text": "EMEA 0.42%, AMER 0.31%, APAC 0.27%"
+                },
+                {
+                  "data": {
+                    "quarter": "2026-Q3",
+                    "rates": {
+                      "AMER": 0.31,
+                      "APAC": 0.27,
+                      "EMEA": 0.42
+                    }
+                  },
+                  "mediaType": "application/json"
+                }
+              ],
+              "metadata": {
+                "com.example/trace": "abc123",
+                "io.acdp/provenance": {
+                  "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
+                  "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
+                  "registry": "registry.example.com",
+                  "salt": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                }
+              }
+            },
+            "expected_failure": "parts_mismatch"
+          },
+          {
+            "name": "N7 — non-canonical salt (nonzero trailing bits)",
+            "held_artifact": {
+              "artifactId": "fraud-summary",
+              "name": "Q3 card-fraud summary",
+              "parts": [
+                {
+                  "text": "EMEA 0.42%, AMER 0.31%, APAC 0.27%"
+                },
+                {
+                  "data": {
+                    "quarter": "2026-Q3",
+                    "rates": {
+                      "AMER": 0.31,
+                      "APAC": 0.27,
+                      "EMEA": 0.42
+                    }
+                  },
+                  "mediaType": "application/json"
+                }
+              ],
+              "metadata": {
+                "com.example/trace": "abc123",
+                "io.acdp/provenance": {
+                  "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
+                  "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
+                  "registry": "registry.example.com",
+                  "salt": "QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl9"
+                }
+              }
+            },
+            "expected_failure": "salt_invalid"
+          },
+          {
+            "name": "N8 — link content_hash differs from the body",
+            "held_artifact": {
+              "artifactId": "fraud-summary",
+              "name": "Q3 card-fraud summary",
+              "parts": [
+                {
+                  "text": "EMEA 0.42%, AMER 0.31%, APAC 0.27%"
+                },
+                {
+                  "data": {
+                    "quarter": "2026-Q3",
+                    "rates": {
+                      "AMER": 0.31,
+                      "APAC": 0.27,
+                      "EMEA": 0.42
+                    }
+                  },
+                  "mediaType": "application/json"
+                }
+              ],
+              "metadata": {
+                "com.example/trace": "abc123",
+                "io.acdp/provenance": {
+                  "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
+                  "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+                  "registry": "registry.example.com",
+                  "salt": "QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl8"
+                }
+              }
+            },
+            "expected_failure": "link_mismatch"
+          },
+          {
+            "name": "N9 — Card agentId names another key",
+            "held_artifact": {
+              "artifactId": "fraud-summary",
+              "name": "Q3 card-fraud summary",
+              "parts": [
+                {
+                  "text": "EMEA 0.42%, AMER 0.31%, APAC 0.27%"
+                },
+                {
+                  "data": {
+                    "quarter": "2026-Q3",
+                    "rates": {
+                      "AMER": 0.31,
+                      "APAC": 0.27,
+                      "EMEA": 0.42
+                    }
+                  },
+                  "mediaType": "application/json"
+                }
+              ],
+              "metadata": {
+                "com.example/trace": "abc123",
+                "io.acdp/provenance": {
+                  "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
+                  "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
+                  "registry": "registry.example.com",
+                  "salt": "QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl8"
+                }
+              }
+            },
+            "card_params": {
+              "registry": "registry.example.com",
+              "agentId": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK"
+            },
+            "expected_failure": "card_mismatch"
+          },
+          {
+            "name": "N10 — wrong task_id known to the holder",
+            "held_artifact": {
+              "artifactId": "fraud-summary",
+              "name": "Q3 card-fraud summary",
+              "parts": [
+                {
+                  "text": "EMEA 0.42%, AMER 0.31%, APAC 0.27%"
+                },
+                {
+                  "data": {
+                    "quarter": "2026-Q3",
+                    "rates": {
+                      "AMER": 0.31,
+                      "APAC": 0.27,
+                      "EMEA": 0.42
+                    }
+                  },
+                  "mediaType": "application/json"
+                }
+              ],
+              "metadata": {
+                "com.example/trace": "abc123",
+                "io.acdp/provenance": {
+                  "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
+                  "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
+                  "registry": "registry.example.com",
+                  "salt": "QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl8"
+                }
+              }
+            },
+            "known_task_id": "0d4c6f1e-2b3a-4c5d-8e9f-a0b1c2d3e4f6",
+            "expected_failure": "task_mismatch"
+          }
+        ]
+      },
+      "registry_assigned": {
+        "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
+        "origin_registry": "registry.example.com",
+        "created_at": "2026-11-06T09:15:42.507Z",
+        "lineage_id": "lin:sha256:ecb35a09d0808bff4d7e0d0ba962d0b0f56ec821a6865ebd1b46f8ee044c5f92"
+      }
+    }
+  ]
+}

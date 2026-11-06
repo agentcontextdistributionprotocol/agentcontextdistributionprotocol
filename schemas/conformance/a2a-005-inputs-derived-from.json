@@ -1,0 +1,54 @@
+{
+  "id": "a2a-005",
+  "description": "(0.5.0, Draft) Client-cited inputs in Message.metadata io.acdp/provenance become derived_from (RFC-ACDP-0022 §7).",
+  "tags": [
+    "a2a",
+    "producer",
+    "behavioral",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-producer-a2a"
+  ],
+  "input": {
+    "note": "Run the agent against a test registry, with a client that sends the a2a-001 task (two chunks for artifactId fraud-summary) unless a scenario says otherwise."
+  },
+  "scenarios": [
+    {
+      "name": "A — order and deduplication",
+      "expected": {
+        "behavior": "inputs [X, Y, X] across the task's messages give derived_from [X, Y]: message order, then array order, first occurrence kept."
+      }
+    },
+    {
+      "name": "B — verified only",
+      "expected": {
+        "behavior": "An input that cannot be retrieved, or whose signature does not verify, is left out; the task still runs."
+      }
+    },
+    {
+      "name": "C — invalid value",
+      "expected": {
+        "behavior": "A value that is not {inputs: [ctx_id, ...]} (extra member, empty array, a non-ctx_id string) is ignored for provenance and never fails the task."
+      }
+    },
+    {
+      "name": "D — cap",
+      "expected": {
+        "behavior": "More than 1000 distinct verified inputs: derived_from stops at 1000."
+      }
+    },
+    {
+      "name": "E — no scraping",
+      "expected": {
+        "behavior": "An acdp:// string inside a Part (text or data) is not added to derived_from."
+      }
+    },
+    {
+      "name": "F — continuation first",
+      "expected": {
+        "behavior": "For a continuation (a2a-002 F), the earlier body's ctx_id precedes the cited inputs."
+      }
+    }
+  ]
+}

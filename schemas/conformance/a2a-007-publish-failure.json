@@ -1,0 +1,48 @@
+{
+  "id": "a2a-007",
+  "description": "(0.5.0, Draft) Fail-open by default, fail-closed by configuration, idempotent retries, and publish before the final chunk (RFC-ACDP-0022 §6–§6.2).",
+  "tags": [
+    "a2a",
+    "producer",
+    "behavioral",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-producer-a2a"
+  ],
+  "input": {
+    "note": "Run the agent against a test registry, with a client that sends the a2a-001 task (two chunks for artifactId fraud-summary) unless a scenario says otherwise."
+  },
+  "scenarios": [
+    {
+      "name": "A — fail-open, registry error",
+      "expected": {
+        "behavior": "The registry answers 429 rate_limited after retries: the artifact is emitted unchanged with io.acdp/provenance = {failed: true, error: \"rate_limited\"}."
+      }
+    },
+    {
+      "name": "B — fail-open, unreachable",
+      "expected": {
+        "behavior": "Connection refused or the publish timeout elapses: {failed: true} with no error member."
+      }
+    },
+    {
+      "name": "C — fail-closed",
+      "expected": {
+        "behavior": "For an artifact configured fail-closed, the parts are never emitted; the agent may end the task TASK_STATE_FAILED with a status message naming the failure."
+      }
+    },
+    {
+      "name": "D — idempotent retry",
+      "expected": {
+        "behavior": "Retries resend the byte-identical body with Idempotency-Key acdp-a2a-<content_hash hex>; the registry returns the original ctx_id."
+      }
+    },
+    {
+      "name": "E — publish before the final chunk",
+      "expected": {
+        "behavior": "The lastChunk chunk, and any snapshot carrying the completed artifact, is emitted only after the publish response; a slow registry delays the final chunk rather than producing a link to an unpublished body."
+      }
+    }
+  ]
+}

@@ -1392,6 +1392,196 @@ def check_mcp_vector(fixture, fixture_data, vector):
     return ok
 
 
+_A2A_EXT_URI = "https://acdp.io/ext/a2a/v1"
+_AITP_EXT_URI = "https://agentidentitytrustprotocol.io/ext/a2a/v1"
+_A2A_RECORD_MEMBERS = {"record_version", "a2a_protocol_version", "artifact_id_hash", "role",
+                       "task_id_hash", "context_id_hash", "parts_hash", "salted", "embedded",
+                       "name", "description", "completed_at"}
+_A2A_LABEL_LIMITS = {"name": 256, "description": 1024}
+
+
+def _a2a_h(salt, value):
+    """RFC-ACDP-0022 §5: "sha256:" + lowercase hex SHA-256(salt ‖ JCS(value)), no domain tag;
+    an empty salt gives the unsalted form."""
+    return "sha256:" + hashlib.sha256(salt + jcs.canonicalize(value)).hexdigest()
+
+
+def _a2a_decode_salt(s):
+    """RFC-ACDP-0022 §5: exactly 43 base64url characters, no padding, zero trailing bits."""
+    import re
+    if not isinstance(s, str) or not re.fullmatch(r"[A-Za-z0-9_-]{43}", s):
+        return None
+    raw = base64.urlsafe_b64decode(s + "=")
+    if base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=") != s:
+        return None
+    return raw
+
+
+def _a2a_aid_key(aid):
+    """RFC-AITP-0001 §5.3: the legacy and the ed25519-tagged pubkey forms denote one Ed25519 key."""
+    for prefix in ("aid:pubkey:ed25519:", "aid:pubkey:"):
+        if aid.startswith(prefix):
+            ident = aid[len(prefix):]
+            if len(ident) == 43 and ":" not in ident:
+                return base64.urlsafe_b64decode(ident + "=")
+    return None
+
+
+def a2a_holder_verify(pc, content_hash, reg, held, card_params=None, known_task_id=None, known_context_id=None):
+    """RFC-ACDP-0022 §8 holder steps over a body already verified per RFC-ACDP-0001.
+    Returns "ok" or the first failing check."""
+    link = (held.get("metadata") or {}).get("io.acdp/provenance") or {}
+    if link.get("failed") is True or link.get("ctx_id") != reg["ctx_id"] \
+            or link.get("registry") != reg["origin_registry"] or link.get("content_hash") != content_hash:
+        return "link_mismatch"
+    if card_params is not None and card_params.get("agentId") != pc["agent_id"]:
+        return "card_mismatch"
+    rec = (pc.get("metadata") or {}).get("acdp:a2a")
+    if not isinstance(rec, dict) or rec.get("record_version") != "acdp-a2a-artifact/1" \
+            or set(rec) - _A2A_RECORD_MEMBERS:
+        return "record_invalid"
+    if rec["salted"]:
+        salt = _a2a_decode_salt(link.get("salt"))
+        if salt is None:
+            return "salt_invalid"
+    else:
+        if "salt" in link:
+            return "salt_invalid"
+        salt = b""
+    if _a2a_h(salt, held["parts"]) != rec["parts_hash"]:
+        return "parts_mismatch"
+    if _a2a_h(salt, held["artifactId"]) != rec["artifact_id_hash"]:
+        return "artifact_id_mismatch"
+    for k, limit in _A2A_LABEL_LIMITS.items():
+        if k in rec and rec[k] != held.get(k, "")[:limit]:
+            return "label_mismatch"
+    if known_task_id is not None and _a2a_h(salt, known_task_id) != rec["task_id_hash"]:
+        return "task_mismatch"
+    if known_context_id is not None and _a2a_h(salt, known_context_id) != rec["context_id_hash"]:
+        return "context_mismatch"
+    return "ok"
+
+
+def check_a2a_vector(fixture, fixture_data, vector):
+    """a2a-001 known answer (RFC-ACDP-0022 §4–§8): chunk assembly, the salted hashes,
+    the record, derived_from from cited inputs, the Idempotency-Key, the link on the final
+    chunk and the Task snapshot, the Card binding, the holder negatives, and (via
+    check_ed25519_vector) the body's hash and signature."""
+    name = vector.get("name", "?")
+    if not check_ed25519_vector(fixture, fixture_data, vector):
+        return False
+    inp, exp, pc = vector["inputs"], vector["expected"], vector["producer_content"]
+    reg = vector["registry_assigned"]
+    rec = pc["metadata"].get("acdp:a2a", {})
+    ok = True
+    salt = _a2a_decode_salt(inp["salt"])
+    if salt is None or len(salt) != 32 or salt.hex() != exp["salt_hex"]:
+        fail(fixture, name, "salt MUST be the canonical base64url form of exactly the 32 pinned bytes")
+        return False
+
+    # §4.2 assembly: parts concatenated in event order; append:false (re)starts the artifact.
+    parts, last = [], None
+    for ev in inp["chunks"]:
+        if ev["taskId"] != inp["task_id"] or ev["contextId"] != inp["context_id"]:
+            fail(fixture, name, "chunk task/context ids differ from the pinned ids")
+            ok = False
+        parts = (parts if ev.get("append") else []) + ev["artifact"]["parts"]
+        last = ev
+    if not (last and last.get("lastChunk") is True):
+        fail(fixture, name, "the final chunk MUST carry lastChunk: true")
+        ok = False
+    if parts != exp["assembled_parts"]:
+        fail(fixture, name, "assembled parts differ from the concatenated chunk parts")
+        ok = False
+    if (salt + jcs.canonicalize(parts)).hex() != exp["parts_preimage_hex"]:
+        fail(fixture, name, "parts preimage MUST be salt ‖ JCS(parts)")
+        ok = False
+
+    artifact_id = inp["chunks"][0]["artifact"]["artifactId"]
+    computed = {
+        "artifact_id_hash": _a2a_h(salt, artifact_id),
+        "task_id_hash": _a2a_h(salt, inp["task_id"]),
+        "context_id_hash": _a2a_h(salt, inp["context_id"]),
+        "parts_hash": _a2a_h(salt, parts),
+    }
+    for k, v in computed.items():
+        if v != exp[k] or v != rec.get(k):
+            fail(fixture, name, f"{k}: computed {v}, expected {exp[k]}, record {rec.get(k)}")
+            ok = False
+    if set(rec) - _A2A_RECORD_MEMBERS or rec.get("record_version") != "acdp-a2a-artifact/1" \
+            or rec.get("salted") is not True or rec.get("embedded") is not False \
+            or rec.get("a2a_protocol_version") != inp["a2a_protocol_version"] \
+            or rec.get("name") != inp["chunks"][0]["artifact"].get("name"):
+        fail(fixture, name, "record members inconsistent with the inputs (or unknown members present)")
+        ok = False
+    if pc["type"].startswith("acdp:") or pc["type"] == "key-revocation":
+        fail(fixture, name, "the body type MUST be the producer's own domain type")
+        ok = False
+
+    # §7 derived_from: cited inputs in citation order, first occurrence, verified only, cap 1000.
+    derived = []
+    for c in inp["message_metadata"]["io.acdp/provenance"]["inputs"]:
+        if c in inp["verified_inputs"] and c not in derived and len(derived) < 1000:
+            derived.append(c)
+    if derived != exp["derived_from"] or derived != pc["derived_from"]:
+        fail(fixture, name, f"derived_from mismatch: computed {derived}")
+        ok = False
+    if exp["idempotency_key"] != "acdp-a2a-" + exp["content_hash"][len("sha256:"):]:
+        fail(fixture, name, "idempotency_key MUST be acdp-a2a-<content_hash hex>")
+        ok = False
+
+    # §6 link: exactly the RFC-ACDP-0019 §6 value, on the final chunk and the snapshot.
+    want = {"ctx_id": reg["ctx_id"], "content_hash": exp["content_hash"],
+            "registry": reg["origin_registry"], "salt": inp["salt"]}
+    fc = exp["final_chunk"]
+    fc_meta = dict(fc["artifact"].get("metadata", {}))
+    if fc_meta.pop("io.acdp/provenance", None) != want or fc_meta != last["artifact"].get("metadata", {}):
+        fail(fixture, name, "final chunk metadata MUST be the upstream metadata plus the link")
+        ok = False
+    if {k: v for k, v in fc.items() if k != "artifact"} != {k: v for k, v in last.items() if k != "artifact"} \
+            or {k: v for k, v in fc["artifact"].items() if k != "metadata"} != {k: v for k, v in last["artifact"].items() if k != "metadata"}:
+        fail(fixture, name, "final chunk altered beyond adding the link")
+        ok = False
+    snap = exp["task_snapshot_artifact"]
+    if snap["parts"] != parts or snap["artifactId"] != artifact_id or snap["metadata"].get("io.acdp/provenance") != want:
+        fail(fixture, name, "Task snapshot artifact MUST carry the assembled parts and the same link")
+        ok = False
+    for a in (fc["artifact"], snap):
+        if "extensions" in a:
+            fail(fixture, name, "Artifact.extensions MUST NOT be used")
+            ok = False
+
+    # §9 Card binding: exactly one ACDP entry, required false, agentId = agent_id; the
+    # did:key encodes the same Ed25519 key as the AITP AID on the same Card.
+    exts = inp["agent_card_extensions"]
+    mine = [e for e in exts if e.get("uri") == _A2A_EXT_URI]
+    aitp = [e for e in exts if e.get("uri") == _AITP_EXT_URI]
+    if len(mine) != 1 or mine[0].get("required") is not False or mine[0]["params"].get("agentId") != pc["agent_id"] \
+            or mine[0]["params"].get("registry") != reg["origin_registry"]:
+        fail(fixture, name, "Card MUST carry exactly one ACDP extension, required false, agentId = agent_id")
+        ok = False
+    did_key_pub = bytes.fromhex(fixture_data["test_keypair"]["public_key_hex"])
+    if len(aitp) == 1:
+        aid = aitp[0]["params"]["aid"]
+        if aid != exp["aitp_aid"] or _a2a_aid_key(aid) != did_key_pub:
+            fail(fixture, name, "did:key agent_id MUST encode the same Ed25519 key as the AITP aid")
+            ok = False
+
+    # §8 holder recomputation: the positive case, then the pinned negatives.
+    verdict = a2a_holder_verify(pc, exp["content_hash"], reg, snap, mine[0]["params"] if mine else None,
+                                inp["task_id"], inp["context_id"])
+    if verdict != "ok":
+        fail(fixture, name, f"holder verification of the pinned artifact: {verdict}")
+        ok = False
+    for neg in exp["holder_negatives"]:
+        v = a2a_holder_verify(pc, exp["content_hash"], reg, neg["held_artifact"], neg.get("card_params"),
+                              neg.get("known_task_id"), neg.get("known_context_id"))
+        if v != neg["expected_failure"]:
+            fail(fixture, name, f"{neg['name']}: expected {neg['expected_failure']}, computed {v}")
+            ok = False
+    return ok
+
+
 _TRUST_PRECEDENCE = ["trusted", "expired", "out_of_scope", "untrusted_registry", "list_invalid"]
 
 
@@ -1826,6 +2016,12 @@ for path in sorted(CONFORMANCE.glob("*.json")):
         # behavioral and verified by proxy implementations.
         for v in _vectors(data, fixture_id):
             if check_mcp_vector(fixture_id, data, v):
+                passes += 1
+    elif fixture_id.startswith("a2a-") and "vectors" in data:
+        # a2a-001 carries the agent-signed artifact known answer (RFC-ACDP-0022);
+        # a2a-002..008 are behavioral and verified by agent and holder implementations.
+        for v in _vectors(data, fixture_id):
+            if check_a2a_vector(fixture_id, data, v):
                 passes += 1
     elif fixture_id.startswith("trust-") and "vectors" in data:
         # trust-001 carries the golden trust-list body and the §6.2 evaluation

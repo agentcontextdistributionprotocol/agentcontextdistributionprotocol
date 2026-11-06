@@ -1,0 +1,66 @@
+{
+  "id": "a2a-002",
+  "description": "(0.5.0, Draft) Chunk assembly, completion, supersede on re-emission in the same task, and derived_from on continuation in a new task (RFC-ACDP-0022 §4.2–§4.3).",
+  "tags": [
+    "a2a",
+    "producer",
+    "behavioral",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-producer-a2a"
+  ],
+  "input": {
+    "note": "Run the agent against a test registry, with a client that sends the a2a-001 task (two chunks for artifactId fraud-summary) unless a scenario says otherwise."
+  },
+  "scenarios": [
+    {
+      "name": "A — one body per completed artifact",
+      "expected": {
+        "behavior": "Two chunks (append false, then append true with lastChunk true) produce exactly one body, published after the second chunk is assembled; its parts_hash covers both chunks' parts in order. No body is published per chunk or per Task."
+      }
+    },
+    {
+      "name": "B — completion by terminal state",
+      "expected": {
+        "behavior": "An artifact streamed without lastChunk true, or only returned in a Task snapshot, is published once when the task enters TASK_STATE_COMPLETED, FAILED, CANCELED or REJECTED; INPUT_REQUIRED and AUTH_REQUIRED complete nothing. The link appears in the snapshot only."
+      }
+    },
+    {
+      "name": "C — re-emission with append false",
+      "expected": {
+        "behavior": "After completion, an append:false chunk for the same artifactId in the same task, completed again, publishes version 2 with supersedes = the version-1 ctx_id, the same agent_id and registry, a fresh salt and parts_hash over the replacement parts. The feed shows an ordinary superseded change."
+      }
+    },
+    {
+      "name": "D — re-emission with append true",
+      "expected": {
+        "behavior": "Further append:true chunks after completion, completed again, publish a new version whose parts_hash covers all parts as now assembled, not only the new chunks."
+      }
+    },
+    {
+      "name": "E — prior publish failed",
+      "expected": {
+        "behavior": "If the version-1 publish failed (fail-open), the re-completion publishes version 1, not a supersession. A registry already_superseded rejection is a publish failure (§6.2)."
+      }
+    },
+    {
+      "name": "F — continuation in a new task",
+      "expected": {
+        "behavior": "A later task that revises the artifact (its message lists the earlier task in referenceTaskIds) publishes a new version-1 body whose derived_from lists the earlier body's ctx_id first, before cited inputs. It never supersedes across tasks."
+      }
+    },
+    {
+      "name": "G — snapshots agree",
+      "expected": {
+        "behavior": "Every later Task.artifacts snapshot carries the same assembled parts for the key, so a holder of the snapshot recomputes the same parts_hash."
+      }
+    },
+    {
+      "name": "H — not the agent's artifact",
+      "expected": {
+        "behavior": "An artifact relayed unchanged from another agent, or (under an A2A revision with Artifact.role) a ROLE_USER artifact, produces no body."
+      }
+    }
+  ]
+}

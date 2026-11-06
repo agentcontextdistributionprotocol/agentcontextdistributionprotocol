@@ -28,6 +28,7 @@ CHANGE_HINT_SCHEMA="${SCHEMA_DIR}/acdp-change-hint.schema.json"
 SUBSCRIPTION_REQUEST_SCHEMA="${SCHEMA_DIR}/acdp-subscription-request.schema.json"
 SUBSCRIPTION_SCHEMA="${SCHEMA_DIR}/acdp-subscription.schema.json"
 MCP_TOOL_RESULT_SCHEMA="${SCHEMA_DIR}/acdp-mcp-tool-result.schema.json"
+A2A_ARTIFACT_SCHEMA="${SCHEMA_DIR}/acdp-a2a-artifact.schema.json"
 TRUST_LIST_SCHEMA="${SCHEMA_DIR}/acdp-trust-list.schema.json"
 TRUST_REPORT_SCHEMA="${SCHEMA_DIR}/acdp-trust-report.schema.json"
 KEY_ATTESTATION_SCHEMA="${SCHEMA_DIR}/acdp-key-attestation.schema.json"
@@ -106,18 +107,23 @@ validate_dir_against() {
     local dir="$1"
     local schema="$2"
     local label="$3"
+    # Optional 4th+ arguments: extra schemas to register as $ref targets for
+    # this directory only (e.g. a schema that $refs another record schema).
+    local extra=()
+    local s
+    for s in "${@:4}"; do extra+=( -r "$s" ); done
     [ -d "$dir" ] || return 0
     echo "── ${label} examples (${dir}) ──"
     for f in "${dir}"/*.json; do
         [ -f "$f" ] || continue
         TOTAL=$((TOTAL + 1))
         echo "  $(basename "$f")"
-        if ajv validate -s "${schema}" "${REFS[@]}" -d "${f}" -c ajv-formats --spec=draft2020 --strict=false >/dev/null 2>&1; then
+        if ajv validate -s "${schema}" "${REFS[@]}" ${extra[@]+"${extra[@]}"} -d "${f}" -c ajv-formats --spec=draft2020 --strict=false >/dev/null 2>&1; then
             VALIDATED=$((VALIDATED + 1))
             echo "    ✓ Valid"
         else
             echo "    ✗ Invalid against ${label} schema"
-            ajv validate -s "${schema}" "${REFS[@]}" -d "${f}" -c ajv-formats --spec=draft2020 --strict=false || true
+            ajv validate -s "${schema}" "${REFS[@]}" ${extra[@]+"${extra[@]}"} -d "${f}" -c ajv-formats --spec=draft2020 --strict=false || true
             exit 1
         fi
     done
@@ -138,6 +144,7 @@ validate_dir_against "${EXAMPLES_DIR}/change-hint"      "${CHANGE_HINT_SCHEMA}" 
 validate_dir_against "${EXAMPLES_DIR}/subscription-request" "${SUBSCRIPTION_REQUEST_SCHEMA}" "subscription request"
 validate_dir_against "${EXAMPLES_DIR}/subscription"     "${SUBSCRIPTION_SCHEMA}"         "subscription"
 validate_dir_against "${EXAMPLES_DIR}/mcp-tool-result"  "${MCP_TOOL_RESULT_SCHEMA}"      "MCP tool-result record"
+validate_dir_against "${EXAMPLES_DIR}/a2a-artifact"     "${A2A_ARTIFACT_SCHEMA}"         "A2A artifact record" "${MCP_TOOL_RESULT_SCHEMA}"
 validate_dir_against "${EXAMPLES_DIR}/trust-list"       "${TRUST_LIST_SCHEMA}"           "trust list"
 validate_dir_against "${EXAMPLES_DIR}/trust-report"     "${TRUST_REPORT_SCHEMA}"         "trust report"
 validate_dir_against "${EXAMPLES_DIR}/key-attestation"  "${KEY_ATTESTATION_SCHEMA}"      "key attestation"

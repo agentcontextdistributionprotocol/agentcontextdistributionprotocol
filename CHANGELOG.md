@@ -2,6 +2,15 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Draft RFC: A2A artifact provenance (RFC-ACDP-0022) — 2026-11-06
+
+No existing body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. Every existing body, record and fixture stays valid. The additions are one new Draft RFC, one new schema, two OPTIONAL profiles and one fixture family. No context type, error code, lifecycle event kind, change kind or key-status value is added.
+
+- **RFC-ACDP-0022 (Draft).** An A2A server agent signs each artifact it completes, under its own `did:web` or `did:key`. One body per completed artifact, keyed `(artifact_id, role)`: re-completion in the same task supersedes, continuation in a new task is `derived_from`. The body's `type` is the agent's own; the binding is the closed `acdp-a2a-artifact/1` record at `metadata["acdp:a2a"]`, with `artifact_id`, task id, context id and parts hashed as H(salt ‖ JCS(value)) under a fresh 32-byte salt and no domain tag, exactly as RFC-ACDP-0019 §4.3. The link is RFC-ACDP-0019 §6's value in `Artifact.metadata["io.acdp/provenance"]`, published before the final chunk; `Artifact.extensions` is never used. Clients cite inputs in `Message.metadata["io.acdp/provenance"]`. The Agent Card pointer `https://acdp.io/ext/a2a/v1` (`params {registry, agentId}`) is untrusted and coexists with AITP's extension; a `did:key` must encode the AITP AID's key. Reliance ledgers, acceptance state, per-task receipts, recall fan-out and audit export are out of scope. Issue #128.
+- **Schema.** `schemas/json/acdp-a2a-artifact.schema.json` (`$defs/record`, `link` by `$ref` to the RFC-ACDP-0019 provenance value, `inputs`, `card_params`), with `examples/a2a-artifact/` routed in `scripts/validate-json.sh`.
+- **Profiles and fixtures.** `acdp-producer-a2a` and `acdp-consumer-a2a` (both OPTIONAL, Draft), never part of `acdp-consumer`. Family `a2a`: `a2a-001`, an executed known answer (chunk assembly, four salted hashes, record, `derived_from`, body hash and Ed25519 signature of the zero-seed `did:key`, `Idempotency-Key`, link, AITP key binding, ten holder negatives), run by a new executor in `scripts/conformance-runner.py`; `a2a-002`..`008` behavioral.
+- **Tooling.** `scripts/check-consistency.py` now accepts fixture family names with digits (`a2a`), segment by segment, so `vis-001-restricted-denied-as-404` still reads as `vis-001`; and a new check 12 fails the build if any profile other than `acdp-producer-a2a` / `acdp-consumer-a2a` lists an `a2a-*` fixture (RFC-ACDP-0022 §12.3).
+
 ## v0.5.0 — Promotion: RFC-ACDP-0018 Final for the consumer side — 2026-11-06
 
 No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and no wire shape changed. This promotes text already on the line.

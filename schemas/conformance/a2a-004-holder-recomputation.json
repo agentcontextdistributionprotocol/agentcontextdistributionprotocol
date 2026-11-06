@@ -1,0 +1,72 @@
+{
+  "id": "a2a-004",
+  "description": "(0.5.0, Draft) Holder verification of a held artifact (RFC-ACDP-0022 §8), including negatives.",
+  "tags": [
+    "a2a",
+    "consumer",
+    "behavioral",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-consumer-a2a"
+  ],
+  "input": {
+    "note": "Use the a2a-001 body, link and Task snapshot artifact as the held artifact unless a scenario says otherwise."
+  },
+  "scenarios": [
+    {
+      "name": "A — accept",
+      "expected": {
+        "behavior": "The holder verifies the body per RFC-ACDP-0001, matches ctx_id, registry and content_hash with the link, finds a valid acdp-a2a-artifact/1 record at metadata[\"acdp:a2a\"], decodes the salt and recomputes parts_hash, artifact_id_hash and name: accept."
+      }
+    },
+    {
+      "name": "B — changed content",
+      "expected": {
+        "behavior": "One changed byte of a text part, reordered parts, or a dropped mediaType fails step 4 at parts_hash."
+      }
+    },
+    {
+      "name": "C — wrong salt or non-canonical salt",
+      "expected": {
+        "behavior": "A different salt fails step 4; a salt that is not 43 base64url characters with zero trailing bits fails step 3."
+      }
+    },
+    {
+      "name": "D — copied link",
+      "expected": {
+        "behavior": "The a2a-001 link copied onto another artifact fails step 4; a link whose content_hash differs from the body fails step 1."
+      }
+    },
+    {
+      "name": "E — unknown record member",
+      "expected": {
+        "behavior": "A record with an extra member is rejected at step 2, not ignored."
+      }
+    },
+    {
+      "name": "F — task ids unknown",
+      "expected": {
+        "behavior": "A holder that received the artifact forwarded, without the task and context ids, leaves task_id_hash and context_id_hash unchecked; that is not a mismatch. With a wrong known task id, step 5 fails."
+      }
+    },
+    {
+      "name": "G — raw part encodings",
+      "expected": {
+        "behavior": "A held raw part received in URL-safe or unpadded base64 is re-encoded to standard padded base64 before hashing and verifies; hashing the received string unchanged would not."
+      }
+    },
+    {
+      "name": "H — status",
+      "expected": {
+        "behavior": "A retracted body (RFC-ACDP-0013) or a superseded one is reported as such; nothing is pushed to the holder, which checks status itself or through the RFC-ACDP-0018 feed."
+      }
+    },
+    {
+      "name": "I — failed link",
+      "expected": {
+        "behavior": "A link {failed: true} names no body and verifies nothing."
+      }
+    }
+  ]
+}
