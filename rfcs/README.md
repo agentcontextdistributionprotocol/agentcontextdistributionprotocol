@@ -10,8 +10,8 @@ This directory contains the normative RFCs that define the Agent Context Distrib
 | [RFC-ACDP-0004](RFC-ACDP-0004-retrieval.md) | Retrieval & Lineage | Final (0.1.0; 0.2.0/0.3.0 amendments Final; **§2.1's consumer lineage checks are *(0.5.0)* Draft**) |
 | [RFC-ACDP-0005](RFC-ACDP-0005-discovery.md) | Discovery (keyword search) | Final (0.1.0; 0.3.0 amendment Final; **§2.3's consumer search completeness is *(0.5.0)* Draft**) |
 | [RFC-ACDP-0006](RFC-ACDP-0006-cross-registry.md) | Cross-Registry References | Final |
-| [RFC-ACDP-0007](RFC-ACDP-0007-capabilities.md) | Capabilities & Errors | Final (0.1.0; 0.2.0/0.3.0/0.4.0 amendments Final; **§4.1 and the `unsupported_media_type` row are *(0.5.0)* Draft**) |
-| [RFC-ACDP-0008](RFC-ACDP-0008-security.md) | Security & Threat Model | Final (0.1.0; 0.2.0/0.3.0 amendments Final; **§6.2's `bearer_jwt` read authentication is *(0.5.0)* Draft**) |
+| [RFC-ACDP-0007](RFC-ACDP-0007-capabilities.md) | Capabilities & Errors | Final (0.1.0; 0.2.0/0.3.0/0.4.0 amendments Final; **the *(0.5.0)* amendments are Draft: §4.1 and the `unsupported_media_type` row, the read-ceiling and changes-feed `limits` fields, and `limits` being Open**) |
+| [RFC-ACDP-0008](RFC-ACDP-0008-security.md) | Security & Threat Model | Final (0.1.0; 0.2.0/0.3.0 amendments Final; **the *(0.5.0)* amendments are Draft: §6.2's `bearer_jwt` and `bearer_static` read authentication and the read rate limiting**) |
 | [RFC-ACDP-0009](RFC-ACDP-0009-extensions.md) | Extensions (attestations, walks, push) | Reserved (§2.7 promoted to RFC-ACDP-0010; §2.1 promoted to RFC-ACDP-0013; §2.11 promoted to RFC-ACDP-0012; §2.12 promoted to RFC-ACDP-0015; §2.10 defined by RFC-ACDP-0018, consumer side Final) |
 | [RFC-ACDP-0010](RFC-ACDP-0010-registry-receipts.md) | Registry Receipts | Final (acdp/0.2.0; **§8/§9's receipt-key status reporting is *(0.5.0)* Draft**) |
 | [RFC-ACDP-0011](RFC-ACDP-0011-lineage-head-receipts.md) | Lineage-Head Receipts | Final (acdp/0.3.0) |
