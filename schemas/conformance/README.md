@@ -407,8 +407,9 @@ All are behavioral, except `rec-007`'s executed HMAC known-answer vector `hint-h
 | `mcp-005` | `derived_from` extraction | JCS preorder, dedup, values only, arguments only, cap 1000 |
 | `mcp-006` | Embedding allowlist | default unembedded; embedded DataRef shape; 64 KB cap |
 | `mcp-007` | Salting | salted whenever unembedded; fresh per body; `endpoint_hash` unsalted; no secrets |
+| `mcp-008` | MCP 2026-07-28 sessions | revision and server identity from `_meta` without `initialize`; missing identity is not a failure; `input_required` and task handles publish nothing; the completing result is published |
 
-`mcp-001` is executed by `scripts/conformance-runner.py`; `mcp-002`..`007` are behavioral. All seven are REQUIRED for the OPTIONAL `acdp-producer-mcp-proxy` profile.
+`mcp-001` is executed by `scripts/conformance-runner.py`; `mcp-002`..`008` are behavioral. All eight are REQUIRED for the OPTIONAL `acdp-producer-mcp-proxy` profile.
 ### Registry trust lists (RFC-ACDP-0020, 0.5.0, Final)
 
 | Fixture | Scenario | Expected |

@@ -660,7 +660,7 @@ An OPTIONAL consumer profile, prerequisite `acdp-consumer`, for consumers that d
 
 #### `acdp-producer-mcp-proxy` *(0.5.0, Draft)*
 
-An OPTIONAL producer-side profile with no prerequisite, for an MCP signing proxy (RFC-ACDP-0019). A proxy claiming it publishes one `acdp:mcp-tool-result` body per observed `tools/call` under its own key, salts the call hashes whenever the result is not embedded, never alters the relayed result, returns the link in `_meta` `io.acdp/provenance`, and passes `mcp-001..007`. The profile stays Draft while RFC-ACDP-0019's body, hashes and link (§4, §6) are Final (2026-10-30), so this entry is not frozen.
+An OPTIONAL producer-side profile with no prerequisite, for an MCP signing proxy (RFC-ACDP-0019). A proxy claiming it publishes one `acdp:mcp-tool-result` body per observed `tools/call` under its own key, salts the call hashes whenever the result is not embedded, never alters the relayed result, returns the link in `_meta` `io.acdp/provenance`, and passes `mcp-001..008`. The profile stays Draft while RFC-ACDP-0019's body, hashes and link (§4, §6) are Final (2026-10-30), so this entry is not frozen.
 
 #### `acdp-registry-keyless` *(0.5.0, Draft)*, `acdp-consumer-keyless` *(0.5.0, Final)*
 

@@ -188,7 +188,7 @@ For an **MCP signing proxy** that sits in front of an MCP server and publishes e
 | | Required |
 |---|---|
 | **Behavioral requirements** | One `acdp:mcp-tool-result` body per observed `tools/call`, signed with the proxy operator's own key. Salted `arguments_hash`/`result_hash`/`request_id_hash` (fresh 32-byte salt per body) whenever the result is not embedded; unsalted `endpoint_hash` that never covers env, headers or credentials. `derived_from` from the ctx_ids in the arguments, in JCS preorder. Embedding only for allowlisted tools. Never alter `content`/`structuredContent`/`isError`; return the link in `_meta` `io.acdp/provenance` only after the publish response. Fail open by default, fail closed per tool; retries reuse `Idempotency-Key: acdp-mcp-<content_hash hex>` |
-| **Conformance fixtures** | `mcp-001` (known answer, executed), `mcp-002` (no result mutation), `mcp-003` (`_meta` link shape), `mcp-004` (publish failure), `mcp-005` (`derived_from` extraction), `mcp-006` (embedding allowlist), `mcp-007` (salting) |
+| **Conformance fixtures** | `mcp-001` (known answer, executed), `mcp-002` (no result mutation), `mcp-003` (`_meta` link shape), `mcp-004` (publish failure), `mcp-005` (`derived_from` extraction), `mcp-006` (embedding allowlist), `mcp-007` (salting), `mcp-008` (MCP 2026-07-28 sessions) |
 | **`not_implemented` permitted on** | Not applicable — a proxy runs no registry endpoints |
 ### `acdp-consumer-trust-list` *(0.5.0)*
 
