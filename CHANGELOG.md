@@ -2,6 +2,12 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Promotion: RFC-ACDP-0018 Final for the consumer side — 2026-11-06
+
+No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and no wire shape changed. This promotes text already on the line.
+
+- **RFC-ACDP-0018 consumer side Final.** §7 and the `acdp-consumer-recall` profile are Final. The §1 criterion is met: acdp-rs 0.21.0 and acdp-verifier-py at `67142a8`, written independently from the text, both pass `rec-006`, `rec-007` D–E, `rec-009` and `rec-010` G–I at spec `3f50697`, including the executed HMAC, envelope and bucket-derivation known answers. Seam, on acdp `=0.21.0`, drives `rec-006` and `rec-009` too, through acdp-rs. The registry side (§4–§6, §8, `acdp-registry-changes`, `acdp-registry-events`) stays Draft until a second registry implementation passes the registry fixtures. Closes #125.
+
 ## v0.5.0 — Draft amendment: bucket watch filters, feed page size and compression (RFC-ACDP-0018), private-watch reservations (RFC-ACDP-0009) — 2026-11-01
 
 No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. No change-entry or response member and no error code was added, so the `acdp-change/1` and changes-response wire shapes are unchanged. This answers a request from a multi-tenant consumer to watch the changes feed without revealing which contexts it relies on.
