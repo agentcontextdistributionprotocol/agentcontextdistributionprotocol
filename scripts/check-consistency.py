@@ -43,7 +43,9 @@ individual validators cannot see:
      verifier.
  12. No fixture of an optional-binding family (`a2a-*`, RFC-ACDP-0022 §12.3)
      is listed by any profile other than the binding's own profiles — in
-     particular never by `acdp-consumer`.
+     particular never by `acdp-consumer`, whether in profiles.json, the
+     `acdp-consumer` section of profiles.md, or RFC-ACDP-0001 §9.1's
+     `acdp-consumer` block.
 
 Exits 0 if all checks pass, 1 otherwise.
 """
@@ -549,6 +551,23 @@ def check_optional_families(profiles_json):
                 err("optional-family",
                     f"profile {pid!r} lists {fid}, but the {fam}-* family belongs only to "
                     f"{', '.join(sorted(allowed))} (RFC-ACDP-0022 §12.3)")
+    # The same rule over the human-readable manifests: the `acdp-consumer` section of
+    # profiles.md and RFC-ACDP-0001 §9.1's `acdp-consumer` block name no such fixture.
+    texts = {"registries/profiles.md `acdp-consumer` section": profiles_md_sections().get("acdp-consumer", "")}
+    core = (RFCS / "RFC-ACDP-0001-core.md").read_text()
+    m = re.search(r"^####\s+`acdp-consumer`.*$", core, flags=re.MULTILINE)
+    if m is None:
+        err("optional-family", "RFC-ACDP-0001 §9.1 has no `#### `acdp-consumer`` block")
+    else:
+        nxt = re.search(r"^#{1,4}\s", core[m.end():], flags=re.MULTILINE)
+        texts["RFC-ACDP-0001 §9.1 `acdp-consumer`"] = core[m.start():m.end() + (nxt.start() if nxt else len(core))]
+    for where, text in texts.items():
+        for fid in sorted(set(SHORT_ID_RE.findall(text)) | expand_ranges(text)):
+            fam = fid.rsplit("-", 1)[0]
+            if fam in OPTIONAL_ONLY_FAMILIES and "acdp-consumer" not in OPTIONAL_ONLY_FAMILIES[fam]:
+                err("optional-family",
+                    f"{where} names {fid}, but the {fam}-* family belongs only to "
+                    f"{', '.join(sorted(OPTIONAL_ONLY_FAMILIES[fam]))} (RFC-ACDP-0022 §12.3)")
 
 
 def main():

@@ -705,8 +705,8 @@
       "behavioral_requirements": [
         "Publish one body per completed artifact, keyed (artifact_id, role), signed by the A2A server agent under its own did:web or did:key; never per Task, never per chunk; the body type is the agent's own domain type and the binding is the closed acdp-a2a-artifact/1 record in metadata[\"acdp:a2a\"] (RFC-ACDP-0022 §3–§4)",
         "Re-completing the same key in the same task publishes a new version that supersedes the last one; continuing it in a new task publishes a new lineage with the earlier ctx_id first in derived_from (RFC-ACDP-0022 §4.3)",
-        "Compute artifact_id_hash, task_id_hash, context_id_hash and parts_hash as sha256 over salt ‖ JCS(value), with a fresh 32-byte salt per body and no domain tag, whenever the parts are not embedded; embed only by allowlist (RFC-ACDP-0022 §5)",
-        "Fill derived_from only from verified inputs cited in Message.metadata io.acdp/provenance, in citation order, first occurrence, cap 1000 (RFC-ACDP-0022 §7)",
+        "Compute artifact_id_hash, task_id_hash and context_id_hash always, and parts_hash whenever the parts are not embedded, as sha256 over salt ‖ JCS(value), with a fresh 32-byte salt per body and no domain tag; only an embedded record may leave parts_hash unsalted; embed only by allowlist (RFC-ACDP-0022 §5)",
+        "Fill derived_from only from verified inputs cited in Message.metadata io.acdp/inputs and used for that artifact, in citation order, first occurrence, cap 1000 (RFC-ACDP-0022 §7)",
         "Return the link in Artifact.metadata io.acdp/provenance on the final chunk and every later Task snapshot, only after the publish response; never use Artifact.extensions; fail open with {failed: true} by default; retries reuse Idempotency-Key acdp-a2a-<content_hash hex> (RFC-ACDP-0022 §6)",
         "Advertise exactly one Card AgentExtension https://acdp.io/ext/a2a/v1 with required false and params {registry, agentId}; a did:key agent_id encodes the same key as the AITP aid (RFC-ACDP-0022 §9)"
       ],
@@ -776,6 +776,6 @@
     "mcp": "MCP tool-result provenance — the acdp:mcp-tool-result record, salted call hashes, the io.acdp/provenance _meta link, publish-failure modes (RFC-ACDP-0019, 0.5.0)",
     "trust": "Registry trust lists — signed acdp:trust-list bodies, issuer pins, series rollback/equivocation, as-of selection, body evaluation and the trust report (RFC-ACDP-0020, 0.5.0)",
     "kl": "Keyless signing — registry-attested ephemeral keys bound to OIDC/SPIFFE workload identities authorized by the controller's did:web document, the keyless publish path, same-identity supersession and the key-status mapping (RFC-ACDP-0021, 0.5.0)",
-    "a2a": "A2A artifact provenance — agent-signed bodies per completed artifact, the acdp-a2a-artifact/1 record in metadata[\"acdp:a2a\"], salted hashes, the Artifact.metadata io.acdp/provenance link, the Agent Card pointer and holder verification (RFC-ACDP-0022, 0.5.0). Distinct from AITP's RFC-AITP-0014 a2a-* vectors, which live in the AITP repository."
+    "a2a": "A2A artifact provenance — agent-signed bodies per completed artifact, the acdp-a2a-artifact/1 record in metadata[\"acdp:a2a\"], salted hashes, the Message.metadata io.acdp/inputs citations, the Artifact.metadata io.acdp/provenance link, the Agent Card pointer and holder verification (RFC-ACDP-0022, 0.5.0). Distinct from AITP's RFC-AITP-0014 a2a-* vectors, which live in the AITP repository."
   }
 }

@@ -1398,6 +1398,28 @@ _A2A_RECORD_MEMBERS = {"record_version", "a2a_protocol_version", "artifact_id_ha
                        "task_id_hash", "context_id_hash", "parts_hash", "salted", "embedded",
                        "name", "description", "completed_at"}
 _A2A_LABEL_LIMITS = {"name": 256, "description": 1024}
+# RFC-ACDP-0022 §4.1: types whose metadata is itself an ACDP-defined record.
+_A2A_EXCLUDED_TYPES = {"acdp:mcp-tool-result", "acdp:trust-list", "acdp:key-attestation",
+                       "key-revocation", "acdp:key-revocation"}
+
+
+def _a2a_normalize_parts(parts):
+    """RFC-ACDP-0022 §5.1: drop null members and empty filename/mediaType; re-encode raw in
+    standard padded base64 whatever alphabet or padding it was received in."""
+    out = []
+    for p in parts:
+        q = {k: v for k, v in p.items() if v is not None and not (k in ("filename", "mediaType") and v == "")}
+        if isinstance(q.get("raw"), str):
+            r = q["raw"].replace("-", "+").replace("_", "/").rstrip("=")
+            q["raw"] = base64.b64encode(base64.b64decode(r + "=" * (-len(r) % 4))).decode("ascii")
+        out.append(q)
+    return out
+
+
+def _a2a_role(held):
+    """RFC-ACDP-0022 §5.1: an absent role or ROLE_UNSPECIFIED reads as ROLE_AGENT."""
+    role = held.get("role")
+    return "ROLE_AGENT" if role in (None, "", "ROLE_UNSPECIFIED") else role
 
 
 def _a2a_h(salt, value):
@@ -1440,21 +1462,23 @@ def a2a_holder_verify(pc, content_hash, reg, held, card_params=None, known_task_
     if not isinstance(rec, dict) or rec.get("record_version") != "acdp-a2a-artifact/1" \
             or set(rec) - _A2A_RECORD_MEMBERS:
         return "record_invalid"
-    if rec["salted"]:
-        salt = _a2a_decode_salt(link.get("salt"))
-        if salt is None:
-            return "salt_invalid"
-    else:
-        if "salt" in link:
-            return "salt_invalid"
-        salt = b""
-    if _a2a_h(salt, held["parts"]) != rec["parts_hash"]:
+    # §5.2: the id hashes are always salted, so a published link always carries the salt;
+    # only parts_hash may be unsalted, and only in an embedded record.
+    salt = _a2a_decode_salt(link.get("salt"))
+    if salt is None:
+        return "salt_invalid"
+    if not rec["salted"] and rec.get("embedded") is not True:
+        return "record_invalid"
+    parts_salt = salt if rec["salted"] else b""
+    if _a2a_h(parts_salt, _a2a_normalize_parts(held["parts"])) != rec["parts_hash"]:
         return "parts_mismatch"
     if _a2a_h(salt, held["artifactId"]) != rec["artifact_id_hash"]:
         return "artifact_id_mismatch"
     for k, limit in _A2A_LABEL_LIMITS.items():
         if k in rec and rec[k] != held.get(k, "")[:limit]:
             return "label_mismatch"
+    if "role" in rec and rec["role"] != _a2a_role(held):
+        return "role_mismatch"
     if known_task_id is not None and _a2a_h(salt, known_task_id) != rec["task_id_hash"]:
         return "task_mismatch"
     if known_context_id is not None and _a2a_h(salt, known_context_id) != rec["context_id_hash"]:
@@ -1479,22 +1503,29 @@ def check_a2a_vector(fixture, fixture_data, vector):
         fail(fixture, name, "salt MUST be the canonical base64url form of exactly the 32 pinned bytes")
         return False
 
-    # §4.2 assembly: parts concatenated in event order; append:false (re)starts the artifact.
-    parts, last = [], None
+    # §4.2 assembly: parts concatenated in event order; append:false (re)starts the artifact;
+    # name and description are those of the last chunk carrying them. §5.1 normalization.
+    parts, last, labels = [], None, {}
     for ev in inp["chunks"]:
         if ev["taskId"] != inp["task_id"] or ev["contextId"] != inp["context_id"]:
             fail(fixture, name, "chunk task/context ids differ from the pinned ids")
             ok = False
         parts = (parts if ev.get("append") else []) + ev["artifact"]["parts"]
+        for k in _A2A_LABEL_LIMITS:
+            if ev["artifact"].get(k):
+                labels[k] = ev["artifact"][k]
         last = ev
+    parts = _a2a_normalize_parts(parts)
+    salted = rec.get("salted") is True
+    parts_salt = salt if salted else b""
     if not (last and last.get("lastChunk") is True):
         fail(fixture, name, "the final chunk MUST carry lastChunk: true")
         ok = False
     if parts != exp["assembled_parts"]:
         fail(fixture, name, "assembled parts differ from the concatenated chunk parts")
         ok = False
-    if (salt + jcs.canonicalize(parts)).hex() != exp["parts_preimage_hex"]:
-        fail(fixture, name, "parts preimage MUST be salt ‖ JCS(parts)")
+    if (parts_salt + jcs.canonicalize(parts)).hex() != exp["parts_preimage_hex"]:
+        fail(fixture, name, "parts preimage MUST be salt ‖ JCS(parts), or JCS(parts) when unsalted")
         ok = False
 
     artifact_id = inp["chunks"][0]["artifact"]["artifactId"]
@@ -1502,25 +1533,43 @@ def check_a2a_vector(fixture, fixture_data, vector):
         "artifact_id_hash": _a2a_h(salt, artifact_id),
         "task_id_hash": _a2a_h(salt, inp["task_id"]),
         "context_id_hash": _a2a_h(salt, inp["context_id"]),
-        "parts_hash": _a2a_h(salt, parts),
+        "parts_hash": _a2a_h(parts_salt, parts),
     }
     for k, v in computed.items():
         if v != exp[k] or v != rec.get(k):
             fail(fixture, name, f"{k}: computed {v}, expected {exp[k]}, record {rec.get(k)}")
             ok = False
     if set(rec) - _A2A_RECORD_MEMBERS or rec.get("record_version") != "acdp-a2a-artifact/1" \
-            or rec.get("salted") is not True or rec.get("embedded") is not False \
+            or rec.get("embedded") is not bool(inp.get("embed")) \
+            or (not salted and rec.get("embedded") is not True) \
             or rec.get("a2a_protocol_version") != inp["a2a_protocol_version"] \
-            or rec.get("name") != inp["chunks"][0]["artifact"].get("name"):
+            or any(rec.get(k) != (v[:_A2A_LABEL_LIMITS[k]] if v else None) for k, v in
+                   ((k, labels.get(k)) for k in _A2A_LABEL_LIMITS)):
         fail(fixture, name, "record members inconsistent with the inputs (or unknown members present)")
         ok = False
-    if pc["type"].startswith("acdp:") or pc["type"] == "key-revocation":
+    if pc["type"] in _A2A_EXCLUDED_TYPES:
         fail(fixture, name, "the body type MUST be the producer's own domain type")
+        ok = False
+
+    # §5.3–§5.4 data_refs: the embedded parts first (when embedded), then one DataRef per url part.
+    want_refs = []
+    if rec.get("embedded"):
+        want_refs.append({"type": "primary_result", "format": "json", "embedded": {"encoding": "json", "content": parts}})
+    for p in parts:
+        if "url" in p and p["url"] in inp.get("url_contents_hex", {}):
+            body = bytes.fromhex(inp["url_contents_hex"][p["url"]])
+            ref = {"type": "primary_result", "location": p["url"],
+                   "content_hash": "sha256:" + hashlib.sha256(body).hexdigest(), "size_bytes": len(body)}
+            if "mediaType" in p:
+                ref["format"] = p["mediaType"]
+            want_refs.append(ref)
+    if pc["data_refs"] != want_refs:
+        fail(fixture, name, f"data_refs differ from §5.3–§5.4: expected {want_refs}")
         ok = False
 
     # §7 derived_from: cited inputs in citation order, first occurrence, verified only, cap 1000.
     derived = []
-    for c in inp["message_metadata"]["io.acdp/provenance"]["inputs"]:
+    for c in inp["message_metadata"]["io.acdp/inputs"]:
         if c in inp["verified_inputs"] and c not in derived and len(derived) < 1000:
             derived.append(c)
     if derived != exp["derived_from"] or derived != pc["derived_from"]:
@@ -1573,6 +1622,12 @@ def check_a2a_vector(fixture, fixture_data, vector):
     if verdict != "ok":
         fail(fixture, name, f"holder verification of the pinned artifact: {verdict}")
         ok = False
+    for pos in exp.get("holder_positives", []):
+        v = a2a_holder_verify(pc, exp["content_hash"], reg, pos["held_artifact"], mine[0]["params"] if mine else None,
+                              inp["task_id"], inp["context_id"])
+        if v != "ok":
+            fail(fixture, name, f"{pos['name']}: expected ok, computed {v}")
+            ok = False
     for neg in exp["holder_negatives"]:
         v = a2a_holder_verify(pc, exp["content_hash"], reg, neg["held_artifact"], neg.get("card_params"),
                               neg.get("known_task_id"), neg.get("known_context_id"))

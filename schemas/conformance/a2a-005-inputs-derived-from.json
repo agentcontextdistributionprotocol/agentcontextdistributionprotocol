@@ -1,6 +1,6 @@
 {
   "id": "a2a-005",
-  "description": "(0.5.0, Draft) Client-cited inputs in Message.metadata io.acdp/provenance become derived_from (RFC-ACDP-0022 §7).",
+  "description": "(0.5.0, Draft) Client-cited inputs in Message.metadata io.acdp/inputs become derived_from (RFC-ACDP-0022 §7).",
   "tags": [
     "a2a",
     "producer",
@@ -21,15 +21,15 @@
       }
     },
     {
-      "name": "B — verified only",
+      "name": "B — verified and used only",
       "expected": {
-        "behavior": "An input that cannot be retrieved, or whose signature does not verify, is left out; the task still runs."
+        "behavior": "An input that cannot be retrieved, or whose signature does not verify, is left out; the task still runs. Of the verified inputs, the agent cites in each artifact's derived_from only those it used for that artifact. Nothing records which inputs the task as a whole relied on."
       }
     },
     {
       "name": "C — invalid value",
       "expected": {
-        "behavior": "A value that is not {inputs: [ctx_id, ...]} (extra member, empty array, a non-ctx_id string) is ignored for provenance and never fails the task."
+        "behavior": "A value of io.acdp/inputs that is not a bare array of 1–1000 ctx_ids (an object, an empty array, a non-ctx_id string) is ignored for provenance and never fails the task. An inputs value under io.acdp/provenance is not read."
       }
     },
     {

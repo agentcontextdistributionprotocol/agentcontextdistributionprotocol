@@ -27,9 +27,9 @@
       }
     },
     {
-      "name": "C — wrong salt or non-canonical salt",
+      "name": "C — wrong, missing or non-canonical salt",
       "expected": {
-        "behavior": "A different salt fails step 4; a salt that is not 43 base64url characters with zero trailing bits fails step 3."
+        "behavior": "A different salt fails step 4; a salt that is not 43 base64url characters with zero trailing bits fails step 3; a published link without a salt fails step 3 even when salted is false, because the id hashes are always salted."
       }
     },
     {
@@ -51,9 +51,9 @@
       }
     },
     {
-      "name": "G — raw part encodings",
+      "name": "G — JSON normalization",
       "expected": {
-        "behavior": "A held raw part received in URL-safe or unpadded base64 is re-encoded to standard padded base64 before hashing and verifies; hashing the received string unchanged would not."
+        "behavior": "Before hashing, a held raw part received in URL-safe or unpadded base64 is re-encoded to standard padded base64; an empty filename or mediaType and any null member are dropped; an absent role or ROLE_UNSPECIFIED reads as ROLE_AGENT. Each verifies (a2a-001 vector 2 P1–P2); hashing the received form unchanged would not."
       }
     },
     {

@@ -13,7 +13,7 @@ It defines:
 - the record **`acdp-a2a-artifact/1`**, carried in `metadata["acdp:a2a"]` of a body whose `type` is the agent's own (§4.4–§4.5);
 - the salted hashes that bind the body to the task, the context and the parts (§5);
 - the link in `Artifact.metadata["io.acdp/provenance"]`, and what happens when publishing fails (§6);
-- how a client cites its inputs in `Message.metadata` (§7);
+- how a client cites its inputs in `Message.metadata["io.acdp/inputs"]` (§7);
 - how a holder verifies a held artifact (§8);
 - the Agent Card pointer `https://acdp.io/ext/a2a/v1` (§9) and the optional `a2a.artifact` anchor (§10);
 - what is out of scope (§11), and the OPTIONAL profiles **`acdp-producer-a2a`** and **`acdp-consumer-a2a`** (§12).
@@ -40,7 +40,7 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 | **Client** | The A2A client that sent the task's messages. |
 | **Holder** | Anyone who holds the artifact later: the client, or whoever the artifact was forwarded to. |
 | **Artifact** | An A2A `Artifact` (`artifactId`, `name`, `description`, `parts`, `metadata`, `extensions`). |
-| **Chunk** | One `TaskArtifactUpdateEvent` (`taskId`, `contextId`, `artifact`, `append`, `lastChunk`). |
+| **Chunk** | One `TaskArtifactUpdateEvent` (`taskId`, `contextId`, `artifact`, `append`, `lastChunk`, `metadata`). The event's own `metadata` is not the Artifact's: it is not hashed and never carries the link (§6). |
 | **Key** | The pair `(artifact_id, role)` that identifies an artifact within a task (§4.2). |
 | **Record** | The `acdp-a2a-artifact/1` object at `metadata["acdp:a2a"]` (§4.4). |
 | **A2A JSON** | The JSON form A2A defines for its messages: ProtoJSON with camelCase member names (A2A §5.5). |
@@ -118,6 +118,8 @@ An agent publishes **one body per completed artifact**. It never publishes one b
 
 An interrupted state (`TASK_STATE_INPUT_REQUIRED`, `TASK_STATE_AUTH_REQUIRED`) does not complete an artifact.
 
+**Without `lastChunk` (NORMATIVE).** An agent need not ever send `lastChunk` true; its artifacts then complete only by case 2. No chunk carries the link in that case, because the chunk stream ended before completion. A holder of such an artifact MUST read the link from that artifact in the final Task: the `artifacts` of the Task in its terminal state, as `GetTask` or the terminal status update returns it (§6). A streamed copy assembled from chunks alone has no link and verifies nothing.
+
 The completed artifact's `parts` are the assembled parts. The agent MUST return the same parts for that key in every later `Task.artifacts` snapshot, because a holder hashes what it holds (§8). `completed_at` is the time of completion, as canonical millisecond RFC 3339 UTC (`.000Z` form).
 
 Agent replies that are plain `Message`s, not artifacts, produce no body. Their parts are messages, not outputs of a task.
@@ -146,7 +148,7 @@ The record is closed: `schemas/json/acdp-a2a-artifact.schema.json` (`$defs/recor
 | `task_id_hash` | Yes | §5 over the task's `id`. |
 | `context_id_hash` | Yes | §5 over the task's `contextId`. |
 | `parts_hash` | Yes | §5 over the assembled `parts` (§5.1). |
-| `salted` | Yes | `true` when the four hashes are salted (§5.2). |
+| `salted` | Yes | `true` when `parts_hash` is salted (§5.2). The three id hashes are salted either way. `false` is allowed only with `embedded` `true`. |
 | `embedded` | Yes | `true` when `data_refs` carries the parts (§5.3). |
 | `name` | No | The artifact's `name`, when it has one and the agent records it. |
 | `description` | No | The artifact's `description`, when it has one and the agent records it. |
@@ -165,20 +167,20 @@ The record is the value of the top-level member `acdp:a2a` of the body's `metada
 Why this name:
 
 - **It cannot be mistaken for an ordinary key.** Producer metadata keys are typically plain identifiers or reverse-DNS names (`quarter`, `com.example/report`). A colon-namespaced key does not collide with either.
-- **`acdp:` is ACDP's own namespace.** ACDP already uses the `acdp:` prefix for the types it defines (`registries/context-types.md`). A top-level `metadata` member whose name starts with `acdp:` is reserved for ACDP-defined records. An agent MUST NOT use such a name for its own data.
+- **`acdp:` marks it as ACDP-defined.** ACDP already uses the `acdp:` prefix for the types it defines (`registries/context-types.md`). This RFC reserves exactly one member name, `acdp:a2a`: an agent MUST NOT use it for its own data. No other `acdp:`-prefixed name is reserved by this RFC, and an agent's own metadata may use one. Registries and verifiers MUST NOT reject a body because its `metadata` has an `acdp:`-prefixed member.
 - **It is not the link key.** `io.acdp/provenance` names the link in A2A and MCP metadata (§6). Using a different name inside the body keeps the record and the link apart.
 
 Rules:
 
 - The body's `metadata` MUST carry exactly one `acdp:a2a` member, and it MUST be a valid record. A body never carries the record anywhere else, and never shares its `metadata` with another ACDP record schema (§4.1 excludes the types that carry one).
 - `schema_uri` describes the agent's own metadata. When the agent sets one, that schema MUST allow the `acdp:a2a` member. Verifiers identify the record by `record_version`, never by `schema_uri`.
-- The record counts against RFC-ACDP-0002 §3.3's metadata limits: one top-level member of the 100, depth 2 of the 8, and roughly 600 bytes of the 64 KB. The agent's own metadata MUST leave room for it.
+- The record counts against RFC-ACDP-0002 §3.3's metadata limits: one top-level member of the 100, depth 2 of the 8, and part of the 64 KB. Without labels it is about 500 bytes of JCS (`a2a-001`'s first record, with its short `name`, is 534). With a full-length `name` and `description` it is about 1.8 KB in ASCII, about 4.4 KB in 3-byte UTF-8 characters, and at most about 5.7 KB in 4-byte ones. The agent's own metadata MUST leave room for it.
 
 ---
 
 ## 5. Hashes and the Salt (NORMATIVE)
 
-The four record hashes use exactly RFC-ACDP-0019 §4.3's construction. For a value `v`:
+The four record hashes use exactly RFC-ACDP-0019 §4.3's construction. The three id hashes are always salted, and `parts_hash` is salted unless §5.2 allows otherwise. For a value `v`:
 
 - **salted**: H(`salt` ‖ JCS(`v`)), where `salt` is exactly 32 bytes and ‖ is byte concatenation: the 32 salt bytes, then the UTF-8 bytes of JCS(`v`);
 - **unsalted**: H(JCS(`v`)).
@@ -207,6 +209,14 @@ JCS of a string is its JSON string form, quotes included. `a2a-001` pins every v
 
 Every Part member is covered, including the Part's own `metadata`.
 
+**Normalizing what was received (NORMATIVE).** A holder hashes the form above, not the JSON it received. ProtoJSON parsers accept members this form leaves out, so before hashing a holder rebuilds each Part:
+
+- it drops every member whose value is `null`, which ProtoJSON reads as unset;
+- it drops `filename` and `mediaType` when they are empty strings;
+- it re-encodes `raw` as the next paragraph says.
+
+For §8 step 4, an absent Artifact `role`, or `ROLE_UNSPECIFIED`, reads as `ROLE_AGENT`. The second vector of `a2a-001` pins each of these cases.
+
 **`raw` parts.** The hash covers the `raw` member as A2A JSON carries it: a base64 string, which JCS hashes as text. The bytes themselves are not hashed separately. The string MUST be in RFC 4648 §4 form: the standard alphabet, with padding, which is what ProtoJSON emits. ProtoJSON parsers also accept the URL-safe alphabet and missing padding. A holder that received `raw` in such a form MUST decode it and re-encode the bytes in the standard padded form before hashing. One rule then covers every part kind, and the hash does not depend on the encoder.
 
 **`data` parts.** `data` is a JSON value. Its numbers are IEEE 754 doubles, as in both `google.protobuf.Value` and JCS, so they canonicalize the same way on every side.
@@ -217,10 +227,11 @@ A holder that received the artifact over gRPC first renders the parts as A2A JSO
 
 As RFC-ACDP-0019 §4.3, and for the same reason. A body is often readable by more parties than the task was. Task ids, context ids and short artifacts can come from a small space, and anyone could hash every candidate. The salt stops that.
 
-- An agent MUST salt whenever the parts are not embedded (`embedded: false`). It MAY leave an embedded record unsalted, since its parts are already published. The task and context ids then become guessable if they have low entropy, so an agent whose ids are not random UUIDs SHOULD salt anyway.
-- The salt MUST be 32 bytes from a cryptographically secure random source, fresh for every body, including each re-emission (§4.3). One salt covers all four hashes of that body.
-- The salt is never in the body. The agent reveals it only in the link (§6), as base64url without padding (RFC 4648 §5): exactly 43 characters.
-- `salted` records which form was used. A verifier MUST use the form `salted` names.
+- An agent MUST salt `artifact_id_hash`, `task_id_hash` and `context_id_hash` in every record, embedded or not. Ids can be guessable whether or not the parts are published, and embedding the parts does not publish the ids.
+- An agent MUST salt `parts_hash` whenever the parts are not embedded (`embedded: false`). It MAY leave `parts_hash` unsalted in an embedded record, since those parts are already in the body. `parts_hash` is then H(JCS(parts)), the same value as a §5.3 location DataRef's `content_hash`.
+- The salt MUST be 32 bytes from a cryptographically secure random source, fresh for every body, including each re-emission (§4.3). One salt covers every salted hash of that body.
+- The salt is never in the body. The agent reveals it only in the link (§6), as base64url without padding (RFC 4648 §5): exactly 43 characters. Because the id hashes are always salted, every published link carries a salt.
+- `salted` records whether `parts_hash` is salted. A verifier MUST hash the parts in the form `salted` names, and MUST always use the salted form for the ids. A record with `salted` false and `embedded` false is invalid.
 
 ### 5.3 Embedding (NORMATIVE)
 
@@ -231,7 +242,7 @@ An agent MAY allowlist artifacts for embedding by its own configuration (for exa
 - `{"type": "primary_result", "format": "json", "embedded": {"encoding": "json", "content": <parts>}}`, within the 64 KB embedded cap (RFC-ACDP-0002 §6.3); or
 - when the agent configured an external location and the parts exceed the cap, `{"type": "primary_result", "format": "json", "location": <https URL>, "content_hash": H(JCS(parts))}`, with `size_bytes` RECOMMENDED. The agent MUST write exactly the bytes JCS(parts) to that location before it publishes. The location is a public `https` URL, subject to RFC-ACDP-0008 §4.9 for consumers.
 
-`embedded` is then `true`. If neither form fits, the agent publishes unembedded and salted.
+`embedded` is then `true`. If neither form fits, the agent publishes unembedded, with `parts_hash` salted.
 
 ### 5.4 `url` parts (NORMATIVE)
 
@@ -267,13 +278,13 @@ After the registry's publish response, the agent adds one key to the completed a
 }
 ```
 
-- The value is exactly RFC-ACDP-0019 §6's value, with the same meaning for each member: `acdp-a2a-artifact.schema.json#/$defs/link`, which references `acdp-mcp-tool-result.schema.json#/$defs/provenance` rather than copying it. `salt` is present exactly when the record is salted.
-- The link goes on the `metadata` of the Artifact in the chunk that completes it (§4.2, the `lastChunk` chunk). It also goes on that artifact in every later `Task.artifacts` snapshot, with the same value until a re-emission (§4.3) replaces it with the new body's link. An artifact completed by the task ending (§4.2 case 2) carries the link only in snapshots.
+- The value is exactly RFC-ACDP-0019 §6's value, with the same meaning for each member: `acdp-a2a-artifact.schema.json#/$defs/link`, which references `acdp-mcp-tool-result.schema.json#/$defs/provenance` rather than copying it. `salt` is always present, because the id hashes are always salted (§5.2). RFC-ACDP-0019 §6 lets `salt` be absent; under this RFC a published link without it fails §8 step 3.
+- The link goes on the `metadata` of the Artifact in the chunk that completes it (§4.2, the `lastChunk` chunk). It also goes on that artifact in every later `Task.artifacts` snapshot, with the same value until a re-emission (§4.3) replaces it with the new body's link. An artifact completed by the task ending (§4.2 case 2) carries the link only in snapshots, and holders read it from the final Task (§4.2).
 - The agent MUST keep every other `metadata` key unchanged, and MUST NOT change `artifactId`, `name`, `description` or `parts`.
 - **Publish before the final chunk.** The agent MUST NOT emit the completing chunk, or a snapshot carrying the completed artifact, before it has received the publish response. It buffers the final chunk while the publish settles. A link therefore only ever names a body that is already published.
 - The publish request carries `Idempotency-Key: acdp-a2a-<hex of content_hash>` (the 64 hex characters after `sha256:`). Retries MUST resend the byte-identical body under the same key (RFC-ACDP-0003 §6).
 
-The key name `io.acdp/provenance` is the one RFC-ACDP-0019 uses in MCP `_meta`, so one name and one value shape serve both protocols. A2A's own examples key extension metadata by the extension URI. This RFC uses the shared key instead, so a holder that already reads MCP links reads A2A links unchanged.
+The link key `io.acdp/provenance` and its value are RFC-ACDP-0019's, used unchanged on `Artifact.metadata`. A2A's own examples key extension metadata by the extension URI. This RFC uses the RFC-ACDP-0019 key instead, so a holder that already reads MCP links reads A2A links unchanged. Cited inputs (§7) use a separate key, `io.acdp/inputs`, so the key alone tells a reader which value it holds.
 
 The agent adds the link whenever it published, whether or not the client activated the extension (A2A §4.6). A client that did not activate it ignores an unknown metadata key. A holder further down the line may never have talked to the agent, and its ability to verify must not depend on the first client's activation.
 
@@ -294,28 +305,27 @@ A failed publish never produces a link.
 
 ## 7. Inputs (NORMATIVE)
 
-A client MAY cite the ACDP contexts it supplies as inputs, in a message's `metadata`:
+A client MAY cite the ACDP contexts it supplies as inputs, under the key `io.acdp/inputs` of a message's `metadata`:
 
 ```json
 "metadata": {
-  "io.acdp/provenance": {
-    "inputs": [
-      "acdp://registry.example.com/7b1d0c52-3e4f-4a6b-8c9d-0e1f2a3b4c5d",
-      "acdp://registry.example.com/0f9e8d7c-6b5a-4c3d-9e2f-1a0b9c8d7e6f"
-    ]
-  }
+  "io.acdp/inputs": [
+    "acdp://registry.example.com/7b1d0c52-3e4f-4a6b-8c9d-0e1f2a3b4c5d",
+    "acdp://registry.example.com/0f9e8d7c-6b5a-4c3d-9e2f-1a0b9c8d7e6f"
+  ]
 }
 ```
 
-The value is closed: `acdp-a2a-artifact.schema.json#/$defs/inputs`, an object whose one member `inputs` is an array of 1 to 1000 `ctx_id`s. The object form leaves room for later members under a new record of this RFC. An invalid value is ignored for provenance. The agent processes the message as if it carried none, and MUST NOT fail the task because of it.
+The value is `acdp-a2a-artifact.schema.json#/$defs/inputs`: a bare array of 1 to 1000 `ctx_id`s. It is a bare array, not an object, because the key already names the value: a wrapper member would only repeat it, and a later addition gets its own key rather than a member here. A bare array also cannot be mistaken for the `io.acdp/provenance` link object. The key is defined by this RFC; a value under `io.acdp/provenance` on a `Message` is not read for inputs. An invalid value is ignored for provenance. The agent processes the message as if it carried none, and MUST NOT fail the task because of it.
 
 The agent fills `derived_from` this way:
 
 1. If the artifact continues an earlier task's artifact (§4.3), that body's `ctx_id` comes first.
 2. Then the cited inputs from the task's client messages received before completion, in message order and then array order.
 3. It keeps only inputs it has **verified**: retrieved, and verified as RFC-ACDP-0001 §5.11 says (fetching under RFC-ACDP-0006 §7 and RFC-ACDP-0008). An input it cannot retrieve or verify is left out.
-4. It keeps the first occurrence of each, and stops after 1000 (the RFC-ACDP-0002 `derived_from` maximum).
-5. After these, the agent MAY append contexts it retrieved and used on its own, within the same cap.
+4. Of the verified inputs, it SHOULD keep only those it used for this artifact. A cited input that served only another artifact of the task, or none, is left out of this body. This is the artifact's lineage, not a record of what the task relied on (§11).
+5. It keeps the first occurrence of each, and stops after 1000 (the RFC-ACDP-0002 `derived_from` maximum).
+6. After these, the agent MAY append contexts it retrieved and used on its own for this artifact, within the same cap.
 
 Only explicit citations count. An `acdp://` string inside a Part is content, not a citation, and is not extracted. RFC-ACDP-0019 §4.4 scrapes tool arguments because MCP has no citation slot. A2A has one, and scraping would turn quoted text into lineage.
 
@@ -327,9 +337,9 @@ A holder with an artifact and its `io.acdp/provenance` value:
 
 1. **Body.** Retrieves `ctx_id` and verifies the body as for any body (RFC-ACDP-0001 §5.11, including the `did:key` and `did:web` paths with nothing added, §3.2). It MUST check that the body's `ctx_id` equals the link's (RFC-ACDP-0006 §4.1 step 7), that its `origin_registry` equals the link's `registry`, and that its `content_hash` equals the link's. A link with `failed: true` names no body and verifies nothing.
 2. **Agent and record.** Checks that `agent_id` is an agent it trusts. When it reached the agent through the Agent Card, `agent_id` MUST equal the Card's `params.agentId` (§9). When that Card also carries an AITP AID and `agent_id` is a `did:key`, the holder MUST check §3.1's key equality. It then checks that `metadata["acdp:a2a"]` is a valid record of a version it knows. The record is closed, so it MUST reject unknown members rather than ignore them.
-3. **Salt.** When `salted` is true, it decodes the salt. Only the canonical encoding is accepted: exactly 43 base64url characters, no padding, and zero trailing bits (RFC 4648 §3.5). When `salted` is false, the link MUST have no `salt`.
-4. **Artifact.** Recomputes, in this order, and requires equality: `parts_hash` from the parts it holds (§5.1); `artifact_id_hash` from the `artifactId` it holds; `name` and `description`, when the record carries them, against the held values truncated as §4.4 says; and `role`, when present, against the held artifact's role.
-5. **Task.** MAY recompute `task_id_hash` and `context_id_hash` when it knows the ids, as the client does. A holder that received the artifact forwarded, without the ids, leaves them unchecked. That is not a mismatch.
+3. **Salt.** It decodes the link's `salt`, which every published link carries (§5.2). Only the canonical encoding is accepted: exactly 43 base64url characters, no padding, and zero trailing bits (RFC 4648 §3.5). A link without a salt fails, whatever `salted` says. A record with `salted` false and `embedded` false is invalid.
+4. **Artifact.** Recomputes, in this order, and requires equality: `parts_hash` from the parts it holds, normalized per §5.1 and salted or not as `salted` says; `artifact_id_hash` from the `artifactId` it holds, salted; `name` and `description`, when the record carries them, against the held values truncated as §4.4 says; and `role`, when present, against the held artifact's role, read per §5.1.
+5. **Task.** MAY recompute `task_id_hash` and `context_id_hash`, always salted, when it knows the ids, as the client does. A holder that received the artifact forwarded, without the ids, leaves them unchecked. That is not a mismatch.
 6. **Status.** Checks the body's status: retraction through RFC-ACDP-0013 and supersession through retrieval, or both through the RFC-ACDP-0018 feed. A `superseded` body means the agent published a later version of this artifact in the same task. A `retracted` body means the agent no longer stands behind it. What the holder does with that is its own policy.
 
 The outcome is a local verdict, not a wire condition, so there is no error code for it (§14). A holder SHOULD report which step failed. It SHOULD at least distinguish an untrusted or unrecognised record (steps 1–3) from a record that does not match the held artifact (steps 4–5).
@@ -381,8 +391,8 @@ A2A #1140 proposes a Content Integrity Profile: an inline `hash` on artifacts, o
 
 - ACDP carries the value and never re-derives it. Core verification MUST NOT recompute or resolve it (RFC-ACDP-0016 §6). A verifier that implements #1140 MAY check it for its own purposes.
 - The anchor is present only when the agent computed the #1140 hash over the same artifact content the record binds. It has no `uri`.
-- The #1140 hash is unsalted, so it undoes §5.2's salt for anyone who can read the body. An agent MUST NOT add it to a salted record of a `public` body.
-- RFC-ACDP-0016 does not require a scheme to be registered, and `registries/anchor-schemes.md` admits a scheme only from its owner. This RFC therefore does not register `a2a.artifact`. The row is A2A's to add once #1140 lands.
+- The #1140 hash is unsalted, so it undoes the salt on `parts_hash` for anyone who can read the body. An agent MUST NOT add it to a `public` body whose record has `salted` true.
+- RFC-ACDP-0016 does not require a scheme to be registered, and `registries/anchor-schemes.md` ("Adding a scheme") lets any party register a scheme it owns. `a2a.artifact` names an A2A construction, so this RFC does not register it. The row is A2A's to add once #1140 lands.
 
 ---
 
@@ -410,7 +420,7 @@ An agent-side profile with no prerequisite. An agent claiming it:
 
 - publishes one body per completed artifact, under its own DID, of its own type, with the record at `metadata["acdp:a2a"]` (§3–§4);
 - supersedes on re-emission in the same task, and cites the earlier body on continuation in a new task (§4.3);
-- salts the four hashes whenever the parts are not embedded, embeds only by allowlist, and maps `url` parts per §5.4 (§5);
+- always salts the three id hashes, salts `parts_hash` whenever the parts are not embedded, embeds only by allowlist, and maps `url` parts per §5.4 (§5);
 - returns the link per §6, never uses `Artifact.extensions`, and handles failure per §6.2;
 - fills `derived_from` per §7;
 - advertises the Card pointer per §9 and keeps the AITP key binding of §3.1;
@@ -432,7 +442,7 @@ No `a2a-*` fixture ever appears in `acdp-consumer`'s `required_fixtures` or `con
 
 ### 13.1 What the signature proves
 
-That the agent's key signed a record binding this artifact's content to a task. The agent can sign false content as easily as true. Consumers MUST scope trust per `agent_id`. An agent SHOULD use a key dedicated to its A2A outputs, so that revoking it (RFC-ACDP-0014) withdraws exactly those bodies. A `did:key` agent cannot rotate; a new key starts new lineages (RFC-ACDP-0001 §5.4).
+That the agent's key signed a record binding this artifact's content to a task. The agent can sign false content as easily as true. Consumers MUST scope trust per `agent_id`. An agent SHOULD use a key dedicated to its A2A outputs, so that revoking it (RFC-ACDP-0014) affects exactly those bodies. Revocation is time-scoped (RFC-ACDP-0014 §7): a body with a verified registry receipt from before `compromised_since` stays historically authorized, and only bodies at or after it, or without a receipt, fail closed. Revoking the key therefore does not withdraw the artifacts it signed before the compromise. To withdraw one of those, the agent retracts it (RFC-ACDP-0013). A `did:key` agent cannot rotate; a new key starts new lineages (RFC-ACDP-0001 §5.4).
 
 ### 13.2 What a body discloses
 
@@ -462,18 +472,18 @@ None new. The agent reports the registry's ACDP error codes verbatim in `io.acdp
 
 | Fixture | Pins |
 |---|---|
-| `a2a-001` | Known answer, executed by `scripts/conformance-runner.py`: from two pinned chunks, the task and context ids, the cited inputs and the salt, the assembled parts and parts preimage, the four salted hashes, the record, `derived_from`, the canonical form, `content_hash`, the Ed25519 signature of the `did:key` agent (the sig-001 zero test seed), the `Idempotency-Key`, the link on the final chunk and the Task snapshot, the Card binding to the agent's AITP AID, and ten holder negatives with the step each fails |
+| `a2a-001` | Known answers, executed by `scripts/conformance-runner.py`. Vector 1: from two pinned chunks, the task and context ids, the cited inputs and the salt, the assembled parts and parts preimage, the four salted hashes, the record, `derived_from`, the canonical form, `content_hash`, the Ed25519 signature of the `did:key` agent (the sig-001 zero test seed), the `Idempotency-Key`, the link on the final chunk and the Task snapshot, the Card binding to the agent's AITP AID, and ten holder negatives with the step each fails. Vector 2: an embedded record with `parts_hash` unsalted and the ids salted; a `raw` part received in URL-safe unpadded base64, a `url` part with a `filename` mapped to a DataRef, Part `metadata`, empty and `null` members dropped (§5.1), `name` and `description` from the last chunk carrying them; two holder positives over the received forms and six negatives |
 | `a2a-002` | Chunk assembly, completion, and supersede on re-emission; continuation in a new task by `derived_from` (§4.2–§4.3) |
 | `a2a-003` | The Card pointer: one entry, `required` false, `agentId` equal to `agent_id`; a mismatched `agentId` fails; coexistence with the AITP extension and the §3.1 key binding (§3.1, §9) |
-| `a2a-004` | Holder recomputation and its negatives, status checks, unchecked task ids when unknown (§8) |
+| `a2a-004` | Holder recomputation, JSON normalization and its negatives, status checks, unchecked task ids when unknown (§8) |
 | `a2a-005` | Cited inputs to `derived_from`: order, verification, deduplication, cap, no scraping of parts (§7) |
 | `a2a-006` | No use of `Artifact.extensions`; only `metadata` gains the link (§6–§6.1) |
 | `a2a-007` | Fail-open, fail-closed and idempotent retries; publish before the final chunk (§6–§6.2) |
-| `a2a-008` | Salting, embedding by allowlist, `url` parts to `data_refs`, the `raw` base64 rule, and the `a2a.artifact` anchor rule (§5, §10) |
+| `a2a-008` | Salting (ids always), embedding by allowlist, `url` parts to `data_refs`, the `raw` base64 rule, and the `a2a.artifact` anchor rule (§5, §10) |
 
 The ACDP `a2a-*` family is distinct from AITP's `a2a-*` vectors for RFC-AITP-0014, which live in the AITP repository and test a different binding.
 
-The `a2a-001` known-answer values (salt = bytes `0x40`..`0x5f`):
+The `a2a-001` known-answer values. Vector 1 uses salt bytes `0x40`..`0x5f`; vector 2 uses `0x60`..`0x7f`, and its `parts_hash` is unsalted.
 
 | Value | Digest |
 |---|---|
@@ -482,15 +492,20 @@ The `a2a-001` known-answer values (salt = bytes `0x40`..`0x5f`):
 | `context_id_hash` | `sha256:9eb6ace274bb43e7095cffdd0b5c7ac975c6ebade2e4b5385be048f0f87dc260` |
 | `parts_hash` | `sha256:11fe7c879a5f786129b918ac9b087666942da00d60d9aa6eba248e5d76fc24a8` |
 | `content_hash` | `sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98` |
+| vector 2 `artifact_id_hash` | `sha256:da3c45c3d94e978fd28d19ae38c0798c77c5dfe0b1778bc0e419174f60a2cd32` |
+| vector 2 `task_id_hash` | `sha256:31cbbb96646ac751ba64b3bc3d89b09aaf1b4d5efb82794759737ee9dfc30fae` |
+| vector 2 `context_id_hash` | `sha256:fc97757bc55c4888086856fccac703cb3df2282602787981633c1d6192f3c14c` |
+| vector 2 `parts_hash` (unsalted) | `sha256:42561b323c691089eecac0ce6cfa2e343fe8d4623ebc0cd134cf3898b4604762` |
+| vector 2 `content_hash` | `sha256:aacb4f58077d4b523dde0ee0162e563fdf57a4e77d91cfc5589c19a081765b5c` |
 
 ---
 
 ## 16. IANA-Style Registrations
 
 - `registries/profiles.json` / `profiles.md`: `acdp-producer-a2a` and `acdp-consumer-a2a`; fixture family `a2a`.
-- A2A extension URI: `https://acdp.io/ext/a2a/v1`, defined here (§9). It depends on the `acdp.io` domain being held for the project.
-- A2A metadata key: `io.acdp/provenance` on `Artifact.metadata` (§6) and `Message.metadata` (§7), with the values defined here. The key itself is RFC-ACDP-0019's.
-- Body metadata member: `acdp:a2a` (§4.5), and the reservation of `acdp:`-prefixed top-level metadata members for ACDP-defined records.
+- A2A extension URI: `https://acdp.io/ext/a2a/v1`, defined here (§9). It depends on the `acdp.io` domain being held for the project, which spec issue #126 tracks.
+- A2A metadata keys: `io.acdp/provenance` on `Artifact.metadata` (§6), whose key and value are RFC-ACDP-0019's; and `io.acdp/inputs` on `Message.metadata` (§7), defined here.
+- Body metadata member: `acdp:a2a` (§4.5). Only this one name is reserved; no other `acdp:`-prefixed metadata member is.
 - No context type, DataRef type, error code or anchor scheme (§10).
 
 ---

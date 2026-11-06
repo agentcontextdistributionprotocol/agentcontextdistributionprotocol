@@ -668,7 +668,7 @@ OPTIONAL keyless-signing profiles (RFC-ACDP-0021 §13). `acdp-registry-keyless` 
 
 #### `acdp-producer-a2a`, `acdp-consumer-a2a` *(0.5.0, Draft)*
 
-OPTIONAL A2A artifact-provenance profiles (RFC-ACDP-0022 §12). `acdp-producer-a2a` (no prerequisite) is for an A2A server agent that signs its own artifacts: one body per completed artifact under its own DID and its own `type`, the closed `acdp-a2a-artifact/1` record at `metadata["acdp:a2a"]`, salted hashes, the link in `Artifact.metadata` `io.acdp/provenance`, the Card pointer `https://acdp.io/ext/a2a/v1`; it passes `a2a-001`..`003` and `a2a-005`..`008`. `acdp-consumer-a2a` (prerequisite `acdp-consumer`) verifies held artifacts against their bodies and passes `a2a-001`, `a2a-003` and `a2a-004`. No `a2a-*` fixture is ever part of `acdp-consumer`. Both stay Draft, so this entry is not frozen.
+OPTIONAL A2A artifact-provenance profiles (RFC-ACDP-0022 §12). `acdp-producer-a2a` (no prerequisite) is for an A2A server agent that signs its own artifacts: one body per completed artifact under its own DID and its own `type`, the closed `acdp-a2a-artifact/1` record at `metadata["acdp:a2a"]`, salted hashes, cited inputs in `Message.metadata` `io.acdp/inputs`, the link in `Artifact.metadata` `io.acdp/provenance`, the Card pointer `https://acdp.io/ext/a2a/v1`; it passes `a2a-001`..`003` and `a2a-005`..`008`. `acdp-consumer-a2a` (prerequisite `acdp-consumer`) verifies held artifacts against their bodies and passes `a2a-001`, `a2a-003` and `a2a-004`. No `a2a-*` fixture is ever part of `acdp-consumer`. Both stay Draft, so this entry is not frozen.
 
 ### 9.2 Verification profile names (RECOMMENDED)
 
