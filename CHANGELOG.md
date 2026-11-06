@@ -2,6 +2,14 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Clarifications: RFC-ACDP-0022 points from the acdp-rs implementation — 2026-11-06
+
+No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and no pinned value moved. acdp-rs (PR #548, `9599825`) passes `a2a-001` and reported three gaps:
+
+- **Salt description.** The description of the shared provenance `salt` now says the salt is present on every RFC-ACDP-0022 link, not only on salted records. This is description-only.
+- **§8 step 2.** Every AITP AID on the Card must match a `did:key` agent.
+- **§9.** `registry` is a bare hostname, so a value with a port is malformed.
+
 ## v0.5.0 — Clarifications: RFC-ACDP-0022 holder edge cases from a second implementation — 2026-11-06
 
 No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and no pinned `a2a-001` value moved. acdp-verifier-py (PR #116, `f9a7936`) implemented the RFC-ACDP-0022 holder from the text alone and passes `a2a-001`. It reported four gaps, now closed with the behaviour it chose:
