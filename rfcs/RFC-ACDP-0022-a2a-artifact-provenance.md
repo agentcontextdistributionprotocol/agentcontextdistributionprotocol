@@ -109,7 +109,7 @@ An agent publishes **one body per completed artifact**. It never publishes one b
 
 - a chunk with `append` false or absent starts the artifact afresh: its parts replace any earlier parts;
 - a chunk with `append` true appends its parts to the parts so far;
-- `name` and `description` are those of the last chunk that carries them.
+- `name` and `description` are those of the last chunk that carries them, across every chunk for the key. A chunk with `append` false replaces the parts, not the labels: a label carried by an earlier chunk survives until a later chunk carries a new one.
 
 **Completion.** An artifact is complete at the earlier of:
 
@@ -211,9 +211,11 @@ Every Part member is covered, including the Part's own `metadata`.
 
 **Normalizing what was received (NORMATIVE).** A holder hashes the form above, not the JSON it received. ProtoJSON parsers accept members this form leaves out, so before hashing a holder rebuilds each Part:
 
-- it drops every member whose value is `null`, which ProtoJSON reads as unset;
+- it drops every member whose value is `null`, which ProtoJSON reads as unset. This includes a content member: a Part received with `data: null` and no other content member has no content member left, and is invalid;
 - it drops `filename` and `mediaType` when they are empty strings;
 - it re-encodes `raw` as the next paragraph says.
+
+A received Part that still carries a member outside the form above (for example a `kind` member from an earlier A2A revision) does not match. The holder MUST NOT drop that member to make it match. The artifact fails §8 step 4 as a parts mismatch.
 
 For §8 step 4, an absent Artifact `role`, or `ROLE_UNSPECIFIED`, reads as `ROLE_AGENT`. The second vector of `a2a-001` pins each of these cases.
 
@@ -338,7 +340,7 @@ A holder with an artifact and its `io.acdp/provenance` value:
 1. **Body.** Retrieves `ctx_id` and verifies the body as for any body (RFC-ACDP-0001 §5.11, including the `did:key` and `did:web` paths with nothing added, §3.2). It MUST check that the body's `ctx_id` equals the link's (RFC-ACDP-0006 §4.1 step 7), that its `origin_registry` equals the link's `registry`, and that its `content_hash` equals the link's. A link with `failed: true` names no body and verifies nothing.
 2. **Agent and record.** Checks that `agent_id` is an agent it trusts. When it reached the agent through the Agent Card, `agent_id` MUST equal the Card's `params.agentId` (§9). When that Card also carries an AITP AID and `agent_id` is a `did:key`, the holder MUST check §3.1's key equality. It then checks that `metadata["acdp:a2a"]` is a valid record of a version it knows. The record is closed, so it MUST reject unknown members rather than ignore them.
 3. **Salt.** It decodes the link's `salt`, which every published link carries (§5.2). Only the canonical encoding is accepted: exactly 43 base64url characters, no padding, and zero trailing bits (RFC 4648 §3.5). A link without a salt fails, whatever `salted` says. A record with `salted` false and `embedded` false is invalid.
-4. **Artifact.** Recomputes, in this order, and requires equality: `parts_hash` from the parts it holds, normalized per §5.1 and salted or not as `salted` says; `artifact_id_hash` from the `artifactId` it holds, salted; `name` and `description`, when the record carries them, against the held values truncated as §4.4 says; and `role`, when present, against the held artifact's role, read per §5.1.
+4. **Artifact.** Recomputes, in this order, and requires equality: `parts_hash` from the parts it holds, normalized per §5.1 and salted or not as `salted` says; `artifact_id_hash` from the `artifactId` it holds, salted; `name` and `description`, when the record carries them, against the held values truncated as §4.4 says (a record label with no held label is a mismatch); and `role`, when present, against the held artifact's role, read per §5.1.
 5. **Task.** MAY recompute `task_id_hash` and `context_id_hash`, always salted, when it knows the ids, as the client does. A holder that received the artifact forwarded, without the ids, leaves them unchecked. That is not a mismatch.
 6. **Status.** Checks the body's status: retraction through RFC-ACDP-0013 and supersession through retrieval, or both through the RFC-ACDP-0018 feed. A `superseded` body means the agent published a later version of this artifact in the same task. A `retracted` body means the agent no longer stands behind it. What the holder does with that is its own policy.
 
@@ -369,7 +371,7 @@ An agent that publishes under this RFC SHOULD declare it on its Agent Card, as e
 - The URI is compared byte for byte. A change a `v1` holder cannot process takes a new URI (A2A §4.6.3).
 - `required` MUST be `false`. Provenance never makes an agent unusable for a client that ignores it.
 - `params` follows `acdp-a2a-artifact.schema.json#/$defs/card_params`. The names are camelCase, as A2A's JSON convention requires. `registry` is the hostname of the registry the agent publishes to. `agentId` is the agent's DID and MUST equal every body's `agent_id` (§3.1). A holder MUST ignore `params` members it does not recognise.
-- A Card with more than one entry for this URI, or with malformed `params`, gives the holder no pointer. It treats the Card as if it had none.
+- A Card with more than one entry for this URI, or with malformed `params`, gives the holder no pointer. The holder treats the Card as if it had no entry for this URI. The rest of the Card still applies, including an AITP AID that §8 step 2 checks.
 
 **The Card is an untrusted pointer.** It is fetched from a host, a registry or a cache, and any of them can change it. It tells a holder where to look and which DID to expect. It is never evidence: the body's signature is. A rewritten `agentId` makes §8 step 2 fail, or binds the holder to a DID it then has to decide to trust on its own.
 
