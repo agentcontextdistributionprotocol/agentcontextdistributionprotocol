@@ -585,7 +585,7 @@
     {
       "id": "acdp-consumer-recall",
       "inherits": "acdp-consumer",
-      "spec_reference": "RFC-ACDP-0018 §7 (0.5.0, Draft)",
+      "spec_reference": "RFC-ACDP-0018 §7 (0.5.0, Final)",
       "behavioral_requirements": [
         "Treat every change entry as a hint until verified: lifecycle via RFC-ACDP-0013 §5 and RFC-ACDP-0017 §10.3 then full-list retraction state; superseded via retrieval and supersedes/lineage check; key_revocation via RFC-ACDP-0014 §5/§6 and §7 (RFC-ACDP-0018 §7)",
         "A failing entry changes no reliance decision and prompts direct re-verification (RFC-ACDP-0018 §7)",
@@ -599,7 +599,7 @@
         "rec-007-change-hints",
         "rec-009-entry-envelope"
       ],
-      "notes": "OPTIONAL consumer profile. rec-007 scenarios D–E apply here. rec-009 is an executed known answer for the §7 envelope-consistency rules.",
+      "notes": "OPTIONAL consumer profile, Final (2026-11-06): acdp-rs 0.21.0 and acdp-verifier-py 67142a8 pass rec-006, rec-007 D–E, rec-009 and rec-010 G–I at spec 3f50697. rec-007 scenarios D–E apply here. rec-009 is an executed known answer for the §7 envelope-consistency rules.",
       "conditional_fixtures": [
         {
           "fixtures": [

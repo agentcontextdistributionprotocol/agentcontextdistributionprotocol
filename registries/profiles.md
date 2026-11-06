@@ -20,7 +20,7 @@ The schema vocabulary is open. Profiles are normatively defined in [RFC-ACDP-000
 | `acdp-consumer-chain` | Optional (0.5.0, Final) | RFC-ACDP-0017 §13, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
 | `acdp-registry-changes` | Optional (0.5.0, Draft) | RFC-ACDP-0018 §3–§6, RFC-ACDP-0001 §9.1 | `acdp-registry-lifecycle`, `acdp-registry-receipts` |
 | `acdp-registry-events` | Optional (0.5.0, Draft) | RFC-ACDP-0018 §8, RFC-ACDP-0001 §9.1 | `acdp-registry-changes` |
-| `acdp-consumer-recall` | Optional (0.5.0, Draft) | RFC-ACDP-0018 §7, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
+| `acdp-consumer-recall` | Optional (0.5.0, Final) | RFC-ACDP-0018 §7, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
 | `acdp-producer-mcp-proxy` | Optional (0.5.0, Draft) | RFC-ACDP-0019 §5, §7, RFC-ACDP-0001 §9.1 | — (a proxy is a producer, not a registry) |
 | `acdp-consumer-trust-list` | Optional (0.5.0, Final) | RFC-ACDP-0020 §9, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
 | `acdp-registry-keyless` | Optional (0.5.0, Draft) | RFC-ACDP-0021 §13, RFC-ACDP-0001 §9.1 | `acdp-registry-receipts`, `acdp-registry-transparency-log`, `acdp-registry-lifecycle` |
@@ -173,7 +173,7 @@ Change hints (RFC-ACDP-0018 §8), under the name RFC-ACDP-0009 §2.10 reserved. 
 
 ### `acdp-consumer-recall` *(0.5.0)*
 
-For consumers that act on the changes feed (RFC-ACDP-0018 §7). Draft and OPTIONAL. Prerequisite `acdp-consumer`.
+For consumers that act on the changes feed (RFC-ACDP-0018 §7). Final (2026-11-06) and OPTIONAL. Prerequisite `acdp-consumer`.
 
 | | Required (in addition to `acdp-consumer`) |
 |---|---|
