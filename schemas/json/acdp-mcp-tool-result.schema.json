@@ -66,7 +66,7 @@
             "ctx_id": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
             "content_hash": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/content_hash" },
             "registry": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/hostname" },
-            "salt": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$", "description": "base64url, unpadded, of the 32 salt bytes. Present exactly when the record is salted." }
+            "salt": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$", "description": "base64url, unpadded, of the 32 salt bytes. Under RFC-ACDP-0019, present exactly when the record is salted. Under RFC-ACDP-0022, present on every published link (§8 step 3)." }
           },
           "additionalProperties": false
         },
