@@ -2,6 +2,14 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Draft amendment: MCP 2026-07-28 sessions in the MCP signing proxy (RFC-ACDP-0019) — 2026-11-06
+
+No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. The `acdp-mcp-tool-result/1` record and the `io.acdp/provenance` value are unchanged, and every existing record stays valid. MCP revision 2026-07-28 removes the `initialize` handshake, which RFC-ACDP-0019 relied on for `mcp_protocol_version` and `server`; without this change a proxy in front of such a server could not publish.
+
+- **Revision and server identity (§3.1, Draft).** Under revisions without `initialize`, `mcp_protocol_version` comes from `io.modelcontextprotocol/protocolVersion` in the forwarded request's `_meta`. `server` comes from `io.modelcontextprotocol/serverInfo` in the result's `_meta`, or else from a fresh `server/discover` response from the same endpoint. A missing server identity there is recorded as `unknown`, not treated as a publish failure. A result arriving before `initialize` is still a publish failure under handshake revisions. The §4.2 rows for these members now point to §3.1. Their values and meaning are unchanged.
+- **Results that are not yet complete (§3.2, Draft).** An `input_required` result and a task handle publish nothing. A multi-round retry is its own call: the completing request's arguments and `id` are hashed, and `inputResponses` and `requestState` are not. Covering task-delivered results is OPTIONAL, and a proxy that doesn't cover them says so. A covering proxy publishes once per task, on the first completed `tasks/get`, and repeats the same link on later polls. Under fail-closed it replaces the inner `result`. A failed or cancelled task, or an unrecognized `resultType`, publishes nothing. The era is classified per request, for servers serving both eras.
+- **Fixture `mcp-008`** (behavioral) covers both, and the `acdp-producer-mcp-proxy` profile now requires `mcp-001`..`mcp-008`.
+
 ## v0.5.0 — Draft amendment: bucket watch filters, feed page size and compression (RFC-ACDP-0018), private-watch reservations (RFC-ACDP-0009) — 2026-11-01
 
 No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. No change-entry or response member and no error code was added, so the `acdp-change/1` and changes-response wire shapes are unchanged. This answers a request from a multi-tenant consumer to watch the changes feed without revealing which contexts it relies on.

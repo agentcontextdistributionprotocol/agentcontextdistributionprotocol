@@ -630,10 +630,11 @@
         "mcp-004-publish-failure",
         "mcp-005-derived-from-extraction",
         "mcp-006-embedding-allowlist",
-        "mcp-007-salting"
+        "mcp-007-salting",
+        "mcp-008-mcp-2026-07-28"
       ],
       "not_implemented_permitted_on": [],
-      "notes": "OPTIONAL producer-side profile. A proxy is not a registry: it publishes to one and is advertised nowhere on the wire. mcp-001 is executed by scripts/conformance-runner.py; mcp-002..007 are behavioral. RFC-ACDP-0019's body, hashes and link are Final (2026-10-30): acdp-rs 0.18.2 and acdp-verifier-py 3928ee1 reproduce mcp-001 and pass mcp-003 at spec 546b8c8. The profile stays Draft until a second proxy passes mcp-001..007."
+      "notes": "OPTIONAL producer-side profile. A proxy is not a registry: it publishes to one and is advertised nowhere on the wire. mcp-001 is executed by scripts/conformance-runner.py; mcp-002..008 are behavioral. RFC-ACDP-0019's body, hashes and link are Final (2026-10-30): acdp-rs 0.18.2 and acdp-verifier-py 3928ee1 reproduce mcp-001 and pass mcp-003 at spec 546b8c8. mcp-008 (2026-11-06) covers MCP 2026-07-28 sessions without initialize. The profile stays Draft until a second proxy passes mcp-001..008."
     },
     {
       "id": "acdp-consumer-trust-list",
