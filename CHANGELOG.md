@@ -2,6 +2,15 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Clarifications: RFC-ACDP-0022 holder edge cases from a second implementation — 2026-11-06
+
+No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and no pinned `a2a-001` value moved. acdp-verifier-py (PR #116, `f9a7936`) implemented the RFC-ACDP-0022 holder from the text alone and passes `a2a-001`. It reported four gaps, now closed with the behaviour it chose:
+
+- **§4.2:** `name` and `description` survive an `append: false` restart until a later chunk carries new ones.
+- **§5.1:** a received Part member outside the hashed form (e.g. `kind`) is a parts mismatch and is not dropped to force a match. `data: null` normalizes to no content member, so the Part is invalid.
+- **§8 step 4:** a record label with no held label is a mismatch.
+- **§9:** a Card with a duplicate or malformed entry for the extension URI loses only that pointer. An AITP AID elsewhere on the Card is still checked.
+
 ## v0.5.0 — Draft RFC: A2A artifact provenance (RFC-ACDP-0022) — 2026-11-06
 
 No existing body field, schema `$id`, JCS rule, content-hash, or signature semantic changed. Every existing body, record and fixture stays valid. The additions are one new Draft RFC, one new schema, two OPTIONAL profiles and one fixture family. No context type, error code, lifecycle event kind, change kind or key-status value is added.
