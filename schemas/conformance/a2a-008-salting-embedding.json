@@ -1,0 +1,54 @@
+{
+  "id": "a2a-008",
+  "description": "(0.5.0, Draft) Salting (ids always), embedding by allowlist, url parts to data_refs, the raw base64 rule and the a2a.artifact anchor (RFC-ACDP-0022 §5, §10).",
+  "tags": [
+    "a2a",
+    "producer",
+    "behavioral",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-producer-a2a"
+  ],
+  "input": {
+    "note": "Run the agent against a test registry, with a client that sends the a2a-001 task (two chunks for artifactId fraud-summary) unless a scenario says otherwise."
+  },
+  "scenarios": [
+    {
+      "name": "A — salting",
+      "expected": {
+        "behavior": "task_id_hash, context_id_hash and artifact_id_hash are always salted, embedded or not: H(salt ‖ JCS(value)), no domain tag. parts_hash is salted whenever the parts are not embedded; only an embedded record may leave it unsalted (salted false, parts_hash = H(JCS(parts))). One fresh 32-byte salt per body, including each re-emission; the salt never appears in the body and is always in the link."
+      }
+    },
+    {
+      "name": "B — embedding allowlist",
+      "expected": {
+        "behavior": "A non-allowlisted artifact has embedded false. An allowlisted one carries data_refs[0] = {type: primary_result, format: json, embedded: {encoding: json, content: <parts>}} within 64 KB, or a location DataRef with content_hash H(JCS(parts)) when larger; embedded true."
+      }
+    },
+    {
+      "name": "C — url parts",
+      "expected": {
+        "behavior": "A url part with a plain https URL gives a DataRef {type: primary_result, location: <url>, content_hash: H(bytes)} after any embedded entry; a signed URL (token, signature or expiry in the query) gives none, and parts_hash still covers the url string."
+      }
+    },
+    {
+      "name": "D — raw parts",
+      "expected": {
+        "behavior": "parts_hash covers raw as standard padded base64 text, and the agent emits that form; empty filename and mediaType and null members are absent from the hashed parts (a2a-001 vector 2)."
+      }
+    },
+    {
+      "name": "E — anchor",
+      "expected": {
+        "behavior": "An agent with an A2A #1140 hash may add anchors [{scheme: a2a.artifact, content_hash}], never on a salted public body; no core verifier recomputes it."
+      }
+    },
+    {
+      "name": "F — metadata member",
+      "expected": {
+        "behavior": "The record is only at metadata[\"acdp:a2a\"], beside the agent's own members; the body type is the agent's own and never acdp:mcp-tool-result, acdp:trust-list, acdp:key-attestation, key-revocation or acdp:key-revocation."
+      }
+    }
+  ]
+}

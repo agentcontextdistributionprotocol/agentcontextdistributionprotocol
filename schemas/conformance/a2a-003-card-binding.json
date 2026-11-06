@@ -1,0 +1,62 @@
+{
+  "id": "a2a-003",
+  "description": "(0.5.0, Draft) The Agent Card pointer https://acdp.io/ext/a2a/v1 and the identity binding to AITP (RFC-ACDP-0022 §3.1, §9).",
+  "tags": [
+    "a2a",
+    "producer",
+    "consumer",
+    "behavioral",
+    "0.5.0"
+  ],
+  "applies_to_profiles": [
+    "acdp-producer-a2a",
+    "acdp-consumer-a2a"
+  ],
+  "input": {
+    "note": "Use the a2a-001 Card extensions (AITP entry and ACDP entry) and body."
+  },
+  "scenarios": [
+    {
+      "name": "A — well-formed pointer (agent)",
+      "expected": {
+        "behavior": "The Card carries exactly one AgentExtension with uri https://acdp.io/ext/a2a/v1, required false, params {registry, agentId}; agentId equals every published body's agent_id."
+      }
+    },
+    {
+      "name": "B — mismatched agentId (holder)",
+      "expected": {
+        "behavior": "A Card whose params.agentId names another DID (e.g. did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK) fails §8 step 2 for the a2a-001 body, even though the body's signature verifies."
+      }
+    },
+    {
+      "name": "C — AITP key binding",
+      "expected": {
+        "behavior": "With the AITP entry params.aid = aid:pubkey:O2onvM62pC1io6jQKm8Nc2UyFXcd4kOmOsBIoYtZ2ik, the did:key agent_id encodes the same Ed25519 key and the binding holds; the tagged form aid:pubkey:ed25519:<same> also holds; an AID for any other key fails the binding."
+      }
+    },
+    {
+      "name": "D — coexistence",
+      "expected": {
+        "behavior": "Both the AITP and the ACDP extensions on one Card are accepted; neither URI is mistaken for the other (byte comparison)."
+      }
+    },
+    {
+      "name": "E — duplicate or malformed entry (holder)",
+      "expected": {
+        "behavior": "Two ACDP entries, or params missing agentId, give the holder no pointer: it proceeds as if the Card had none and relies only on its own trust configuration."
+      }
+    },
+    {
+      "name": "F — required true is non-conformant",
+      "expected": {
+        "behavior": "An agent MUST NOT mark the extension required; a holder ignores required when deciding trust."
+      }
+    },
+    {
+      "name": "G — untrusted pointer and fetch rules (holder)",
+      "expected": {
+        "behavior": "A params.registry outside the holder's allowlist, or resolving to a private, loopback or link-local address, is not fetched (RFC-ACDP-0006 §7, RFC-ACDP-0008 §4.8–§4.9); a link naming a registry other than params.registry is not by itself a failure."
+      }
+    }
+  ]
+}

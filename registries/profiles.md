@@ -25,6 +25,8 @@ The schema vocabulary is open. Profiles are normatively defined in [RFC-ACDP-000
 | `acdp-consumer-trust-list` | Optional (0.5.0, Final) | RFC-ACDP-0020 §9, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
 | `acdp-registry-keyless` | Optional (0.5.0, Draft) | RFC-ACDP-0021 §13, RFC-ACDP-0001 §9.1 | `acdp-registry-receipts`, `acdp-registry-transparency-log`, `acdp-registry-lifecycle` |
 | `acdp-consumer-keyless` | Optional (0.5.0, Final) | RFC-ACDP-0021 §13, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
+| `acdp-producer-a2a` | Optional (0.5.0, Draft) | RFC-ACDP-0022 §12, RFC-ACDP-0001 §9.1 | — (an A2A agent is a producer, not a registry) |
+| `acdp-consumer-a2a` | Optional (0.5.0, Draft) | RFC-ACDP-0022 §12, RFC-ACDP-0001 §9.1 | `acdp-consumer` |
 
 (RFC-ACDP-0014, the producer key-revocation signal, deliberately defines **no profile**: a revocation is an ordinary context carried by existing surfaces; its registry-side validation binds to `acdp_version` ≥ 0.3.0 and its consumer semantics to `acdp-consumer` — RFC-ACDP-0014 §10.)
 
@@ -219,6 +221,26 @@ For consumers that verify keyless-signed bodies (RFC-ACDP-0021). Final (2026-10-
 |---|---|
 | **Behavioral requirements** | Resolve `acdp-kl-` keys only through §8; accept attesters only from configuration or RFC-ACDP-0020 evaluation (default none, §11), and in chain verification only from `pinned.keyless_attesters` (§10); place the signature with the attester's receipt inside the window; report one of the three existing key statuses or fail closed, keeping the two existing revocation trust classes (§8.2, §9); evaluate keyless chain nodes with the existing key-stage values (§10) |
 | **Conformance fixtures** | `kl-001` (executed), `kl-005` (verification and key status), `kl-006` (attester trust), `kl-007` (fail closed), `kl-008` (chain verification), `kl-009` (identity revocation) |
+| **`not_implemented` permitted on** | Not applicable — a consumer runs no registry endpoints |
+
+### `acdp-producer-a2a` *(0.5.0)*
+
+For an **A2A server agent** that signs its own artifacts and publishes each completed artifact as an ACDP body (RFC-ACDP-0022). Draft and OPTIONAL. An agent is a producer, not a registry; it has no prerequisite profile. Its fixtures never join `acdp-consumer` (RFC-ACDP-0022 §12.3).
+
+| | Required |
+|---|---|
+| **Behavioral requirements** | One body per completed artifact, keyed `(artifact_id, role)`, signed under the agent's own `did:web` or `did:key`; the body `type` is the agent's own and the binding is the closed `acdp-a2a-artifact/1` record at `metadata["acdp:a2a"]`. Re-completion in the same task supersedes; continuation in a new task cites the earlier body first in `derived_from`. Always-salted `artifact_id_hash`/`task_id_hash`/`context_id_hash`, and a salted `parts_hash` whenever unembedded (H(salt ‖ JCS(value)), fresh 32-byte salt, no domain tag); embedding only by allowlist; `url` parts to `data_refs` unless credential-bearing. `derived_from` only from verified inputs cited in `Message.metadata` `io.acdp/inputs` and used for that artifact. Link in `Artifact.metadata` `io.acdp/provenance` on the final chunk and later snapshots, only after the publish response; never `Artifact.extensions`; fail open by default; retries reuse `Idempotency-Key: acdp-a2a-<content_hash hex>`. One Card extension `https://acdp.io/ext/a2a/v1`, `required` false, `params.agentId` = `agent_id`; a `did:key` encodes the AITP AID's key |
+| **Conformance fixtures** | `a2a-001` (known answer, executed), `a2a-002` (assembly and supersession), `a2a-003` (Card pointer), `a2a-005` (inputs), `a2a-006` (no `Artifact.extensions`), `a2a-007` (publish failure), `a2a-008` (salting and embedding) |
+| **`not_implemented` permitted on** | Not applicable — an agent runs no registry endpoints |
+
+### `acdp-consumer-a2a` *(0.5.0)*
+
+For holders that verify A2A artifacts against their ACDP bodies (RFC-ACDP-0022 §8). Draft and OPTIONAL. Prerequisite `acdp-consumer`, which never lists any `a2a-*` fixture (RFC-ACDP-0022 §12.3).
+
+| | Required (in addition to `acdp-consumer`) |
+|---|---|
+| **Behavioral requirements** | Verify the body per RFC-ACDP-0001 and match `ctx_id`, `registry` and `content_hash` with the link; trust by `agent_id`, equal to the Card's `params.agentId` when the Card was used; reject unknown record members; accept only the canonical salt; recompute `parts_hash` (A2A JSON, `raw` normalized to standard padded base64), `artifact_id_hash` and recorded labels; check status through RFC-ACDP-0013 / RFC-ACDP-0018. The Card is an untrusted pointer: fetches follow RFC-ACDP-0006 §7, RFC-ACDP-0008 §4.3/§4.8/§4.9 and the holder's allowlist |
+| **Conformance fixtures** | `a2a-001` (executed, including its holder negatives), `a2a-003` (Card binding), `a2a-004` (holder recomputation) |
 | **`not_implemented` permitted on** | Not applicable — a consumer runs no registry endpoints |
 
 ## Adding a profile

@@ -440,6 +440,21 @@ All are behavioral, except `rec-007`'s executed HMAC known-answer vector `hint-h
 
 `kl-001` is executed by `scripts/conformance-runner.py` (the two bodies as `sig-001`, plus reference RFC-ACDP-0021 §8.2 and §7 evaluators over the tables); `kl-002`..`009` are behavioral. The registry-side fixtures are REQUIRED for `acdp-registry-keyless` and the consumer-side ones for `acdp-consumer-keyless`, both OPTIONAL.
 
+### A2A artifact provenance (RFC-ACDP-0022, 0.5.0, Draft)
+
+| Fixture | Scenario | Pins |
+|---|---|---|
+| `a2a-001` | Known answer (two vectors): chunk assembly, always-salted `artifact_id_hash`/`task_id_hash`/`context_id_hash`, `parts_hash` salted (vector 1) and unsalted under embedding (vector 2), the parts preimage, A2A JSON normalization (URL-safe unpadded `raw`, empty and null members), `url` part to DataRef, the record at `metadata["acdp:a2a"]`, `derived_from` from cited inputs, body hash and signature, `Idempotency-Key`, the link on the final chunk and snapshot, the Card binding to the AITP AID, holder positives and sixteen holder negatives | every value recomputed byte for byte with the `jcs` library and the zero test seed (`did:key`) |
+| `a2a-002` | Chunk assembly and supersede on re-emission | one body per completed artifact; terminal-state completion; same-task re-emission supersedes; new-task continuation by `derived_from` |
+| `a2a-003` | Card pointer (agent and holder) | one entry, `required` false, `agentId` = `agent_id`; a mismatched `agentId` fails; AITP key binding; coexistence; untrusted pointer and fetch rules |
+| `a2a-004` | Holder recomputation (holder) | accept; changed parts, wrong, missing or non-canonical salt, copied link, unknown record member fail; unknown task ids unchecked; JSON normalization (`raw`, empty and null members, role); status |
+| `a2a-005` | Inputs to `derived_from` | citation order, verified only, dedup, cap 1000, invalid value ignored, no scraping of parts |
+| `a2a-006` | No `Artifact.extensions` | nothing added to `extensions`; only the link added to `metadata`; link without activation |
+| `a2a-007` | Publish failure | fail-open `{failed: true, error?}`; fail-closed withholds the parts; idempotent retries; publish before the final chunk |
+| `a2a-008` | Salting and embedding | ids always salted, parts salted unless embedded, no domain tag; embedding allowlist; `url` parts to `data_refs`; `raw` rule; `a2a.artifact` anchor |
+
+`a2a-001` is executed by `scripts/conformance-runner.py`; `a2a-002`..`008` are behavioral. The agent-side fixtures are REQUIRED for `acdp-producer-a2a` and the holder-side ones for `acdp-consumer-a2a`, both OPTIONAL; none is ever part of `acdp-consumer`. This ACDP `a2a-*` family is distinct from AITP's RFC-AITP-0014 `a2a-*` vectors, which live in the AITP repository.
+
 ### did:key resolution (RFC-ACDP-0001 §5.4 / §5.11.1, 0.2.0)
 
 | ID | Description | Outcome |

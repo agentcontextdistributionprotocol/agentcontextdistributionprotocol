@@ -41,6 +41,11 @@ individual validators cannot see:
      copies of, see CHANGELOG.md) never reappears under rfcs/, schemas/,
      examples/, or docs/ — a narrow regression guard, not a general hash
      verifier.
+ 12. No fixture of an optional-binding family (`a2a-*`, RFC-ACDP-0022 §12.3)
+     is listed by any profile other than the binding's own profiles — in
+     particular never by `acdp-consumer`, whether in profiles.json, the
+     `acdp-consumer` section of profiles.md, or RFC-ACDP-0001 §9.1's
+     `acdp-consumer` block.
 
 Exits 0 if all checks pass, 1 otherwise.
 """
@@ -67,10 +72,13 @@ def err(check, msg):
     errors.append(f"[{check}] {msg}")
 
 
-SHORT_ID_RE = re.compile(r"\b([a-z][a-z-]*-\d{3})\b")
-SHORT_ID_EXACT = re.compile(r"[a-z][a-z-]*-\d{3}")
+SHORT_ID_RE = re.compile(r"\b([a-z][a-z0-9]*(?:-[a-z][a-z0-9]*)*-\d{3})\b")
+SHORT_ID_EXACT = re.compile(r"[a-z][a-z0-9]*(?:-[a-z][a-z0-9]*)*-\d{3}")
+# Family names are hyphen-separated segments, each a lowercase letter then
+# letters or digits (e.g. `a2a`, `data-ref-ssrf`); a segment never starts with a
+# digit, so `vis-001-restricted-denied-as-404` still yields `vis-001`.
 # Range notations used in profiles.md: `fam-001`..`fam-012` and `fam-001..005`
-RANGE_RE = re.compile(r"([a-z][a-z-]*-)(\d{3})`?\s*\.\.\s*`?(?:[a-z][a-z-]*-)?(\d{3})")
+RANGE_RE = re.compile(r"([a-z][a-z0-9]*(?:-[a-z][a-z0-9]*)*-)(\d{3})`?\s*\.\.\s*`?(?:[a-z][a-z0-9]*(?:-[a-z][a-z0-9]*)*-)?(\d{3})")
 
 
 def short_of(token):
@@ -427,7 +435,7 @@ def check_markdown_links():
 
 # ── Check 10: per-profile fixture placement (profiles.json ↔ profiles.md) ────
 
-WILDCARD_RE = re.compile(r"([a-z][a-z-]*)-\*")
+WILDCARD_RE = re.compile(r"([a-z][a-z0-9]*(?:-[a-z][a-z0-9]*)*)-\*")
 
 
 def profile_fixture_sets(profiles_json):
@@ -527,6 +535,41 @@ def check_no_disproven_digest():
                     f"{DISPROVEN_LINEAGE_DIGEST!r} (lin:sha256:ca770dc5… is correct)")
 
 
+# ── Check 12: optional binding families stay out of acdp-consumer ───────────
+# RFC-ACDP-0022 §12.3 (NORMATIVE): no a2a-* fixture is ever required or
+# conditional for acdp-consumer; they belong only to acdp-producer-a2a and
+# acdp-consumer-a2a.
+OPTIONAL_ONLY_FAMILIES = {"a2a": {"acdp-producer-a2a", "acdp-consumer-a2a"}}
+
+
+def check_optional_families(profiles_json):
+    for pid, ids in profile_fixture_sets(profiles_json).items():
+        for fid in sorted(ids):
+            fam = fid.rsplit("-", 1)[0]
+            allowed = OPTIONAL_ONLY_FAMILIES.get(fam)
+            if allowed is not None and pid not in allowed:
+                err("optional-family",
+                    f"profile {pid!r} lists {fid}, but the {fam}-* family belongs only to "
+                    f"{', '.join(sorted(allowed))} (RFC-ACDP-0022 §12.3)")
+    # The same rule over the human-readable manifests: the `acdp-consumer` section of
+    # profiles.md and RFC-ACDP-0001 §9.1's `acdp-consumer` block name no such fixture.
+    texts = {"registries/profiles.md `acdp-consumer` section": profiles_md_sections().get("acdp-consumer", "")}
+    core = (RFCS / "RFC-ACDP-0001-core.md").read_text()
+    m = re.search(r"^####\s+`acdp-consumer`.*$", core, flags=re.MULTILINE)
+    if m is None:
+        err("optional-family", "RFC-ACDP-0001 §9.1 has no `#### `acdp-consumer`` block")
+    else:
+        nxt = re.search(r"^#{1,4}\s", core[m.end():], flags=re.MULTILINE)
+        texts["RFC-ACDP-0001 §9.1 `acdp-consumer`"] = core[m.start():m.end() + (nxt.start() if nxt else len(core))]
+    for where, text in texts.items():
+        for fid in sorted(set(SHORT_ID_RE.findall(text)) | expand_ranges(text)):
+            fam = fid.rsplit("-", 1)[0]
+            if fam in OPTIONAL_ONLY_FAMILIES and "acdp-consumer" not in OPTIONAL_ONLY_FAMILIES[fam]:
+                err("optional-family",
+                    f"{where} names {fid}, but the {fam}-* family belongs only to "
+                    f"{', '.join(sorted(OPTIONAL_ONLY_FAMILIES[fam]))} (RFC-ACDP-0022 §12.3)")
+
+
 def main():
     profiles_json = json.loads((REGISTRIES / "profiles.json").read_text())
     families = set(profiles_json.get("fixture_families", {}))
@@ -548,6 +591,7 @@ def main():
     check_markdown_links()
     check_profile_placement(fixtures, profiles_json)
     check_no_disproven_digest()
+    check_optional_families(profiles_json)
 
     if errors:
         print(f"✗ {len(errors)} consistency error(s):", file=sys.stderr)
