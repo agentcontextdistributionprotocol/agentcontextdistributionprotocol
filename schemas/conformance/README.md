@@ -165,7 +165,7 @@ These fixtures exercise the §6.2 contract and the §6.2.1 ordering/atomicity gu
 | ID | Description | Outcome |
 |---|---|---|
 | `rate-001` | Wire shape of `rate_limited` response: HTTP 429, standard error envelope, `Retry-After` MUST be present (integer seconds or HTTP-date; a limiter without an exact refill horizon emits a conservative estimate — RFC-ACDP-0008 §4.3) | failure: `rate_limited` |
-| `rate-002` | *(0.5.0, Draft)* Wire shape of a **read** `rate_limited` refusal (RFC-ACDP-0008 §4.3): HTTP 429, standard envelope, mandatory `Retry-After`; never 404/403; authenticated reads keyed by `effective_requester_did`, anonymous by source address. Consumers MUST NOT retry before `Retry-After`. Self-test only; conditional on `acdp_version` ≥ 0.5.0 for registries | failure: `rate_limited` |
+| `rate-002` | *(0.5.0)* Wire shape of a **read** `rate_limited` refusal (RFC-ACDP-0008 §4.3): HTTP 429, standard envelope, mandatory `Retry-After`; never 404/403; authenticated reads keyed by `effective_requester_did`, anonymous by source address. Consumers MUST NOT retry before `Retry-After`. Self-test only; conditional on `acdp_version` ≥ 0.5.0 for registries | failure: `rate_limited` |
 
 Rate-limit triggering depends on registry policy (window, bucket, threshold), so `rate-001` and `rate-002` pin only the wire shape. Implementers MUST self-test the trigger per each fixture's recipe (`rate-001-rate-limited-response-shape.json` for publishes, `rate-002-read-rate-limited-response-shape.json` for reads).
 
@@ -379,7 +379,7 @@ All `lc-*` fixtures are behavioral. Required for `acdp-registry-lifecycle`; `lc-
 
 `chain-001`, `chain-002`, `chain-003` and `chain-010` scenario A, and the 27 vectors of `chain-011`, are known-answer vectors executed by `scripts/conformance-runner.py`: each pins a bundle (`examples/evidence/`), a verdict (`examples/chain-verdict/`) and their three digests, which an implementation MUST reproduce byte for byte. Every other scenario is behavioral. All eleven are REQUIRED for the OPTIONAL `acdp-consumer-chain` profile; `chain-009` is additionally the registry-side fixture for `acdp-registry-lifecycle` registries that also advertise `acdp-registry-receipts` at `acdp_version` ≥ 0.5.0. RFC-ACDP-0017 is Final (2026-10-26): acdp-rs and acdp-verifier-py reproduce all 31 known answers.
 
-### Retraction recall (RFC-ACDP-0018, 0.5.0, Draft)
+### Retraction recall (RFC-ACDP-0018, 0.5.0, Final)
 
 | Fixture | Scenario | Expected |
 |---|---|---|
@@ -396,7 +396,7 @@ All `lc-*` fixtures are behavioral. Required for `acdp-registry-lifecycle`; `lc-
 
 All are behavioral, except `rec-007`'s executed HMAC known-answer vector `hint-hmac-001` (key = the UTF-8 bytes of the secret string), `rec-009`'s executed envelope known answers and `rec-010`'s executed bucket derivations; the runner dispatches each `rec-*` vector on its shape (`secret`, `entry` or `bucket_of`). `rec-001`..`005` and `rec-008` are REQUIRED for the OPTIONAL `acdp-registry-changes` profile, `rec-007` for `acdp-registry-events`, and `rec-006`, `rec-009` plus `rec-007` D–E for `acdp-consumer-recall`. `rec-010` is conditional: A–F for a registry advertising `limits.max_change_bucket_length`, G–I for a consumer that uses bucket filters.
 
-### MCP tool-result provenance (RFC-ACDP-0019, 0.5.0, Final; proxy profile Draft)
+### MCP tool-result provenance (RFC-ACDP-0019, 0.5.0, Final)
 
 | Fixture | Scenario | Pins |
 |---|---|---|
@@ -424,7 +424,7 @@ All are behavioral, except `rec-007`'s executed HMAC known-answer vector `hint-h
 
 `trust-001` is executed by `scripts/conformance-runner.py` (golden body as `sig-003`, plus the reference RFC-ACDP-0020 §6.2 evaluator over the table); `trust-002`..`007` are behavioral. All seven are REQUIRED for the OPTIONAL `acdp-consumer-trust-list` profile.
 
-### Keyless signing (RFC-ACDP-0021, 0.5.0, Final; registry profile Draft)
+### Keyless signing (RFC-ACDP-0021, 0.5.0, Final)
 
 | Fixture | Scenario | Expected |
 |---|---|---|
@@ -440,7 +440,7 @@ All are behavioral, except `rec-007`'s executed HMAC known-answer vector `hint-h
 
 `kl-001` is executed by `scripts/conformance-runner.py` (the two bodies as `sig-001`, plus reference RFC-ACDP-0021 §8.2 and §7 evaluators over the tables); `kl-002`..`009` are behavioral. The registry-side fixtures are REQUIRED for `acdp-registry-keyless` and the consumer-side ones for `acdp-consumer-keyless`, both OPTIONAL.
 
-### A2A artifact provenance (RFC-ACDP-0022, 0.5.0, Draft)
+### A2A artifact provenance (RFC-ACDP-0022, 0.5.0, Final)
 
 | Fixture | Scenario | Pins |
 |---|---|---|
@@ -502,7 +502,7 @@ These fixtures are required for `acdp-registry-federated` profile conformance (r
 | `caps-005` | `limits.max_embedded_bytes != 65536` | reject: `schema_violation` |
 | `caps-006` | Unknown top-level field — consumer MUST tolerate (open schema) | accept |
 | `caps-007` | *(0.3.0)* `limits.max_publish_per_minute` present and ≥ 1 — OPTIONAL advisory per-agent publish ceiling (RFC-ACDP-0007 §3.2, RFC-ACDP-0008 §4.3); reject variants pin zero / negative / non-integer values | accept (valid doc); reject variants: `schema_violation` |
-| `caps-008` | *(0.5.0, Draft)* `limits.max_reads_per_minute` and `limits.max_anonymous_reads_per_minute` present and ≥ 1 — OPTIONAL advisory read ceilings (RFC-ACDP-0007 §3.2 / §3.5 check 12, RFC-ACDP-0008 §4.3); reject variants pin zero / negative / non-integer values. Conditional on `acdp_version` ≥ 0.5.0 for registries | accept (valid doc); reject variants: `schema_violation` |
+| `caps-008` | *(0.5.0)* `limits.max_reads_per_minute` and `limits.max_anonymous_reads_per_minute` present and ≥ 1 — OPTIONAL advisory read ceilings (RFC-ACDP-0007 §3.2 / §3.5 check 12, RFC-ACDP-0008 §4.3); reject variants pin zero / negative / non-integer values. Conditional on `acdp_version` ≥ 0.5.0 for registries | accept (valid doc); reject variants: `schema_violation` |
 
 ### Registry-state `status` pattern (RFC-ACDP-0004 §4.1)
 
@@ -526,7 +526,7 @@ These fixtures are required for `acdp-registry-federated` profile conformance (r
 | `schema-007` | `match_summary` with `domain: null` — non-nullable bare string | reject: `schema_violation` |
 | `schema-008` | Body `signature` object with an extra field (closed sub-schema) | reject: `schema_violation` |
 | `schema-009` | Body `data_period` object with an extra field (closed sub-schema) | reject: `schema_violation` |
-| `schema-010` | *(0.5.0, Draft)* Capabilities `limits` sub-object with an extra field (open from 0.5.0; closed through 0.4.0) | accept (0.5.0 consumers tolerate); through 0.4.0: reject `schema_violation` |
+| `schema-010` | *(0.5.0)* Capabilities `limits` sub-object with an extra field (open from 0.5.0; closed through 0.4.0) | accept (0.5.0 consumers tolerate); through 0.4.0: reject `schema_violation` |
 | `schema-011` | `DataRef.format` is `null` — optional, non-nullable string; MUST be omitted, not nulled (RFC-ACDP-0002 §6.8) | reject: `schema_violation` |
 | `schema-012` | `DataRef.location` is `null` — not nullable; mutual exclusivity with `embedded` does not make it nullable (RFC-ACDP-0002 §6.8) | reject: `schema_violation` |
 | `schema-013` | Error envelope `error.details` is `null` — optional, non-nullable object; MUST be omitted, not nulled | reject: `schema_violation` |

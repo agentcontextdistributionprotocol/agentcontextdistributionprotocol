@@ -1,6 +1,6 @@
 {
   "id": "mcp-005",
-  "description": "(0.5.0, Draft) derived_from comes from the arguments only, in JCS traversal order, deduplicated (RFC-ACDP-0019 §4.4).",
+  "description": "(0.5.0) derived_from comes from the arguments only, in JCS traversal order, deduplicated (RFC-ACDP-0019 §4.4).",
   "tags": [
     "mcp",
     "producer",

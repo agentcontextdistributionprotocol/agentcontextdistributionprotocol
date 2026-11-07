@@ -1,6 +1,6 @@
 {
   "id": "mcp-002",
-  "description": "(0.5.0, Draft) The proxy never alters what the upstream server returned (RFC-ACDP-0019 §6).",
+  "description": "(0.5.0) The proxy never alters what the upstream server returned (RFC-ACDP-0019 §6).",
   "tags": [
     "mcp",
     "producer",

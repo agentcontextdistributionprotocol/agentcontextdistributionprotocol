@@ -3,7 +3,7 @@
 
 **Document:** RFC-ACDP-0017
 **Version:** 0.5.0
-**Status:** Community Standards Track (Final; §10–§11 registry amendments *(0.5.0)* Draft)
+**Status:** Community Standards Track (Final)
 
 This RFC specifies **chain verification**: one consumer-side algorithm that verifies a whole `derived_from` graph, **offline**, **as of a past instant T**, and emits a **deterministic, digestible verdict**. It defines three objects:
 
@@ -17,7 +17,7 @@ The algorithm runs identically online and offline. The two modes differ only in 
 
 ## 1. Status of This Memo
 
-This document is a **Final** ACDP specification at version `0.5.0`, promoted 2026-10-26. It is the first Final document on the `acdp/0.5.0` line, which as a whole remains Draft (VERSIONING.md). Breaking changes now require a new RFC and a version bump.
+This document is a **Final** ACDP specification at version `0.5.0`, promoted 2026-10-26. It is the first Final document on the `acdp/0.5.0` line, which was promoted to Final as a whole on 2026-11-06 (VERSIONING.md). Breaking changes now require a new RFC and a version bump.
 
 **Promotion evidence.** The consumer-side conformance fixtures (`chain-001`..`chain-011`, profile `acdp-consumer-chain`) pass against two independent interoperating implementations:
 - acdp-rs `acdp-chain` 0.17.1;
@@ -25,7 +25,7 @@ This document is a **Final** ACDP specification at version `0.5.0`, promoted 202
 
 Both reproduce every known-answer vector byte for byte. That is 31 verdicts: `chain-001`, `002`, `003` and `010` scenario A, plus the 27 cross-implementation edge vectors of `chain-011`. Both also pass the behavioral consumer scenarios. The two implementations' disagreements were resolved in this text before promotion (CHANGELOG, 2026-10-26).
 
-**Still Draft.** The registry-side amendments in §10 (lifecycle event receipts) and §11 (receipts on lineage members) remain *(0.5.0)* **Draft**, not frozen. Only one registry implementation (acdp-registry-rs, in production since 0.5.6) exercises their registry-side scenarios (`chain-009` A–B). They are promoted when a second registry does. The consumer-side verification of event receipts (§10.3) is Final.
+**Registry side: Final (2026-11-06).** The registry-side amendments in §10 (lifecycle event receipts) and §11 (receipts on lineage members) were promoted with the acdp/0.5.0 line under the acdp/0.5.0 single-implementation gate exception ([VERSIONING.md](../VERSIONING.md)). Only one registry implementation (acdp-registry-rs, in production since 0.5.6) exercises their registry-side scenarios (`chain-009` A–B), and it passes them at spec `ce39078`: <<EVIDENCE:registry-rs>>. The consumer-side verification of event receipts (§10.3) was already Final.
 
 The `acdp-consumer-chain` profile (§13) is OPTIONAL. A consumer that never verifies chains is unaffected. The registry-side amendments in §10 and §11 bind only registries that advertise `acdp-registry-receipts` and declare `acdp_version` ≥ `0.5.0`.
 
@@ -432,7 +432,7 @@ Implementations MUST NOT add members to the verdict object. Diagnostics, duratio
 
 ---
 
-## 10. Lifecycle Event Receipts (amends RFC-ACDP-0013, NORMATIVE) *(0.5.0, Draft; §10.3 consumer verification Final)*
+## 10. Lifecycle Event Receipts (amends RFC-ACDP-0013, NORMATIVE) *(0.5.0)*
 
 ### 10.1 Issuance
 
@@ -488,7 +488,7 @@ An event receipt gives a lifecycle event a **provable evidence time** (§5.1). W
 
 ---
 
-## 11. Receipts on Lineage Members (amends RFC-ACDP-0004 §5.1, NORMATIVE) *(0.5.0, Draft)*
+## 11. Receipts on Lineage Members (amends RFC-ACDP-0004 §5.1, NORMATIVE) *(0.5.0)*
 
 A registry that advertises `acdp-registry-receipts` and declares `acdp_version` ≥ `0.5.0` MUST include `registry_receipt` in every member of `GET /lineages/{lineage_id}`, exactly as in full retrieval (RFC-ACDP-0004 §2.1).
 

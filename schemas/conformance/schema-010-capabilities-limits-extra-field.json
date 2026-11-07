@@ -1,6 +1,6 @@
 {
   "id": "schema-010",
-  "description": "(0.5.0, Draft) A capabilities document whose `limits` sub-object carries an unknown field. From 0.5.0 `limits` is OPEN (additionalProperties: true; acdp-capabilities.schema.json and the openness map in RFC-ACDP-0007 §3.3.1), like the document top level (caps-006 / schema-004). A consumer implementing 0.5.0 MUST tolerate the unknown field: it MUST NOT reject the document and MAY ignore the field. Through 0.4.0 `limits` was CLOSED and this same document was a schema_violation; a consumer implementing only 0.4.0 or earlier is held to that earlier expectation (expected.pre_0_5_0).",
+  "description": "(0.5.0) A capabilities document whose `limits` sub-object carries an unknown field. From 0.5.0 `limits` is OPEN (additionalProperties: true; acdp-capabilities.schema.json and the openness map in RFC-ACDP-0007 §3.3.1), like the document top level (caps-006 / schema-004). A consumer implementing 0.5.0 MUST tolerate the unknown field: it MUST NOT reject the document and MAY ignore the field. Through 0.4.0 `limits` was CLOSED and this same document was a schema_violation; a consumer implementing only 0.4.0 or earlier is held to that earlier expectation (expected.pre_0_5_0).",
   "tags": ["schema-openness", "capabilities", "limits", "forward-compatibility", "0.5.0"],
   "input": {
     "endpoint": "GET /.well-known/acdp.json",

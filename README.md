@@ -15,13 +15,13 @@ The "producer-controlled portion" — the **ProducerContent** — comprises the 
 
 There is no central authority. Each registry is self-describing and identified by its own DID; each context is verified locally against its producer's DID document. ACDP is **coordination-agnostic** — it does not specify session, voting, consensus, marketplace, or reputation semantics.
 
-The **current stable version** of ACDP is **`acdp/0.4.0` (`Final`)**; a `0.5.0` line is open in `Draft`. On it, [RFC-ACDP-0017](rfcs/RFC-ACDP-0017-chain-verification.md) (chain verification) and [RFC-ACDP-0020](rfcs/RFC-ACDP-0020-registry-trust-lists.md) (registry trust lists) are `Final`, and so are most of [RFC-ACDP-0019](rfcs/RFC-ACDP-0019-mcp-tool-result-provenance.md) (MCP tool-result provenance) and the consumer sides of [RFC-ACDP-0018](rfcs/RFC-ACDP-0018-retraction-recall.md) (retraction recall) and [RFC-ACDP-0021](rfcs/RFC-ACDP-0021-keyless-signing.md) (keyless signing). [RFC-ACDP-0016](rfcs/RFC-ACDP-0016-external-anchors.md) (typed external anchors) and [RFC-ACDP-0022](rfcs/RFC-ACDP-0022-a2a-artifact-provenance.md) (A2A artifact provenance) are `Draft`, as are the registry sides of RFC-ACDP-0018 and RFC-ACDP-0021 and the *(0.5.0)* amendments inside Final RFCs. [rfcs/README.md](rfcs/README.md) gives each RFC's exact status. The first published version, `acdp/0.1.0`, was released as `Final` and remains wire-frozen. The **`acdp/0.2.0` Trust & Hardening line (Final)** added registry receipts ([RFC-ACDP-0010](rfcs/RFC-ACDP-0010-registry-receipts.md)) closing the registry-honesty gap for receipt-bearing responses, `did:key` producers with infrastructure-independent verification, and the hash-divergence corpus hardening cross-implementation interop. The **`acdp/0.3.0` line (Final)** adds lineage-head receipts ([RFC-ACDP-0011](rfcs/RFC-ACDP-0011-lineage-head-receipts.md)), the registry transparency log ([RFC-ACDP-0012](rfcs/RFC-ACDP-0012-transparency-log.md) — promoting the RFC-ACDP-0009 §2.11 reservation), lifecycle events & retraction ([RFC-ACDP-0013](rfcs/RFC-ACDP-0013-lifecycle-events.md) — mark-not-delete, promoting the RFC-ACDP-0009 §2.1 reservation), and the producer key-revocation signal ([RFC-ACDP-0014](rfcs/RFC-ACDP-0014-key-revocation.md)). Both lines were promoted from Draft to Final on 2026-07-05 after their conformance packs passed against two independent interoperating implementations (see [CHANGELOG.md](CHANGELOG.md)). The **`acdp/0.4.0` line (Final)** adds transparency-log witness cosigning ([RFC-ACDP-0015](rfcs/RFC-ACDP-0015-witness-cosigning.md) — promoting the RFC-ACDP-0009 §2.12 reservation), so independent witnesses can cosign the checkpoints they verify and a consumer trusting one honest witness inherits split-view protection; it was promoted from Draft to Final on 2026-08-28 under the same two-implementation gate. Post-publication relationships, attestations, push subscriptions, and server-side traversal remain deferred to future versions.
+The **current stable version** of ACDP is **`acdp/0.5.0` (`Final`)**, promoted on 2026-11-06; a `0.6.0` line is open in `Draft` with no content yet. The 0.5.0 line adds typed external anchors ([RFC-ACDP-0016](rfcs/RFC-ACDP-0016-external-anchors.md)), chain verification ([RFC-ACDP-0017](rfcs/RFC-ACDP-0017-chain-verification.md)), retraction recall ([RFC-ACDP-0018](rfcs/RFC-ACDP-0018-retraction-recall.md)), MCP tool-result provenance ([RFC-ACDP-0019](rfcs/RFC-ACDP-0019-mcp-tool-result-provenance.md)), registry trust lists ([RFC-ACDP-0020](rfcs/RFC-ACDP-0020-registry-trust-lists.md)), keyless signing ([RFC-ACDP-0021](rfcs/RFC-ACDP-0021-keyless-signing.md)) and A2A artifact provenance ([RFC-ACDP-0022](rfcs/RFC-ACDP-0022-a2a-artifact-provenance.md)), plus the *(0.5.0)* amendments inside earlier RFCs. [rfcs/README.md](rfcs/README.md) gives each RFC's exact status. The first published version, `acdp/0.1.0`, was released as `Final` and remains wire-frozen. The **`acdp/0.2.0` Trust & Hardening line (Final)** added registry receipts ([RFC-ACDP-0010](rfcs/RFC-ACDP-0010-registry-receipts.md)) closing the registry-honesty gap for receipt-bearing responses, `did:key` producers with infrastructure-independent verification, and the hash-divergence corpus hardening cross-implementation interop. The **`acdp/0.3.0` line (Final)** adds lineage-head receipts ([RFC-ACDP-0011](rfcs/RFC-ACDP-0011-lineage-head-receipts.md)), the registry transparency log ([RFC-ACDP-0012](rfcs/RFC-ACDP-0012-transparency-log.md) — promoting the RFC-ACDP-0009 §2.11 reservation), lifecycle events & retraction ([RFC-ACDP-0013](rfcs/RFC-ACDP-0013-lifecycle-events.md) — mark-not-delete, promoting the RFC-ACDP-0009 §2.1 reservation), and the producer key-revocation signal ([RFC-ACDP-0014](rfcs/RFC-ACDP-0014-key-revocation.md)). Both lines were promoted from Draft to Final on 2026-07-05 after their conformance packs passed against two independent interoperating implementations (see [CHANGELOG.md](CHANGELOG.md)). The **`acdp/0.4.0` line (Final)** adds transparency-log witness cosigning ([RFC-ACDP-0015](rfcs/RFC-ACDP-0015-witness-cosigning.md) — promoting the RFC-ACDP-0009 §2.12 reservation), so independent witnesses can cosign the checkpoints they verify and a consumer trusting one honest witness inherits split-view protection; it was promoted from Draft to Final on 2026-08-28 under the same two-implementation gate. The **`acdp/0.5.0` line (Final)** was promoted on 2026-11-06: its consumer-side pieces under the two-implementation gate, and the pieces with a single implementation (the registry side, the RFC-ACDP-0019 proxy, the RFC-ACDP-0022 agent side) under a one-time gate exception recorded in [VERSIONING.md](VERSIONING.md). Post-publication relationships, attestations, push subscriptions, and server-side traversal remain deferred to future versions.
 
 <!-- Canonical text. Copied verbatim into sibling repos; register any new copy in
      posture/copies.json in the agentcontextdistributionprotocol/.github repo. -->
 ## Project status
 
-ACDP is maintained by a single maintainer on a best-effort basis; changes land when a consumer needs them, with no SLA. The stable surface is the 0.1.0 / 0.2.0 / 0.3.0 / 0.4.0 Final lines, which are wire-frozen. On the open 0.5.0 line, RFC-ACDP-0017, RFC-ACDP-0020, most of RFC-ACDP-0019 and the consumer sides of RFC-ACDP-0018 and RFC-ACDP-0021 are Final. RFC-ACDP-0016, RFC-ACDP-0022, the registry sides of RFC-ACDP-0018 and RFC-ACDP-0021 and the *(0.5.0)* amendments are Draft, and RFC-ACDP-0009 is Reserved; a Draft surface is not dependable until promoted. Promotion to Final requires the conformance pack to pass against two independent implementations (`acdp-rs` and `acdp-verifier-py`); the second implementation is therefore part of the protocol's governance machinery, not an optional extra. Security reports: see SECURITY.md in the org profile.
+ACDP is maintained by a single maintainer on a best-effort basis; changes land when a consumer needs them, with no SLA. The stable surface is the 0.1.0 / 0.2.0 / 0.3.0 / 0.4.0 / 0.5.0 Final lines, which are wire-frozen; RFC-ACDP-0009 is Reserved. Promotion to Final requires the conformance pack to pass against two independent implementations (`acdp-rs` and `acdp-verifier-py`); the second implementation is therefore part of the protocol's governance machinery, not an optional extra. The 0.5.0 line is the one recorded exception: its single-implementation pieces were promoted on one implementation passing the full fixture set (VERSIONING.md). Security reports: see SECURITY.md in the org profile.
 
 ---
 
@@ -71,13 +71,13 @@ agentcontextdistributionprotocol/
     RFC-ACDP-0013-lifecycle-events.md # Lifecycle events & retraction (0.3.0)
     RFC-ACDP-0014-key-revocation.md  # Producer key-revocation signal (0.3.0)
     RFC-ACDP-0015-witness-cosigning.md # Transparency-log witness cosigning (0.4.0)
-    RFC-ACDP-0016-external-anchors.md # Typed external anchors (0.5.0, Draft)
-    RFC-ACDP-0017-chain-verification.md # Chain verification and evidence bundles (0.5.0, Final; §10–§11 Draft)
-    RFC-ACDP-0018-retraction-recall.md # Retraction recall: changes feed and hints (0.5.0, consumer side Final)
-    RFC-ACDP-0019-mcp-tool-result-provenance.md # MCP tool-result provenance (0.5.0, Final; proxy obligations Draft)
+    RFC-ACDP-0016-external-anchors.md # Typed external anchors (0.5.0, Final)
+    RFC-ACDP-0017-chain-verification.md # Chain verification and evidence bundles (0.5.0, Final)
+    RFC-ACDP-0018-retraction-recall.md # Retraction recall: changes feed and hints (0.5.0, Final)
+    RFC-ACDP-0019-mcp-tool-result-provenance.md # MCP tool-result provenance (0.5.0, Final)
     RFC-ACDP-0020-registry-trust-lists.md # Registry trust lists (0.5.0, Final)
-    RFC-ACDP-0021-keyless-signing.md # Keyless signing (0.5.0, Final; registry side Draft)
-    RFC-ACDP-0022-a2a-artifact-provenance.md # A2A artifact provenance (0.5.0, Draft)
+    RFC-ACDP-0021-keyless-signing.md # Keyless signing (0.5.0, Final)
+    RFC-ACDP-0022-a2a-artifact-provenance.md # A2A artifact provenance (0.5.0, Final)
 
   docs/
     overview.md
@@ -195,17 +195,17 @@ Evaluating ACDP against MCP, A2A, C2PA, AT Protocol, or DIDComm? Read **[docs/ac
 | `acdp-registry-transparency-log` *(0.3.0)* | + 0012 | Serves the append-only Merkle log: checkpoints, inclusion/consistency proofs, leaf enumeration. |
 | `acdp-registry-lifecycle` *(0.3.0)* | + 0013 | Retraction/republication endpoints, append-only lifecycle events, `status: retracted`. |
 | `acdp-log-witness` *(0.4.0)* | 0015 | A witness node, not a registry: verifies and cosigns transparency-log checkpoints. |
-| `acdp-registry-changes` *(0.5.0, Draft)* | + 0018 | Serves the signed changes feed that consumers poll for recall. |
-| `acdp-registry-events` *(0.5.0, Draft)* | + 0018 | Sends content-free webhook hints telling subscribers to pull the changes feed. |
-| `acdp-registry-keyless` *(0.5.0, Draft)* | + 0021 | Accepts keyless publishes: verifies an OIDC workload token and issues a receipted key attestation. |
+| `acdp-registry-changes` *(0.5.0, Final)* | + 0018 | Serves the signed changes feed that consumers poll for recall. |
+| `acdp-registry-events` *(0.5.0, Final)* | + 0018 | Sends content-free webhook hints telling subscribers to pull the changes feed. |
+| `acdp-registry-keyless` *(0.5.0, Final)* | + 0021 | Accepts keyless publishes: verifies an OIDC workload token and issues a receipted key attestation. |
 | `acdp-consumer` | 0001, 0002, 0004 (read), 0006, 0008 (+ 0010/0011/0012/0013/0014/0015 verification surfaces under 0.2.0/0.3.0/0.4.0) | A consumer that retrieves, verifies, and visibility-checks contexts. |
 | `acdp-consumer-chain` *(0.5.0)* | + 0017 | Verifies a `derived_from` chain offline and as of a given time, from an evidence bundle. |
 | `acdp-consumer-recall` *(0.5.0, Final)* | + 0018 | Follows a registry's changes feed and detects retractions and revocations of relied-on contexts. |
 | `acdp-consumer-trust-list` *(0.5.0)* | + 0020 | Evaluates contexts against a signed, versioned trust list of producers and registries. |
 | `acdp-consumer-keyless` *(0.5.0)* | + 0021 | Verifies keyless-signed contexts through their key attestations and receipts. |
-| `acdp-producer-mcp-proxy` *(0.5.0, Draft)* | 0019 | An MCP proxy that signs and publishes tool results as ACDP bodies. |
-| `acdp-producer-a2a` *(0.5.0, Draft)* | 0022 | An A2A agent that signs and publishes its own completed artifacts as ACDP bodies. |
-| `acdp-consumer-a2a` *(0.5.0, Draft)* | + 0022 | Verifies a held A2A artifact against the agent's signed body. |
+| `acdp-producer-mcp-proxy` *(0.5.0, Final)* | 0019 | An MCP proxy that signs and publishes tool results as ACDP bodies. |
+| `acdp-producer-a2a` *(0.5.0, Final)* | 0022 | An A2A agent that signs and publishes its own completed artifacts as ACDP bodies. |
+| `acdp-consumer-a2a` *(0.5.0, Final)* | + 0022 | Verifies a held A2A artifact against the agent's signed body. |
 
 Apart from `acdp-producer-mcp-proxy` and `acdp-producer-a2a`, there is no producer-only profile: producers MUST be able to verify any context they publish, and that requires the same cryptographic core as a registry. [registries/profiles.md](registries/profiles.md) is the authoritative list, with each profile's fixtures and prerequisites.
 
@@ -228,13 +228,13 @@ Apart from `acdp-producer-mcp-proxy` and `acdp-producer-a2a`, there is no produc
 - **RFC-ACDP-0013 Lifecycle Events & Retraction** *(0.3.0)* — signed, append-only retraction/republication events; `status: retracted`; mark-not-delete.
 - **RFC-ACDP-0014 Producer Key-Revocation Signal** *(0.3.0)* — the `key-revocation` context type; time-scoped fail-closed verification against receipt-attested publish times.
 - **RFC-ACDP-0015 Transparency-Log Witness Cosigning** *(0.4.0)* — independent witnesses cosign the checkpoints they verify for consistency; consumers verify N-witnessed quorum, closing RFC-ACDP-0012's registry-asserted-timestamp residual.
-- **RFC-ACDP-0016 Typed External Anchors** *(0.5.0, Draft)* — an optional producer-signed `anchors` field genesis-links a body to a non-ACDP, content-addressed external artifact.
-- **RFC-ACDP-0017 Chain Verification and Evidence Bundles** *(0.5.0, Final; §10–§11 Draft)* — offline, as-of verification of a whole `derived_from` graph from an `acdp-evidence/1` bundle, with a byte-identical verdict.
-- **RFC-ACDP-0018 Retraction Recall** *(0.5.0, Final for the consumer side; registry side Draft)* — a sequenced `GET /changes` feed of retractions, supersessions and key revocations, with optional change hints.
-- **RFC-ACDP-0019 MCP Tool-Result Provenance** *(0.5.0, Final; §3.1–§3.2, §5, §7, §10 Draft)* — an MCP signing proxy publishes each relayed tool result as a signed `acdp:mcp-tool-result` body.
+- **RFC-ACDP-0016 Typed External Anchors** *(0.5.0, Final)* — an optional producer-signed `anchors` field genesis-links a body to a non-ACDP, content-addressed external artifact.
+- **RFC-ACDP-0017 Chain Verification and Evidence Bundles** *(0.5.0, Final)* — offline, as-of verification of a whole `derived_from` graph from an `acdp-evidence/1` bundle, with a byte-identical verdict.
+- **RFC-ACDP-0018 Retraction Recall** *(0.5.0, Final)* — a sequenced `GET /changes` feed of retractions, supersessions and key revocations, with optional change hints.
+- **RFC-ACDP-0019 MCP Tool-Result Provenance** *(0.5.0, Final)* — an MCP signing proxy publishes each relayed tool result as a signed `acdp:mcp-tool-result` body.
 - **RFC-ACDP-0020 Registry Trust Lists** *(0.5.0, Final)* — a signed `acdp:trust-list` body says which registries a consumer relies on, for which producers and types, and when.
-- **RFC-ACDP-0021 Keyless Signing** *(0.5.0, Draft)* — workloads sign with short-lived keys attested by a registry from an OIDC token or JWT-SVID.
-- **RFC-ACDP-0022 A2A Artifact Provenance** *(0.5.0, Draft)* — an A2A server agent publishes each completed artifact as a body it signs itself and returns the `acdp://` link in `Artifact.metadata`.
+- **RFC-ACDP-0021 Keyless Signing** *(0.5.0, Final)* — workloads sign with short-lived keys attested by a registry from an OIDC token or JWT-SVID.
+- **RFC-ACDP-0022 A2A Artifact Provenance** *(0.5.0, Final)* — an A2A server agent publishes each completed artifact as a body it signs itself and returns the `acdp://` link in `Artifact.metadata`.
 
 ---
 

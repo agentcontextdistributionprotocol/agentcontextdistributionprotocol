@@ -1,6 +1,6 @@
 {
   "id": "a2a-007",
-  "description": "(0.5.0, Draft) Fail-open by default, fail-closed by configuration, idempotent retries, and publish before the final chunk (RFC-ACDP-0022 §6–§6.2).",
+  "description": "(0.5.0) Fail-open by default, fail-closed by configuration, idempotent retries, and publish before the final chunk (RFC-ACDP-0022 §6–§6.2).",
   "tags": [
     "a2a",
     "producer",

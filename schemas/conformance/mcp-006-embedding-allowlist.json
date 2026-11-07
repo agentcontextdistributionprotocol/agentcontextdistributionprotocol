@@ -1,6 +1,6 @@
 {
   "id": "mcp-006",
-  "description": "(0.5.0, Draft) The result is embedded only for allowlisted tools (RFC-ACDP-0019 §5).",
+  "description": "(0.5.0) The result is embedded only for allowlisted tools (RFC-ACDP-0019 §5).",
   "tags": [
     "mcp",
     "producer",

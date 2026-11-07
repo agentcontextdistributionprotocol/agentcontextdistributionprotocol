@@ -1,6 +1,6 @@
 {
   "id": "a2a-006",
-  "description": "(0.5.0, Draft) Artifact.extensions is never used; only Artifact.metadata gains the link (RFC-ACDP-0022 §6–§6.1).",
+  "description": "(0.5.0) Artifact.extensions is never used; only Artifact.metadata gains the link (RFC-ACDP-0022 §6–§6.1).",
   "tags": [
     "a2a",
     "producer",

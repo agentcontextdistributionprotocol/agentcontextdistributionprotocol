@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-change-hint.schema.json",
-  "title": "ACDP Change Hint (0.5.0, Draft)",
+  "title": "ACDP Change Hint (0.5.0)",
   "description": "acdp-change-hint/1: webhook body telling a subscriber that new matching entries exist; carries no change content (RFC-ACDP-0018 §8.2). Authenticated by the ACDP-Signature HMAC header, which conveys no producer or registry authenticity. The receiver pulls GET /changes from its OWN persisted cursor; head_cursor is informational.",
   "type": "object",
   "required": [

@@ -11,7 +11,7 @@ This RFC specifies **registry trust lists**: a signed, consumer-side document th
 
 ## 1. Status of This Memo
 
-This document is a **Final** ACDP specification at version `0.5.0`, promoted 2026-10-30, ahead of the `acdp/0.5.0` line, which as a whole remains Draft (VERSIONING.md). Breaking changes now require a new RFC and a version bump.
+This document is a **Final** ACDP specification at version `0.5.0`, promoted 2026-10-30, ahead of the `acdp/0.5.0` line, which was promoted to Final as a whole on 2026-11-06 (VERSIONING.md). Breaking changes now require a new RFC and a version bump.
 
 **Promotion evidence.** The conformance fixtures this document defines (`trust-001`..`trust-007`, profile `acdp-consumer-trust-list`) pass against two independent interoperating implementations, both run at spec `546b8c8`:
 - acdp-rs 0.18.2 (`acdp-mcp-proxy`, `acdp-chain`);

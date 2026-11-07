@@ -1,6 +1,6 @@
 {
   "id": "a2a-004",
-  "description": "(0.5.0, Draft) Holder verification of a held artifact (RFC-ACDP-0022 §8), including negatives.",
+  "description": "(0.5.0) Holder verification of a held artifact (RFC-ACDP-0022 §8), including negatives.",
   "tags": [
     "a2a",
     "consumer",

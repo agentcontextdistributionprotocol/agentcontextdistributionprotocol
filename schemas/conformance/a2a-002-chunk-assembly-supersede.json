@@ -1,6 +1,6 @@
 {
   "id": "a2a-002",
-  "description": "(0.5.0, Draft) Chunk assembly, completion, supersede on re-emission in the same task, and derived_from on continuation in a new task (RFC-ACDP-0022 §4.2–§4.3).",
+  "description": "(0.5.0) Chunk assembly, completion, supersede on re-emission in the same task, and derived_from on continuation in a new task (RFC-ACDP-0022 §4.2–§4.3).",
   "tags": [
     "a2a",
     "producer",
