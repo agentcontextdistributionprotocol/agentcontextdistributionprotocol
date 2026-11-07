@@ -175,7 +175,7 @@ A key attestation is a body with:
 
 - `type` = `acdp:key-attestation` (`registries/context-types.md`), `visibility` = `public`, `version` = 1, `supersedes` = null, empty `data_refs` and `derived_from`;
 - `agent_id` = the attesting registry's DID, which MUST be `did:web:` plus the authority of its own `ctx_id`, and a `signature` by a key in that DID document's `assertionMethod` (the registry signs it as a producer, with the same key it uses for receipts or another);
-- `schema_uri` = `https://schemas.acdp.io/v0.1.0/acdp-key-attestation.schema.json` and `acdp_version` ≥ `0.5.0`;
+- `schema_uri` = `https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-key-attestation.schema.json` and `acdp_version` ≥ `0.5.0`;
 - `metadata` = an `acdp-key-attestation/1` object (`schemas/json/acdp-key-attestation.schema.json`):
 
 | Member | Meaning |
@@ -216,7 +216,7 @@ A keyless-signed body carries a producer-signed field naming its attestation:
 ```json
 "key_attestation": {
   "ctx_id": "acdp://registry.example.com/7a1c0f3e-5b2d-4c8e-9f10-2b3c4d5e6f70",
-  "content_hash": "sha256:fbed72af712224f7d9d6e05a896d3a364c6c709247548a3de059198473399672"
+  "content_hash": "sha256:707eb69ab15a9866f2fa6f42def6821ef27c7a0b91bd844055cad617ff2d1bf5"
 }
 ```
 

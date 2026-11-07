@@ -50,7 +50,7 @@ a documentation bug.
 
 ## 3. Schemas and conformance
 
-- [ ] Schema `$id` namespace (`schemas.acdp.io/v<major>.<minor>.<patch>/`) matches the
+- [ ] Schema `$id` namespace (`schemas.agentcontextdistributionprotocol.io/v<major>.<minor>.<patch>/`) matches the
       release version **or** remains in the wire-frozen `v0.1.0` namespace per the
       VERSIONING.md additive-minor rule. The namespace never carries an `-rcN` suffix.
 - [ ] `registries/profiles.json` and `registries/profiles.md` agree on every

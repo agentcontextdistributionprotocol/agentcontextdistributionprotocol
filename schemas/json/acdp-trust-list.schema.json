@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.acdp.io/v0.1.0/acdp-trust-list.schema.json",
+  "$id": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-trust-list.schema.json",
   "title": "ACDP Trust List (acdp-trust-list/1)",
   "description": "(0.5.0, Final) The metadata of an 'acdp:trust-list' body (RFC-ACDP-0020 §4): the registries an issuer trusts, with optional receipt-key pins, required profiles, scope and validity windows. Closed at every level. Runtime checks not expressible here: valid_from < valid_until, and each entry's registry_did equals 'did:web:' + origin (RFC-ACDP-0020 §5.2).",
   "type": "object",
@@ -59,7 +59,7 @@
             "description": "MUST equal 'did:web:' + origin (RFC-ACDP-0020 §4.2; checked at runtime, §5.2 step 4)."
           },
           "origin": {
-            "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/hostname",
+            "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/hostname",
             "description": "Registry authority as bodies name it: lowercase hostname, no port (RFC-ACDP-0020 §4.3)."
           },
           "receipt_key_fingerprints": {
@@ -94,7 +94,7 @@
               "agent_ids": {
                 "type": "array",
                 "items": {
-                  "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did"
+                  "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/did"
                 },
                 "minItems": 1,
                 "uniqueItems": true,
@@ -124,7 +124,7 @@
               "types": {
                 "type": "array",
                 "items": {
-                  "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/context_type"
+                  "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/context_type"
                 },
                 "minItems": 1,
                 "uniqueItems": true,

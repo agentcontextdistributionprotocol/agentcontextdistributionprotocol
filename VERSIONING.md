@@ -22,7 +22,7 @@ The `0.5.0` line is currently **Draft** (opened 2026-08-29): RFC-ACDP-0016 (Type
 | Body version | `body.acdp_version` (optional); absent ⇒ `0.1.0` | `0.1.0` | Body fields are stable; future versions add fields only. |
 | Registry-state extensibility | Open object | n/a | Future versions add fields (lifecycle, relationships, attestations). Consumers MUST tolerate unknown fields. |
 | RFC version | RFC document `Version:` header | `0.1.0` | Final RFCs carry the bare semver string (e.g. `0.1.0`); Draft-stage documents (new RFCs or Final RFCs carrying Draft amendments for an in-progress line) use `-draft` (e.g. `0.2.0-draft`); pre-final candidates use `-rcN` during the Release Candidate window (e.g. `0.1.0-rc1`); reserved-numbering RFCs without normative text use `-reserved` (e.g. `0.2.0-reserved` for RFC-ACDP-0009). |
-| Schema namespace | `$id` URL path segment | `v0.1.0` | The canonical JSON Schemas live under `schemas.acdp.io/v<major>.<minor>.<patch>/`. The namespace carries the target release version (no `-rcN`); a breaking change opens a new namespace. |
+| Schema namespace | `$id` URL path segment | `v0.1.0` | The canonical JSON Schemas live under `schemas.agentcontextdistributionprotocol.io/v<major>.<minor>.<patch>/`. The namespace carries the target release version (no `-rcN`); a breaking change opens a new namespace. |
 
 ## Change classes
 

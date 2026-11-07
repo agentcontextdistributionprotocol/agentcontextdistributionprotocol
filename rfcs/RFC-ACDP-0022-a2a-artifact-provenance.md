@@ -12,10 +12,10 @@ It defines:
 - the granularity: one body per completed artifact, keyed `(artifact_id, role)`, with supersession on re-emission and `derived_from` on continuation (§4);
 - the record **`acdp-a2a-artifact/1`**, carried in `metadata["acdp:a2a"]` of a body whose `type` is the agent's own (§4.4–§4.5);
 - the salted hashes that bind the body to the task, the context and the parts (§5);
-- the link in `Artifact.metadata["io.acdp/provenance"]`, and what happens when publishing fails (§6);
-- how a client cites its inputs in `Message.metadata["io.acdp/inputs"]` (§7);
+- the link in `Artifact.metadata["io.agentcontextdistributionprotocol/provenance"]`, and what happens when publishing fails (§6);
+- how a client cites its inputs in `Message.metadata["io.agentcontextdistributionprotocol/inputs"]` (§7);
 - how a holder verifies a held artifact (§8);
-- the Agent Card pointer `https://acdp.io/ext/a2a/v1` (§9) and the optional `a2a.artifact` anchor (§10);
+- the Agent Card pointer `https://agentcontextdistributionprotocol.io/ext/a2a/v1` (§9) and the optional `a2a.artifact` anchor (§10);
 - what is out of scope (§11), and the OPTIONAL profiles **`acdp-producer-a2a`** and **`acdp-consumer-a2a`** (§12).
 
 It depends on RFC-ACDP-0001 (Core), -0002 (Context Body), -0003 (Publish & Supersession), -0006 (Cross-Registry References), -0008 (Security), -0013 (Lifecycle Events), -0016 (Typed External Anchors), -0018 (Retraction Recall) and -0019 (MCP Tool-Result Provenance, for the link value and the salt construction).
@@ -168,7 +168,7 @@ Why this name:
 
 - **It cannot be mistaken for an ordinary key.** Producer metadata keys are typically plain identifiers or reverse-DNS names (`quarter`, `com.example/report`). A colon-namespaced key does not collide with either.
 - **`acdp:` marks it as ACDP-defined.** ACDP already uses the `acdp:` prefix for the types it defines (`registries/context-types.md`). This RFC reserves exactly one member name, `acdp:a2a`: an agent MUST NOT use it for its own data. No other `acdp:`-prefixed name is reserved by this RFC, and an agent's own metadata may use one. Registries and verifiers MUST NOT reject a body because its `metadata` has an `acdp:`-prefixed member.
-- **It is not the link key.** `io.acdp/provenance` names the link in A2A and MCP metadata (§6). Using a different name inside the body keeps the record and the link apart.
+- **It is not the link key.** `io.agentcontextdistributionprotocol/provenance` names the link in A2A and MCP metadata (§6). Using a different name inside the body keeps the record and the link apart.
 
 Rules:
 
@@ -271,7 +271,7 @@ After the registry's publish response, the agent adds one key to the completed a
 ```json
 "metadata": {
   "com.example/trace": "abc123",
-  "io.acdp/provenance": {
+  "io.agentcontextdistributionprotocol/provenance": {
     "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
     "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
     "registry": "registry.example.com",
@@ -286,7 +286,7 @@ After the registry's publish response, the agent adds one key to the completed a
 - **Publish before the final chunk.** The agent MUST NOT emit the completing chunk, or a snapshot carrying the completed artifact, before it has received the publish response. It buffers the final chunk while the publish settles. A link therefore only ever names a body that is already published.
 - The publish request carries `Idempotency-Key: acdp-a2a-<hex of content_hash>` (the 64 hex characters after `sha256:`). Retries MUST resend the byte-identical body under the same key (RFC-ACDP-0003 §6).
 
-The link key `io.acdp/provenance` and its value are RFC-ACDP-0019's, used unchanged on `Artifact.metadata`. A2A's own examples key extension metadata by the extension URI. This RFC uses the RFC-ACDP-0019 key instead, so a holder that already reads MCP links reads A2A links unchanged. Cited inputs (§7) use a separate key, `io.acdp/inputs`, so the key alone tells a reader which value it holds.
+The link key `io.agentcontextdistributionprotocol/provenance` and its value are RFC-ACDP-0019's, used unchanged on `Artifact.metadata`. A2A's own examples key extension metadata by the extension URI. This RFC uses the RFC-ACDP-0019 key instead, so a holder that already reads MCP links reads A2A links unchanged. Cited inputs (§7) use a separate key, `io.agentcontextdistributionprotocol/inputs`, so the key alone tells a reader which value it holds.
 
 The agent adds the link whenever it published, whether or not the client activated the extension (A2A §4.6). A client that did not activate it ignores an unknown metadata key. A holder further down the line may never have talked to the agent, and its ability to verify must not depend on the first client's activation.
 
@@ -298,7 +298,7 @@ An agent MUST NOT add the extension URI, or anything else, to `Artifact.extensio
 
 When publishing fails after the agent's retries, or does not finish within its publish timeout:
 
-- **Fail-open (the default).** The agent emits the artifact unchanged, with `io.acdp/provenance` set to `{"failed": true, "error": <code>}`. `error` is the registry's `error.code` when the registry answered with an ACDP error, and is absent otherwise.
+- **Fail-open (the default).** The agent emits the artifact unchanged, with `io.agentcontextdistributionprotocol/provenance` set to `{"failed": true, "error": <code>}`. `error` is the registry's `error.code` when the registry answered with an ACDP error, and is absent otherwise.
 - **Fail-closed (by the agent's configuration).** The agent does not emit the artifact. It MAY end the task in `TASK_STATE_FAILED` with a status message saying that provenance publishing failed. It MUST NOT emit the parts without a link. A self-signing agent has no relayed content to protect, so fail-closed is simply its choice not to ship an unpublished output.
 
 A failed publish never produces a link.
@@ -307,18 +307,18 @@ A failed publish never produces a link.
 
 ## 7. Inputs (NORMATIVE)
 
-A client MAY cite the ACDP contexts it supplies as inputs, under the key `io.acdp/inputs` of a message's `metadata`:
+A client MAY cite the ACDP contexts it supplies as inputs, under the key `io.agentcontextdistributionprotocol/inputs` of a message's `metadata`:
 
 ```json
 "metadata": {
-  "io.acdp/inputs": [
+  "io.agentcontextdistributionprotocol/inputs": [
     "acdp://registry.example.com/7b1d0c52-3e4f-4a6b-8c9d-0e1f2a3b4c5d",
     "acdp://registry.example.com/0f9e8d7c-6b5a-4c3d-9e2f-1a0b9c8d7e6f"
   ]
 }
 ```
 
-The value is `acdp-a2a-artifact.schema.json#/$defs/inputs`: a bare array of 1 to 1000 `ctx_id`s. It is a bare array, not an object, because the key already names the value: a wrapper member would only repeat it, and a later addition gets its own key rather than a member here. A bare array also cannot be mistaken for the `io.acdp/provenance` link object. The key is defined by this RFC; a value under `io.acdp/provenance` on a `Message` is not read for inputs. An invalid value is ignored for provenance. The agent processes the message as if it carried none, and MUST NOT fail the task because of it.
+The value is `acdp-a2a-artifact.schema.json#/$defs/inputs`: a bare array of 1 to 1000 `ctx_id`s. It is a bare array, not an object, because the key already names the value: a wrapper member would only repeat it, and a later addition gets its own key rather than a member here. A bare array also cannot be mistaken for the `io.agentcontextdistributionprotocol/provenance` link object. The key is defined by this RFC; a value under `io.agentcontextdistributionprotocol/provenance` on a `Message` is not read for inputs. An invalid value is ignored for provenance. The agent processes the message as if it carried none, and MUST NOT fail the task because of it.
 
 The agent fills `derived_from` this way:
 
@@ -335,7 +335,7 @@ Only explicit citations count. An `acdp://` string inside a Part is content, not
 
 ## 8. Verification by a Holder (NORMATIVE)
 
-A holder with an artifact and its `io.acdp/provenance` value:
+A holder with an artifact and its `io.agentcontextdistributionprotocol/provenance` value:
 
 1. **Body.** Retrieves `ctx_id` and verifies the body as for any body (RFC-ACDP-0001 §5.11, including the `did:key` and `did:web` paths with nothing added, §3.2). It MUST check that the body's `ctx_id` equals the link's (RFC-ACDP-0006 §4.1 step 7), that its `origin_registry` equals the link's `registry`, and that its `content_hash` equals the link's. A link with `failed: true` names no body and verifies nothing.
 2. **Agent and record.** Checks that `agent_id` is an agent it trusts. When it reached the agent through the Agent Card, `agent_id` MUST equal the Card's `params.agentId` (§9). When that Card also carries one or more AITP AIDs (in one AITP entry or several) and `agent_id` is a `did:key`, the holder MUST check §3.1's key equality against every AID it finds. One mismatch fails the step. It then checks that `metadata["acdp:a2a"]` is a valid record of a version it knows. The record is closed, so it MUST reject unknown members rather than ignore them.
@@ -358,7 +358,7 @@ An agent that publishes under this RFC SHOULD declare it on its Agent Card, as e
 
 ```json
 {
-  "uri": "https://acdp.io/ext/a2a/v1",
+  "uri": "https://agentcontextdistributionprotocol.io/ext/a2a/v1",
   "description": "Completed artifacts are published as signed ACDP bodies (RFC-ACDP-0022).",
   "required": false,
   "params": {
@@ -466,7 +466,7 @@ The agent fetches cited inputs (§7), and holders fetch bodies (§8–§9). Ever
 
 ## 14. Errors
 
-None new. The agent reports the registry's ACDP error codes verbatim in `io.acdp/provenance.error`. Holder verification (§8) is a local verdict with no wire code.
+None new. The agent reports the registry's ACDP error codes verbatim in `io.agentcontextdistributionprotocol/provenance.error`. Holder verification (§8) is a local verdict with no wire code.
 
 ---
 
@@ -505,8 +505,8 @@ The `a2a-001` known-answer values. Vector 1 uses salt bytes `0x40`..`0x5f`; vect
 ## 16. IANA-Style Registrations
 
 - `registries/profiles.json` / `profiles.md`: `acdp-producer-a2a` and `acdp-consumer-a2a`; fixture family `a2a`.
-- A2A extension URI: `https://acdp.io/ext/a2a/v1`, defined here (§9). It depends on the `acdp.io` domain being held for the project, which spec issue #126 tracks.
-- A2A metadata keys: `io.acdp/provenance` on `Artifact.metadata` (§6), whose key and value are RFC-ACDP-0019's; and `io.acdp/inputs` on `Message.metadata` (§7), defined here.
+- A2A extension URI: `https://agentcontextdistributionprotocol.io/ext/a2a/v1`, defined here (§9). It is on the project's own `agentcontextdistributionprotocol.io` domain.
+- A2A metadata keys: `io.agentcontextdistributionprotocol/provenance` on `Artifact.metadata` (§6), whose key and value are RFC-ACDP-0019's; and `io.agentcontextdistributionprotocol/inputs` on `Message.metadata` (§7), defined here.
 - Body metadata member: `acdp:a2a` (§4.5). Only this one name is reserved; no other `acdp:`-prefixed metadata member is.
 - No context type, DataRef type, error code or anchor scheme (§10).
 

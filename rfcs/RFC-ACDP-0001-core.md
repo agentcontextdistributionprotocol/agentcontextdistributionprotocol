@@ -660,7 +660,7 @@ An OPTIONAL consumer profile, prerequisite `acdp-consumer`, for consumers that d
 
 #### `acdp-producer-mcp-proxy` *(0.5.0, Draft)*
 
-An OPTIONAL producer-side profile with no prerequisite, for an MCP signing proxy (RFC-ACDP-0019). A proxy claiming it publishes one `acdp:mcp-tool-result` body per observed `tools/call` under its own key, salts the call hashes whenever the result is not embedded, never alters the relayed result, returns the link in `_meta` `io.acdp/provenance`, and passes `mcp-001..008`. The profile stays Draft while RFC-ACDP-0019's body, hashes and link (§4, §6) are Final (2026-10-30), so this entry is not frozen.
+An OPTIONAL producer-side profile with no prerequisite, for an MCP signing proxy (RFC-ACDP-0019). A proxy claiming it publishes one `acdp:mcp-tool-result` body per observed `tools/call` under its own key, salts the call hashes whenever the result is not embedded, never alters the relayed result, returns the link in `_meta` `io.agentcontextdistributionprotocol/provenance`, and passes `mcp-001..008`. The profile stays Draft while RFC-ACDP-0019's body, hashes and link (§4, §6) are Final (2026-10-30), so this entry is not frozen.
 
 #### `acdp-registry-keyless` *(0.5.0, Draft)*, `acdp-consumer-keyless` *(0.5.0, Final)*
 
@@ -668,7 +668,7 @@ OPTIONAL keyless-signing profiles (RFC-ACDP-0021 §13). `acdp-registry-keyless` 
 
 #### `acdp-producer-a2a`, `acdp-consumer-a2a` *(0.5.0, Draft)*
 
-OPTIONAL A2A artifact-provenance profiles (RFC-ACDP-0022 §12). `acdp-producer-a2a` (no prerequisite) is for an A2A server agent that signs its own artifacts: one body per completed artifact under its own DID and its own `type`, the closed `acdp-a2a-artifact/1` record at `metadata["acdp:a2a"]`, salted hashes, cited inputs in `Message.metadata` `io.acdp/inputs`, the link in `Artifact.metadata` `io.acdp/provenance`, the Card pointer `https://acdp.io/ext/a2a/v1`; it passes `a2a-001`..`003` and `a2a-005`..`008`. `acdp-consumer-a2a` (prerequisite `acdp-consumer`) verifies held artifacts against their bodies and passes `a2a-001`, `a2a-003` and `a2a-004`. No `a2a-*` fixture is ever part of `acdp-consumer`. Both stay Draft, so this entry is not frozen.
+OPTIONAL A2A artifact-provenance profiles (RFC-ACDP-0022 §12). `acdp-producer-a2a` (no prerequisite) is for an A2A server agent that signs its own artifacts: one body per completed artifact under its own DID and its own `type`, the closed `acdp-a2a-artifact/1` record at `metadata["acdp:a2a"]`, salted hashes, cited inputs in `Message.metadata` `io.agentcontextdistributionprotocol/inputs`, the link in `Artifact.metadata` `io.agentcontextdistributionprotocol/provenance`, the Card pointer `https://agentcontextdistributionprotocol.io/ext/a2a/v1`; it passes `a2a-001`..`003` and `a2a-005`..`008`. `acdp-consumer-a2a` (prerequisite `acdp-consumer`) verifies held artifacts against their bodies and passes `a2a-001`, `a2a-003` and `a2a-004`. No `a2a-*` fixture is ever part of `acdp-consumer`. Both stay Draft, so this entry is not frozen.
 
 ### 9.2 Verification profile names (RECOMMENDED)
 

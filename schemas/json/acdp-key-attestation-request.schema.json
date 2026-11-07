@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.acdp.io/v0.1.0/acdp-key-attestation-request.schema.json",
+  "$id": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-key-attestation-request.schema.json",
   "title": "ACDP Key-Attestation Request (acdp-key-attestation-request/1)",
   "description": "(0.5.0, Draft) The body of POST /key-attestations (RFC-ACDP-0021 §5.1). The identity member is an RFC-AITP-0002 identity descriptor: type, issuer (oidc only), subject and proof (the token), plus svid_type for spiffe. Only JWT-SVIDs are accepted; X509-SVIDs are out of scope (RFC-ACDP-0021 §5.1). Closed at every level.",
   "type": "object",

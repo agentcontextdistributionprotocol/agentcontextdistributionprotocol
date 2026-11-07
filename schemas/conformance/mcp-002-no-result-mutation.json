@@ -23,13 +23,13 @@
     {
       "name": "B — upstream _meta keys preserved",
       "expected": {
-        "behavior": "Every upstream _meta key (com.example/trace) is returned unchanged; the proxy adds only io.acdp/provenance."
+        "behavior": "Every upstream _meta key (com.example/trace) is returned unchanged; the proxy adds only io.agentcontextdistributionprotocol/provenance."
       }
     },
     {
-      "name": "C — upstream already set io.acdp/provenance",
+      "name": "C — upstream already set io.agentcontextdistributionprotocol/provenance",
       "expected": {
-        "behavior": "The proxy publishes its own record but leaves the upstream io.acdp/provenance value unchanged and does not add its own; the record is still published."
+        "behavior": "The proxy publishes its own record but leaves the upstream io.agentcontextdistributionprotocol/provenance value unchanged and does not add its own; the record is still published."
       }
     }
   ]

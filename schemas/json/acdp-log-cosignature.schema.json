@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.acdp.io/v0.1.0/acdp-log-cosignature.schema.json",
+  "$id": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-log-cosignature.schema.json",
   "title": "ACDP Transparency-Log Witness Cosignature (0.4.0)",
   "description": "An independent witness's signed observation of an RFC-ACDP-0012 transparency-log checkpoint: 'witness witness_id observed checkpoint (log_id, tree_size, root_hash, timestamp), verified its signature and consistency from its retained head, and cosigned it at witnessed_at' (RFC-ACDP-0015 §4). The cosignature preimage is the JCS canonicalization of this object minus 'signature'; the witness signs the ASCII bytes of 'sha256:<hex(SHA-256(preimage))>' exactly as RFC-ACDP-0001 §5.8 / RFC-ACDP-0010 §5, with the WITNESS's own assertionMethod key (RFC-ACDP-0015 §5) — witnesses are NOT registries and use their own DID and key material. Specified by RFC-ACDP-0015 (acdp/0.4.0), promoting the RFC-ACDP-0009 §2.12 reservation; additive minor, so this schema lives in the v0.1.0 namespace (VERSIONING.md).",
 
@@ -56,7 +56,7 @@
       "description": "The witness-clock time at which the witness observed and cosigned the checkpoint; canonical millisecond-precision RFC 3339 UTC (RFC-ACDP-0001 §5.3). This is the witness's OWN observation time, anchored against a party the registry does not control — it bounds when the checkpoint existed regardless of the registry's claimed timestamp (RFC-ACDP-0015 §4). Consumers apply a freshness policy to witnessed_at (RFC-ACDP-0015 §7). Honors the RFC-ACDP-0009 §2.12 reserved name 'witnessed_at'."
     },
     "signature": {
-      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/signature",
+      "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/signature",
       "description": "The WITNESS's signature over the cosignature hash (RFC-ACDP-0015 §5 — the RFC-ACDP-0010 §5 construction verbatim, but keyed by the witness's own assertionMethod key under the witness's DID). signature.key_id MUST be a DID URL under witness_id."
     }
   },

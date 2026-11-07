@@ -5,7 +5,7 @@
   "contributors": [],
   "title": "MCP tool result: fraud-stats/regional_fraud_rate",
   "type": "acdp:mcp-tool-result",
-  "schema_uri": "https://schemas.acdp.io/v0.1.0/acdp-mcp-tool-result.schema.json",
+  "schema_uri": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-mcp-tool-result.schema.json",
   "data_refs": [],
   "derived_from": [
     "acdp://registry.example.com/7b1d0c52-3e4f-4a6b-8c9d-0e1f2a3b4c5d",
@@ -32,10 +32,10 @@
     "completed_at": "2026-10-26T14:03:11.912Z"
   },
   "acdp_version": "0.5.0",
-  "content_hash": "sha256:3b2b181b18ab9edc3160390f8a2be2fef94bd116ddb62deffcba27457c98634f",
+  "content_hash": "sha256:4aed49d224d126b7b941c8505a7f2019aa3c77a044cb1cf7a8d2159457217b7e",
   "signature": {
     "algorithm": "ed25519",
     "key_id": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp#z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
-    "value": "tmUWnYH8y01lVLQXHc24ZcZucf74VeKWzU27e7F7vB5kigFA47Oe5bFkwaCTmMxEmr7xPIXCY/qo7hpH4qfiDw=="
+    "value": "Lhi+FRbl/boMh6RZtwY8MNI5g9yoN70n5hRZscgYCM8ecWfX7uhzMAUDb1kSUxfg8fvOpIAFVpxsGN4mAoOUAg=="
   }
 }

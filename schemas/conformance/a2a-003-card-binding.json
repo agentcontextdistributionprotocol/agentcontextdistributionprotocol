@@ -1,6 +1,6 @@
 {
   "id": "a2a-003",
-  "description": "(0.5.0, Draft) The Agent Card pointer https://acdp.io/ext/a2a/v1 and the identity binding to AITP (RFC-ACDP-0022 §3.1, §9).",
+  "description": "(0.5.0, Draft) The Agent Card pointer https://agentcontextdistributionprotocol.io/ext/a2a/v1 and the identity binding to AITP (RFC-ACDP-0022 §3.1, §9).",
   "tags": [
     "a2a",
     "producer",
@@ -19,7 +19,7 @@
     {
       "name": "A — well-formed pointer (agent)",
       "expected": {
-        "behavior": "The Card carries exactly one AgentExtension with uri https://acdp.io/ext/a2a/v1, required false, params {registry, agentId}; agentId equals every published body's agent_id."
+        "behavior": "The Card carries exactly one AgentExtension with uri https://agentcontextdistributionprotocol.io/ext/a2a/v1, required false, params {registry, agentId}; agentId equals every published body's agent_id."
       }
     },
     {

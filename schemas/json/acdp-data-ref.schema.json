@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.acdp.io/v0.1.0/acdp-data-ref.schema.json",
+  "$id": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-data-ref.schema.json",
   "title": "ACDP Data Reference",
   "description": "A reference to a piece of data the context describes. Each data reference contains exactly one of 'location' (URI string or structured locator) or 'embedded' (inline content).",
   "type": "object",
@@ -45,7 +45,7 @@
       "description": "Producer-specific schema version for this data."
     },
     "content_hash": {
-      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/content_hash",
+      "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/content_hash",
       "description": "Optional SHA-256 hash for verifying data integrity at fetch time. For embedded data, computed over decoded bytes."
     },
     "location": {
@@ -106,7 +106,7 @@
           "description": "The embedded data. Type depends on encoding: any JSON value for 'json'; string for 'utf8' and 'base64'."
         },
         "content_hash": {
-          "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/content_hash",
+          "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/content_hash",
           "description": "OPTIONAL SHA-256 of the decoded embedded bytes (RFC-ACDP-0002 §6.6 check 8, §6.7; fixture data-ref-007). Mismatch → data_ref_hash_mismatch."
         }
       },

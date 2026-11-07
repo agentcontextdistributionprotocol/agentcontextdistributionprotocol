@@ -34,7 +34,7 @@
         "data_refs": [],
         "derived_from": [],
         "visibility": "public",
-        "schema_uri": "https://schemas.acdp.io/v0.1.0/acdp-trust-list.schema.json",
+        "schema_uri": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-trust-list.schema.json",
         "metadata": {
           "trust_list_version": "acdp-trust-list/1",
           "list_id": "tenant-acme.production",
@@ -92,11 +92,11 @@
         "acdp_version": "0.5.0"
       },
       "expected": {
-        "canonical_form": "{\"acdp_version\":\"0.5.0\",\"agent_id\":\"did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3\",\"contributors\":[],\"data_refs\":[],\"derived_from\":[],\"metadata\":{\"entries\":[{\"origin\":\"registry.example.com\",\"receipt_key_fingerprints\":[\"sha256:10ba682c8ad13513971e8b56881aab8bd702bb807796eca81932c735a94d6e6d\"],\"registry_did\":\"did:web:registry.example.com\",\"required_profiles\":[\"acdp-registry-receipts\",\"acdp-registry-lifecycle\"]},{\"origin\":\"partner.example.org\",\"registry_did\":\"did:web:partner.example.org\",\"scope\":{\"agent_id_prefixes\":[\"did:web:agents.partner.example.org:\"],\"types\":[\"analysis\",\"data_snapshot\"]},\"valid_until\":\"2026-12-01T00:00:00.000Z\"},{\"origin\":\"sandbox.example.net\",\"registry_did\":\"did:web:sandbox.example.net\",\"scope\":{\"did_methods\":[\"did:key\"]},\"valid_from\":\"2026-11-01T00:00:00.000Z\"},{\"origin\":\"partner.example.org\",\"registry_did\":\"did:web:partner.example.org\",\"scope\":{\"agent_ids\":[\"did:web:auditor.example.com\"]}}],\"issued_at\":\"2026-10-26T00:00:00.000Z\",\"list_id\":\"tenant-acme.production\",\"serial\":7,\"trust_list_version\":\"acdp-trust-list/1\",\"valid_from\":\"2026-10-01T00:00:00.000Z\",\"valid_until\":\"2027-04-01T00:00:00.000Z\"},\"schema_uri\":\"https://schemas.acdp.io/v0.1.0/acdp-trust-list.schema.json\",\"summary\":\"Registries tenant acme relies on in production (RFC-ACDP-0020), serial 7.\",\"supersedes\":null,\"title\":\"Trust list — tenant acme, production\",\"type\":\"acdp:trust-list\",\"version\":1,\"visibility\":\"public\"}",
-        "content_hash": "sha256:206fe1d0f0c3610e9a7d55638b7baa1883b625c71373b92747f25e07f3678bf3",
-        "signature_input": "sha256:206fe1d0f0c3610e9a7d55638b7baa1883b625c71373b92747f25e07f3678bf3",
-        "signature_value_hex": "1788be3879cbc74944c67af888bddc8e2221fa9f064638c36d57a7221e530961b7101fe23d35b98c97fa7bf777eef9a5fd37927df91b858c975083220e9fb70d",
-        "signature_value_base64": "F4i+OHnLx0lExnr4iL3cjiIh+p8GRjjDbVenIh5TCWG3EB/iPTW5jJf6e/d37vml/TeSffkbhYyXUIMiDp+3DQ==",
+        "canonical_form": "{\"acdp_version\":\"0.5.0\",\"agent_id\":\"did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3\",\"contributors\":[],\"data_refs\":[],\"derived_from\":[],\"metadata\":{\"entries\":[{\"origin\":\"registry.example.com\",\"receipt_key_fingerprints\":[\"sha256:10ba682c8ad13513971e8b56881aab8bd702bb807796eca81932c735a94d6e6d\"],\"registry_did\":\"did:web:registry.example.com\",\"required_profiles\":[\"acdp-registry-receipts\",\"acdp-registry-lifecycle\"]},{\"origin\":\"partner.example.org\",\"registry_did\":\"did:web:partner.example.org\",\"scope\":{\"agent_id_prefixes\":[\"did:web:agents.partner.example.org:\"],\"types\":[\"analysis\",\"data_snapshot\"]},\"valid_until\":\"2026-12-01T00:00:00.000Z\"},{\"origin\":\"sandbox.example.net\",\"registry_did\":\"did:web:sandbox.example.net\",\"scope\":{\"did_methods\":[\"did:key\"]},\"valid_from\":\"2026-11-01T00:00:00.000Z\"},{\"origin\":\"partner.example.org\",\"registry_did\":\"did:web:partner.example.org\",\"scope\":{\"agent_ids\":[\"did:web:auditor.example.com\"]}}],\"issued_at\":\"2026-10-26T00:00:00.000Z\",\"list_id\":\"tenant-acme.production\",\"serial\":7,\"trust_list_version\":\"acdp-trust-list/1\",\"valid_from\":\"2026-10-01T00:00:00.000Z\",\"valid_until\":\"2027-04-01T00:00:00.000Z\"},\"schema_uri\":\"https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-trust-list.schema.json\",\"summary\":\"Registries tenant acme relies on in production (RFC-ACDP-0020), serial 7.\",\"supersedes\":null,\"title\":\"Trust list — tenant acme, production\",\"type\":\"acdp:trust-list\",\"version\":1,\"visibility\":\"public\"}",
+        "content_hash": "sha256:3af2ea67f7fd60d888b892fc1654b6fe5657c680fa361e54cd3627a403d0f056",
+        "signature_input": "sha256:3af2ea67f7fd60d888b892fc1654b6fe5657c680fa361e54cd3627a403d0f056",
+        "signature_value_hex": "40aad23796e3970cd81f96fff9656141872d42a748fc3100b20f15549eeae62a27cd31a2178278c156f8a150889c628fc09f947ffbc8158d29f52bdd4886f408",
+        "signature_value_base64": "QKrSN5bjlwzYH5b/+WVhQYctQqdI/DEAsg8VVJ7q5ionzTGiF4J4wVb4oVCInGKPwJ+Uf/vIFY0p9SvdSIb0CA==",
         "publish_request_body": {
           "version": 1,
           "supersedes": null,
@@ -108,7 +108,7 @@
           "data_refs": [],
           "derived_from": [],
           "visibility": "public",
-          "schema_uri": "https://schemas.acdp.io/v0.1.0/acdp-trust-list.schema.json",
+          "schema_uri": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-trust-list.schema.json",
           "metadata": {
             "trust_list_version": "acdp-trust-list/1",
             "list_id": "tenant-acme.production",
@@ -164,11 +164,11 @@
             ]
           },
           "acdp_version": "0.5.0",
-          "content_hash": "sha256:206fe1d0f0c3610e9a7d55638b7baa1883b625c71373b92747f25e07f3678bf3",
+          "content_hash": "sha256:3af2ea67f7fd60d888b892fc1654b6fe5657c680fa361e54cd3627a403d0f056",
           "signature": {
             "algorithm": "ed25519",
             "key_id": "did:key:z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3#z6MkghLt1e8m1fmANsdJJco3aCLV8Xnigr5UWwC3u5iZFPd3",
-            "value": "F4i+OHnLx0lExnr4iL3cjiIh+p8GRjjDbVenIh5TCWG3EB/iPTW5jJf6e/d37vml/TeSffkbhYyXUIMiDp+3DQ=="
+            "value": "QKrSN5bjlwzYH5b/+WVhQYctQqdI/DEAsg8VVJ7q5ionzTGiF4J4wVb4oVCInGKPwJ+Uf/vIFY0p9SvdSIb0CA=="
           }
         }
       }

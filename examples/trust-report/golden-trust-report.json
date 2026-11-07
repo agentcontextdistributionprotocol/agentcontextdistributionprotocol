@@ -8,7 +8,7 @@
       "list_id": "tenant-acme.production",
       "status": "used",
       "serial": 7,
-      "content_hash": "sha256:206fe1d0f0c3610e9a7d55638b7baa1883b625c71373b92747f25e07f3678bf3"
+      "content_hash": "sha256:3af2ea67f7fd60d888b892fc1654b6fe5657c680fa361e54cd3627a403d0f056"
     }
   ],
   "nodes": [
@@ -35,5 +35,5 @@
       "profiles_checked": false
     }
   ],
-  "report_digest": "sha256:29bc9165caeee178569e5d20f49bc39e31f4fe6b2906fcb6d820a8f84598738a"
+  "report_digest": "sha256:ea453bb31b18d6827e3953e53061953818253d1788e32bcae9ae85db3cb1c9a2"
 }

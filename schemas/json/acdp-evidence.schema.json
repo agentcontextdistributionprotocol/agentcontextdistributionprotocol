@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.acdp.io/v0.1.0/acdp-evidence.schema.json",
+  "$id": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-evidence.schema.json",
   "title": "ACDP Evidence Bundle (0.5.0)",
   "description": "acdp-evidence/1: a self-describing, UNSIGNED and UNTRUSTED container for everything RFC-ACDP-0017 chain verification consumes offline — bodies with their receipts, lifecycle events, event receipts and log inclusions; DID-document snapshot histories; observed revocation-discovery records; checkpoints with cosignatures; and the exporter's list of deliberately omitted contexts (RFC-ACDP-0017 §4). Nothing is believed because it is present: every check re-derives from content. A bundle failing this schema is rejected whole (RFC-ACDP-0017 §4.1).",
 
@@ -10,7 +10,7 @@
     "evidence_version": { "const": "acdp-evidence/1" },
     "roots": {
       "type": "array",
-      "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
+      "items": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
       "description": "Informational: the roots the exporter walked from. The verifier takes roots from its caller (RFC-ACDP-0017 §4.2)."
     },
     "exported_at": {
@@ -19,13 +19,13 @@
     },
     "contexts": {
       "type": "object",
-      "propertyNames": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
+      "propertyNames": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
       "additionalProperties": { "$ref": "#/$defs/context_evidence" },
       "description": "Keyed by ctx_id. The key is a claim, checked by the identity stage against body.ctx_id and registry_receipt.ctx_id (RFC-ACDP-0017 §7.2)."
     },
     "did_documents": {
       "type": "object",
-      "propertyNames": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did", "not": { "pattern": "^did:key:" } },
+      "propertyNames": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/did", "not": { "pattern": "^did:key:" } },
       "additionalProperties": {
         "type": "array",
         "minItems": 1,
@@ -35,7 +35,7 @@
     },
     "revocation_discovery": {
       "type": "object",
-      "propertyNames": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did" },
+      "propertyNames": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/did" },
       "additionalProperties": {
         "type": "array",
         "minItems": 1,
@@ -49,10 +49,10 @@
         "type": "object",
         "required": ["checkpoint"],
         "properties": {
-          "checkpoint": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-log-checkpoint.schema.json" },
+          "checkpoint": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-log-checkpoint.schema.json" },
           "cosignatures": {
             "type": "array",
-            "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-log-cosignature.schema.json" }
+            "items": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-log-cosignature.schema.json" }
           }
         },
         "additionalProperties": false
@@ -79,7 +79,7 @@
         "type": "object",
         "required": ["ctx_id", "reason"],
         "properties": {
-          "ctx_id": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
+          "ctx_id": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
           "reason": { "enum": ["withheld", "not_retrievable", "limit"] }
         },
         "additionalProperties": false
@@ -101,19 +101,19 @@
       "type": "object",
       "required": ["body"],
       "properties": {
-        "body": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-context-body.schema.json" },
-        "registry_receipt": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-registry-receipt.schema.json" },
+        "body": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-context-body.schema.json" },
+        "registry_receipt": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-registry-receipt.schema.json" },
         "lifecycle_events": {
           "type": "array",
           "minItems": 1,
-          "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-lifecycle-event.schema.json" }
+          "items": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-lifecycle-event.schema.json" }
         },
         "event_receipts": {
           "type": "array",
           "minItems": 1,
-          "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-event-receipt.schema.json" }
+          "items": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-event-receipt.schema.json" }
         },
-        "log_inclusion": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-log-inclusion.schema.json" }
+        "log_inclusion": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-log-inclusion.schema.json" }
       },
       "dependentRequired": { "event_receipts": ["lifecycle_events"] },
       "additionalProperties": false
@@ -133,7 +133,7 @@
       "type": "object",
       "required": ["vantage", "outcome", "completed_at"],
       "properties": {
-        "vantage": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/hostname" },
+        "vantage": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/hostname" },
         "outcome": { "enum": ["revoked", "not-revoked-complete", "unknown"] },
         "completed_at": { "$ref": "#/$defs/timestamp" }
       },
@@ -150,17 +150,17 @@
             "type": "object",
             "required": ["did", "document", "instant"],
             "properties": {
-              "did": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did", "not": { "pattern": "^did:key:" } },
+              "did": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/did", "not": { "pattern": "^did:key:" } },
               "document": { "type": "object" },
               "instant": { "$ref": "#/$defs/timestamp" }
             },
             "additionalProperties": false
           }
         },
-        "registries": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did" } },
-        "witnesses": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did" } },
-        "vantages": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/hostname" } },
-        "keyless_attesters": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did" }, "description": "(0.5.0, Draft) Registry DIDs accepted as RFC-ACDP-0021 key attesters (RFC-ACDP-0021 §10, §11). Sorted and deduplicated like the other arrays; omitted when empty." }
+        "registries": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/did" } },
+        "witnesses": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/did" } },
+        "vantages": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/hostname" } },
+        "keyless_attesters": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/did" }, "description": "(0.5.0, Draft) Registry DIDs accepted as RFC-ACDP-0021 key attesters (RFC-ACDP-0021 §10, §11). Sorted and deduplicated like the other arrays; omitted when empty." }
       },
       "additionalProperties": false
     }

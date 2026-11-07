@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.acdp.io/v0.1.0/acdp-log-checkpoint.schema.json",
+  "$id": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-log-checkpoint.schema.json",
   "title": "ACDP Transparency-Log Checkpoint (Signed Tree Head, 0.3.0)",
   "description": "A registry-signed commitment to the transparency log's state: 'as of timestamp, the log log_id has tree_size leaves and Merkle root root_hash' (RFC-ACDP-0012 §6). The checkpoint preimage is the JCS canonicalization of this object minus 'signature'; the registry signs the ASCII bytes of 'sha256:<hex(SHA-256(preimage))>' exactly as RFC-ACDP-0001 §5.8 / RFC-ACDP-0010 §5, with the RFC-ACDP-0010 receipt signing key. Specified by RFC-ACDP-0012 (acdp/0.3.0), promoting the RFC-ACDP-0009 §2.11 reservation; additive minor, so this schema lives in the v0.1.0 namespace (VERSIONING.md).",
 
@@ -39,7 +39,7 @@
       "description": "Registry-clock time at which this checkpoint was evaluated and signed; canonical millisecond-precision RFC 3339 UTC (RFC-ACDP-0001 §5.3). Registry-asserted — external anchoring via witness cosigning is specified by RFC-ACDP-0015 (0.4.0, promoting the RFC-ACDP-0009 §2.12 reservation). Consumers reject a future timestamp beyond a small skew allowance and apply their own max-age freshness policy (RFC-ACDP-0012 §7.2, §9.3)."
     },
     "signature": {
-      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/signature",
+      "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/signature",
       "description": "The registry's signature over the checkpoint hash (RFC-ACDP-0012 §6 — the RFC-ACDP-0010 §5 construction verbatim, same receipt signing key and RFC-ACDP-0010 §9 lifecycle). signature.key_id MUST be a DID URL under the registry_did embedded in log_id."
     }
   },

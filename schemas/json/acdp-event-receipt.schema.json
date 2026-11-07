@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.acdp.io/v0.1.0/acdp-event-receipt.schema.json",
+  "$id": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-event-receipt.schema.json",
   "title": "ACDP Lifecycle Event Receipt (0.5.0)",
   "description": "A registry-signed attestation that a lifecycle event was appended at index 'index' of a context's lifecycle_events, with registry acceptance time 'accepted_at' (RFC-ACDP-0017 §10, amending RFC-ACDP-0013). Served in registry_state.event_receipts, parallel to lifecycle_events. The preimage is the JCS canonicalization of this object minus 'signature'; the registry signs the ASCII bytes of 'sha256:<hex(SHA-256(preimage))>' with its receipt key, exactly as RFC-ACDP-0010 §5. Additive minor, so this schema lives in the v0.1.0 namespace (VERSIONING.md).",
 
@@ -21,11 +21,11 @@
       "description": "Domain separator: distinguishes an event receipt preimage from every other object signed under the receipt key (RFC-ACDP-0017 §10.1)."
     },
     "registry_did": {
-      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did",
+      "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/did",
       "description": "The minting registry's DID: did:web:<authority> where <authority> equals the context's origin_registry (RFC-ACDP-0017 §10.3 step 2)."
     },
     "ctx_id": {
-      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id"
+      "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id"
     },
     "event_id": {
       "type": "string",
@@ -48,7 +48,7 @@
       "description": "Registry clock at acceptance, canonical millisecond RFC 3339 UTC. Never backdated; non-decreasing in index; >= the context's created_at (RFC-ACDP-0017 §10.1). This, not the actor-claimed occurred_at, is the event's evidence time (RFC-ACDP-0017 §5.1)."
     },
     "signature": {
-      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/signature",
+      "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/signature",
       "description": "Registry signature under the receipt key (RFC-ACDP-0010 §5, §9). signature.key_id MUST be a DID URL under registry_did."
     }
   },

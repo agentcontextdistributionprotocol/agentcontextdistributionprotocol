@@ -1,6 +1,6 @@
 {
   "id": "mcp-001",
-  "description": "(0.5.0) Known-answer vector for an acdp:mcp-tool-result body (RFC-ACDP-0019 §4–§6). From the pinned tools/call arguments, CallToolResult, JSON-RPC request id, endpoint descriptor and salt, recompute the salted arguments_hash, result_hash and request_id_hash, the unsalted endpoint_hash, the derived_from extraction, the full ProducerContent's canonical form and content_hash, the Ed25519 signature of the did:key proxy, the Idempotency-Key, and the returned CallToolResult with its io.acdp/provenance _meta. Executed by scripts/conformance-runner.py.",
+  "description": "(0.5.0) Known-answer vector for an acdp:mcp-tool-result body (RFC-ACDP-0019 §4–§6). From the pinned tools/call arguments, CallToolResult, JSON-RPC request id, endpoint descriptor and salt, recompute the salted arguments_hash, result_hash and request_id_hash, the unsalted endpoint_hash, the derived_from extraction, the full ProducerContent's canonical form and content_hash, the Ed25519 signature of the did:key proxy, the Idempotency-Key, and the returned CallToolResult with its io.agentcontextdistributionprotocol/provenance _meta. Executed by scripts/conformance-runner.py.",
   "tags": [
     "mcp",
     "producer",
@@ -69,7 +69,7 @@
         "contributors": [],
         "title": "MCP tool result: fraud-stats/regional_fraud_rate",
         "type": "acdp:mcp-tool-result",
-        "schema_uri": "https://schemas.acdp.io/v0.1.0/acdp-mcp-tool-result.schema.json",
+        "schema_uri": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-mcp-tool-result.schema.json",
         "data_refs": [],
         "derived_from": [
           "acdp://registry.example.com/7b1d0c52-3e4f-4a6b-8c9d-0e1f2a3b4c5d",
@@ -123,11 +123,11 @@
           "acdp://registry.example.com/7b1d0c52-3e4f-4a6b-8c9d-0e1f2a3b4c5d",
           "acdp://registry.example.com/0f9e8d7c-6b5a-4c3d-9e2f-1a0b9c8d7e6f"
         ],
-        "idempotency_key": "acdp-mcp-3b2b181b18ab9edc3160390f8a2be2fef94bd116ddb62deffcba27457c98634f",
-        "canonical_form": "{\"acdp_version\":\"0.5.0\",\"agent_id\":\"did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp\",\"contributors\":[],\"data_refs\":[],\"derived_from\":[\"acdp://registry.example.com/7b1d0c52-3e4f-4a6b-8c9d-0e1f2a3b4c5d\",\"acdp://registry.example.com/0f9e8d7c-6b5a-4c3d-9e2f-1a0b9c8d7e6f\"],\"metadata\":{\"arguments_hash\":\"sha256:010d05bef8881a150d20a0ee0305180990b6ca4660d7c89c665c355929a1341a\",\"completed_at\":\"2026-10-26T14:03:11.912Z\",\"embedded\":false,\"is_error\":false,\"mcp_protocol_version\":\"2025-06-18\",\"record_version\":\"acdp-mcp-tool-result/1\",\"request_id_hash\":\"sha256:7cd156f85826f187bab397d47716e4ebe0ef2e5f7ba4a759268eb2af877e55da\",\"result_hash\":\"sha256:8262a4f266f704366e5c66c0060d9ddc9ccee7dd6cefaa7df97a3710781f936d\",\"salted\":true,\"server\":{\"endpoint_hash\":\"sha256:27b9116c4e751db1e87889d804380f31b885c1f009ec2f06ab1024b9e314dfbe\",\"name\":\"fraud-stats\",\"transport\":\"stdio\",\"version\":\"1.4.2\"},\"started_at\":\"2026-10-26T14:03:11.250Z\",\"tool\":\"regional_fraud_rate\"},\"schema_uri\":\"https://schemas.acdp.io/v0.1.0/acdp-mcp-tool-result.schema.json\",\"supersedes\":null,\"title\":\"MCP tool result: fraud-stats/regional_fraud_rate\",\"type\":\"acdp:mcp-tool-result\",\"version\":1,\"visibility\":\"private\"}",
-        "content_hash": "sha256:3b2b181b18ab9edc3160390f8a2be2fef94bd116ddb62deffcba27457c98634f",
-        "signature_value_hex": "b665169d81fccb4d6554b4171dcdb865c66e71fef855e296cd4dbb7bb17bbc1e648a0140e3b39ee5b164c1a09398cc449abef13c85c263faa8ee1a47e2a7e20f",
-        "signature_value_base64": "tmUWnYH8y01lVLQXHc24ZcZucf74VeKWzU27e7F7vB5kigFA47Oe5bFkwaCTmMxEmr7xPIXCY/qo7hpH4qfiDw==",
+        "idempotency_key": "acdp-mcp-4aed49d224d126b7b941c8505a7f2019aa3c77a044cb1cf7a8d2159457217b7e",
+        "canonical_form": "{\"acdp_version\":\"0.5.0\",\"agent_id\":\"did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp\",\"contributors\":[],\"data_refs\":[],\"derived_from\":[\"acdp://registry.example.com/7b1d0c52-3e4f-4a6b-8c9d-0e1f2a3b4c5d\",\"acdp://registry.example.com/0f9e8d7c-6b5a-4c3d-9e2f-1a0b9c8d7e6f\"],\"metadata\":{\"arguments_hash\":\"sha256:010d05bef8881a150d20a0ee0305180990b6ca4660d7c89c665c355929a1341a\",\"completed_at\":\"2026-10-26T14:03:11.912Z\",\"embedded\":false,\"is_error\":false,\"mcp_protocol_version\":\"2025-06-18\",\"record_version\":\"acdp-mcp-tool-result/1\",\"request_id_hash\":\"sha256:7cd156f85826f187bab397d47716e4ebe0ef2e5f7ba4a759268eb2af877e55da\",\"result_hash\":\"sha256:8262a4f266f704366e5c66c0060d9ddc9ccee7dd6cefaa7df97a3710781f936d\",\"salted\":true,\"server\":{\"endpoint_hash\":\"sha256:27b9116c4e751db1e87889d804380f31b885c1f009ec2f06ab1024b9e314dfbe\",\"name\":\"fraud-stats\",\"transport\":\"stdio\",\"version\":\"1.4.2\"},\"started_at\":\"2026-10-26T14:03:11.250Z\",\"tool\":\"regional_fraud_rate\"},\"schema_uri\":\"https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-mcp-tool-result.schema.json\",\"supersedes\":null,\"title\":\"MCP tool result: fraud-stats/regional_fraud_rate\",\"type\":\"acdp:mcp-tool-result\",\"version\":1,\"visibility\":\"private\"}",
+        "content_hash": "sha256:4aed49d224d126b7b941c8505a7f2019aa3c77a044cb1cf7a8d2159457217b7e",
+        "signature_value_hex": "2e18be1516e5fdba0c87a459b7063c30d23983dca837bd27e61459b1c81808cf1e7167d7eee8733005036f59125317e0f1fbcea48005569c6c18de2602839402",
+        "signature_value_base64": "Lhi+FRbl/boMh6RZtwY8MNI5g9yoN70n5hRZscgYCM8ecWfX7uhzMAUDb1kSUxfg8fvOpIAFVpxsGN4mAoOUAg==",
         "publish_request_body": {
           "version": 1,
           "supersedes": null,
@@ -135,7 +135,7 @@
           "contributors": [],
           "title": "MCP tool result: fraud-stats/regional_fraud_rate",
           "type": "acdp:mcp-tool-result",
-          "schema_uri": "https://schemas.acdp.io/v0.1.0/acdp-mcp-tool-result.schema.json",
+          "schema_uri": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-mcp-tool-result.schema.json",
           "data_refs": [],
           "derived_from": [
             "acdp://registry.example.com/7b1d0c52-3e4f-4a6b-8c9d-0e1f2a3b4c5d",
@@ -162,11 +162,11 @@
             "completed_at": "2026-10-26T14:03:11.912Z"
           },
           "acdp_version": "0.5.0",
-          "content_hash": "sha256:3b2b181b18ab9edc3160390f8a2be2fef94bd116ddb62deffcba27457c98634f",
+          "content_hash": "sha256:4aed49d224d126b7b941c8505a7f2019aa3c77a044cb1cf7a8d2159457217b7e",
           "signature": {
             "algorithm": "ed25519",
             "key_id": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp#z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
-            "value": "tmUWnYH8y01lVLQXHc24ZcZucf74VeKWzU27e7F7vB5kigFA47Oe5bFkwaCTmMxEmr7xPIXCY/qo7hpH4qfiDw=="
+            "value": "Lhi+FRbl/boMh6RZtwY8MNI5g9yoN70n5hRZscgYCM8ecWfX7uhzMAUDb1kSUxfg8fvOpIAFVpxsGN4mAoOUAg=="
           }
         },
         "returned_result": {
@@ -186,9 +186,9 @@
           "isError": false,
           "_meta": {
             "com.example/trace": "abc123",
-            "io.acdp/provenance": {
+            "io.agentcontextdistributionprotocol/provenance": {
               "ctx_id": "acdp://registry.example.com/3c2b1a09-8f7e-4d6c-9b5a-4e3d2c1b0a9f",
-              "content_hash": "sha256:3b2b181b18ab9edc3160390f8a2be2fef94bd116ddb62deffcba27457c98634f",
+              "content_hash": "sha256:4aed49d224d126b7b941c8505a7f2019aa3c77a044cb1cf7a8d2159457217b7e",
               "registry": "registry.example.com",
               "salt": "QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl8"
             }

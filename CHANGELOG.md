@@ -2,6 +2,31 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Breaking identifier change: ACDP moves to its long-form domain — 2026-11-06
+
+**This is a breaking identifier change.** Nobody has adopted ACDP yet, and the owner's no-adopters policy allows the break. The owner decided on 2026-11-06 that ACDP, AITP and MACP use their long-form domains everywhere. `acdp.io` was never registered, and `aitp.io` and `macp.io` belong to other people.
+
+No body field, JCS rule, content-hash rule or signature rule changed. Only these identifier strings changed:
+
+- **Schema `$id`s and `schema_uri` values:** `https://schemas.acdp.io/…` becomes `https://schemas.agentcontextdistributionprotocol.io/…`. Paths and version segments are unchanged.
+- **The RFC-ACDP-0022 A2A Agent Card extension URI:** `https://acdp.io/ext/a2a/v1` becomes `https://agentcontextdistributionprotocol.io/ext/a2a/v1`.
+- **Reverse-DNS metadata keys:**
+  - `io.acdp/provenance` becomes `io.agentcontextdistributionprotocol/provenance`, in MCP `_meta` (RFC-ACDP-0019) and in A2A `Artifact.metadata` (RFC-ACDP-0022).
+  - `io.acdp/inputs` becomes `io.agentcontextdistributionprotocol/inputs`, in A2A `Message.metadata`.
+  - `io.acdp/provenance.error` becomes `io.agentcontextdistributionprotocol/provenance.error`.
+
+These are unchanged: the `acdp://` URI scheme, the `acdp:` body type and metadata names (such as `acdp:a2a` and `acdp:mcp-tool-result`), and the package names.
+
+**Re-pinned golden values.** Each of these signed bodies carries a `schema_uri`, so its pinned values were regenerated with the `jcs` library and the fixture's own test keys:
+
+- **`kl-001`:** vector 1 (the attestation body) gets a new `canonical_form`, `content_hash`, `signature_value_hex` and `signature_value_base64`. Vector 2 (the keyless body) gets a new `key_attestation.content_hash`, `canonical_form`, `content_hash` and `signature.value`.
+- **`mcp-001`:** gets a new `canonical_form`, `content_hash`, `idempotency_key`, `signature_value_hex`, `signature_value_base64` and publish request body.
+- **`trust-001`:** gets a new `canonical_form`, `content_hash`, `signature_input`, `signature_value_hex` and `signature_value_base64`.
+
+The examples that embed these bodies were updated to match. That covers `examples/publish/keyless-publish-request.json`, `mcp-tool-result-request.json` and `trust-list-publish.json`. It also covers `examples/trust-report/golden-trust-report.json`, whose `report_digest` was recomputed. `a2a-001` keeps its values, because no replaced string sits in hashed content there.
+
+**Migration.** SDKs, proxies and verifiers swap the constants listed above. Bodies already published with the old `schema_uri` are immutable and stay valid as stored bodies. A verifier that pins `schema_uri` for a trust list, keyless attestation or MCP tool-result body sees the new value only on bodies published after this change.
+
 ## v0.5.0 — Clarifications: RFC-ACDP-0022 points from the acdp-rs implementation — 2026-11-06
 
 No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and no pinned value moved. acdp-rs (PR #548, `9599825`) passes `a2a-001` and reported three gaps:
