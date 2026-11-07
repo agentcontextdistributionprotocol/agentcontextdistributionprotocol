@@ -1,6 +1,6 @@
 {
   "id": "mcp-004",
-  "description": "(0.5.0, Draft) Fail-open by default, fail-closed per tool (RFC-ACDP-0019 §7).",
+  "description": "(0.5.0) Fail-open by default, fail-closed per tool (RFC-ACDP-0019 §7).",
   "tags": [
     "mcp",
     "producer",

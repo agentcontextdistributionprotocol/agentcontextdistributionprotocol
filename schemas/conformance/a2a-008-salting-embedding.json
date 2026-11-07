@@ -1,6 +1,6 @@
 {
   "id": "a2a-008",
-  "description": "(0.5.0, Draft) Salting (ids always), embedding by allowlist, url parts to data_refs, the raw base64 rule and the a2a.artifact anchor (RFC-ACDP-0022 §5, §10).",
+  "description": "(0.5.0) Salting (ids always), embedding by allowlist, url parts to data_refs, the raw base64 rule and the a2a.artifact anchor (RFC-ACDP-0022 §5, §10).",
   "tags": [
     "a2a",
     "producer",

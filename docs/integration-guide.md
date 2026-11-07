@@ -45,7 +45,7 @@ body = {
 }
 ```
 
-*(0.5.0, Draft)* To genesis-link the body to a non-ACDP, content-addressed artifact, add the optional `anchors` array before hashing — it is producer-signed like any other field. Shape, limits, and the registry gate are in RFC-ACDP-0016 and [registries/anchor-schemes.md](../registries/anchor-schemes.md); a body carrying it MUST declare `acdp_version` ≥ 0.5.0 and be published only to a registry that also advertises ≥ 0.5.0, or it is rejected with `schema_violation` (RFC-ACDP-0016 §10, §14).
+*(0.5.0)* To genesis-link the body to a non-ACDP, content-addressed artifact, add the optional `anchors` array before hashing — it is producer-signed like any other field. Shape, limits, and the registry gate are in RFC-ACDP-0016 and [registries/anchor-schemes.md](../registries/anchor-schemes.md); a body carrying it MUST declare `acdp_version` ≥ 0.5.0 and be published only to a registry that also advertises ≥ 0.5.0, or it is rejected with `schema_violation` (RFC-ACDP-0016 §10, §14).
 
 ### Step 2: Compute content_hash
 
@@ -148,7 +148,7 @@ producer_pubkey.verify(sig_bytes, body["content_hash"].encode("ascii"))
 
 If `verify` raises, the body is not authentically from `agent_id`.
 
-> **Strict Ed25519 verification *(0.5.0, Draft)*.** The snippet above uses the `cryptography` package, whose default `verify` is OpenSSL-backed and does **not** apply the strict checks RFC-ACDP-0001 §5.10 requires: reject any signature whose `s` is not in `0 <= s < L`, and any whose public key `A` or nonce point `R` is a small-order point (`invalid_signature`). Without the small-order check, an identity key with `R = identity, s = 0` "verifies" for every message. Add the checks yourself (or use a library with a strict mode, e.g. ed25519-dalek's `verify_strict`):
+> **Strict Ed25519 verification *(0.5.0)*.** The snippet above uses the `cryptography` package, whose default `verify` is OpenSSL-backed and does **not** apply the strict checks RFC-ACDP-0001 §5.10 requires: reject any signature whose `s` is not in `0 <= s < L`, and any whose public key `A` or nonce point `R` is a small-order point (`invalid_signature`). Without the small-order check, an identity key with `R = identity, s = 0` "verifies" for every message. Add the checks yourself (or use a library with a strict mode, e.g. ed25519-dalek's `verify_strict`):
 >
 > ```python
 > L = 2**252 + 27742317777372353535851937790883648493

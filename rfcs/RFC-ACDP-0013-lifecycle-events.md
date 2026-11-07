@@ -15,7 +15,7 @@ Retraction is **mark-not-delete**: the body of a retracted context remains perma
 
 This document is a **Final** ACDP specification (acdp/0.3.0). It is stable for the 0.3.0 line; subsequent breaking changes require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md). It was promoted from Draft to Final on 2026-07-05, the VERSIONING.md gate having been met: the conformance fixtures it defines (`lc-001..003`) pass against two independent interoperating implementations (see [CHANGELOG.md](../CHANGELOG.md) for the promotion record).
 
-This revision additionally carries an **acdp/0.5.0 Draft-line amendment**, marked *(0.5.0)*, to §4.1: registry-signed lifecycle event receipts, specified in RFC-ACDP-0017 §10. Being Draft-line, the marked passage is **not** frozen with the rest of this Final document.
+This revision additionally carries an **acdp/0.5.0-line amendment**, marked *(0.5.0)*, to §4.1: registry-signed lifecycle event receipts, specified in RFC-ACDP-0017 §10. The 0.5.0 line is Final (2026-11-06), so the marked passage is frozen with the rest of this document.
 
 This RFC promotes the RFC-ACDP-0009 §2.1 reservation. The reserved names — the `lifecycle_events` registry-state field, the `retracted` status, and the `immutable_field` error code — are adopted exactly as reserved. Nothing in this document invalidates any v0.1.0/0.2.0 body, signature, `content_hash`, or receipt; retraction never touches a body.
 

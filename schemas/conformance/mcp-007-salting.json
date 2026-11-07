@@ -1,6 +1,6 @@
 {
   "id": "mcp-007",
-  "description": "(0.5.0, Draft) Salt rules (RFC-ACDP-0019 §4.3).",
+  "description": "(0.5.0) Salt rules (RFC-ACDP-0019 §4.3).",
   "tags": [
     "mcp",
     "producer",

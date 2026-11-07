@@ -144,7 +144,7 @@ A future ACDP version will define:
 
 Reserved profile name: `acdp-registry-similarity` (added to a future RFC-ACDP-0001 §9.1; current registries advertising similarity gating remain non-conformant in v0.1.0).
 
-### 2.10 Registry webhook event profile — **DEFINED by RFC-ACDP-0018 (acdp/0.5.0, Draft)**
+### 2.10 Registry webhook event profile — **DEFINED by RFC-ACDP-0018 (acdp/0.5.0, Final)**
 
 > *(0.5.0)* RFC-ACDP-0018 defines `acdp-registry-events` in a narrower form than the sketch below: the webhook carries **no** event content, only a "pull now" hint, and consumers read signed evidence from the `GET /changes` feed (`acdp-registry-changes`). The sketch below is retained for history and is superseded by RFC-ACDP-0018 §8.
 

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-subscription-request.schema.json",
-  "title": "ACDP Subscription Request (0.5.0, Draft)",
+  "title": "ACDP Subscription Request (0.5.0)",
   "description": "POST /subscriptions body (RFC-ACDP-0018 §8.1). callback_url is subject to the RFC-ACDP-0018 §8.3 SSRF rules at creation and at every delivery.",
   "type": "object",
   "required": [

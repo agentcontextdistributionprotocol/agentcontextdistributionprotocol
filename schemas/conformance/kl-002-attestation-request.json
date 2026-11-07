@@ -1,6 +1,6 @@
 {
   "id": "kl-002",
-  "description": "(0.5.0, Draft) POST /key-attestations validation (RFC-ACDP-0021 §5.1–§5.2). Behavioral, registry-side.",
+  "description": "(0.5.0) POST /key-attestations validation (RFC-ACDP-0021 §5.1–§5.2). Behavioral, registry-side.",
   "tags": [
     "keyless",
     "registry",

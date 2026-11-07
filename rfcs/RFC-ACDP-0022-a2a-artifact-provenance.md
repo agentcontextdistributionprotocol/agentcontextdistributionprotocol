@@ -3,7 +3,7 @@
 
 **Document:** RFC-ACDP-0022
 **Version:** 0.5.0
-**Status:** Community Standards Track (Draft)
+**Status:** Community Standards Track (Final)
 
 This RFC binds ACDP to the Agent2Agent protocol (A2A, v1.0.1, package `lf.a2a.v1`). An A2A server agent publishes each artifact it completes as a body it signs itself, and returns the `acdp://` link inside the artifact. Anyone who later holds the artifact can prove that the agent published exactly this content, check whether the agent has since replaced or retracted it, and follow its inputs.
 
@@ -24,7 +24,11 @@ It depends on RFC-ACDP-0001 (Core), -0002 (Context Body), -0003 (Publish & Super
 
 ## 1. Status of This Memo
 
-This document is a **Draft** ACDP specification on the `0.5.0` line, which as a whole is Draft (VERSIONING.md). Nothing in it is frozen. It is promoted when two independent implementations pass its fixtures: an agent and a holder in acdp-rs, and an independent holder in acdp-verifier-py, all reproducing `a2a-001` byte for byte.
+This document is a **Final** ACDP specification at version `0.5.0`, promoted 2026-11-06 with the `acdp/0.5.0` line. Breaking changes now require a new RFC and a version bump (VERSIONING.md).
+
+**Holder side** (§8 and the `acdp-consumer-a2a` profile) meets the two-implementation gate. A holder in acdp-rs and an independent holder in acdp-verifier-py, written from this text alone, both reproduce `a2a-001` byte for byte and pass the holder fixtures at spec `ce39078`: acdp-rs `55f40c3` (require-mode conformance at spec `ce39078`, [CI run](https://github.com/agentcontextdistributionprotocol/acdp-rs/actions/runs/42328766458)); acdp-verifier-py `9267a62` (138 passed, 0 failed, at spec `8cc186d`, [CI run](https://github.com/agentcontextdistributionprotocol/acdp-verifier-py/actions/runs/42338572175)).
+
+**Agent side** (§4–§7, §9–§10 and the `acdp-producer-a2a` profile) was promoted under the acdp/0.5.0 single-implementation gate exception ([VERSIONING.md](../VERSIONING.md)). acdp-rs `acdp-a2a` is the only producer, and it passes `a2a-001`..`a2a-008` at spec `ce39078`: acdp-rs `55f40c3` (require-mode conformance at spec `ce39078`, [CI run](https://github.com/agentcontextdistributionprotocol/acdp-rs/actions/runs/42328766458)).
 
 Both profiles (§12) are OPTIONAL. A registry needs nothing new: a body published under this RFC is an ordinary signed body of the agent's own type, and the record is ordinary producer `metadata`. Nothing in this document invalidates any existing body, signature or `content_hash`.
 
@@ -414,7 +418,7 @@ Lifecycle goes only through RFC-ACDP-0013 and the RFC-ACDP-0018 feed.
 
 ---
 
-## 12. Profiles (OPTIONAL) *(0.5.0, Draft)*
+## 12. Profiles (OPTIONAL) *(0.5.0)*
 
 ### 12.1 `acdp-producer-a2a`
 

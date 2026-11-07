@@ -1,6 +1,6 @@
 {
   "id": "kl-003",
-  "description": "(0.5.0, Draft) Publishing a keyless-signed body (RFC-ACDP-0021 §6.3). Behavioral, registry-side.",
+  "description": "(0.5.0) Publishing a keyless-signed body (RFC-ACDP-0021 §6.3). Behavioral, registry-side.",
   "tags": [
     "keyless",
     "registry",

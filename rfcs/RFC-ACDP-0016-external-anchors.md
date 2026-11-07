@@ -2,8 +2,8 @@
 # Agent Context Distribution Protocol (ACDP) — Typed External Anchors
 
 **Document:** RFC-ACDP-0016
-**Version:** 0.5.0-draft
-**Status:** Community Standards Track (Draft)
+**Version:** 0.5.0
+**Status:** Community Standards Track (Final)
 
 This RFC specifies **typed external anchors**: an optional, producer-signed body field, `anchors`, that lets an ACDP body genesis-link to a **non-ACDP, content-addressed external artifact** — a commitment record, a sealed decision, or any object identified by its own digest. It closes a gap neither `derived_from` (ACDP-internal lineage) nor `data_refs` (data a context describes) covers: a signed, first-class way to say "this fact is about, or descends from, that external artifact." It opens the ACDP 0.5.0 line. It depends on RFC-ACDP-0001 (Core) and RFC-ACDP-0002 (Context Body), and amends RFC-ACDP-0008 (Security) by cross-reference only.
 
@@ -11,7 +11,9 @@ This RFC specifies **typed external anchors**: an optional, producer-signed body
 
 ## 1. Status of This Memo
 
-This document is a **Draft** ACDP specification, opening the `acdp/0.5.0` line. It is open for substantive change until promoted. Per [VERSIONING.md](../VERSIONING.md), promotion to **Final** requires the conformance fixtures this document defines (`anc-001..005`) to pass against two independent interoperating implementations. Nothing in this document invalidates any v0.1.0/0.2.0/0.3.0/0.4.0 body, signature, `content_hash`, receipt, checkpoint, or cosignature.
+This document is a **Final** ACDP specification at version `0.5.0`. It opened the `acdp/0.5.0` line and was promoted to Final with it on 2026-11-06. Breaking changes now require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
+
+**Promotion evidence.** The conformance fixtures this document defines (`anc-001..005`) pass against two independent interoperating implementations at spec `ce39078`: acdp-rs `55f40c3` (require-mode conformance at spec `ce39078`, [CI run](https://github.com/agentcontextdistributionprotocol/acdp-rs/actions/runs/42328766458)); acdp-verifier-py `9267a62` (138 passed, 0 failed, at spec `8cc186d`, [CI run](https://github.com/agentcontextdistributionprotocol/acdp-verifier-py/actions/runs/42338572175)). Registry acceptance of `anchors`: acdp-registry-rs `92c639a` (v0.11.1; conformance against the fixtures at spec `8cc186d`, including `lc-001`..`lc-003` and `rev-003` A–R, [CI run](https://github.com/agentcontextdistributionprotocol/acdp-registry-rs/actions/runs/42349360187)). Nothing in this document invalidates any v0.1.0/0.2.0/0.3.0/0.4.0 body, signature, `content_hash`, receipt, checkpoint, or cosignature.
 
 This RFC does **not** promote an RFC-ACDP-0009 reservation. External anchors were never reserved in RFC-ACDP-0009; `anchors` is a new producer-controlled field introduced directly here, covered automatically by the RFC-ACDP-0001 §5.7 unknown-producer-field rule even before this document's schema update makes it first-class.
 

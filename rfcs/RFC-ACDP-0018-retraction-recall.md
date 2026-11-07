@@ -3,7 +3,7 @@
 
 **Document:** RFC-ACDP-0018
 **Version:** 0.5.0
-**Status:** Community Standards Track (Final for the consumer side: §7 and the `acdp-consumer-recall` profile; the registry side, §4–§6, §8 and the `acdp-registry-changes` and `acdp-registry-events` profiles, *(0.5.0)* Draft)
+**Status:** Community Standards Track (Final)
 
 This RFC specifies **retraction recall**: how a consumer that relied on a context learns, later, that it should no longer rely on it. Retractions, supersessions and key revocations are already recorded and verifiable (RFC-ACDP-0013, RFC-ACDP-0003, RFC-ACDP-0014), but only a consumer that goes back and looks ever sees them. This document adds:
 
@@ -19,12 +19,12 @@ It depends on RFC-ACDP-0001, -0003, -0004, -0005, -0006, -0008, -0010, -0013, -0
 
 ## 1. Status of This Memo
 
-This document is an ACDP specification on the `acdp/0.5.0` line. Its consumer side is **Final** (2026-11-06). Its registry side is **Draft** and open for substantive change until it is promoted. Per [VERSIONING.md](../VERSIONING.md), promotion to **Final** requires the conformance fixtures this document defines (`rec-001`..`rec-010`) to pass against two independent interoperating implementations.
+This document is a **Final** ACDP specification at version `0.5.0`. Both sides were promoted on 2026-11-06: the consumer side under the two-implementation gate, and the registry side with the `acdp/0.5.0` line under the acdp/0.5.0 single-implementation gate exception ([VERSIONING.md](../VERSIONING.md)). Breaking changes now require a new RFC and a version bump.
 
-Promotion is split by side, as for RFC-ACDP-0021:
+Promotion was split by side, as for RFC-ACDP-0021:
 
 - **Consumer side** (§7, the `acdp-consumer-recall` profile, and the consumer fixtures `rec-006`, `rec-007` D–E, `rec-009` and `rec-010` G–I): promoted when a second consumer implementation, independent of the first, passes those fixtures against an SDK carrying the 2026-11-01 clarifications in this document.
-- **Registry side** (§4–§6, §8, the `acdp-registry-changes` and `acdp-registry-events` profiles, and the registry fixtures): stays Draft until a second registry implementation passes the registry fixtures.
+- **Registry side** (§4–§6, §8, the `acdp-registry-changes` and `acdp-registry-events` profiles, and the registry fixtures): promoted when the registry fixtures pass. With only one registry implementation, the acdp/0.5.0 single-implementation gate exception applies.
 
 **Consumer side: Final (2026-11-06).** The consumer criterion is met. Two independent consumer implementations pass every consumer fixture at spec `3f50697`, which carries the 2026-11-01 clarifications:
 - acdp-rs 0.21.0 (`tests/recall.rs`, `tests/conformance.rs`) runs `rec-006` A–K, M and N, `rec-007` D–E with the hint HMAC known answer, the `rec-009` envelope vectors, and `rec-010` G–I with the bucket derivations;
@@ -34,7 +34,7 @@ Seam (seam-runtime, on acdp `=0.21.0`) also drives `rec-006` and `rec-009` in it
 
 acdp-rs leaves `rec-006` L (feed silence is not non-revocation) to the application built on it, because it constrains what the application concludes from entries it has not seen.
 
-**Registry side: still Draft.** §4–§6 and §8, `acdp-registry-changes`, `acdp-registry-events` and the registry fixtures stay *(0.5.0)* Draft, because only one registry (acdp-registry-rs) implements them. Their wire shapes are what the Final consumer side reads, so a change to them that a Final consumer would notice needs a version bump (VERSIONING.md).
+**Registry side: Final (2026-11-06).** §4–§6 and §8, `acdp-registry-changes`, `acdp-registry-events` and the registry fixtures are Final with the acdp/0.5.0 line under the acdp/0.5.0 single-implementation gate exception ([VERSIONING.md](../VERSIONING.md)). The only registry implementation, acdp-registry-rs, passes the registry fixtures at spec `ce39078`: acdp-registry-rs `92c639a` (v0.11.1; conformance against the fixtures at spec `8cc186d`, including `lc-001`..`lc-003` and `rev-003` A–R, [CI run](https://github.com/agentcontextdistributionprotocol/acdp-registry-rs/actions/runs/42349360187)).
 
 All three profiles it defines (§9) are OPTIONAL. A registry or consumer that claims none of them is unaffected.
 
@@ -366,7 +366,7 @@ A `callback_url` failing these rules at creation is rejected (§8.1).
 | `rec-009` | Entry envelope consistency (consumer, executable): known answers for the §7 envelope rules (`recorded_at` equality, per-kind `ctx_id` and `lineage_id`, no self-supersession, JCS equality of the entry's evidence with the served copy), each `{entry, served} → accept \| reject(reason)` (§7) |
 | `rec-010` | Bucket filters: derivation known answers (executable); a bucket returns every entry in it and only those; longer buckets narrow; `agent_bucket` hears revocations by controller; OR/AND combination and the `max_change_filters` count; malformed values give `schema_violation`; cursors and visibility unchanged (registry A–F, when `max_change_bucket_length` is advertised); the consumer filters a bucket response locally and sends no bucket to a registry that does not advertise support (consumer G–I) (§6.1) |
 
-All are **behavioral** in this Draft, except `rec-007`'s HMAC known-answer vector `hint-hmac-001`, the `rec-009` envelope known answers and the `rec-010` bucket derivations, which the runner executes.
+All are **behavioral**, except `rec-007`'s HMAC known-answer vector `hint-hmac-001`, the `rec-009` envelope known answers and the `rec-010` bucket derivations, which the runner executes.
 
 ---
 
