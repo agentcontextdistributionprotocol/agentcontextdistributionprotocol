@@ -16,7 +16,7 @@ The `0.5.0` line is published as **`Final`** (opened as Draft 2026-08-29; promot
 
 **The 0.5.0 promotion gate exception (owner decision, 2026-11-06).** Every prior line was promoted only after its conformance pack passed against two independent interoperating implementations. For 0.5.0 the owner decided that where only one implementation of a piece exists, that implementation passing the piece's full fixture set at the pinned spec commit meets the gate. The exception covers exactly three sides:
 
-- the **registry side** of the line (the *(0.5.0)* registry passages in RFC-ACDP-0001, -0003, -0007, -0008, -0010, -0014, -0017, -0018 and -0021), implemented only by **acdp-registry-rs**: <<EVIDENCE:registry-rs>>;
+- the **registry side** of the line (the *(0.5.0)* registry passages in RFC-ACDP-0001, -0003, -0007, -0008, -0010, -0014, -0017, -0018 and -0021), implemented only by **acdp-registry-rs**: acdp-registry-rs `92c639a` (v0.11.1; conformance against the fixtures at spec `8cc186d`, including `lc-001`..`lc-003` and `rev-003` A–R, [CI run](https://github.com/agentcontextdistributionprotocol/acdp-registry-rs/actions/runs/42349360187));
 - the **RFC-ACDP-0019 proxy** (§3.1–§3.2, §5, §7, the `acdp-producer-mcp-proxy` profile), implemented only by **acdp-mcp-proxy** in acdp-rs: acdp-rs `55f40c3` (require-mode conformance at spec `ce39078`, [CI run](https://github.com/agentcontextdistributionprotocol/acdp-rs/actions/runs/42328766458));
 - the **RFC-ACDP-0022 agent side** (the `acdp-producer-a2a` profile), implemented only by **acdp-a2a** in acdp-rs: acdp-rs `55f40c3` (require-mode conformance at spec `ce39078`, [CI run](https://github.com/agentcontextdistributionprotocol/acdp-rs/actions/runs/42328766458)).
 

@@ -34,7 +34,7 @@ Seam (seam-runtime, on acdp `=0.21.0`) also drives `rec-006` and `rec-009` in it
 
 acdp-rs leaves `rec-006` L (feed silence is not non-revocation) to the application built on it, because it constrains what the application concludes from entries it has not seen.
 
-**Registry side: Final (2026-11-06).** §4–§6 and §8, `acdp-registry-changes`, `acdp-registry-events` and the registry fixtures are Final with the acdp/0.5.0 line under the acdp/0.5.0 single-implementation gate exception ([VERSIONING.md](../VERSIONING.md)). The only registry implementation, acdp-registry-rs, passes the registry fixtures at spec `ce39078`: <<EVIDENCE:registry-rs>>.
+**Registry side: Final (2026-11-06).** §4–§6 and §8, `acdp-registry-changes`, `acdp-registry-events` and the registry fixtures are Final with the acdp/0.5.0 line under the acdp/0.5.0 single-implementation gate exception ([VERSIONING.md](../VERSIONING.md)). The only registry implementation, acdp-registry-rs, passes the registry fixtures at spec `ce39078`: acdp-registry-rs `92c639a` (v0.11.1; conformance against the fixtures at spec `8cc186d`, including `lc-001`..`lc-003` and `rev-003` A–R, [CI run](https://github.com/agentcontextdistributionprotocol/acdp-registry-rs/actions/runs/42349360187)).
 
 All three profiles it defines (§9) are OPTIONAL. A registry or consumer that claims none of them is unaffected.
 

@@ -36,7 +36,7 @@ Both reproduce every `kl-001` value byte for byte: the golden attestation and ke
 - the `keyless` capabilities member (§13.1) and the `acdp-registry-keyless` profile (§13.2), with the registry-side fixtures `kl-002`, `kl-003` and `kl-004`;
 - the keyless reason tokens in `registries/error-codes.md`, now Stable.
 
-acdp-registry-rs passes `kl-001`..`kl-004`, `kl-007` and `kl-009` at spec `ce39078`: <<EVIDENCE:registry-rs>>.
+acdp-registry-rs passes `kl-001`..`kl-004`, `kl-007` and `kl-009` at spec `ce39078`: acdp-registry-rs `92c639a` (v0.11.1; conformance against the fixtures at spec `8cc186d`, including `lc-001`..`lc-003` and `rev-003` A–R, [CI run](https://github.com/agentcontextdistributionprotocol/acdp-registry-rs/actions/runs/42349360187)).
 
 Both profiles it defines, `acdp-registry-keyless` and `acdp-consumer-keyless` (§13), are OPTIONAL. Registries and consumers that implement neither are unaffected, and they refuse keyless bodies by the ordinary key-resolution rules they already follow (§12).
 
