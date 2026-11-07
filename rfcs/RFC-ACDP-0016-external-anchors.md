@@ -13,7 +13,7 @@ This RFC specifies **typed external anchors**: an optional, producer-signed body
 
 This document is a **Final** ACDP specification at version `0.5.0`. It opened the `acdp/0.5.0` line and was promoted to Final with it on 2026-11-06. Breaking changes now require a new RFC and a version bump per [VERSIONING.md](../VERSIONING.md).
 
-**Promotion evidence.** The conformance fixtures this document defines (`anc-001..005`) pass against two independent interoperating implementations at spec `ce39078`: <<EVIDENCE:acdp-rs>>; <<EVIDENCE:verifier-py>>. Registry acceptance of `anchors`: <<EVIDENCE:registry-rs>>. Nothing in this document invalidates any v0.1.0/0.2.0/0.3.0/0.4.0 body, signature, `content_hash`, receipt, checkpoint, or cosignature.
+**Promotion evidence.** The conformance fixtures this document defines (`anc-001..005`) pass against two independent interoperating implementations at spec `ce39078`: acdp-rs `55f40c3` (require-mode conformance at spec `ce39078`, [CI run](https://github.com/agentcontextdistributionprotocol/acdp-rs/actions/runs/42328766458)); acdp-verifier-py `9267a62` (138 passed, 0 failed, at spec `8cc186d`, [CI run](https://github.com/agentcontextdistributionprotocol/acdp-verifier-py/actions/runs/42338572175)). Registry acceptance of `anchors`: <<EVIDENCE:registry-rs>>. Nothing in this document invalidates any v0.1.0/0.2.0/0.3.0/0.4.0 body, signature, `content_hash`, receipt, checkpoint, or cosignature.
 
 This RFC does **not** promote an RFC-ACDP-0009 reservation. External anchors were never reserved in RFC-ACDP-0009; `anchors` is a new producer-controlled field introduced directly here, covered automatically by the RFC-ACDP-0001 §5.7 unknown-producer-field rule even before this document's schema update makes it first-class.
 
