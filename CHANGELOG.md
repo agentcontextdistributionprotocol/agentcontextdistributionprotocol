@@ -2,6 +2,10 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Clarifications: RFC-ACDP-0021 accepts the earlier attestation schema_uri — 2026-11-06
+
+No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and no pinned value moved. After the move to the long-form domain (#136), key attestations already stored on registries still carry `https://schemas.acdp.io/v0.1.0/acdp-key-attestation.schema.json`. §5.3 now has registries mint only the new URI, while verifiers MUST accept both. That keeps existing keyless bodies verifiable. The owner decided this on 2026-11-06.
+
 ## v0.5.0 — Breaking identifier change: ACDP moves to its long-form domain — 2026-11-06
 
 **This is a breaking identifier change.** Nobody has adopted ACDP yet, and the owner's no-adopters policy allows the break. The owner decided on 2026-11-06 that ACDP, AITP and MACP use their long-form domains everywhere. `acdp.io` was never registered, and `aitp.io` and `macp.io` belong to other people.
