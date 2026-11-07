@@ -175,7 +175,7 @@ A key attestation is a body with:
 
 - `type` = `acdp:key-attestation` (`registries/context-types.md`), `visibility` = `public`, `version` = 1, `supersedes` = null, empty `data_refs` and `derived_from`;
 - `agent_id` = the attesting registry's DID, which MUST be `did:web:` plus the authority of its own `ctx_id`, and a `signature` by a key in that DID document's `assertionMethod` (the registry signs it as a producer, with the same key it uses for receipts or another);
-- `schema_uri` = `https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-key-attestation.schema.json` and `acdp_version` ≥ `0.5.0`;
+- `schema_uri` = `https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-key-attestation.schema.json` and `acdp_version` ≥ `0.5.0`. A registry MUST mint this value. A verifier checking this rule (§6.3 step 3, §8.1 step 1) MUST also accept the earlier `https://schemas.acdp.io/v0.1.0/acdp-key-attestation.schema.json`. Attestations minted before the move to the project's long-form domain carry it, and stored bodies are immutable;
 - `metadata` = an `acdp-key-attestation/1` object (`schemas/json/acdp-key-attestation.schema.json`):
 
 | Member | Meaning |
