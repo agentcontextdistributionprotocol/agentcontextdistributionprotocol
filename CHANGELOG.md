@@ -2,6 +2,10 @@
 
 All notable changes to ACDP are recorded here. ACDP follows the versioning policy in [VERSIONING.md](VERSIONING.md).
 
+## v0.5.0 — Clarifications: RFC-ACDP-0001 §5.11 classifies a wrong DID document Content-Type as permanent — 2026-11-06
+
+No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and no pinned value moved. §5.11 step 3 already required the DID document response to be `application/did+json` or `application/json`, but its failure classes didn't place a violation. It is now **permanent** (`key_resolution_failed`, 400), alongside a JSON parse error of the fetched document, which is consistent with `did-001` C. The owner decided this on 2026-11-06. acdp-rs #561 already does this, and acdp-verifier-py follows.
+
 ## v0.5.0 — Clarifications: RFC-ACDP-0021 accepts the earlier attestation schema_uri — 2026-11-06
 
 No body field, schema `$id`, JCS rule, content-hash, or signature semantic changed, and no pinned value moved. After the move to the long-form domain (#136), key attestations already stored on registries still carry `https://schemas.acdp.io/v0.1.0/acdp-key-attestation.schema.json`. §5.3 now has registries mint only the new URI, while verifiers MUST accept both. That keeps existing keyless bodies verifiable. The owner decided this on 2026-11-06.

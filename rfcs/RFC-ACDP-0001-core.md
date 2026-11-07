@@ -376,7 +376,7 @@ The resolution algorithm:
    - The response MUST be a JSON object with `Content-Type: application/did+json` (or `application/json`).
    - Failures are classified as transient or permanent and reported with distinct error codes:
      - **Transient** (network or upstream-availability): DNS resolution failure, TLS handshake failure, HTTP non-2xx response, or timeout fetching the DID document. MUST be reported as `key_resolution_unreachable` (HTTP 502). These are typically retryable.
-     - **Permanent** (the upstream document is malformed or does not authorize the requested key): JSON parse error of the fetched document, missing fragment in `signature.key_id`, or no `verificationMethod` matches the requested fragment. MUST be reported as `key_resolution_failed` (HTTP 400). These are not retryable without producer-side action (republish with a corrected `key_id`, fix the DID document, etc.).
+     - **Permanent** (the upstream document is malformed or does not authorize the requested key): JSON parse error of the fetched document, a response whose `Content-Type` (ignoring parameters and case) is not `application/did+json` or `application/json`, missing fragment in `signature.key_id`, or no `verificationMethod` matches the requested fragment. MUST be reported as `key_resolution_failed` (HTTP 400). These are not retryable without producer-side action (republish with a corrected `key_id`, fix the DID document, etc.).
 
 4. **Locate the verification method.** The DID document's `verificationMethod` array contains key entries. Find the entry whose `id` ends with `#<fragment>` (matching the parsed fragment from step 1). If no entry matches, return `key_resolution_failed`.
 
