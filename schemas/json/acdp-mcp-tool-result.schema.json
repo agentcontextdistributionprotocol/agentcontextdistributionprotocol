@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.acdp.io/v0.1.0/acdp-mcp-tool-result.schema.json",
+  "$id": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-mcp-tool-result.schema.json",
   "title": "ACDP MCP Tool-Result Record (0.5.0, Final)",
-  "description": "acdp-mcp-tool-result/1: the metadata of an acdp:mcp-tool-result body, published by an MCP signing proxy that observed one tools/call (RFC-ACDP-0019 §4). The proxy is the producer; the record binds hashes of the call, never the call itself unless a DataRef embeds the result. $defs/provenance is the value of the io.acdp/provenance key the proxy adds to the CallToolResult _meta (RFC-ACDP-0019 §6).",
+  "description": "acdp-mcp-tool-result/1: the metadata of an acdp:mcp-tool-result body, published by an MCP signing proxy that observed one tools/call (RFC-ACDP-0019 §4). The proxy is the producer; the record binds hashes of the call, never the call itself unless a DataRef embeds the result. $defs/provenance is the value of the io.agentcontextdistributionprotocol/provenance key the proxy adds to the CallToolResult _meta (RFC-ACDP-0019 §6).",
   "$ref": "#/$defs/record",
   "$defs": {
     "hash": {
@@ -50,22 +50,22 @@
         "is_error": { "type": "boolean", "description": "The CallToolResult isError, false when absent." },
         "salted": { "type": "boolean", "description": "true when the hashes are over salt ‖ JCS (RFC-ACDP-0019 §4.3)." },
         "embedded": { "type": "boolean", "description": "true when a data_refs entry carries the hashed result (RFC-ACDP-0019 §5)." },
-        "started_at": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/rfc3339_timestamp" },
-        "completed_at": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/rfc3339_timestamp" }
+        "started_at": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/rfc3339_timestamp" },
+        "completed_at": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/rfc3339_timestamp" }
       },
       "additionalProperties": false
     },
     "provenance": {
-      "description": "Value of CallToolResult._meta[\"io.acdp/provenance\"]: either the published link or a publish failure (RFC-ACDP-0019 §6–§7).",
+      "description": "Value of CallToolResult._meta[\"io.agentcontextdistributionprotocol/provenance\"]: either the published link or a publish failure (RFC-ACDP-0019 §6–§7).",
       "oneOf": [
         {
           "title": "Published",
           "type": "object",
           "required": ["ctx_id", "content_hash", "registry"],
           "properties": {
-            "ctx_id": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
-            "content_hash": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/content_hash" },
-            "registry": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/hostname" },
+            "ctx_id": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
+            "content_hash": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/content_hash" },
+            "registry": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/hostname" },
             "salt": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$", "description": "base64url, unpadded, of the 32 salt bytes. Under RFC-ACDP-0019, present exactly when the record is salted. Under RFC-ACDP-0022, present on every published link (§8 step 3)." }
           },
           "additionalProperties": false

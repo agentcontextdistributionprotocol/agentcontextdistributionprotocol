@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.acdp.io/v0.1.0/acdp-index.schema.json",
+  "$id": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-index.schema.json",
   "title": "ACDP Schemas Index (v0.1.0)",
   "description": "Discoverable list of all JSON Schemas defined for ACDP v0.1.0.",
 
@@ -10,16 +10,16 @@
     "schemas": {
       "type": "object",
       "properties": {
-        "common": { "const": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json" },
-        "data_ref": { "const": "https://schemas.acdp.io/v0.1.0/acdp-data-ref.schema.json" },
-        "context_body": { "const": "https://schemas.acdp.io/v0.1.0/acdp-context-body.schema.json" },
-        "registry_state": { "const": "https://schemas.acdp.io/v0.1.0/acdp-registry-state.schema.json" },
-        "context": { "const": "https://schemas.acdp.io/v0.1.0/acdp-context.schema.json" },
-        "publish_request": { "const": "https://schemas.acdp.io/v0.1.0/acdp-publish-request.schema.json" },
-        "publish_response": { "const": "https://schemas.acdp.io/v0.1.0/acdp-publish-response.schema.json" },
-        "search_response": { "const": "https://schemas.acdp.io/v0.1.0/acdp-search-response.schema.json" },
-        "capabilities": { "const": "https://schemas.acdp.io/v0.1.0/acdp-capabilities.schema.json" },
-        "error": { "const": "https://schemas.acdp.io/v0.1.0/acdp-error.schema.json" }
+        "common": { "const": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json" },
+        "data_ref": { "const": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-data-ref.schema.json" },
+        "context_body": { "const": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-context-body.schema.json" },
+        "registry_state": { "const": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-registry-state.schema.json" },
+        "context": { "const": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-context.schema.json" },
+        "publish_request": { "const": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-publish-request.schema.json" },
+        "publish_response": { "const": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-publish-response.schema.json" },
+        "search_response": { "const": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-search-response.schema.json" },
+        "capabilities": { "const": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-capabilities.schema.json" },
+        "error": { "const": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-error.schema.json" }
       }
     }
   },
@@ -27,16 +27,16 @@
     {
       "version": "0.1.0",
       "schemas": {
-        "common": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json",
-        "data_ref": "https://schemas.acdp.io/v0.1.0/acdp-data-ref.schema.json",
-        "context_body": "https://schemas.acdp.io/v0.1.0/acdp-context-body.schema.json",
-        "registry_state": "https://schemas.acdp.io/v0.1.0/acdp-registry-state.schema.json",
-        "context": "https://schemas.acdp.io/v0.1.0/acdp-context.schema.json",
-        "publish_request": "https://schemas.acdp.io/v0.1.0/acdp-publish-request.schema.json",
-        "publish_response": "https://schemas.acdp.io/v0.1.0/acdp-publish-response.schema.json",
-        "search_response": "https://schemas.acdp.io/v0.1.0/acdp-search-response.schema.json",
-        "capabilities": "https://schemas.acdp.io/v0.1.0/acdp-capabilities.schema.json",
-        "error": "https://schemas.acdp.io/v0.1.0/acdp-error.schema.json"
+        "common": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json",
+        "data_ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-data-ref.schema.json",
+        "context_body": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-context-body.schema.json",
+        "registry_state": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-registry-state.schema.json",
+        "context": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-context.schema.json",
+        "publish_request": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-publish-request.schema.json",
+        "publish_response": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-publish-response.schema.json",
+        "search_response": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-search-response.schema.json",
+        "capabilities": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-capabilities.schema.json",
+        "error": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-error.schema.json"
       }
     }
   ]

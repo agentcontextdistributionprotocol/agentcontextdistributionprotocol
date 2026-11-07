@@ -1378,7 +1378,7 @@ def check_mcp_vector(fixture, fixture_data, vector):
         fail(fixture, name, "returned result altered content/structuredContent/isError")
         ok = False
     meta = dict(returned.get("_meta", {}))
-    prov = meta.pop("io.acdp/provenance", None)
+    prov = meta.pop("io.agentcontextdistributionprotocol/provenance", None)
     upstream = {k: v for k, v in result.get("_meta", {}).items()}
     if meta != upstream:
         fail(fixture, name, "returned _meta must keep every upstream key unchanged")
@@ -1387,12 +1387,12 @@ def check_mcp_vector(fixture, fixture_data, vector):
     want = {"ctx_id": reg.get("ctx_id"), "content_hash": exp["content_hash"],
             "registry": reg.get("origin_registry"), "salt": salt_b64}
     if prov != want:
-        fail(fixture, name, f"io.acdp/provenance {prov} != {want}")
+        fail(fixture, name, f"io.agentcontextdistributionprotocol/provenance {prov} != {want}")
         ok = False
     return ok
 
 
-_A2A_EXT_URI = "https://acdp.io/ext/a2a/v1"
+_A2A_EXT_URI = "https://agentcontextdistributionprotocol.io/ext/a2a/v1"
 _AITP_EXT_URI = "https://agentidentitytrustprotocol.io/ext/a2a/v1"
 _A2A_RECORD_MEMBERS = {"record_version", "a2a_protocol_version", "artifact_id_hash", "role",
                        "task_id_hash", "context_id_hash", "parts_hash", "salted", "embedded",
@@ -1452,7 +1452,7 @@ def _a2a_aid_key(aid):
 def a2a_holder_verify(pc, content_hash, reg, held, card_params=None, known_task_id=None, known_context_id=None):
     """RFC-ACDP-0022 §8 holder steps over a body already verified per RFC-ACDP-0001.
     Returns "ok" or the first failing check."""
-    link = (held.get("metadata") or {}).get("io.acdp/provenance") or {}
+    link = (held.get("metadata") or {}).get("io.agentcontextdistributionprotocol/provenance") or {}
     if link.get("failed") is True or link.get("ctx_id") != reg["ctx_id"] \
             or link.get("registry") != reg["origin_registry"] or link.get("content_hash") != content_hash:
         return "link_mismatch"
@@ -1569,7 +1569,7 @@ def check_a2a_vector(fixture, fixture_data, vector):
 
     # §7 derived_from: cited inputs in citation order, first occurrence, verified only, cap 1000.
     derived = []
-    for c in inp["message_metadata"]["io.acdp/inputs"]:
+    for c in inp["message_metadata"]["io.agentcontextdistributionprotocol/inputs"]:
         if c in inp["verified_inputs"] and c not in derived and len(derived) < 1000:
             derived.append(c)
     if derived != exp["derived_from"] or derived != pc["derived_from"]:
@@ -1584,7 +1584,7 @@ def check_a2a_vector(fixture, fixture_data, vector):
             "registry": reg["origin_registry"], "salt": inp["salt"]}
     fc = exp["final_chunk"]
     fc_meta = dict(fc["artifact"].get("metadata", {}))
-    if fc_meta.pop("io.acdp/provenance", None) != want or fc_meta != last["artifact"].get("metadata", {}):
+    if fc_meta.pop("io.agentcontextdistributionprotocol/provenance", None) != want or fc_meta != last["artifact"].get("metadata", {}):
         fail(fixture, name, "final chunk metadata MUST be the upstream metadata plus the link")
         ok = False
     if {k: v for k, v in fc.items() if k != "artifact"} != {k: v for k, v in last.items() if k != "artifact"} \
@@ -1592,7 +1592,7 @@ def check_a2a_vector(fixture, fixture_data, vector):
         fail(fixture, name, "final chunk altered beyond adding the link")
         ok = False
     snap = exp["task_snapshot_artifact"]
-    if snap["parts"] != parts or snap["artifactId"] != artifact_id or snap["metadata"].get("io.acdp/provenance") != want:
+    if snap["parts"] != parts or snap["artifactId"] != artifact_id or snap["metadata"].get("io.agentcontextdistributionprotocol/provenance") != want:
         fail(fixture, name, "Task snapshot artifact MUST carry the assembled parts and the same link")
         ok = False
     for a in (fc["artifact"], snap):

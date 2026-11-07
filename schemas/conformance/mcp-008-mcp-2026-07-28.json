@@ -35,31 +35,31 @@
     {
       "name": "D — input_required: the completing request is the call",
       "expected": {
-        "behavior": "Request id 1 with arguments {\"region\":\"EU\"} returns resultType \"input_required\". The proxy relays it byte-for-byte unchanged, publishes no body and adds no io.acdp/provenance. The client sends request id 2 with arguments {\"region\":\"EU-West\"}, inputResponses and requestState, and gets resultType \"complete\". The proxy publishes exactly one body: arguments_hash recomputes over {\"region\":\"EU-West\"} and request_id_hash over 2 with the returned salt; neither matches the id-1 values; inputResponses and requestState are not hashed."
+        "behavior": "Request id 1 with arguments {\"region\":\"EU\"} returns resultType \"input_required\". The proxy relays it byte-for-byte unchanged, publishes no body and adds no io.agentcontextdistributionprotocol/provenance. The client sends request id 2 with arguments {\"region\":\"EU-West\"}, inputResponses and requestState, and gets resultType \"complete\". The proxy publishes exactly one body: arguments_hash recomputes over {\"region\":\"EU-West\"} and request_id_hash over 2 with the returned salt; neither matches the id-1 values; inputResponses and requestState are not hashed."
       }
     },
     {
       "name": "E — task handle and completed task",
       "expected": {
-        "behavior": "tools/call returns resultType \"task\". The proxy relays it unchanged and publishes no body. A covering proxy: the first tasks/get with status completed yields exactly one body (tool, arguments_hash and request_id_hash from the creating tools/call) and io.acdp/provenance in the inner result's _meta; a second tasks/get for the same task returns the identical io.acdp/provenance value and publishes nothing. Tasks ending failed or cancelled get no body. A task-status notification carrying a completed result is relayed without the result."
+        "behavior": "tools/call returns resultType \"task\". The proxy relays it unchanged and publishes no body. A covering proxy: the first tasks/get with status completed yields exactly one body (tool, arguments_hash and request_id_hash from the creating tools/call) and io.agentcontextdistributionprotocol/provenance in the inner result's _meta; a second tasks/get for the same task returns the identical io.agentcontextdistributionprotocol/provenance value and publishes nothing. Tasks ending failed or cancelled get no body. A task-status notification carrying a completed result is relayed without the result."
       }
     },
     {
       "name": "E2 — task under fail-closed and lost state",
       "expected": {
-        "behavior": "With fail-closed and the registry unreachable, the completed tasks/get keeps status completed and its inner result is the §7 failure result (isError true, one text item, io.acdp/provenance {\"failed\": true}). With the proxy restarted between task creation and completion, the completed task is a publish failure under the tool's policy."
+        "behavior": "With fail-closed and the registry unreachable, the completed tasks/get keeps status completed and its inner result is the §7 failure result (isError true, one text item, io.agentcontextdistributionprotocol/provenance {\"failed\": true}). With the proxy restarted between task creation and completion, the completed task is a publish failure under the tool's policy."
       }
     },
     {
       "name": "F — legacy revision: result before initialize",
       "expected": {
-        "behavior": "Against a 2025-11-25 server, a tools/call result the proxy sees before the upstream initialize result is a publish failure (§7): fail-open returns the result with io.acdp/provenance {\"failed\": true}; fail-closed returns the §7 isError result instead."
+        "behavior": "Against a 2025-11-25 server, a tools/call result the proxy sees before the upstream initialize result is a publish failure (§7): fail-open returns the result with io.agentcontextdistributionprotocol/provenance {\"failed\": true}; fail-closed returns the §7 isError result instead."
       }
     },
     {
       "name": "G — unknown resultType",
       "expected": {
-        "behavior": "A result with an unrecognized resultType is relayed unchanged and produces no body and no io.acdp/provenance."
+        "behavior": "A result with an unrecognized resultType is relayed unchanged and produces no body and no io.agentcontextdistributionprotocol/provenance."
       }
     },
     {

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.acdp.io/v0.1.0/acdp-log-leaf.schema.json",
+  "$id": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-log-leaf.schema.json",
   "title": "ACDP Transparency-Log Leaf (0.3.0)",
   "description": "One transparency-log leaf: the closed object binding one accepted publish event (RFC-ACDP-0012 §4). The leaf encoding — the bytes that are hashed — is the JCS canonicalization (RFC 8785) of this object; leaf_hash = SHA-256(0x00 || JCS(leaf)) per RFC-ACDP-0012 §5.1. Specified by RFC-ACDP-0012 (acdp/0.3.0), promoting the RFC-ACDP-0009 §2.11 reservation; additive minor, so this schema lives in the v0.1.0 namespace (VERSIONING.md).",
 
@@ -21,15 +21,15 @@
       "description": "Leaf envelope version and in-object domain separator (RFC-ACDP-0012 §4): a leaf can never be mistaken for an RFC-ACDP-0010 receipt preimage or any other JCS-canonicalized ACDP object."
     },
     "ctx_id": {
-      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id",
+      "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id",
       "description": "The registry-assigned context identifier (RFC-ACDP-0001 §5.5). Exactly one leaf per ctx_id."
     },
     "lineage_id": {
-      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/lineage_id",
+      "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/lineage_id",
       "description": "The registry-derived lineage identifier (RFC-ACDP-0001 §5.6)."
     },
     "origin_registry": {
-      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/hostname",
+      "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/hostname",
       "description": "The registry-assigned origin authority (bare DNS hostname, RFC-ACDP-0002 §3.1). MUST equal the ctx_id authority and the log's registry DID authority."
     },
     "created_at": {
@@ -38,7 +38,7 @@
       "description": "The registry-assigned creation timestamp, canonical millisecond-precision RFC 3339 UTC (RFC-ACDP-0001 §5.3). Byte-identical to body.created_at and registry_receipt.created_at."
     },
     "content_hash": {
-      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/content_hash",
+      "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/content_hash",
       "description": "The body's content_hash as verified at publish time (RFC-ACDP-0001 §5.7)."
     },
     "key_fingerprint": {

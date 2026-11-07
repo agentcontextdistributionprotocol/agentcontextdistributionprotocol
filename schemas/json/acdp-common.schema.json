@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json",
+  "$id": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json",
   "title": "ACDP Common Types",
   "description": "Shared type definitions referenced by other ACDP schemas. Defined as of ACDP v0.1.0.",
 

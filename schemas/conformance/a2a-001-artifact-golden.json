@@ -1,6 +1,6 @@
 {
   "id": "a2a-001",
-  "description": "(0.5.0, Draft) Known-answer vectors for an A2A artifact published by the agent that produced it (RFC-ACDP-0022 §4–§8). From two pinned TaskArtifactUpdateEvent chunks, the task and context ids, the client's cited inputs and the salt, recompute the assembled parts, the always-salted artifact_id_hash, task_id_hash and context_id_hash and the parts_hash (sha256 over salt ‖ JCS(value), no domain tag), the derived_from list, the acdp-a2a-artifact/1 record under metadata[\"acdp:a2a\"], the canonical form, content_hash, the Ed25519 signature of the did:key agent (the sig-001 zero seed), the Idempotency-Key, the io.acdp/provenance link on the final chunk and the Task snapshot, the Card binding to the agent's AITP AID, and the holder verdicts for the pinned negatives. The second vector pins an embedded, parts-unsalted record whose ids stay salted, a raw part received in URL-safe unpadded base64, a url part with a filename mapped to a DataRef, Part metadata, the dropping of empty and null members, and name/description taken from the last chunk carrying them. Executed by scripts/conformance-runner.py.",
+  "description": "(0.5.0, Draft) Known-answer vectors for an A2A artifact published by the agent that produced it (RFC-ACDP-0022 §4–§8). From two pinned TaskArtifactUpdateEvent chunks, the task and context ids, the client's cited inputs and the salt, recompute the assembled parts, the always-salted artifact_id_hash, task_id_hash and context_id_hash and the parts_hash (sha256 over salt ‖ JCS(value), no domain tag), the derived_from list, the acdp-a2a-artifact/1 record under metadata[\"acdp:a2a\"], the canonical form, content_hash, the Ed25519 signature of the did:key agent (the sig-001 zero seed), the Idempotency-Key, the io.agentcontextdistributionprotocol/provenance link on the final chunk and the Task snapshot, the Card binding to the agent's AITP AID, and the holder verdicts for the pinned negatives. The second vector pins an embedded, parts-unsalted record whose ids stay salted, a raw part received in URL-safe unpadded base64, a url part with a filename mapped to a DataRef, Part metadata, the dropping of empty and null members, and name/description taken from the last chunk carrying them. Executed by scripts/conformance-runner.py.",
   "tags": [
     "a2a",
     "producer",
@@ -73,7 +73,7 @@
           }
         ],
         "message_metadata": {
-          "io.acdp/inputs": [
+          "io.agentcontextdistributionprotocol/inputs": [
             "acdp://registry.example.com/7b1d0c52-3e4f-4a6b-8c9d-0e1f2a3b4c5d",
             "acdp://registry.example.com/0f9e8d7c-6b5a-4c3d-9e2f-1a0b9c8d7e6f",
             "acdp://registry.example.com/7b1d0c52-3e4f-4a6b-8c9d-0e1f2a3b4c5d"
@@ -95,7 +95,7 @@
             }
           },
           {
-            "uri": "https://acdp.io/ext/a2a/v1",
+            "uri": "https://agentcontextdistributionprotocol.io/ext/a2a/v1",
             "description": "Artifacts are signed ACDP bodies (RFC-ACDP-0022).",
             "required": false,
             "params": {
@@ -231,7 +231,7 @@
             ],
             "metadata": {
               "com.example/trace": "abc123",
-              "io.acdp/provenance": {
+              "io.agentcontextdistributionprotocol/provenance": {
                 "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
                 "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
                 "registry": "registry.example.com",
@@ -263,7 +263,7 @@
           ],
           "metadata": {
             "com.example/trace": "abc123",
-            "io.acdp/provenance": {
+            "io.agentcontextdistributionprotocol/provenance": {
               "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
               "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
               "registry": "registry.example.com",
@@ -296,7 +296,7 @@
               ],
               "metadata": {
                 "com.example/trace": "abc123",
-                "io.acdp/provenance": {
+                "io.agentcontextdistributionprotocol/provenance": {
                   "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
                   "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
                   "registry": "registry.example.com",
@@ -329,7 +329,7 @@
               ],
               "metadata": {
                 "com.example/trace": "abc123",
-                "io.acdp/provenance": {
+                "io.agentcontextdistributionprotocol/provenance": {
                   "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
                   "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
                   "registry": "registry.example.com",
@@ -361,7 +361,7 @@
               ],
               "metadata": {
                 "com.example/trace": "abc123",
-                "io.acdp/provenance": {
+                "io.agentcontextdistributionprotocol/provenance": {
                   "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
                   "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
                   "registry": "registry.example.com",
@@ -394,7 +394,7 @@
               ],
               "metadata": {
                 "com.example/trace": "abc123",
-                "io.acdp/provenance": {
+                "io.agentcontextdistributionprotocol/provenance": {
                   "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
                   "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
                   "registry": "registry.example.com",
@@ -427,7 +427,7 @@
               ],
               "metadata": {
                 "com.example/trace": "abc123",
-                "io.acdp/provenance": {
+                "io.agentcontextdistributionprotocol/provenance": {
                   "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
                   "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
                   "registry": "registry.example.com",
@@ -460,7 +460,7 @@
               ],
               "metadata": {
                 "com.example/trace": "abc123",
-                "io.acdp/provenance": {
+                "io.agentcontextdistributionprotocol/provenance": {
                   "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
                   "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
                   "registry": "registry.example.com",
@@ -493,7 +493,7 @@
               ],
               "metadata": {
                 "com.example/trace": "abc123",
-                "io.acdp/provenance": {
+                "io.agentcontextdistributionprotocol/provenance": {
                   "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
                   "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
                   "registry": "registry.example.com",
@@ -526,7 +526,7 @@
               ],
               "metadata": {
                 "com.example/trace": "abc123",
-                "io.acdp/provenance": {
+                "io.agentcontextdistributionprotocol/provenance": {
                   "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
                   "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
                   "registry": "registry.example.com",
@@ -559,7 +559,7 @@
               ],
               "metadata": {
                 "com.example/trace": "abc123",
-                "io.acdp/provenance": {
+                "io.agentcontextdistributionprotocol/provenance": {
                   "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
                   "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
                   "registry": "registry.example.com",
@@ -596,7 +596,7 @@
               ],
               "metadata": {
                 "com.example/trace": "abc123",
-                "io.acdp/provenance": {
+                "io.agentcontextdistributionprotocol/provenance": {
                   "ctx_id": "acdp://registry.example.com/5e8a2c71-9d4b-4f3e-a6c2-1b7d9e0f3a48",
                   "content_hash": "sha256:73a4b28819c470e198578b6c8a180fdb748ceef67690609188aa1484bb7b4a98",
                   "registry": "registry.example.com",
@@ -665,7 +665,7 @@
           }
         ],
         "message_metadata": {
-          "io.acdp/inputs": [
+          "io.agentcontextdistributionprotocol/inputs": [
             "acdp://registry.example.com/3a4b5c6d-7e8f-4a1b-9c2d-3e4f5a6b7c8d"
           ]
         },
@@ -688,7 +688,7 @@
             }
           },
           {
-            "uri": "https://acdp.io/ext/a2a/v1",
+            "uri": "https://agentcontextdistributionprotocol.io/ext/a2a/v1",
             "description": "Artifacts are signed ACDP bodies (RFC-ACDP-0022).",
             "required": false,
             "params": {
@@ -869,7 +869,7 @@
               }
             ],
             "metadata": {
-              "io.acdp/provenance": {
+              "io.agentcontextdistributionprotocol/provenance": {
                 "ctx_id": "acdp://registry.example.com/9c0d1e2f-3a4b-4c5d-8e6f-7a8b9c0d1e2f",
                 "content_hash": "sha256:aacb4f58077d4b523dde0ee0162e563fdf57a4e77d91cfc5589c19a081765b5c",
                 "registry": "registry.example.com",
@@ -900,7 +900,7 @@
             }
           ],
           "metadata": {
-            "io.acdp/provenance": {
+            "io.agentcontextdistributionprotocol/provenance": {
               "ctx_id": "acdp://registry.example.com/9c0d1e2f-3a4b-4c5d-8e6f-7a8b9c0d1e2f",
               "content_hash": "sha256:aacb4f58077d4b523dde0ee0162e563fdf57a4e77d91cfc5589c19a081765b5c",
               "registry": "registry.example.com",
@@ -934,7 +934,7 @@
                 }
               ],
               "metadata": {
-                "io.acdp/provenance": {
+                "io.agentcontextdistributionprotocol/provenance": {
                   "ctx_id": "acdp://registry.example.com/9c0d1e2f-3a4b-4c5d-8e6f-7a8b9c0d1e2f",
                   "content_hash": "sha256:aacb4f58077d4b523dde0ee0162e563fdf57a4e77d91cfc5589c19a081765b5c",
                   "registry": "registry.example.com",
@@ -965,7 +965,7 @@
                 }
               ],
               "metadata": {
-                "io.acdp/provenance": {
+                "io.agentcontextdistributionprotocol/provenance": {
                   "ctx_id": "acdp://registry.example.com/9c0d1e2f-3a4b-4c5d-8e6f-7a8b9c0d1e2f",
                   "content_hash": "sha256:aacb4f58077d4b523dde0ee0162e563fdf57a4e77d91cfc5589c19a081765b5c",
                   "registry": "registry.example.com",
@@ -999,7 +999,7 @@
                 }
               ],
               "metadata": {
-                "io.acdp/provenance": {
+                "io.agentcontextdistributionprotocol/provenance": {
                   "ctx_id": "acdp://registry.example.com/9c0d1e2f-3a4b-4c5d-8e6f-7a8b9c0d1e2f",
                   "content_hash": "sha256:aacb4f58077d4b523dde0ee0162e563fdf57a4e77d91cfc5589c19a081765b5c",
                   "registry": "registry.example.com",
@@ -1031,7 +1031,7 @@
                 }
               ],
               "metadata": {
-                "io.acdp/provenance": {
+                "io.agentcontextdistributionprotocol/provenance": {
                   "ctx_id": "acdp://registry.example.com/9c0d1e2f-3a4b-4c5d-8e6f-7a8b9c0d1e2f",
                   "content_hash": "sha256:aacb4f58077d4b523dde0ee0162e563fdf57a4e77d91cfc5589c19a081765b5c",
                   "registry": "registry.example.com",
@@ -1063,7 +1063,7 @@
                 }
               ],
               "metadata": {
-                "io.acdp/provenance": {
+                "io.agentcontextdistributionprotocol/provenance": {
                   "ctx_id": "acdp://registry.example.com/9c0d1e2f-3a4b-4c5d-8e6f-7a8b9c0d1e2f",
                   "content_hash": "sha256:aacb4f58077d4b523dde0ee0162e563fdf57a4e77d91cfc5589c19a081765b5c",
                   "registry": "registry.example.com",
@@ -1095,7 +1095,7 @@
                 }
               ],
               "metadata": {
-                "io.acdp/provenance": {
+                "io.agentcontextdistributionprotocol/provenance": {
                   "ctx_id": "acdp://registry.example.com/9c0d1e2f-3a4b-4c5d-8e6f-7a8b9c0d1e2f",
                   "content_hash": "sha256:aacb4f58077d4b523dde0ee0162e563fdf57a4e77d91cfc5589c19a081765b5c",
                   "registry": "registry.example.com"
@@ -1126,7 +1126,7 @@
                 }
               ],
               "metadata": {
-                "io.acdp/provenance": {
+                "io.agentcontextdistributionprotocol/provenance": {
                   "ctx_id": "acdp://registry.example.com/9c0d1e2f-3a4b-4c5d-8e6f-7a8b9c0d1e2f",
                   "content_hash": "sha256:aacb4f58077d4b523dde0ee0162e563fdf57a4e77d91cfc5589c19a081765b5c",
                   "registry": "registry.example.com",
@@ -1158,7 +1158,7 @@
                 }
               ],
               "metadata": {
-                "io.acdp/provenance": {
+                "io.agentcontextdistributionprotocol/provenance": {
                   "ctx_id": "acdp://registry.example.com/9c0d1e2f-3a4b-4c5d-8e6f-7a8b9c0d1e2f",
                   "content_hash": "sha256:aacb4f58077d4b523dde0ee0162e563fdf57a4e77d91cfc5589c19a081765b5c",
                   "registry": "registry.example.com",

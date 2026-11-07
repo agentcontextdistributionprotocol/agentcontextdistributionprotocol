@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.acdp.io/v0.1.0/acdp-chain-verdict.schema.json",
+  "$id": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-chain-verdict.schema.json",
   "title": "ACDP Chain Verdict (0.5.0)",
   "description": "acdp-chain-verdict/1: the deterministic output of RFC-ACDP-0017 verify_chain. JCS-canonical; given the same roots, bundle bytes and options (and no fired time budget) every conformant implementation emits byte-identical JCS (RFC-ACDP-0017 §9.3). verdict_digest covers the whole object minus both digests; as_of_digest covers the as-of projection only and is the value to seal at T (RFC-ACDP-0017 §9.2). Closed at every level: implementations MUST NOT add members. Members that do not apply are omitted, never null, except the members this schema declares nullable.",
 
@@ -56,7 +56,7 @@
         "type": "object",
         "required": ["ctx_id", "kind"],
         "properties": {
-          "ctx_id": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
+          "ctx_id": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
           "kind": {
             "enum": [
               "published_after_as_of", "revoked_after_as_of", "retracted_after_as_of",
@@ -79,7 +79,7 @@
     "ctx_id_set": {
       "type": "array",
       "uniqueItems": true,
-      "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
+      "items": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
       "description": "Sorted ascending by UTF-8 bytes."
     },
     "paths": {
@@ -87,7 +87,7 @@
       "items": {
         "type": "array",
         "minItems": 1,
-        "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" }
+        "items": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" }
       }
     },
     "verdict": { "enum": ["ok", "ok_with_caveats", "unknown", "refused"] },
@@ -96,11 +96,11 @@
       "type": "object",
       "required": ["ctx_id", "depth", "as_of", "latest"],
       "properties": {
-        "ctx_id": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
+        "ctx_id": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
         "depth": { "type": "integer", "minimum": 0 },
         "derived_from": {
           "type": "array",
-          "items": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
+          "items": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
           "description": "As in the body, in body order. Omitted when the node is not present."
         },
         "as_of": { "oneOf": [{ "$ref": "#/$defs/pass" }, { "type": "null" }] },
@@ -230,7 +230,7 @@
       "type": "object", "required": ["value"],
       "properties": {
         "value": { "enum": ["not-revoked", "pre-compromise", "revoked", "unplaceable", "unknown"] },
-        "revocation_ctx_id": { "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
+        "revocation_ctx_id": { "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id" },
         "basis": { "$ref": "#/$defs/basis" },
         "evidence_time": { "$ref": "#/$defs/timestamp" },
         "reason": { "$ref": "#/$defs/stage_common/properties/reason" }

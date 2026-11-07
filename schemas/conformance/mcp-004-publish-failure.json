@@ -17,19 +17,19 @@
     {
       "name": "A — fail-open, registry error",
       "expected": {
-        "behavior": "Registry answers 429 rate_limited after retries: the upstream result is returned unchanged with io.acdp/provenance = {failed: true, error: \"rate_limited\"}."
+        "behavior": "Registry answers 429 rate_limited after retries: the upstream result is returned unchanged with io.agentcontextdistributionprotocol/provenance = {failed: true, error: \"rate_limited\"}."
       }
     },
     {
       "name": "B — fail-open, registry unreachable",
       "expected": {
-        "behavior": "Connection refused or the publish timeout elapses: result returned with io.acdp/provenance = {failed: true} and no error member."
+        "behavior": "Connection refused or the publish timeout elapses: result returned with io.agentcontextdistributionprotocol/provenance = {failed: true} and no error member."
       }
     },
     {
       "name": "C — fail-closed tool",
       "expected": {
-        "behavior": "For a tool configured fail-closed, the upstream content is withheld: the proxy returns a CallToolResult with isError true, a text content item naming the failure, and io.acdp/provenance = {failed: true, ...}."
+        "behavior": "For a tool configured fail-closed, the upstream content is withheld: the proxy returns a CallToolResult with isError true, a text content item naming the failure, and io.agentcontextdistributionprotocol/provenance = {failed: true, ...}."
       }
     },
     {

@@ -17,7 +17,7 @@
     {
       "name": "A — fail-open, registry error",
       "expected": {
-        "behavior": "The registry answers 429 rate_limited after retries: the artifact is emitted unchanged with io.acdp/provenance = {failed: true, error: \"rate_limited\"}."
+        "behavior": "The registry answers 429 rate_limited after retries: the artifact is emitted unchanged with io.agentcontextdistributionprotocol/provenance = {failed: true, error: \"rate_limited\"}."
       }
     },
     {

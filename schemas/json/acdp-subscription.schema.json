@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.acdp.io/v0.1.0/acdp-subscription.schema.json",
+  "$id": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-subscription.schema.json",
   "title": "ACDP Subscription (0.5.0, Draft)",
   "description": "A change-hint subscription owned by the requester DID that created it (RFC-ACDP-0018 §8.1). secret is present ONLY in the 201 creation response and is never served again.",
   "type": "object",
@@ -25,7 +25,7 @@
           "minItems": 1,
           "uniqueItems": true,
           "items": {
-            "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id"
+            "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id"
           }
         },
         "lineage_id": {
@@ -33,7 +33,7 @@
           "minItems": 1,
           "uniqueItems": true,
           "items": {
-            "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/lineage_id"
+            "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/lineage_id"
           }
         },
         "agent_id": {
@@ -41,7 +41,7 @@
           "minItems": 1,
           "uniqueItems": true,
           "items": {
-            "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did"
+            "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/did"
           }
         },
         "kind": {

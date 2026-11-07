@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.acdp.io/v0.1.0/acdp-change.schema.json",
+  "$id": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-change.schema.json",
   "title": "ACDP Change Entry (0.5.0, Draft)",
   "description": "acdp-change/1: one reliance-changing change in a registry's GET /changes feed, carrying the existing signed evidence for it verbatim (RFC-ACDP-0018 §4). Evidence, not a verdict: consumers verify it per RFC-ACDP-0018 §7. Unsigned itself; adds no new signature.",
   "type": "object",
@@ -30,14 +30,14 @@
       ]
     },
     "ctx_id": {
-      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id",
+      "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id",
       "description": "The affected context (RFC-ACDP-0018 §3)."
     },
     "lineage_id": {
-      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/lineage_id"
+      "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/lineage_id"
     },
     "agent_id": {
-      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did",
+      "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/did",
       "description": "The producer whose reliance the change touches; for key_revocation, the revoked key's controller (RFC-ACDP-0018 §4)."
     },
     "recorded_at": {
@@ -46,16 +46,16 @@
       "description": "Equals event_receipt.accepted_at (lifecycle) or registry_receipt.created_at (superseded, key_revocation) (RFC-ACDP-0018 §4)."
     },
     "event": {
-      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-lifecycle-event.schema.json"
+      "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-lifecycle-event.schema.json"
     },
     "event_receipt": {
-      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-event-receipt.schema.json"
+      "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-event-receipt.schema.json"
     },
     "superseded_by": {
-      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id"
+      "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id"
     },
     "registry_receipt": {
-      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-registry-receipt.schema.json"
+      "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-registry-receipt.schema.json"
     }
   },
   "allOf": [

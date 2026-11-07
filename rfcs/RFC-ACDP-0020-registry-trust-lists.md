@@ -64,7 +64,7 @@ A trust list is a body (RFC-ACDP-0002) with:
 |---|---|
 | `type` | MUST be `acdp:trust-list`. The namespaced form is used so that every existing registry accepts the type today, with no vocabulary change. It is registered in [`registries/context-types.md`](../registries/context-types.md). |
 | `metadata` | MUST be an `acdp-trust-list/1` object valid against [`acdp-trust-list.schema.json`](../schemas/json/acdp-trust-list.schema.json) (§4.2). |
-| `schema_uri` | SHOULD be `https://schemas.acdp.io/v0.1.0/acdp-trust-list.schema.json`. |
+| `schema_uri` | SHOULD be `https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-trust-list.schema.json`. |
 | `visibility` | Any. A tenant's list MAY be `private` or `restricted`; a consortium list SHOULD be `public`. |
 | `derived_from`, `data_refs` | SHOULD be empty. They carry no trust meaning. |
 | `supersedes` | A new version of a list series SHOULD supersede the previous one at the same registry. Supersession is a convenience; ordering comes from `serial` (§5.3). |

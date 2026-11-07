@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.acdp.io/v0.1.0/acdp-capabilities.schema.json",
+  "$id": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-capabilities.schema.json",
   "title": "ACDP Registry Capabilities (v0.1.0)",
   "description": "The capability declaration document served at /.well-known/acdp.json. Tells consumers what algorithms, profiles, and limits the registry supports.",
 
@@ -20,7 +20,7 @@
       "description": "The ACDP specification version this registry implements."
     },
     "registry_did": {
-      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did",
+      "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/did",
       "description": "The registry's own DID, typically did:web:<hostname>."
     },
     "supported_signature_algorithms": {

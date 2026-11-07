@@ -401,8 +401,8 @@ All are behavioral, except `rec-007`'s executed HMAC known-answer vector `hint-h
 | Fixture | Scenario | Pins |
 |---|---|---|
 | `mcp-001` | Known answer: salted call hashes, `endpoint_hash`, `derived_from`, body hash and signature, `Idempotency-Key`, returned `_meta` | every value recomputed byte for byte with the `jcs` library and the zero test seed (`did:key`) |
-| `mcp-002` | The proxy never alters the upstream result | `content`/`structuredContent`/`isError` and upstream `_meta` keys unchanged; an upstream `io.acdp/provenance` is left alone |
-| `mcp-003` | The `io.acdp/provenance` value | `{ctx_id, content_hash, registry, salt}`; `salt` iff salted; link only after the publish response; consumer recomputation |
+| `mcp-002` | The proxy never alters the upstream result | `content`/`structuredContent`/`isError` and upstream `_meta` keys unchanged; an upstream `io.agentcontextdistributionprotocol/provenance` is left alone |
+| `mcp-003` | The `io.agentcontextdistributionprotocol/provenance` value | `{ctx_id, content_hash, registry, salt}`; `salt` iff salted; link only after the publish response; consumer recomputation |
 | `mcp-004` | Publish failure | fail-open `{failed: true, error?}`; fail-closed per tool; idempotent retries |
 | `mcp-005` | `derived_from` extraction | JCS preorder, dedup, values only, arguments only, cap 1000 |
 | `mcp-006` | Embedding allowlist | default unembedded; embedded DataRef shape; 64 KB cap |

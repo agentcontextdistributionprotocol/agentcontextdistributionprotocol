@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.acdp.io/v0.1.0/acdp-lifecycle-event.schema.json",
+  "$id": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-lifecycle-event.schema.json",
   "title": "ACDP Lifecycle Event (0.3.0)",
   "description": "A signed, append-only event recorded in registry_state.lifecycle_events (RFC-ACDP-0013, acdp/0.3.0 — promoting the RFC-ACDP-0009 §2.1 reservation). Additive minor, so this schema lives in the v0.1.0 namespace (VERSIONING.md). Where a signature is present, the event preimage is the JCS canonicalization of this object minus 'signature'; the actor signs the ASCII bytes of 'sha256:<hex(SHA-256(preimage))>' exactly as RFC-ACDP-0001 §5.8 / RFC-ACDP-0010 §5 (RFC-ACDP-0013 §5).",
 
@@ -19,7 +19,7 @@
       "description": "UUID (RFC 9562 canonical lowercase form) minted by the actor. Unique within the context's lifecycle_events array (RFC-ACDP-0013 §4)."
     },
     "ctx_id": {
-      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id",
+      "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/ctx_id",
       "description": "The affected context. MUST equal the ctx_id of the context whose registry_state carries this event — binding a signed event to exactly one context (RFC-ACDP-0013 §4)."
     },
     "event_type": {
@@ -35,7 +35,7 @@
       "description": "When the actor performed the action: canonical millisecond-precision RFC 3339 UTC (RFC-ACDP-0001 §5.3). Ordering of events is by array position, never by this field (RFC-ACDP-0013 §4.1, §7.1)."
     },
     "actor": {
-      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/did",
+      "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/did",
       "description": "The DID performing the action: body.agent_id for producer-initiated events; the registry's DID for registry-initiated events (RFC-ACDP-0013 §4, §6)."
     },
     "reason": {
@@ -44,7 +44,7 @@
       "description": "Optional human-readable explanation. Informational only; MUST NOT drive automated decisions (RFC-ACDP-0013 §4)."
     },
     "signature": {
-      "$ref": "https://schemas.acdp.io/v0.1.0/acdp-common.schema.json#/$defs/signature",
+      "$ref": "https://schemas.agentcontextdistributionprotocol.io/v0.1.0/acdp-common.schema.json#/$defs/signature",
       "description": "Signature over the event hash (RFC-ACDP-0013 §5). REQUIRED on producer-initiated events (key resolved per RFC-ACDP-0001 §5.11); SHOULD be present on registry-initiated events (registries advertising acdp-registry-receipts MUST sign, SHOULD use the RFC-ACDP-0010 receipt signing key)."
     }
   },

@@ -17,19 +17,19 @@
     {
       "name": "A — no extensions entry",
       "expected": {
-        "behavior": "The completing chunk and every snapshot carry no https://acdp.io/ext/a2a/v1 entry in Artifact.extensions, and the agent adds nothing to that field."
+        "behavior": "The completing chunk and every snapshot carry no https://agentcontextdistributionprotocol.io/ext/a2a/v1 entry in Artifact.extensions, and the agent adds nothing to that field."
       }
     },
     {
       "name": "B — nothing else altered",
       "expected": {
-        "behavior": "artifactId, name, description, parts and every other metadata key are byte-identical to what the agent would emit without ACDP; only io.acdp/provenance is added."
+        "behavior": "artifactId, name, description, parts and every other metadata key are byte-identical to what the agent would emit without ACDP; only io.agentcontextdistributionprotocol/provenance is added."
       }
     },
     {
       "name": "C — link without activation",
       "expected": {
-        "behavior": "A client that did not send A2A-Extensions: https://acdp.io/ext/a2a/v1 still receives the link in metadata."
+        "behavior": "A client that did not send A2A-Extensions: https://agentcontextdistributionprotocol.io/ext/a2a/v1 still receives the link in metadata."
       }
     }
   ]
